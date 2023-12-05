@@ -23,7 +23,7 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
     
-    parser.add_argument("-m", "--mask", )
+    parser.add_argument("-m", "--mask")
     parser.add_argument("-i", "--images")
 
     parser.add_argument("-b", "--start", type=int)
