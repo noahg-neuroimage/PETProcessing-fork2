@@ -33,7 +33,7 @@ def compute_average_over_mask_of_multiple_frames(mask: np.ndarray,
                                                  start: int,
                                                  step: int,
                                                  stop: int):
-    """.0..0.0
+    """
     Given a mask, and multiple images, we compute the average value of the image over the mask. It is assumed that the last
     index for the images corresponds to different images or time-points. A simple and explicit iterator to stride over the
     images is included.
