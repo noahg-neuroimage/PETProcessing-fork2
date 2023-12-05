@@ -31,25 +31,25 @@ def compute_average_over_mask(mask: np.ndarray, image: np.ndarray) -> float:
 def compute_average_over_mask_of_multiple_frames(mask: np.ndarray,
                                                  image_series: np.ndarray,
                                                  start: int,
-                                                 stride: int,
-                                                 end: int):
-    """
+                                                 step: int,
+                                                 stop: int):
+    """.0..0.0
     Given a mask, and multiple images, we compute the average value of the image over the mask. It is assumed that the last
     index for the images corresponds to different images or time-points. A simple and explicit iterator to stride over the
     images is included.
     :param mask:
     :param image_series:
     :param start:
-    :param stride:
-    :param end:
+    :param step:
+    :param stop:
     :return:
     """
     #TODO: A smarter way to stride over images so that negative indecies can be used.
     assert start >= 0, "`start` has to be >= 0."
-    assert end < image_series.shape[-1], "`end` has to be smaller than the number of frames in the image array."
-    assert stride >= 0, "`stride` has to be >= 0."
+    assert stop < image_series.shape[-1], "`end` has to be smaller than the number of frames in the image array."
+    assert step >= 0, "`stride` has to be >= 0."
     
-    frame_it = range(start, end, stride)
+    frame_it = range(start, stop, step)
     num_frames = len(frame_it)
     avg_values = np.zeros(num_frames, float)
     
