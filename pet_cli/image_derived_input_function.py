@@ -46,7 +46,7 @@ def compute_average_over_mask_of_multiple_frames(mask: np.ndarray,
     """
     #TODO: A smarter way to stride over images so that negative indecies can be used.
     assert start >= 0, "`start` has to be >= 0."
-    assert stop < image_series.shape[-1], "`end` has to be smaller than the number of frames in the image array."
+    assert stop <= image_series.shape[-1], "`end` has to be smaller than the number of frames in the image array."
     assert step >= 0, "`stride` has to be >= 0."
     
     frame_it = range(start, stop, step)
