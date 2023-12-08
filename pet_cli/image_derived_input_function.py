@@ -2,14 +2,18 @@ import numpy as np
 import nibabel
 
 
-def extract_from_nii_as_numpy(file_path: str) -> np.ndarray:
+def extract_from_nii_as_numpy(file_path: str, verbose: bool) -> np.ndarray:
     """
     Convenient wrapper to extract data from a .nii or .nii.gz file as a numpy array
     :param file_path: The full path to the file.
     :return: The data contained in the .nii or .nii.gz file as a numpy array
     """
+    image_data = nibabel.load(filename=file_path).get_fdata()
     
-    return nibabel.load(filename=file_path).get_fdata()
+    if verbose:
+        print(f"(fileIO): {file_path} has shape {image_data.shape}")
+    
+    return image_data
     
 
 def compute_average_over_mask(mask: np.ndarray, image: np.ndarray) -> float:
