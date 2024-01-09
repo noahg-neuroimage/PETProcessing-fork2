@@ -65,6 +65,10 @@ def compute_average_over_mask_of_multiple_frames(mask: np.ndarray,
     return avg_values
 
 
+
+
+
+
 # TODO: Maybe a class that tracks unitful quantities so we don't have to worry about units
 class BloodInputFunction(object):
     """

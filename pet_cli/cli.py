@@ -21,14 +21,14 @@ if __name__ == '__main__':
     
     verb_group = parser.add_argument_group("Additional information")
     verb_group.add_argument("-p", "--print", action="store_true", help="Print the calculated values to screen.",
-                            required=True)
+                            required=False)
     verb_group.add_argument("-v", "--verbose", action="store_true",
-                            help="Print the shape of the mask and images files.", required=True)
+                            help="Print the shape of the mask and images files.", required=False)
     
     args = parser.parse_args()
     
-    assert pathlib.Path(args.mask).is_file(), "Mask file path is incorrect or does not exist."
-    assert pathlib.Path(args.images).is_file(), "Images file path is incorrect or does not exist."
+    assert pathlib.Path(args.mask).is_file(), f"Mask file path (${args.mask}) is incorrect or does not exist."
+    assert pathlib.Path(args.images).is_file(), f"Images file path (${args.images}) is incorrect or does not exist."
     
     mask = idif.extract_from_nii_as_numpy(file_path=args.mask, verbose=args.verbose)
     images = idif.extract_from_nii_as_numpy(file_path=args.images, verbose=args.verbose)
