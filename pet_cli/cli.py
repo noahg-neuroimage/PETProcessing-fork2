@@ -27,16 +27,7 @@ if __name__ == '__main__':
     
     args = parser.parse_args()
     
-    assert pathlib.Path(args.mask).is_file(), f"Mask file path (${args.mask}) is incorrect or does not exist."
-    assert pathlib.Path(args.images).is_file(), f"Images file path (${args.images}) is incorrect or does not exist."
-    
-    mask = idif.extract_from_nii_as_numpy(file_path=args.mask, verbose=args.verbose)
-    images = idif.extract_from_nii_as_numpy(file_path=args.images, verbose=args.verbose)
-    
-    avg_vals = idif.compute_average_over_mask_of_multiple_frames(mask=mask, image_series=images, start=args.start,
-                                                                 stop=args.stop, step=args.step)
-    np.savetxt(fname=args.outfile, X=avg_vals, delimiter=', ')
-    
-    if args.print:
-        print(avg_vals.shape)
-        print(avg_vals)
+    idif.calculate_and_save_image_derived_input_function(mask_file=args.mask, pet_file=args.images,
+                                                         out_file=args.outfile, start=args.start, step=args.step,
+                                                         stop=args.stop, verbose=args.verbose,
+                                                         print_to_screen=args.print)

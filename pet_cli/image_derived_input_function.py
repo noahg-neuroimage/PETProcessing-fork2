@@ -2,6 +2,7 @@ from scipy.optimize import curve_fit as sp_fit
 from scipy.interpolate import interp1d as sp_interp
 import numpy as np
 import nibabel
+import pathlib
 
 
 def extract_from_nii_as_numpy(file_path: str, verbose: bool) -> np.ndarray:
@@ -65,8 +66,40 @@ def compute_average_over_mask_of_multiple_frames(mask: np.ndarray,
     return avg_values
 
 
-
-
+def calculate_and_save_image_derived_input_function(mask_file: str,
+                                                    pet_file: str,
+                                                    out_file: str,
+                                                    start: int,
+                                                    step: int,
+                                                    stop: int,
+                                                    verbose: bool,
+                                                    print_to_screen: bool):
+    """
+    
+    :param mask_file:
+    :param pet_file:
+    :param out_file:
+    :param start:
+    :param step:
+    :param stop:
+    :param verbose:
+    :param print_to_screen:
+    :return:
+    """
+    
+    assert pathlib.Path(mask_file).is_file(), f"Mask file path (${mask_file}) is incorrect or does not exist."
+    assert pathlib.Path(pet_file).is_file(), f"Images file path (${pet_file}) is incorrect or does not exist."
+    
+    mask = extract_from_nii_as_numpy(file_path=mask_file, verbose=verbose)
+    images = extract_from_nii_as_numpy(file_path=pet_file, verbose=verbose)
+    
+    avg_vals = compute_average_over_mask_of_multiple_frames(mask=mask, image_series=images, start=start, stop=stop,
+                                                            step=step)
+    np.savetxt(fname=out_file, X=avg_vals, delimiter=', ')
+    if print_to_screen:
+        print(avg_vals.shape)
+        print(avg_vals)
+    return avg_vals
 
 
 # TODO: Maybe a class that tracks unitful quantities so we don't have to worry about units
