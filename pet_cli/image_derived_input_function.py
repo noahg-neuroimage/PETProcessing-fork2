@@ -34,7 +34,7 @@ def compute_average_over_mask(mask: np.ndarray, image: np.ndarray) -> float:
     
     return np.sum(mask * image) / np.sum(mask)
 
-
+#TODO: Add documentation
 def compute_average_over_mask_of_multiple_frames(mask: np.ndarray,
                                                  image_series: np.ndarray,
                                                  start: int,
@@ -64,6 +64,33 @@ def compute_average_over_mask_of_multiple_frames(mask: np.ndarray,
         avg_values[t] = compute_average_over_mask(mask=mask, image=image_series[:, :, :, frmID])
     
     return avg_values
+
+#TODO: Add documentation
+def calculate_image_derived_input_function(mask_file: str,
+                                           pet_file: str,
+                                           start: int,
+                                           step: int,
+                                           stop: int):
+    """
+    
+    :param mask_file:
+    :param pet_file:
+    :param start:
+    :param step:
+    :param stop:
+    :param verbose:
+    :return:
+    """
+    
+    assert pathlib.Path(mask_file).is_file(), f"Mask file path (${mask_file}) is incorrect or does not exist."
+    assert pathlib.Path(pet_file).is_file(), f"Images file path (${pet_file}) is incorrect or does not exist."
+    
+    mask = extract_from_nii_as_numpy(file_path=mask_file, verbose=False)
+    images = extract_from_nii_as_numpy(file_path=pet_file, verbose=False)
+    
+    avg_vals = compute_average_over_mask_of_multiple_frames(mask=mask, image_series=images, start=start, stop=stop,
+                                                            step=step)
+    return avg_vals
 
 
 def calculate_and_save_image_derived_input_function(mask_file: str,
