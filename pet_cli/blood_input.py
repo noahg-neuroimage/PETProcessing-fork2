@@ -1,6 +1,45 @@
 import numpy as np
 from scipy.interpolate import interp1d as sp_interp
 from scipy.optimize import optimize as sp_fit
+from pandas import read_csv
+from typing import Tuple
+
+
+def extract_blood_input_function_from_csv(file_path: str) -> Tuple[np.ndarray, np.ndarray]:
+    """
+    Given a CSV file which contains blood activity data, we extract the times and the activity
+    Assumes that the file is comma-separated and has columns: ID, TIME, UNCORRECTED ACTIVITY, CORRECTED ACTIVITY
+    :param file_path:
+    :return: [times, activity]
+    """
+    blood_data = read_csv(file_path)
+    times, activity = blood_data.to_numpy().T[[1, 3]]
+    return times, activity
+
+
+def extract_blood_input_function_times_from_csv(file_path: str) -> np.ndarray:
+    """
+    Given a CSV file which contains blood activity data, we extract just the times.
+    Assumes that the file is comma-separated and has columns: ID, TIME, UNCORRECTED ACTIVITY, CORRECTED ACTIVITY
+    :param file_path:
+    :return: [times, activity]
+    """
+    blood_data = read_csv(file_path)
+    times = blood_data.to_numpy().T[[1]]
+    return times
+
+
+def extract_blood_input_function_activity_from_csv(file_path: str) -> np.ndarray:
+    """
+    Given a CSV file which contains blood activity data, we extract just the activities.
+    Assumes that the file is comma-separated and has columns: ID, TIME, UNCORRECTED ACTIVITY, CORRECTED ACTIVITY
+    :param file_path:
+    :return: activity
+    """
+    blood_data = read_csv(file_path)
+    activity = blood_data.to_numpy().T[[3]]
+    return activity
+
 
 # TODO: Maybe a class that tracks unitful quantities so we don't have to worry about units
 class BloodInputFunction(object):
@@ -41,7 +80,7 @@ class BloodInputFunction(object):
         self.above_func = BloodInputFunction.linear_fitting_func(x_data=time[above_thresh],
                                                                  y_data=activity[above_thresh])
     
-    def calc_blood_input_function(self, x: np.ndarray):
+    def calc_blood_input_function(self, x: np.ndarray) -> np.ndarray:
         """
         Given new time data, assumed to be in minutes,
         :param x:
@@ -57,7 +96,7 @@ class BloodInputFunction(object):
         return y
     
     @staticmethod
-    def _linear_function(x: np.ndarray, m: float, b: float):
+    def _linear_function(x: np.ndarray, m: float, b: float) -> np.ndarray:
         """
         Simple equation for a line. `y = m * x + b`
         :param x: Independent variable
