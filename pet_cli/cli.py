@@ -1,10 +1,8 @@
 import argparse
-import pathlib
 import image_derived_input_function as idif
-import numpy as np
 
-# Press the green button in the gutter to run the script.
-if __name__ == '__main__':
+
+def main():
     parser = argparse.ArgumentParser(prog="PET Processing",
                                      description="General purpose suite for processing PET images.",
                                      epilog="PET Processing complete.")
@@ -31,3 +29,7 @@ if __name__ == '__main__':
                                                          out_file=args.outfile, start=args.start, step=args.step,
                                                          stop=args.stop, verbose=args.verbose,
                                                          print_to_screen=args.print)
+
+
+if __name__ == '__main__':
+    main()
