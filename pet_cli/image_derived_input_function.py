@@ -1,5 +1,3 @@
-from scipy.optimize import curve_fit as sp_fit
-from scipy.interpolate import interp1d as sp_interp
 import numpy as np
 import nibabel
 import pathlib
