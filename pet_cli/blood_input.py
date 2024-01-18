@@ -1,6 +1,6 @@
 import numpy as np
 from scipy.interpolate import interp1d as sp_interp
-from scipy.optimize import optimize as sp_fit
+from scipy.optimize import curve_fit as sp_fit
 from pandas import read_csv
 from typing import Tuple
 
