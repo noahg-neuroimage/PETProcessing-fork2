@@ -1,5 +1,5 @@
 import argparse
-import image_derived_input_function as idif
+from . import image_derived_input_function as idif
 
 
 def main():
