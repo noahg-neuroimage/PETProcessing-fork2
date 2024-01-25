@@ -90,7 +90,7 @@ def calculate_image_derived_input_function(mask_file: str,
                                                             step=step)
     return avg_vals
 
-
+#TODO: Add documentation
 def calculate_and_save_image_derived_input_function(mask_file: str,
                                                     pet_file: str,
                                                     out_file: str,

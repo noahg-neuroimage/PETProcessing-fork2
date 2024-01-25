@@ -1,6 +1,8 @@
+import nibabel
 import numpy as np
 import numba
 
+from typing import Tuple
 
 # TODO: Add documentation
 @numba.njit()
@@ -33,25 +35,25 @@ def line_fit(xdata: np.ndarray, ydata: np.ndarray) -> float:
 # TODO: Add documentation
 # TODO: Should the zeroth index be 0?
 @numba.njit()
-def integrate_input_function(input_function: np.ndarray, input_times: np.ndarray) -> np.ndarray:
+def calculate_cumulative_integral(function_vals: np.ndarray, function_times: np.ndarray) -> np.ndarray:
     """
     
-    :param input_function:
-    :param input_times:
+    :param function_vals:
+    :param function_times:
     :return:
     """
-    integral = np.zeros_like(input_function)
-    for i in range(1, len(input_function)):
-        integral[i] = np.trapz(y=input_function[1:i], x=input_times[1:i])
+    integral = np.zeros_like(function_vals)
+    for i in range(1, len(function_vals)):
+        integral[i] = np.trapz(y=function_vals[1:i], x=function_times[1:i])
     return integral
 
 
 # TODO: Add documentation
 @numba.njit()
-def generate_parametric_image_with_naive_patlak(intensity_image: np.ndarray,
-                                                input_func: np.ndarray,
-                                                input_times: np.ndarray,
-                                                t_thresh: int) -> np.ndarray:
+def generate_parametric_image_with_patlak(intensity_image: np.ndarray,
+                                          input_func: np.ndarray,
+                                          input_times: np.ndarray,
+                                          t_thresh: int) -> np.ndarray:
     """
     
     :param intensity_image:
@@ -60,7 +62,7 @@ def generate_parametric_image_with_naive_patlak(intensity_image: np.ndarray,
     :param t_thresh:
     :return:
     """
-    input_int = integrate_input_function(input_func, input_times)
+    input_int = calculate_cumulative_integral(input_func, input_times)
     x_var = input_int[t_thresh:] / input_func[t_thresh:]
     image_shape = intensity_image.shape
     x_dim = image_shape[0]
@@ -75,3 +77,34 @@ def generate_parametric_image_with_naive_patlak(intensity_image: np.ndarray,
                 fit_vals = line_fit(x_var, yVar)
                 par_image[i, j, k] = fit_vals[0]
     return par_image
+
+#TODO: Should re-factor into a IO sub-module.
+def read_tsv_tac(file_path: str) -> Tuple[np.ndarray, np.ndarray]:
+    times, tac = np.loadtxt(fname=file_path, delimiter='\t', dtype=float).T
+    return np.array(times, float), np.array(tac, float)
+
+#TODO: Add documentation
+def save_parametric_image_from_4DPET_using_patlak(pet_file: str, input_func_file: str, out_file: str, thresh_in_mins: float):
+    """
+    
+    :param pet_file:
+    :param input_func_file:
+    :param out_file:
+    :param thresh_in_mins:
+    :return:
+    """
+    pet_file = nibabel.load(filename=pet_file)
+    
+    input_times, input_tac = read_tsv_tac(input_func_file)
+    t_thresh = np.argwhere(input_times >= thresh_in_mins)[0, 0]
+    
+    parametric_values = generate_parametric_image_with_patlak(intensity_image=pet_file.get_fdata()/37000.,
+                                                              input_func=input_tac,
+                                                              input_times=input_times,
+                                                              t_thresh=t_thresh)
+
+    parametric_image = nibabel.Nifti1Image(parametric_values, pet_file.affine, pet_file.header)
+
+    nibabel.save(img=parametric_image, filename=f"{out_file}.nii.gz")
+    
+    return None
