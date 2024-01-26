@@ -32,31 +32,24 @@ def line_fit(xdata: np.ndarray, ydata: np.ndarray) -> float:
     fit_ans = np.linalg.lstsq(matrix, ydata)[0]
     return fit_ans
 
-# TODO: Remove the function since SciPy has a version.
-# TODO: Add documentation
-# TODO: Should the zeroth index be 0?
-@numba.njit()
-def calculate_cumulative_integral(y: np.ndarray, x: np.ndarray) -> np.ndarray:
-    """
-    
-    :param y:
-    :param x:
-    :return:
-    """
-    integral = np.zeros_like(y)
-    for i in range(1, len(y)):
-        integral[i-1] = np.trapz(y=y[0:i], x=x[0:i])
-    return integral
 
 
 # TODO: Add documentation
 @numba.njit()
 def generate_parametric_image_with_patlak(intensity_image: np.ndarray,
                                           input_func: np.ndarray,
-                                          input_times: np.ndarray,
+                                          input_cum_int: np.ndarray,
                                           t_thresh: int) -> np.ndarray:
-    input_int = np.array(cumulative_trapezoid(y=input_func, x=input_times, initial=0.0), float)
-    x_var = input_int[t_thresh:] / input_func[t_thresh:]
+    """
+    
+    :param intensity_image:
+    :param input_func:
+    :param input_cum_int:
+    :param t_thresh:
+    :return:
+    """
+    
+    x_var = input_cum_int[t_thresh:] / input_func[t_thresh:]
     image_shape = intensity_image.shape
     x_dim = image_shape[0]
     y_dim = image_shape[1]
@@ -103,9 +96,11 @@ def save_parametric_image_from_4DPET_using_patlak(pet_file: str,
     if verbose:
         print(f"{len(input_times)-t_thresh} points will be fit for each TAC.")
     
+    input_cum_int = np.array(cumulative_trapezoid(y=input_tac, x=input_times, initial=0.0), float)
+    
     parametric_values = generate_parametric_image_with_patlak(intensity_image=pet_file.get_fdata()/37000.,
                                                               input_func=input_tac,
-                                                              input_times=input_times,
+                                                              input_cum_int=input_cum_int,
                                                               t_thresh=t_thresh)
 
     parametric_image = nibabel.Nifti1Image(parametric_values, pet_file.affine, pet_file.header)
