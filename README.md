@@ -1,6 +1,6 @@
 # PETProcessing
 
-Test-bed for BrierLab PET Processing.
+Test-bed for Brier Lab PET Processing.
 
 ## Installation
 
