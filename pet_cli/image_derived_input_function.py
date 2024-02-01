@@ -1,13 +1,19 @@
-import numpy as np
-import nibabel
 import pathlib
+
+import nibabel
+import numpy as np
 
 
 def extract_from_nii_as_numpy(file_path: str, verbose: bool) -> np.ndarray:
-    """
-    Convenient wrapper to extract data from a .nii or .nii.gz file as a numpy array
-    :param file_path: The full path to the file.
-    :return: The data contained in the .nii or .nii.gz file as a numpy array
+    """Convenient wrapper to extract data from a .nii or .nii.gz file as a numpy array
+    
+    Args:
+        file_path (str): The full path to the file.
+        verbose (bool): Whether to print image shape to screen
+
+    Returns:
+        The data contained in the .nii or .nii.gz file as a numpy array
+
     """
     image_data = nibabel.load(filename=file_path).get_fdata()
     
@@ -18,11 +24,13 @@ def extract_from_nii_as_numpy(file_path: str, verbose: bool) -> np.ndarray:
     
 
 def compute_average_over_mask(mask: np.ndarray, image: np.ndarray) -> float:
-    """
-    We compute the average value of `image` over the provided `mask`. We multiply the mask
+    """ We compute the average value of `image` over the provided `mask`.
+    
+    We multiply the mask
     and the image element-wise, which gives us the image pixels corresponding to the mask. We then take the standard mean
     over those values by summing and dividing by the number of values. Note that the implementation does not care about
     the dimensions of mask and image; just that they be the same.
+    
     :param mask: 3D numpy array that contains 1s and 0s.
     :param image: 3D numpy array corresponding to an image.
     :return: Average value of the image over the mask.
