@@ -10,3 +10,17 @@ In the top-level directory (where `setup.py` exists), we run the following comma
 python setup.py sdist #Generates a tarball that we can use pip to install
 pip install dist/pet_cli-0.0.1.tar.gz #Installs the package
 ```
+
+## Documentation
+
+### On Windows
+
+To generate the documentation in HTML using sphinx, assuming we are in the `docs/` directory and that sphinx is
+installed:
+
+```shell
+make clean
+make html 
+```
+
+Then, open `doc/build/html/index.html` using any browser or your IDE.
