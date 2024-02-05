@@ -70,3 +70,29 @@ def cumulative_trapezoidal_integral(xdata: np.ndarray, ydata: np.ndarray, initia
     cum_int[1:] = np.cumsum(dx * (ydata[1:] + ydata[:-1]) / 2.0)
     
     return cum_int
+
+# TODO: Add references for the TCMs and Patlak. Could maybe rely on Turku PET Center.
+@numba.njit()
+def calculate_patlak_x(tac_times: np.ndarray, tac_vals: np.ndarray) -> np.ndarray:
+    r"""Calculates the x-variable in Patlak analysis (:math:`\frac{\int_{0}^{T}f(t)\mathrm{d}t}{f(T)}`).
+    
+    Patlak-Gjedde analysis is a linearization of the 2-TCM with irreversible uptake in the second compartment.
+    Therefore, we essentially have to fit a line to some data :math:`y = mx+b`. This function calculates the :math:`x`
+    variable for Patlak analysis where,
+    .. math::
+        x = \frac{\int_{0}_{T} C_\mathrm{P}(t) \mathrm{d}t}{C_\mathrm{P}(t)},
+    
+    where further :math:`C_\mathrm{P}` is usually the plasma TAC.
+    
+    Args:
+        tac_times (np.ndarray): Array containing the sampled times.
+        tac_vals (np.ndarray): Array for activity values at the sampled times.
+
+    Returns:
+        np.ndarray: Patlak x-variable. Cumulative integral of activity divided by activity.
+    """
+    cumulative_integral = cumulative_trapezoidal_integral(xdata=tac_times, ydata=tac_vals, initial=0.0)
+    
+    return cumulative_integral / tac_vals
+
+
