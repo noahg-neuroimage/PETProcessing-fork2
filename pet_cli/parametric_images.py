@@ -77,13 +77,17 @@ def save_parametric_image_from_4DPET_using_patlak(pet_file: str,
                                                   verbose=True):
     """
     
-    :param pet_file:
-    :param input_func_file:
-    :param out_file:
-    :param thresh_in_mins:
-    :param verbose:
-    :return:
+    Args:
+        pet_file:
+        input_func_file:
+        out_file:
+        thresh_in_mins:
+        verbose:
+
+    Returns:
+
     """
+    
     pet_file = nibabel.load(filename=pet_file)
     
     input_times, input_tac = read_tsv_tac(input_func_file)

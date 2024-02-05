@@ -12,6 +12,7 @@ Welcome to PETProcessingPackage's documentation!
 
    ./pet_cli.blood_input
    ./pet_cli.image_derived_input_function
+   ./pet_cli.parametric_images
 
 Indices and tables
 ==================
