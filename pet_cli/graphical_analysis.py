@@ -14,11 +14,13 @@ def _line_fitting_make_rhs_matrix_from_xdata(xdata: numba.float64[::1]) -> numba
     """Generates the RHS matrix for linear least squares fitting
 
     Args:
-        xdata (numba.float64): array of independent variable values
+        xdata (numba.float64[:]): array of independent variable values
 
     Returns:
-        2D matrix where first column is `xdata` and the second column is 1s.
+        numba.float64[:,:]: 2D matrix where first column is `xdata` and the second column is 1s.
     """
     out_matrix = np.ones((len(xdata), 2), float)
     out_matrix[:, 0] = xdata
     return out_matrix
+
+
