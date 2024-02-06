@@ -7,9 +7,9 @@ TODO:
 
 __version__ = '0.1'
 
-import numpy as np
 import numba
-import typing
+import numpy as np
+
 
 # TODO: Check if documentation is good.
 @numba.njit()
@@ -72,6 +72,7 @@ def cumulative_trapezoidal_integral(xdata: np.ndarray, ydata: np.ndarray, initia
     return cum_int
 
 # TODO: Add references for the TCMs and Patlak. Could maybe rely on Turku PET Center.
+# TODO: Handle cases when tac_vals = 0.0. Might be able to use t_thresh so that we are past the 0-values.
 @numba.njit()
 def calculate_patlak_x(tac_times: np.ndarray, tac_vals: np.ndarray) -> np.ndarray:
     r"""Calculates the x-variable in Patlak analysis (:math:`\frac{\int_{0}^{T}f(t)\mathrm{d}t}{f(T)}`).
