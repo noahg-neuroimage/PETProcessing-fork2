@@ -2,7 +2,8 @@
 
 TODO:
     * Check if it makes more sense to lift out the more mathy methods out into a separate module.
-
+    * Might have to change the division of the TACS cumulative integral by the TACS to be from ``[t_thresh:]`` to
+      avoid division by zero.
 """
 
 __version__ = '0.1'
@@ -142,3 +143,33 @@ def patlak_analysis(input_tac_values: np.ndarray,
     patlak_values = fit_line_to_data_using_lls(xdata=patlak_x[t_thresh:], ydata=patlak_y[t_thresh:])
     
     return patlak_values
+
+
+@numba.njit()
+def logan_analysis(input_tac_values: np.ndarray,
+                   region_tac_values: np.ndarray,
+                   tac_times_in_minutes: np.ndarray,
+                   t_thresh_in_minutes: float) -> np.ndarray:
+    """Performs logan analysis on given input TAC, regional TAC, times and threshold.
+    
+    Args:
+        input_tac_values (np.ndarray):
+        region_tac_values (np.ndarray):
+        tac_times_in_minutes (np.ndarray):
+        t_thresh_in_minutes (np.ndarray):
+
+    Returns:
+        np.ndarray: :math:`(V_{d}, \mathrm{Int})`.
+        
+    Notes:
+        The interpretation of the values depends on the underlying kinetic model.
+    """
+    
+    t_thresh = get_index_from_threshold(times_in_minutes=tac_times_in_minutes, t_thresh_in_minutes=t_thresh_in_minutes)
+    
+    logan_x = cumulative_trapezoidal_integral(xdata=tac_times_in_minutes, ydata=input_tac_values) / region_tac_values
+    logan_y = cumulative_trapezoidal_integral(xdata=tac_times_in_minutes, ydata=region_tac_values) / region_tac_values
+    
+    logan_values = fit_line_to_data_using_lls(xdata=logan_x[t_thresh:], ydata=logan_y[t_thresh:])
+    
+    return logan_values
