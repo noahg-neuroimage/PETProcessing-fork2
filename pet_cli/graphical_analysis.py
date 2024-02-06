@@ -115,3 +115,30 @@ def get_index_from_threshold(times_in_minutes: np.ndarray, t_thresh_in_minutes: 
         return -1
     else:
         return np.argwhere(times_in_minutes >= t_thresh_in_minutes)[0, 0]
+
+
+# TODO: Add more detailed documentation.
+@numba.njit()
+def patlak_analysis(input_tac_values: np.ndarray,
+                    region_tac_values: np.ndarray,
+                    tac_times_in_minutes: np.ndarray,
+                    t_thresh_in_minutes: float) -> np.ndarray:
+    """Performs Patlak-Gjedde analysis given the input TAC, region TAC, times and threshold.
+    
+    Args:
+        input_tac_values (np.ndarray):
+        region_tac_values (np.ndarray):
+        tac_times_in_minutes (np.ndarray):
+        t_thresh_in_minutes (np.ndarray):
+
+    Returns:
+        np.ndarray: Array containing :math:`(K_{1}, V_{0})` values.
+    """
+    t_thresh = get_index_from_threshold(times_in_minutes=tac_times_in_minutes, t_thresh_in_minutes=t_thresh_in_minutes)
+    
+    patlak_x = calculate_patlak_x(tac_times=tac_times_in_minutes, tac_vals=input_tac_values)
+    patlak_y = region_tac_values / input_tac_values
+    
+    patlak_values = fit_line_to_data_using_lls(xdata=patlak_x[t_thresh:], ydata=patlak_y[t_thresh:])
+    
+    return patlak_values
