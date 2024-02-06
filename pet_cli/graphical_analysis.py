@@ -150,7 +150,7 @@ def logan_analysis(input_tac_values: np.ndarray,
                    region_tac_values: np.ndarray,
                    tac_times_in_minutes: np.ndarray,
                    t_thresh_in_minutes: float) -> np.ndarray:
-    """Performs logan analysis on given input TAC, regional TAC, times and threshold.
+    """Performs Logan analysis on given input TAC, regional TAC, times and threshold.
     
     Args:
         input_tac_values (np.ndarray):
@@ -169,6 +169,37 @@ def logan_analysis(input_tac_values: np.ndarray,
     
     logan_x = cumulative_trapezoidal_integral(xdata=tac_times_in_minutes, ydata=input_tac_values) / region_tac_values
     logan_y = cumulative_trapezoidal_integral(xdata=tac_times_in_minutes, ydata=region_tac_values) / region_tac_values
+    
+    logan_values = fit_line_to_data_using_lls(xdata=logan_x[t_thresh:], ydata=logan_y[t_thresh:])
+    
+    return logan_values
+
+
+# TODO: Add detailed documentation?
+@numba.njit()
+def alternative_logan_analysis(input_tac_values: np.ndarray,
+                               region_tac_values: np.ndarray,
+                               tac_times_in_minutes: np.ndarray,
+                               t_thresh_in_minutes: float) -> np.ndarray:
+    """Performs alternative logan analysis on given input TAC, regional TAC, times and threshold.
+
+    Args:
+        input_tac_values (np.ndarray):
+        region_tac_values (np.ndarray):
+        tac_times_in_minutes (np.ndarray):
+        t_thresh_in_minutes (np.ndarray):
+
+    Returns:
+        np.ndarray: :math:`(V_{d}, \mathrm{Int})`.
+
+    Notes:
+        The interpretation of the values depends on the underlying kinetic model.
+    """
+    
+    t_thresh = get_index_from_threshold(times_in_minutes=tac_times_in_minutes, t_thresh_in_minutes=t_thresh_in_minutes)
+    
+    logan_x = cumulative_trapezoidal_integral(xdata=tac_times_in_minutes, ydata=input_tac_values) / region_tac_values
+    logan_y = cumulative_trapezoidal_integral(xdata=tac_times_in_minutes, ydata=region_tac_values) / input_tac_values
     
     logan_values = fit_line_to_data_using_lls(xdata=logan_x[t_thresh:], ydata=logan_y[t_thresh:])
     
