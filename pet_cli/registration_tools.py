@@ -1,3 +1,4 @@
+import ants
 import nibabel.nifti1
 from nibabel.filebasedimages import FileBasedHeader, FileBasedImage
 import numpy as np
@@ -109,3 +110,36 @@ def apply_3d_mr_bias_correction(image: nibabel.nifti1.Nifti1Image, verbose: bool
         print(f"(fileIO): 3D MR image has been bias corrected")
 
     return corrected_nibabel_image
+
+
+def convert_nib_to_ants(nib_image: nibabel.nifti1.Nifti1Image) -> ants.ANTsImage:
+    """Converts nibabel image format (nibabel.nifti1.Nifti1Image) to ants image format (ANTsImage).
+
+    Args:
+        nib_image: Image in nibabel.nifti1.Nifti1Image format.
+
+    Returns:
+        Image in ANTsImage format.
+
+    """
+    nib_image_data: np.ndarray = nib_image.get_fdata()
+    nib_image_affine = nib_image.affine
+    ants_image = ants.from_numpy(nib_image_data)
+    ants_image.set_spacing(tuple(np.diag(nib_image_affine)[:3]))
+
+    return ants_image
+
+
+def rigid_3d_registration(moving_image: nibabel.nifti1.Nifti1Image, fixed_image: nibabel.nifti1.Nifti1Image,
+                          verbose: bool) -> nibabel.nifti1.Nifti1Image:
+    """
+
+    Args:
+        moving_image:
+        fixed_image:
+        verbose:
+
+    Returns:
+
+    """
+    moving_image_ants = convert_nib
