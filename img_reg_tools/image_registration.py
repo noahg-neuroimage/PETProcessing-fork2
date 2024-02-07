@@ -4,7 +4,9 @@ Image registration tools for PET processing
 import ants
 import nibabel
 
-
+# TODO: Incorporate this more generally into an image utils class.
+#       Then we could remove duplicated codes, and have a module
+#       to run the codes in a specified order depending on the task.
 def pet_to_atlas_registration(pet_image_series: nibabel.nifti1,
                               atlas_image: nibabel.nifti1,
                               init_transform=None,
@@ -23,7 +25,7 @@ def pet_to_atlas_registration(pet_image_series: nibabel.nifti1,
 
 
     Returns:
-
+        pet_on_atlas (nibabel.nifti1)
     """
     pet_image_ants = ants.from_nibabel(pet_image_series)
     atlas_image_ants = ants.from_nibabel(atlas_image)
@@ -78,6 +80,26 @@ def pet_to_subject_registration(pet_image_series: nibabel.nifti1,
             pet_image_ants,
             transformlist=init_transform
         )
-    
+
     pet_on_mpr = ants.utils.convert_nibabel.to_nibabel(pet_on_mpr_ants)
     return pet_on_mpr
+
+
+def any_to_reference_registration(input_image: nibabel.nifti1,
+                                  ref_image: nibabel.nifti1,
+                                  init_transform=None,
+                                  compute_transform: bool=True,
+                                  registration_type: str='Rigid',
+                                  registration_metric: str='GC') -> nibabel.nifti1:
+    """
+    Registration of any input image to reference using Ants registration
+
+    Arguments:
+
+    Returns:
+
+    """
+    pet_image_ants = ants.from_nibabel(input_image)
+    mpr_image_ants = ants.from_nibabel(ref_image)
+
+    return 1
