@@ -1,7 +1,7 @@
 import nibabel.nifti1
 from nibabel.filebasedimages import FileBasedHeader, FileBasedImage
 import numpy as np
-import SimpleITK as sitk
+import SimpleITK as sITK
 
 
 def load_nii(file_path: str, verbose: bool) -> FileBasedImage:
@@ -81,24 +81,31 @@ def reorient_to_ras(image: nibabel.nifti1.Nifti1Image, verbose: bool) -> nibabel
 
 
 def apply_3d_mr_bias_correction(image: nibabel.nifti1.Nifti1Image, verbose: bool) -> nibabel.nifti1.Nifti1Image:
-    """Wrapper for bias field correction on 3-dimensional MR images, may use N4BiasFieldCorrection
+    """Wrapper for bias field correction on 3-dimensional MR images, uses N4BiasFieldCorrection
 
     Args:
-        image:
+        image: The nifti file itself.
         verbose:
 
     Returns:
+        N4BiasField-corrected 3D MR nifti image.
 
     """
     image_array = extract_image_from_nii_as_numpy(image=image, verbose=False)
     image_header = extract_header_from_nii(image=image, verbose=False)
-    sitk_image = sitk.GetImageFromArray(np.array(image_array, dtype=image_array.dtype))
+    sitk_image = sITK.GetImageFromArray(image_array.astype(np.float32))
     sitk_image.SetSpacing(image_header.get_zooms()[:3])
 
-    corrector = sitk.N4BiasFieldCorrectionImageFilter()
+    corrector = sITK.N4BiasFieldCorrectionImageFilter()
     corrected_sitk_image = corrector.Execute(sitk_image)
 
-    corrected_img_array = sitk.GetArrayFromImage(corrected_sitk_image)
-    corrected_nibabel_image: nibabel.nifti1.Nifti1Image = nibabel.Nifti1Image(corrected_img_array, affine=image.affine)
+    corrected_image_array = sITK.GetArrayFromImage(corrected_sitk_image)
+
+    # noinspection PyTypeChecker
+    corrected_nibabel_image: nibabel.nifti1.Nifti1Image = nibabel.Nifti1Image(dataobj=corrected_image_array,
+                                                                              affine=image.affine)
+
+    if verbose:
+        print(f"(fileIO): 3D MR image has been bias corrected")
 
     return corrected_nibabel_image
