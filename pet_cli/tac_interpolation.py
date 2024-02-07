@@ -6,6 +6,7 @@ import numpy as np
 from scipy.interpolate import interp1d as sp_interpolation
 from typing import Tuple
 
+
 class EvenlyInterpolateTAC(object):
     """A class for interpolating TACs evenly with respect to time.
     
@@ -36,7 +37,7 @@ class EvenlyInterpolateTAC(object):
         self.interp_func = sp_interpolation(x=self._tac_times, y=self._tac_vals, kind='linear', bounds_error=True)
         self.resample_times = None
         self.resample_vals = None
-        
+    
     # TODO: Make sure the usage pattern is not clunky
     def calculate_resample_times(self, num_points_before_max: float = 10.0):
         """Calculate resample times such that we do not miss the max in the TAC and that we have at
@@ -54,7 +55,7 @@ class EvenlyInterpolateTAC(object):
         new_dt = (time_for_max_val - t_start) / num_points_before_max
         new_times = np.arange(t_start, t_end, new_dt)
         self.resample_times = new_times
-        
+    
     # TODO: Add better documentation
     def calculate_resample_activities(self):
         """Given the calculated resampled times, we calculate the interpolated values at those resampled times.
@@ -64,7 +65,7 @@ class EvenlyInterpolateTAC(object):
         """
         assert self.resample_times is not None, "Resample times have not been calculated yet."
         self.resample_vals = self.interp_func(self.resample_times)
-        
+    
     def generate_resampled_tac(self, num_points_before_max: float) -> Tuple[np.ndarray, np.ndarray]:
         """
         
@@ -78,7 +79,6 @@ class EvenlyInterpolateTAC(object):
         self.calculate_resample_activities()
         return self.get_resample_tac()
     
-        
     def get_resample_tac(self) -> Tuple[np.ndarray, np.ndarray]:
         """
         
@@ -86,4 +86,4 @@ class EvenlyInterpolateTAC(object):
             (np.ndarray, np.ndarray):
         """
         assert (self.resample_vals is not None), "Resample values have not been calculated yet."
-        return (self.resample_times, self.resample_vals)
+        return self.resample_times, self.resample_vals
