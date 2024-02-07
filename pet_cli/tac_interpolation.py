@@ -21,7 +21,7 @@ class EvenlyInterpolateTAC(object):
         resample_vals (np.ndarray): Interpolated activities at the calculated resample times.
     """
     
-    def __int__(self, tac_times: np.ndarray, tac_values: np.ndarray):
+    def __init__(self, tac_times: np.ndarray, tac_values: np.ndarray):
         """
         
         Args:
