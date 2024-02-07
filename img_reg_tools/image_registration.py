@@ -1,47 +1,20 @@
 """
 Image registration tools for PET processing
 """
-import numpy as np
 import ants
 import nibabel
-import fsl
 
 
-def run_image_registration(pet_image_series: np.ndarray, 
-                           reference_image: np.ndarray,
-                           input_affine: np.ndarray,
-                           reference_affine: np.ndarray,
-                           transform: np.ndarray) -> np.ndarray:
-    """
-    Given an input image and a transform, will perform
-    linear registration based on the supplied transform.
-
-    Arguments:
-        pet_image_series (np.ndarray):
-        reference_image (np.ndarray):
-        input_affine (np.ndarray): 4x4
-        reference_affine (np.ndarray): 4x4
-        transform (np.ndarray): A 4x4 linear transformation matrix, following FSL convention.
-
-    Returns:
-        transformed_image (np.ndarray): Input image after being transformed based on the 
-                                        supplied transform matrix
-
-    """
-    transformed_image = 1
-    return transformed_image
-
-
-def pet_to_atlas_registration(pet_image_series: np.ndarray,
-                              atlas_image: np.ndarray,
+def pet_to_atlas_registration(pet_image_series: nibabel.nifti1,
+                              atlas_image: nibabel.nifti1,
                               init_transform=None,
-                              compute_transform: bool=True) -> np.ndarray:
+                              compute_transform: bool=True) -> nibabel.nifti1:
     """
     Warps pet image to atlas
 
     Arguments:
-        pet_image_series (np.ndarray): 4D PET image to be resampled onto atlas.
-        atlas_image (np.ndarray): Atlas image to which the PET image is warped onto.
+        pet_image_series (nibabel.nifti1): 4D PET image to be resampled onto atlas.
+        atlas_image (nibabel.nifti1): Atlas image to which the PET image is warped onto.
         compute_transform (bool): Set to True to run the registration from PET to atlas space.
                                   Set to False if supplying a pre-computed transform.
         init_transform: Transformation matrix or list of transformation matrices to apply to
@@ -52,19 +25,59 @@ def pet_to_atlas_registration(pet_image_series: np.ndarray,
     Returns:
 
     """
-    pet_image_ants = ants.from_numpy(pet_image_series)
-    atlas_image_ants = ants.from_numpy(atlas_image)
+    pet_image_ants = ants.from_nibabel(pet_image_series)
+    atlas_image_ants = ants.from_nibabel(atlas_image)
 
     if compute_transform:
-        pet_on_atlas, _atlas_on_pet, _pet_to_atlas_xfm, _atlas_to_pet_xfm  = ants.registration(
+        # TODO: save pet_to_atlas_xfm to file
+        pet_on_atlas_ants, _atlonpet, _pet_to_atlas_xfm, _atlas_to_pet_xfm  = ants.registration(
             atlas_image_ants,
             pet_image_ants,
             type_of_transform='SyN')
-        return pet_on_atlas
+    else:
+        pet_on_atlas_ants = ants.apply_transforms(
+            atlas_image_ants,
+            pet_image_ants,
+            transformlist=init_transform
+        )
 
-    pet_on_atlas = ants.apply_transforms(
-        atlas_image_ants,
-        pet_image_ants,
-        transformlist=init_transform
-    )
+    pet_on_atlas = ants.utils.convert_nibabel.to_nibabel(pet_on_atlas_ants)
     return pet_on_atlas
+
+
+def pet_to_subject_registration(pet_image_series: nibabel.nifti1,
+                                mpr_image: nibabel.nifti1,
+                                init_transform=None,
+                                compute_transform: bool=True):
+    """
+    Rigid transform pet -> subject T1 space
+
+    Arguments:
+        pet_image_series (nibabel.nifti1): 4D PET image to be resampled onto MPRAGE.
+        atlas_image (nibabel.nifti1): MPRAGE image to which the PET image is warped onto.
+        compute_transform (bool): Set to True to run the registration from PET to subject MPRAGE space.
+                                  Set to False if supplying a pre-computed transform.
+        init_transform: Transformation matrix or list of transformation matrices to apply to
+                        PET image if compute_transform is False; i.e. when user supplies
+                        their own transforms.
+
+    Returns:
+        pet_on_mpr (nibabel.nifti1): 4D PET image resampled onto the MPRAGE.
+    """
+    pet_image_ants = ants.from_nibabel(pet_image_series)
+    mpr_image_ants = ants.from_nibabel(mpr_image)
+
+    if compute_transform:
+        pet_on_mpr_ants, _mpr_on_pet, _pet_to_mpr_xfm, _mpr_to_pet_xfm  = ants.registration(
+            mpr_image_ants,
+            pet_image_ants,
+            type_of_transform='Rigid')
+    else:
+        pet_on_mpr_ants = ants.apply_transforms(
+            mpr_image_ants,
+            pet_image_ants,
+            transformlist=init_transform
+        )
+    
+    pet_on_mpr = ants.utils.convert_nibabel.to_nibabel(pet_on_mpr_ants)
+    return pet_on_mpr
