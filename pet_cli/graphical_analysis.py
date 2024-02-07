@@ -198,9 +198,9 @@ def alternative_logan_analysis(input_tac_values: np.ndarray,
     
     t_thresh = get_index_from_threshold(times_in_minutes=tac_times_in_minutes, t_thresh_in_minutes=t_thresh_in_minutes)
     
-    logan_x = cumulative_trapezoidal_integral(xdata=tac_times_in_minutes, ydata=input_tac_values) / region_tac_values
-    logan_y = cumulative_trapezoidal_integral(xdata=tac_times_in_minutes, ydata=region_tac_values) / input_tac_values
+    alt_logan_x = cumulative_trapezoidal_integral(xdata=tac_times_in_minutes, ydata=input_tac_values) / region_tac_values
+    alt_logan_y = cumulative_trapezoidal_integral(xdata=tac_times_in_minutes, ydata=region_tac_values) / input_tac_values
     
-    logan_values = fit_line_to_data_using_lls(xdata=logan_x[t_thresh:], ydata=logan_y[t_thresh:])
+    alt_logan_values = fit_line_to_data_using_lls(xdata=alt_logan_x[t_thresh:], ydata=alt_logan_y[t_thresh:])
     
-    return logan_values
+    return alt_logan_values
