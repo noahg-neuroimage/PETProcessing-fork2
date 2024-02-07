@@ -32,10 +32,7 @@ def extract_image_from_nii_as_numpy(file: FileBasedImage, verbose: bool) -> np.n
         The data contained in the .nii or .nii.gz file as a numpy array
 
     """
-    if isinstance(file, FileBasedImage):
-        image_data: np.ndarray = file.get_fdata()
-    else:
-        raise TypeError("file must be a Nifti1Image")
+    image_data: np.ndarray = file.get_fdata()
 
     if verbose:
         print(f"(fileIO): {file} has shape {image_data.shape}")
@@ -54,10 +51,7 @@ def extract_header_from_nii(file: FileBasedImage, verbose: bool) -> FileBasedHea
         The nifti header
 
     """
-    if isinstance(file, FileBasedImage):
-        image_header: FileBasedHeader = file.header
-    else:
-        raise TypeError("file must be a Nifti1Image")
+    image_header: FileBasedHeader = file.header
 
     if verbose:
         print(f"(fileIO): {file} header is: {image_header}")
@@ -75,3 +69,4 @@ def reorient_to_ras(file: FileBasedImage, verbose: bool) -> FileBasedImage:
     Returns:
 
     """
+
