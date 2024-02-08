@@ -51,8 +51,8 @@ class EvenlyInterpolateTAC(object):
         """
         t_start = self._tac_times[0]
         t_end = self._tac_times[-1]
-        time_for_max_val = self._tac_times[np.argmax(self._tac_vals)]
-        new_dt = (time_for_max_val - t_start) / num_points_before_max
+        t_for_max_val = self._tac_times[np.argmax(self._tac_vals)]
+        new_dt = (t_for_max_val - t_start) / num_points_before_max
         new_times = np.arange(t_start, t_end, new_dt)
         self.resample_times = new_times
     
