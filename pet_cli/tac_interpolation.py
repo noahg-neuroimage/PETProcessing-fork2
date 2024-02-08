@@ -38,27 +38,52 @@ class EvenlyInterpolateTAC(object):
         self.resample_times = None
         self.resample_vals = None
     
+    @staticmethod
+    def calculate_dt_for_even_spacing_with_max_sampled(tac_times: np.ndarray,
+                                                       tac_vals: np.ndarray,
+                                                       samples_before_max: float) -> float:
+        """Calculate :math:`\Delta t` such that TAC is evenly sampled while still sampling the maximum TAC value.
+        
+        .. math::
+            \Delta t = \frac{t_{\mathrm{max} - t_{0}}{N}
+        
+        
+        Args:
+            tac_times (np.ndarray): Array containing TAC times.
+            tac_vals (np.ndarray): Array containing TAC activities.
+            samples_before_max (float):
+            
+        Returns:
+            (float): dt such that the TAC is evenly sampled and the TAC max is still explicitly sampled.
+        """
+        t_start = tac_times[0]
+        t_for_max_val = tac_times[np.argmax(tac_vals)]
+        dt = (t_for_max_val - t_start) / samples_before_max
+        return dt
+    
+    
     # TODO: Make sure the usage pattern is not clunky
-    def calculate_resample_times(self, num_points_before_max: float = 10.0):
+    def calculate_resample_times(self, samples_before_max: float = 10.0):
         """Calculate resample times such that we do not miss the max in the TAC and that we have at
         least ``num_points_before_max`` samples before the max.
         
         Args:
-            num_points_before_max (int): Number of time-samples before maximum value in the provided TAC.
+            samples_before_max (float): Number of time-samples before maximum value in the provided TAC.
 
         Returns:
 
         """
-        t_start = self._tac_times[0]
-        t_end = self._tac_times[-1]
-        t_for_max_val = self._tac_times[np.argmax(self._tac_vals)]
-        new_dt = (t_for_max_val - t_start) / num_points_before_max
-        new_times = np.arange(t_start, t_end, new_dt)
+        t_start, t_end = self._tac_times[[0, -1]]
+        
+        dt = self.calculate_dt_for_even_spacing_with_max_sampled(tac_times=self._tac_times, tac_vals=self._tac_vals,
+                                                                 samples_before_max=samples_before_max)
+        new_times = np.arange(t_start, t_end, dt)
         self.resample_times = new_times
     
     # TODO: Add better documentation
     def calculate_resample_activities(self):
         """Given the calculated resampled times, we calculate the interpolated values at those resampled times.
+        
         
         Returns:
 
@@ -66,16 +91,16 @@ class EvenlyInterpolateTAC(object):
         assert self.resample_times is not None, "Resample times have not been calculated yet."
         self.resample_vals = self.interp_func(self.resample_times)
     
-    def generate_resampled_tac(self, num_points_before_max: float) -> Tuple[np.ndarray, np.ndarray]:
+    def generate_resampled_tac(self, samples_before_max: float) -> Tuple[np.ndarray, np.ndarray]:
         """
         
         Args:
-            num_points_before_max:
+            samples_before_max:
 
         Returns:
 
         """
-        self.calculate_resample_times(num_points_before_max=num_points_before_max)
+        self.calculate_resample_times(samples_before_max=samples_before_max)
         self.calculate_resample_activities()
         return self.get_resample_tac()
     
