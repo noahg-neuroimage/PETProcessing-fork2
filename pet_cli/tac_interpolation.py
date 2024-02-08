@@ -1,5 +1,10 @@
 """A sub-module for interpolating TACs evenly with respect to time.
 
+
+    TODO:
+        * Documentation for the module level.
+        * Maybe have a base class which just resamples TACs evenly and the max capturing one (current) extends the
+          base class by doing a different dt calculation.
 """
 
 import numpy as np
@@ -61,7 +66,6 @@ class EvenlyInterpolateTAC(object):
         dt = (t_for_max_val - t_start) / samples_before_max
         return dt
     
-    
     # TODO: Make sure the usage pattern is not clunky
     def calculate_resample_times(self, samples_before_max: float = 10.0):
         """Calculate resample times such that we do not miss the max in the TAC and that we have at
@@ -95,7 +99,7 @@ class EvenlyInterpolateTAC(object):
         """
         
         Args:
-            samples_before_max:
+            samples_before_max (float):
 
         Returns:
 
