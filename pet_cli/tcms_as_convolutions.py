@@ -34,7 +34,7 @@ def calc_convolution_with_check(f: np.ndarray[float], g: np.ndarray[float], dt: 
 
 @numba.njit()
 def response_function_1tcm_c1(t: np.ndarray[float], k1: float, k2: float) -> np.ndarray:
-    """The response function for the 1TCM :math:`f(t)=k_1 e^{-k_{2}t}`
+    r"""The response function for the 1TCM :math:`f(t)=k_1 e^{-k_{2}t}`
     
     Args:
         t (np.ndarray[float]): Array containing time-points where :math:`t\geq0`.
@@ -49,7 +49,7 @@ def response_function_1tcm_c1(t: np.ndarray[float], k1: float, k2: float) -> np.
 
 @numba.njit()
 def response_function_2tcm_with_k4zero_c1(t: np.ndarray[float], k1: float, k2: float, k3: float) -> np.ndarray:
-    """The response function for first compartment in the 2TCM with :math:`k_{4}=0`; :math:`f(t)=k_{1}e^{-(k_{2} + k_{3})t}`.
+    r"""The response function for first compartment in the 2TCM with :math:`k_{4}=0`; :math:`f(t)=k_{1}e^{-(k_{2} + k_{3})t}`.
     
     Args:
         t (np.ndarray[float]): Array containing time-points where :math:`t\geq0`.
@@ -61,3 +61,19 @@ def response_function_2tcm_with_k4zero_c1(t: np.ndarray[float], k1: float, k2: f
         (np.ndarray[float]): Array containing response function values for first compartment given the constants.
     """
     return k1 * np.exp(-(k2 + k3) * t)
+
+
+@numba.njit()
+def response_function_2tcm_with_k4zero_c2(t: np.ndarray[float], k1: float, k2: float, k3: float) -> np.ndarray:
+    r"""The response function for second compartment in the 2TCM with :math:`k_{4}=0`; :math:`f(t)=\frac{k_{1}k_{3}}{k_{2}+k_{3}}(1-e^{-(k_{2} + k_{3})t})`.
+
+    Args:
+        t (np.ndarray[float]): Array containing time-points where :math:`t\geq0`.
+        k1: Rate constant for transport from plasma/blood to tissue compartment.
+        k2: Rate constant for transport from tissue compartment back to plasma/blood.
+        k3: Rate constant for transport from tissue compartment to irreversible compartment.
+
+    Returns:
+        (np.ndarray[float]): Array containing response function values for first compartment given the constants.
+    """
+    return ((k1 * k3) / (k2 + k3)) * (1.0 - np.exp(-(k2 + k3) * t))
