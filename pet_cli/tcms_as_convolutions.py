@@ -257,10 +257,8 @@ def generate_tac_2tcm_with_k4zero_cpet_from_tac(tac_times: np.ndarray[float],
         * :func:`response_function_2tcm_with_k4zero_c1` for more details about the 2TCM response function, of the first compartment, used for the convolution.
         * :func:`response_function_2tcm_with_k4zero_c2` for more details about the 2TCM response function, of the second compartment, used for the convolution.
     """
-    _resp_vals = (response_function_2tcm_with_k4zero_c1(t=tac_times, k1=k1, k2=k2,
-                                                        k3=k3) + response_function_2tcm_with_k4zero_c2(t=tac_times,
-                                                                                                       k1=k1, k2=k2,
-                                                                                                       k3=k3))
+    _resp_vals = response_function_2tcm_with_k4zero_c1(t=tac_times, k1=k1, k2=k2, k3=k3)
+    _resp_vals += response_function_2tcm_with_k4zero_c2(t=tac_times, k1=k1, k2=k2, k3=k3)
     dt = tac_times[1] - tac_times[0]
     cpet = calc_convolution_with_check(f=tac_vals, g=_resp_vals, dt=dt)
     return np.asarray([tac_times, cpet])
