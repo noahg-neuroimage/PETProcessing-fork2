@@ -97,9 +97,9 @@ def response_function_serial_2tcm_c1(t: np.ndarray[float], k1: float, k2: float,
     
     .. math::
         \begin{align*}
+        a&= k_{2}+k_{3}+k_{4}\\
         \alpha_{1}&=\frac{a-\sqrt{a^{2}-4k_{2}k_{4}}}{2}\\
         \alpha_{1}&=\frac{a+\sqrt{a^{2}-4k_{2}k_{4}}}{2}\\
-        a&= k_{2}+k_{3}+k_{4}
         \end{align*}
     
     Args:
