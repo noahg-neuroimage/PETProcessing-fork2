@@ -62,7 +62,7 @@ def response_function_2tcm_with_k4zero_c1(t: np.ndarray[float], k1: float, k2: f
         (np.ndarray[float]): Array containing response function values for first compartment given the constants.
         
     See Also:
-        :func:``response_function_2tcm_with_k4zero_c2``
+        :func:`response_function_2tcm_with_k4zero_c2`
         
     """
     return k1 * np.exp(-(k2 + k3) * t)
@@ -82,7 +82,7 @@ def response_function_2tcm_with_k4zero_c2(t: np.ndarray[float], k1: float, k2: f
         (np.ndarray[float]): Array containing response function values for first compartment given the constants.
     
     See Also:
-        :func:``response_function_2tcm_with_k4zero_c1``
+        :func:`response_function_2tcm_with_k4zero_c1`
     """
     return ((k1 * k3) / (k2 + k3)) * (1.0 - np.exp(-(k2 + k3) * t))
 
@@ -112,6 +112,10 @@ def response_function_serial_2tcm_c1(t: np.ndarray[float], k1: float, k2: float,
 
     Returns:
         (np.ndarray[float]): Array containing response function values for first compartment given the constants.
+        
+    See Also:
+        * :func:`response_function_serial_2tcm_c2`
+        * :func:`response_function_2tcm_with_k4zero_c1` for when :math:`k_{4}=0` (irreversible second compartment).
     """
     a = k2 + k3 + k4
     alpha_1 = (a - np.sqrt((a ** 2.) - 4.0 * k2 * k4)) / 2.0
@@ -145,6 +149,10 @@ def response_function_serial_2tcm_c2(t: np.ndarray[float], k1: float, k2: float,
 
     Returns:
         (np.ndarray[float]): Array containing response function values for second compartment given the constants.
+        
+    See Also:
+        * :func:`response_function_serial_2tcm_c2`
+        * :func:`response_function_2tcm_with_k4zero_c2` for when :math:`k_{4}=0` (irreversible second compartment).
     """
     a = k2 + k3 + k4
     alpha_1 = (a - np.sqrt((a ** 2.) - 4.0 * k2 * k4)) / 2.0
