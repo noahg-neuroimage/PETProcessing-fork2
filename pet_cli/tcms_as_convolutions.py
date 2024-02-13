@@ -316,7 +316,7 @@ def generate_tac_serial_2tcm_c2_from_tac(tac_times: np.ndarray[float],
             * :func:`response_function_2tcm_c2` for more details about the 2TCM response function, of the second compartment, used for the convolution.
             * :func:`response_function_2tcm_with_k4zero_c2` for more details about the 2TCM response function (with :math:`k_{4}=0`), of the second compartment, used for the convolution.
     """
-    _resp_vals = response_function_serial_2tcm_c2(t=tac_times, k1=k1, k2=k2, k3=k3)
+    _resp_vals = response_function_serial_2tcm_c2(t=tac_times, k1=k1, k2=k2, k3=k3, k4=k4)
     dt = tac_times[1] - tac_times[0]
     c2 = calc_convolution_with_check(f=tac_vals, g=_resp_vals, dt=dt)
     return np.asarray([tac_times, c2])
