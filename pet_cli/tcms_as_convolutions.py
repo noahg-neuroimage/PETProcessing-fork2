@@ -159,3 +159,26 @@ def response_function_serial_2tcm_c2(t: np.ndarray[float], k1: float, k2: float,
     alpha_2 = (a + np.sqrt((a ** 2.) - 4.0 * k2 * k4)) / 2.0
     
     return (k1 * k3 / a) * (np.exp(-alpha_1 * t) - np.exp(-alpha_2 * t))
+
+
+def generate_tac_1tcm_c1_from_tac(tac_times: np.ndarray[float], tac_vals: np.ndarray[float], k1: float, k2: float) -> \
+np.ndarray[float, float]:
+    r"""Calculate the TTAC, given the input TAC, for a 1TCM as an explicit convolution.
+    
+    Args:
+        tac_times (np.ndarray[float]): Array containing time-points where :math:`t\geq0` and equal time-steps.
+        tac_vals (np.ndarray[float]): Array containing TAC activities.
+        k1 (float): Rate constant for transport from plasma/blood to tissue compartment.
+        k2 (float): Rate constant for transport from first tissue compartment back to plasma/blood.
+
+    Returns:
+        ((np.ndarray[float], np.ndarray[float])): Arrays containing the times and TTAC given the input TAC and parameters.
+        
+    See Also:
+        :func:`response_function_1tcm_c1` for more details about the 1TCM response function used for the convolution.
+    """
+    
+    _resp_vals = response_function_1tcm_c1(t=tac_times, k1=k1, k2=k2)
+    dt = tac_times[1] - tac_times[0]
+    c1 = calc_convolution_with_check(f=tac_vals, g=_resp_vals, dt=dt)
+    return np.asarray([tac_times, c1])
