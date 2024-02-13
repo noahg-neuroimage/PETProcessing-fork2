@@ -1,9 +1,9 @@
-"""
+"""A collection of functions to compute TACs as explicit convolutions for common Tissue Compartment Models (TCMs).
 
 """
 
-import numpy as np
 import numba
+import numpy as np
 
 
 def calc_convolution_with_check(f: np.ndarray[float], g: np.ndarray[float], dt: float) -> np.ndarray:
@@ -25,7 +25,7 @@ def calc_convolution_with_check(f: np.ndarray[float], g: np.ndarray[float], dt: 
     Notes:
         This function does not use `numba.njit()`.
     """
-    assert len(f) == len(g), "The provided arrays must have the same lengths!"
+    assert len(f) == len(g), f"The provided arrays must have the same lengths! f:{len(f):<6} and g:{len(g):<6}."
     vals = np.convolve(f, g, mode='full')
     return vals[:len(f)] * dt
 
