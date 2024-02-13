@@ -32,6 +32,7 @@ def calc_convolution_with_check(f: np.ndarray[float], g: np.ndarray[float], dt: 
     vals = np.convolve(f, g, mode='full')
     return vals[:len(f)] * dt
 
+
 @numba.njit()
 def response_function_1tcm_c1(t: np.ndarray[float], k1: float, k2: float) -> np.ndarray:
     r"""The response function for the 1TCM :math:`f(t)=k_1 e^{-k_{2}t}`
@@ -73,9 +74,9 @@ def response_function_2tcm_with_k4zero_c2(t: np.ndarray[float], k1: float, k2: f
 
     Args:
         t (np.ndarray[float]): Array containing time-points where :math:`t\geq0`.
-        k1: Rate constant for transport from plasma/blood to tissue compartment.
-        k2: Rate constant for transport from tissue compartment back to plasma/blood.
-        k3: Rate constant for transport from tissue compartment to irreversible compartment.
+        k1 (float): Rate constant for transport from plasma/blood to tissue compartment.
+        k2 (float): Rate constant for transport from tissue compartment back to plasma/blood.
+        k3 (float): Rate constant for transport from tissue compartment to irreversible compartment.
 
     Returns:
         (np.ndarray[float]): Array containing response function values for first compartment given the constants.
@@ -104,10 +105,10 @@ def response_function_serial_2tcm_c1(t: np.ndarray[float], k1: float, k2: float,
     
     Args:
         t (np.ndarray[float]): Array containing time-points where :math:`t\geq0`.
-        k1: Rate constant for transport from plasma/blood to tissue compartment.
-        k2: Rate constant for transport from first tissue compartment back to plasma/blood.
-        k3: Rate constant for transport from first tissue compartment to second tissue compartment.
-        k4: Rate constant for transport from second tissue compartment back to first tissue compartment.
+        k1 (float): Rate constant for transport from plasma/blood to tissue compartment.
+        k2 (float): Rate constant for transport from first tissue compartment back to plasma/blood.
+        k3 (float): Rate constant for transport from first tissue compartment to second tissue compartment.
+        k4 (float): Rate constant for transport from second tissue compartment back to first tissue compartment.
 
     Returns:
         (np.ndarray[float]): Array containing response function values for first compartment given the constants.
@@ -117,3 +118,36 @@ def response_function_serial_2tcm_c1(t: np.ndarray[float], k1: float, k2: float,
     alpha_2 = (a + np.sqrt((a ** 2.) - 4.0 * k2 * k4)) / 2.0
     
     return (k1 / a) * ((k4 - alpha_1) * np.exp(-alpha_1 * t) + (alpha_2 - k4) * np.exp(-alpha_2 * t))
+
+
+@numba.njit()
+def response_function_serial_2tcm_c2(t: np.ndarray[float], k1: float, k2: float, k3: float, k4: float) -> np.ndarray:
+    r"""The response function for second compartment in the *serial* 2TCM.
+
+    .. math::
+        f(t) = \frac{k_{1}k_{3}}{a} \left[ e^{-\alpha_{1}t} - e^{-\alpha_{2}t}\right]
+
+    where
+
+    .. math::
+        \begin{align*}
+        a&= k_{2}+k_{3}+k_{4}\\
+        \alpha_{1}&=\frac{a-\sqrt{a^{2}-4k_{2}k_{4}}}{2}\\
+        \alpha_{1}&=\frac{a+\sqrt{a^{2}-4k_{2}k_{4}}}{2}\\
+        \end{align*}
+
+    Args:
+        t (np.ndarray[float]): Array containing time-points where :math:`t\geq0`.
+        k1 (float): Rate constant for transport from plasma/blood to tissue compartment.
+        k2 (float): Rate constant for transport from first tissue compartment back to plasma/blood.
+        k3 (float): Rate constant for transport from first tissue compartment to second tissue compartment.
+        k4 (float): Rate constant for transport from second tissue compartment back to first tissue compartment.
+
+    Returns:
+        (np.ndarray[float]): Array containing response function values for second compartment given the constants.
+    """
+    a = k2 + k3 + k4
+    alpha_1 = (a - np.sqrt((a ** 2.) - 4.0 * k2 * k4)) / 2.0
+    alpha_2 = (a + np.sqrt((a ** 2.) - 4.0 * k2 * k4)) / 2.0
+    
+    return (k1 * k3 / a) * (np.exp(-alpha_1 * t) - np.exp(-alpha_2 * t))
