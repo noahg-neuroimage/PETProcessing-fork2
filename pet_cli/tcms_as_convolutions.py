@@ -262,3 +262,93 @@ def generate_tac_2tcm_with_k4zero_cpet_from_tac(tac_times: np.ndarray[float],
     dt = tac_times[1] - tac_times[0]
     cpet = calc_convolution_with_check(f=tac_vals, g=_resp_vals, dt=dt)
     return np.asarray([tac_times, cpet])
+
+
+def generate_tac_serial_2tcm_c1_from_tac(tac_times: np.ndarray[float],
+                                         tac_vals: np.ndarray[float],
+                                         k1: float,
+                                         k2: float,
+                                         k3: float,
+                                         k4: float) -> np.ndarray[float, float]:
+    """Calculate the TTAC of the first comparment, given the input TAC, for a serial 2TCM as an explicit convolution.
+    
+    Args:
+        tac_times (np.ndarray[float]): Array containing time-points where :math:`t\geq0` and equal time-steps.
+        tac_vals (np.ndarray[float]): Array containing TAC activities.
+        k1 (float): Rate constant for transport from plasma/blood to tissue compartment.
+        k2 (float): Rate constant for transport from first tissue compartment back to plasma/blood.
+        k3 (float): Rate constant for transport from tissue compartment to second compartment.
+        k4 (float): Rate constant for transport from second tissue compartment back to first tissue compartment.
+
+    Returns:
+        ((np.ndarray[float], np.ndarray[float])): Arrays containing the times and TTAC given the input TAC and parameters.
+        
+    See Also:
+        * :func:`response_function_2tcm_c1` for more details about the 2TCM response function, of the first compartment, used for the convolution.
+        * :func:`response_function_2tcm_with_k4zero_c1` for more details about the 2TCM response function (with :math:`k_{4}=0`), of the first compartment, used for the convolution.
+    """
+    _resp_vals = pet_tcms.response_function_serial_2tcm_c1(t=tac_times, k1=k1, k2=k2, k3=k3, k4=k4)
+    dt = tac_times[1] - tac_times[0]
+    c1 = pet_tcms.calc_convolution_with_check(f=tac_vals, g=_resp_vals, dt=dt)
+    return np.asarray([tac_times, c1])
+
+
+def generate_tac_serial_2tcm_c2_from_tac(tac_times: np.ndarray[float],
+                                         tac_vals: np.ndarray[float],
+                                         k1: float,
+                                         k2: float,
+                                         k3: float,
+                                         k4: float) -> np.ndarray[float, float]:
+    """Calculate the TTAC of the second comparment, given the input TAC, for a serial 2TCM as an explicit convolution.
+
+        Args:
+            tac_times (np.ndarray[float]): Array containing time-points where :math:`t\geq0` and equal time-steps.
+            tac_vals (np.ndarray[float]): Array containing TAC activities.
+            k1 (float): Rate constant for transport from plasma/blood to tissue compartment.
+            k2 (float): Rate constant for transport from first tissue compartment back to plasma/blood.
+            k3 (float): Rate constant for transport from tissue compartment to second compartment.
+            k4 (float): Rate constant for transport from second tissue compartment back to first tissue compartment.
+
+        Returns:
+            ((np.ndarray[float], np.ndarray[float])): Arrays containing the times and TTAC given the input TAC and parameters.
+
+        See Also:
+            * :func:`response_function_2tcm_c2` for more details about the 2TCM response function, of the second compartment, used for the convolution.
+            * :func:`response_function_2tcm_with_k4zero_c2` for more details about the 2TCM response function (with :math:`k_{4}=0`), of the second compartment, used for the convolution.
+    """
+    _resp_vals = pet_tcms.response_function_serial_2tcm_c2(t=tac_times, k1=k1, k2=k2, k3=k3)
+    dt = tac_times[1] - tac_times[0]
+    c2 = pet_tcms.calc_convolution_with_check(f=tac_vals, g=_resp_vals, dt=dt)
+    return np.asarray([tac_times, c2])
+
+
+def generate_tac_serial_2tcm_cpet_from_tac(tac_times: np.ndarray[float],
+                                           tac_vals: np.ndarray[float],
+                                           k1: float,
+                                           k2: float,
+                                           k3: float,
+                                           k4: float) -> np.ndarray[float, float]:
+    """Calculate the PET-TTAC (sum of both compartments), given the input TAC, for a serial 2TCM as an explicit convolution.
+
+        Args:
+            tac_times (np.ndarray[float]): Array containing time-points where :math:`t\geq0` and equal time-steps.
+            tac_vals (np.ndarray[float]): Array containing TAC activities.
+            k1 (float): Rate constant for transport from plasma/blood to tissue compartment.
+            k2 (float): Rate constant for transport from first tissue compartment back to plasma/blood.
+            k3 (float): Rate constant for transport from tissue compartment to second compartment.
+            k4 (float): Rate constant for transport from second tissue compartment back to first tissue compartment.
+
+        Returns:
+            ((np.ndarray[float], np.ndarray[float])): Arrays containing the times and TTAC given the input TAC and parameters.
+
+        See Also:
+            * :func:`response_function_2tcm_c1` for more details about the 2TCM response function, of the first compartment, used for the convolution.
+            * :func:`response_function_2tcm_with_k4zero_c1` for more details about the 2TCM response function (with :math:`k_{4}=0`), of the first compartment, used for the convolution.
+            * :func:`response_function_2tcm_c2` for more details about the 2TCM response function, of the second compartment, used for the convolution.
+            * :func:`response_function_2tcm_with_k4zero_c2` for more details about the 2TCM response function (with :math:`k_{4}=0`), of the second compartment, used for the convolution.
+    """
+    _resp_vals = pet_tcms.response_function_serial_2tcm_c1(t=tac_times, k1=k1, k2=k2, k3=k3, k4=k4)
+    _resp_vals += pet_tcms.response_function_serial_2tcm_c2(t=tac_times, k1=k1, k2=k2, k3=k3, k4=k4)
+    dt = tac_times[1] - tac_times[0]
+    cpet = pet_tcms.calc_convolution_with_check(f=tac_vals, g=_resp_vals, dt=dt)
+    return np.asarray([tac_times, cpet])
