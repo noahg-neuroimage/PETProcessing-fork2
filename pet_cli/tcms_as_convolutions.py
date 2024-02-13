@@ -49,7 +49,7 @@ def response_function_1tcm_c1(t: np.ndarray[float], k1: float, k2: float) -> np.
 
 @numba.njit()
 def response_function_2tcm_with_k4zero_c1(t: np.ndarray[float], k1: float, k2: float, k3: float) -> np.ndarray:
-    r"""The response function for first compartment in the 2TCM with :math:`k_{4}=0`; :math:`f(t)=k_{1}e^{-(k_{2} + k_{3})t}`.
+    r"""The response function for first compartment in the serial 2TCM with :math:`k_{4}=0`; :math:`f(t)=k_{1}e^{-(k_{2} + k_{3})t}`.
     
     Args:
         t (np.ndarray[float]): Array containing time-points where :math:`t\geq0`.
@@ -59,13 +59,17 @@ def response_function_2tcm_with_k4zero_c1(t: np.ndarray[float], k1: float, k2: f
 
     Returns:
         (np.ndarray[float]): Array containing response function values for first compartment given the constants.
+        
+    See Also:
+        :func:``response_function_2tcm_with_k4zero_c2``
+        
     """
     return k1 * np.exp(-(k2 + k3) * t)
 
 
 @numba.njit()
 def response_function_2tcm_with_k4zero_c2(t: np.ndarray[float], k1: float, k2: float, k3: float) -> np.ndarray:
-    r"""The response function for second compartment in the 2TCM with :math:`k_{4}=0`; :math:`f(t)=\frac{k_{1}k_{3}}{k_{2}+k_{3}}(1-e^{-(k_{2} + k_{3})t})`.
+    r"""The response function for second compartment in the serial 2TCM with :math:`k_{4}=0`; :math:`f(t)=\frac{k_{1}k_{3}}{k_{2}+k_{3}}(1-e^{-(k_{2} + k_{3})t})`.
 
     Args:
         t (np.ndarray[float]): Array containing time-points where :math:`t\geq0`.
@@ -75,5 +79,41 @@ def response_function_2tcm_with_k4zero_c2(t: np.ndarray[float], k1: float, k2: f
 
     Returns:
         (np.ndarray[float]): Array containing response function values for first compartment given the constants.
+    
+    See Also:
+        :func:``response_function_2tcm_with_k4zero_c1``
     """
     return ((k1 * k3) / (k2 + k3)) * (1.0 - np.exp(-(k2 + k3) * t))
+
+
+@numba.njit()
+def response_function_serial_2tcm_c1(t: np.ndarray[float], k1: float, k2: float, k3: float, k4: float) -> np.ndarray:
+    r"""The response function for first compartment in the *serial* 2TCM.
+    
+    .. math::
+        f(t) = \frac{k_{1}}{a} \left[ (k_{4}-\alpha_{1})e^{-\alpha_{1}t} + (\alpha_{2}-k_{4})e^{-\alpha_{2}t}\right]
+    
+    where
+    
+    .. math::
+        \begin{align*}
+        \alpha_{1}&=\frac{a-\sqrt{a^{2}-4k_{2}k_{4}}}{2}\\
+        \alpha_{1}&=\frac{a+\sqrt{a^{2}-4k_{2}k_{4}}}{2}\\
+        a&= k_{2}+k_{3}+k_{4}
+        \end{align*}
+    
+    Args:
+        t (np.ndarray[float]): Array containing time-points where :math:`t\geq0`.
+        k1: Rate constant for transport from plasma/blood to tissue compartment.
+        k2: Rate constant for transport from first tissue compartment back to plasma/blood.
+        k3: Rate constant for transport from first tissue compartment to second tissue compartment.
+        k4: Rate constant for transport from second tissue compartment back to first tissue compartment.
+
+    Returns:
+        (np.ndarray[float]): Array containing response function values for first compartment given the constants.
+    """
+    a = k2 + k3 + k4
+    alpha_1 = (a - np.sqrt((a ** 2.) - 4.0 * k2 * k4)) / 2.0
+    alpha_2 = (a + np.sqrt((a ** 2.) - 4.0 * k2 * k4)) / 2.0
+    
+    return (k1 / a) * ((k4 - alpha_1) * np.exp(-alpha_1 * t) + (alpha_2 - k4) * np.exp(-alpha_2 * t))
