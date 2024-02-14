@@ -1,5 +1,5 @@
-"""This module contains a collection of six functions to compute Time-Activity Curves (TACs) for common Tissue Compartment
- Models (TCMs). These models are commonly seen in medical studies, such as radiology and pharmacology.
+"""This module contains a collection of functions to compute Time-Activity Curves (TACs) for common Tissue Compartment
+ Models (TCMs). These models are commonly used for kinetic analysis of PET TACs.
 
     Functions:
         calc_convolution_with_check(f: np.ndarray, g: np.ndarray, dt: float) -> np.ndarray:
@@ -25,6 +25,30 @@
         response_function_serial_2tcm_c2(t: np.ndarray, k1: float, k2: float, k3: float, k4: float) -> np.ndarray:
             Returns the response function for the second compartment in the serial 2-Tissue Compartment Model. The
             output is a numpy ndarray.
+        
+        generate_tac_1tcm_c1_from_tac(tac_times: np.ndarray, tac_vals: np.ndarray, k1: float, k2: float) -> np.ndarray:
+        Generates the TTAC for a one tissue compartment model (1TCM) based on an input Time-Activity Curve (TAC).
+
+        generate_tac_2tcm_with_k4zero_c1_from_tac(tac_times: np.ndarray, tac_vals: np.ndarray, k1: float, k2: float,
+                                                   k3: float) -> np.ndarray:
+            Generates the TTAC for a two tissue compartment model (2TCM) with a zero k4 rate constant for the C1 compartment
+            based on an input TAC.
+    
+        generate_tac_2tcm_with_k4zero_c2_from_tac(tac_times: np.ndarray, tac_vals: np.ndarray, k1: float, k2: float, k3: float) -> np.ndarray:
+            Generates the TTAC for a 2TCM with a zero k4 rate constant for the C2 compartment based on an input TAC.
+    
+        generate_tac_2tcm_with_k4zero_cpet_from_tac(tac_times: np.ndarray, tac_vals: np.ndarray, k1: float, k2: float,
+                                                     k3: float, vb: float) -> np.ndarray:
+            Generates the TTAC for a 2TCM with a zero k4 rate constant for a CPET based on an input TAC.
+    
+        generate_tac_serial_2tcm_c1_from_tac(tac_times: np.ndarray, tac_vals: np.ndarray, k1: float, k2: float, k3: float) -> np.ndarray:
+            Generates the TTAC for a serial two tissue compartment model (s2TCM) for the C1 compartment based on an input TAC.
+    
+        generate_tac_serial_2tcm_c2_from_tac(tac_times: np.ndarray, tac_vals: np.ndarray, k1: float, k2: float, k3: float, k4: float) -> np.ndarray:
+            Generates the TTAC for a s2TCM for the C2 compartment based on an input TAC.
+    
+        generate_tac_serial_2tcm_cpet_from_tac(tac_times: np.ndarray, tac_vals: np.ndarray, k1: float, k2: float, k3: float, k4: float) -> np.ndarray:
+            Generates the TTAC for a s2TCM for a CPET based on an input TAC.
             
     Notes:
         All functions in this module are decorated with `numba.njit()`. It compiles the function to machine code at
