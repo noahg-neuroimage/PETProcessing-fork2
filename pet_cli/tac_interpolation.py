@@ -79,7 +79,7 @@ class EvenlyInterpolateWithMax(EvenlyInterpolate):
 
         Args:
             tac_times (np.ndarray): Array containing TAC times.
-            tac_vals (np.ndarray): Array containing TAC activities.
+            tac_values (np.ndarray): Array containing TAC activities.
             samples_before_max (float):
 
         Returns:
