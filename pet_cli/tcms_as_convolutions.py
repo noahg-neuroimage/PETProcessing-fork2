@@ -193,8 +193,10 @@ def response_function_serial_2tcm_c2(t: np.ndarray[float], k1: float, k2: float,
     return (k1 * k3 / a) * (np.exp(-alpha_1 * t) - np.exp(-alpha_2 * t))
 
 
-def generate_tac_1tcm_c1_from_tac(tac_times: np.ndarray[float], tac_vals: np.ndarray[float], k1: float, k2: float) -> \
-np.ndarray[float, float]:
+def generate_tac_1tcm_c1_from_tac(tac_times: np.ndarray[float],
+                                  tac_vals: np.ndarray[float],
+                                  k1: float,
+                                  k2: float) -> np.ndarray[float, float]:
     r"""Calculate the TTAC, given the input TAC, for a 1TCM as an explicit convolution.
     
     Args:
