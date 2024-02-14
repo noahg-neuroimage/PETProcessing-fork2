@@ -1,8 +1,40 @@
-"""A collection of functions to compute TACs as explicit convolutions for common Tissue Compartment Models (TCMs).
+"""This module contains a collection of six functions to compute Time-Activity Curves (TACs) for common Tissue Compartment
+ Models (TCMs). These models are commonly seen in medical studies, such as radiology and pharmacology.
 
-
-TODO:
-    * Add the derivations of the solutions to the TCMs in the module docstring.
+    Functions:
+        calc_convolution_with_check(f: np.ndarray, g: np.ndarray, dt: float) -> np.ndarray:
+            Performs a discrete convolution of 'f' and 'g' which are numpy arrays. The np.ndarray is assumed to represent
+            time-series data.
+    
+        response_function_1tcm_c1(t: np.ndarray, k1: float, k2: float) -> np.ndarray:
+            Returns the response function for the 1-Tissue Compartment Model where the arguments 'k1' and 'k2' are float
+             values. The output is a numpy ndarray.
+    
+        response_function_2tcm_with_k4zero_c1(t: np.ndarray, k1: float, k2: float, k3: float) -> np.ndarray:
+            Returns the response function for the first compartment in the serial 2-Tissue Compartment Model with a
+            parameter `k4` equal to zero. The output is a numpy ndarray.
+    
+        response_function_2tcm_with_k4zero_c2(t: np.ndarray, k1: float, k2: float, k3: float) -> np.ndarray:
+            Returns the response function for the second compartment in the serial 2-Tissue Compartment Model with a
+            parameter `k4` equal to zero. The output is a numpy ndarray.
+    
+        response_function_serial_2tcm_c1(t: np.ndarray, k1: float, k2: float, k3: float, k4: float) -> np.ndarray:
+            Returns the response function for the first compartment in the serial 2-Tissue Compartment Model. The output
+             is a numpy ndarray.
+    
+        response_function_serial_2tcm_c2(t: np.ndarray, k1: float, k2: float, k3: float, k4: float) -> np.ndarray:
+            Returns the response function for the second compartment in the serial 2-Tissue Compartment Model. The
+            output is a numpy ndarray.
+            
+    Notes:
+        All functions in this module are decorated with `numba.njit()`. It compiles the function to machine code at
+        runtime (Just-In-Time compilation), which usually provides a significant speed-up.
+    
+    Requires:
+        The module relies on the numpy and numba libraries.
+    
+    TODO:
+        Add the derivations of the solutions to the Tissue Compartment Models in the module docstring.
 """
 
 import numba
