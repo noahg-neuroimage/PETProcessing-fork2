@@ -1,64 +1,65 @@
 """This module contains a collection of functions to compute Time-Activity Curves (TACs) for common Tissue Compartment
  Models (TCMs). These models are commonly used for kinetic analysis of PET TACs.
 
-    Functions:
-        calc_convolution_with_check(f: np.ndarray, g: np.ndarray, dt: float) -> np.ndarray:
-            Performs a discrete convolution of 'f' and 'g' which are numpy arrays. The np.ndarray is assumed to represent
-            time-series data.
+Functions:
+    :func:`calc_convolution_with_check(f: np.ndarray, g: np.ndarray, dt: float) -> np.ndarray:`
+        Performs a discrete convolution of 'f' and 'g' which are numpy arrays. The np.ndarray is assumed to represent
+        time-series data.
+
+    :func:`response_function_1tcm_c1(t: np.ndarray, k1: float, k2: float) -> np.ndarray:`
+        Returns the response function for the 1-Tissue Compartment Model where the arguments 'k1' and 'k2' are float
+        values. The output is a numpy ndarray.
+
+    :func:`response_function_2tcm_with_k4zero_c1(t: np.ndarray, k1: float, k2: float, k3: float) -> np.ndarray:`
+        Returns the response function for the first compartment in the serial 2-Tissue Compartment Model with a
+        parameter `k4` equal to zero. The output is a numpy ndarray.
+
+    :func:`response_function_2tcm_with_k4zero_c2(t: np.ndarray, k1: float, k2: float, k3: float) -> np.ndarray:`
+        Returns the response function for the second compartment in the serial 2-Tissue Compartment Model with a
+        parameter `k4` equal to zero. The output is a numpy ndarray.
+
+    :func:`response_function_serial_2tcm_c1(t: np.ndarray, k1: float, k2: float, k3: float, k4: float) -> np.ndarray:`
+        Returns the response function for the first compartment in the serial 2-Tissue Compartment Model. The output
+        is a numpy ndarray.
+
+    :func:`response_function_serial_2tcm_c2(t: np.ndarray, k1: float, k2: float, k3: float, k4: float) -> np.ndarray:`
+        Returns the response function for the second compartment in the serial 2-Tissue Compartment Model. The
+        output is a numpy ndarray.
     
-        response_function_1tcm_c1(t: np.ndarray, k1: float, k2: float) -> np.ndarray:
-            Returns the response function for the 1-Tissue Compartment Model where the arguments 'k1' and 'k2' are float
-             values. The output is a numpy ndarray.
-    
-        response_function_2tcm_with_k4zero_c1(t: np.ndarray, k1: float, k2: float, k3: float) -> np.ndarray:
-            Returns the response function for the first compartment in the serial 2-Tissue Compartment Model with a
-            parameter `k4` equal to zero. The output is a numpy ndarray.
-    
-        response_function_2tcm_with_k4zero_c2(t: np.ndarray, k1: float, k2: float, k3: float) -> np.ndarray:
-            Returns the response function for the second compartment in the serial 2-Tissue Compartment Model with a
-            parameter `k4` equal to zero. The output is a numpy ndarray.
-    
-        response_function_serial_2tcm_c1(t: np.ndarray, k1: float, k2: float, k3: float, k4: float) -> np.ndarray:
-            Returns the response function for the first compartment in the serial 2-Tissue Compartment Model. The output
-             is a numpy ndarray.
-    
-        response_function_serial_2tcm_c2(t: np.ndarray, k1: float, k2: float, k3: float, k4: float) -> np.ndarray:
-            Returns the response function for the second compartment in the serial 2-Tissue Compartment Model. The
-            output is a numpy ndarray.
-        
-        generate_tac_1tcm_c1_from_tac(tac_times: np.ndarray, tac_vals: np.ndarray, k1: float, k2: float) -> np.ndarray:
+    :func:`generate_tac_1tcm_c1_from_tac(tac_times: np.ndarray, tac_vals: np.ndarray, k1: float, k2: float) -> np.ndarray:`
         Generates the TTAC for a one tissue compartment model (1TCM) based on an input Time-Activity Curve (TAC).
 
-        generate_tac_2tcm_with_k4zero_c1_from_tac(tac_times: np.ndarray, tac_vals: np.ndarray, k1: float, k2: float,
-                                                   k3: float) -> np.ndarray:
-            Generates the TTAC for a two tissue compartment model (2TCM) with a zero k4 rate constant for the C1
-            compartment based on an input TAC.
+    :func:`generate_tac_2tcm_with_k4zero_c1_from_tac(tac_times: np.ndarray, tac_vals: np.ndarray, k1: float, k2: float,
+                                               k3: float) -> np.ndarray:
+        Generates the TTAC for a two tissue compartment model (2TCM) with a zero k4 rate constant for the C1
+        compartment based on an input TAC.
+
+    :func:`generate_tac_2tcm_with_k4zero_c2_from_tac(tac_times: np.ndarray, tac_vals: np.ndarray, k1: float, k2: float, k3: float) -> np.ndarray:`
+        Generates the TTAC for a 2TCM with a zero k4 rate constant for the C2 compartment based on an input TAC.
+
+    :func:`generate_tac_2tcm_with_k4zero_cpet_from_tac(tac_times: np.ndarray, tac_vals: np.ndarray, k1: float, k2: float, k3: float) -> np.ndarray:`
+        Generates the TTAC for a 2TCM with a zero k4 rate constant for a CPET based on an input TAC.
+
+    :func:`generate_tac_serial_2tcm_c1_from_tac(tac_times: np.ndarray, tac_vals: np.ndarray, k1: float, k2: float, k3: float) -> np.ndarray:`
+        Generates the TTAC for a serial two tissue compartment model (s2TCM) for the C1 compartment based on an
+        input TAC.
+
+    :func:`generate_tac_serial_2tcm_c2_from_tac(tac_times: np.ndarray, tac_vals: np.ndarray, k1: float, k2: float, k3: float, k4: float) -> np.ndarray:`
+        Generates the TTAC for a s2TCM for the C2 compartment based on an input TAC.
+
+    :func:`generate_tac_serial_2tcm_cpet_from_tac(tac_times: np.ndarray, tac_vals: np.ndarray, k1: float, k2: float, k3: float, k4: float) -> np.ndarray:`
+        Generates the TTAC for a s2TCM for a CPET based on an input TAC.
+        
+Notes:
+    All functions in this module are decorated with ``numba.njit()``. It compiles the function to machine code at
+    runtime (Just-In-Time compilation), which usually provides a significant speed-up.
+
+Requires:
+    The module relies on the ``numpy`` and ``numba`` libraries.
+
+TODO:
+    Add the derivations of the solutions to the Tissue Compartment Models in the module docstring.
     
-        generate_tac_2tcm_with_k4zero_c2_from_tac(tac_times: np.ndarray, tac_vals: np.ndarray, k1: float, k2: float, k3: float) -> np.ndarray:
-            Generates the TTAC for a 2TCM with a zero k4 rate constant for the C2 compartment based on an input TAC.
-    
-        generate_tac_2tcm_with_k4zero_cpet_from_tac(tac_times: np.ndarray, tac_vals: np.ndarray, k1: float, k2: float, k3: float) -> np.ndarray:
-            Generates the TTAC for a 2TCM with a zero k4 rate constant for a CPET based on an input TAC.
-    
-        generate_tac_serial_2tcm_c1_from_tac(tac_times: np.ndarray, tac_vals: np.ndarray, k1: float, k2: float, k3: float) -> np.ndarray:
-            Generates the TTAC for a serial two tissue compartment model (s2TCM) for the C1 compartment based on an
-            input TAC.
-    
-        generate_tac_serial_2tcm_c2_from_tac(tac_times: np.ndarray, tac_vals: np.ndarray, k1: float, k2: float, k3: float, k4: float) -> np.ndarray:
-            Generates the TTAC for a s2TCM for the C2 compartment based on an input TAC.
-    
-        generate_tac_serial_2tcm_cpet_from_tac(tac_times: np.ndarray, tac_vals: np.ndarray, k1: float, k2: float, k3: float, k4: float) -> np.ndarray:
-            Generates the TTAC for a s2TCM for a CPET based on an input TAC.
-            
-    Notes:
-        All functions in this module are decorated with `numba.njit()`. It compiles the function to machine code at
-        runtime (Just-In-Time compilation), which usually provides a significant speed-up.
-    
-    Requires:
-        The module relies on the numpy and numba libraries.
-    
-    TODO:
-        Add the derivations of the solutions to the Tissue Compartment Models in the module docstring.
 """
 
 import numba
@@ -70,6 +71,7 @@ def calc_convolution_with_check(f: np.ndarray[float], g: np.ndarray[float], dt: 
     
     Let ``f``:math:`=f(t)` and ``g``:math:`=g(t)` where both functions are 0 for :math:`t\leq0`. Then,
     the output, :math:`h(t)`, is
+    
     .. math::
         h(t) = \int_{0}^{t}f(s)g(s-t)\mathrm{d}s
     
