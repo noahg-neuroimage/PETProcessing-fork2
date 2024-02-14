@@ -108,24 +108,6 @@ class ImageUtil():
         return reoriented_image
 
 
-    def convert_nib_to_ants(self, nib_image: nibabel.nifti1) -> ants.ANTsImage:
-        """
-        Converts nibabel image format (nibabel.nifti1) to ants image format (ANTsImage).
-
-        Args:
-            nib_image: Image in nibabel.nifti1 format.
-
-        Returns:
-            Image in ANTsImage format.
-        """
-        nib_image_data: np.ndarray = nib_image.get_fdata()
-        nib_image_affine = nib_image.affine
-        ants_image = ants.from_numpy(nib_image_data)
-        ants_image.set_spacing(tuple(np.diag(nib_image_affine)[:3]))
-
-        return ants_image
-
-
     def rigid_registration_calc(self,
                            moving_image: nibabel.nifti1,
                            fixed_image: nibabel.nifti1,
@@ -142,10 +124,42 @@ class ImageUtil():
         """
         moving_image_ants = ants.from_nibabel(moving_image)
         fixed_image_ants = ants.from_nibabel(fixed_image)
-        print(moving_image_ants)
-        print(fixed_image_ants)
 
-        return 1
+        _mov_fix_ants,_fix_mov_ants,mov_fix_xfm,_fix_mov_xfm = ants.registration(
+            fixed_image_ants,
+            moving_image_ants,
+            type_of_transform='rigid'
+        )
+
+        return mov_fix_xfm
+
+
+    def apply_registration(self,
+                      moving_image: nibabel.nifti1,
+                      fixed_image: nibabel.nifti1,
+                      xfm_matrix: np.ndarray) -> nibabel.nifti1:
+        """
+        Register a moving image to a fixed image using a supplied transform.
+
+        Args:
+            moving_image (nibabel.nifti1): Image to be resampled onto fixed reference image.
+            fixed_image (nibabel.nifti1): Reference image onto which the moving_image is registered.
+            xfm_matrix (np.ndarray): Ants-style transformation matrix used to apply transformation.
+
+        Returns:
+            moving_on_fixed_image (nibabel.nifti1): Moving image registered onto the fixed image.
+        """
+        moving_image_ants = ants.from_nibabel(moving_image)
+        fixed_image_ants = ants.from_nibabel(fixed_image)
+
+        mov_fix_ants = ants.apply_transforms(
+            fixed_image_ants,
+            moving_image_ants,
+            transformlist=xfm_matrix)
+
+        moving_on_fixed_image = ants.to_nibabel(mov_fix_ants)
+
+        return moving_on_fixed_image
 
 
     def weighted_series_sum(self,
