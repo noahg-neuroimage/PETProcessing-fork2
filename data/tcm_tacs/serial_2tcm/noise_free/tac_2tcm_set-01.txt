@@ -1,4 +1,4 @@
-# Serial 2TCM with k0:0.50; k1:0.85; k2:0.25; k3:0.01
+# Serial 2TCM with k1:0.50; k2:0.85; k3:0.25; k4:0.01
 # Times[minutes] Activity[kBq/ml]
 0.000000e+00 0.000000e+00
 3.011960e-01 0.000000e+00
