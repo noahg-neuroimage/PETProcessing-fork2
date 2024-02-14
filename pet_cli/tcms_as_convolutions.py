@@ -65,7 +65,7 @@ import numba
 import numpy as np
 
 
-def calc_convolution_with_check(f: np.ndarray[float], g: np.ndarray[float], dt: float) -> np.ndarray:
+def calc_convolution_with_check(f: np.ndarray[float], g: np.ndarray[float], dt: float) -> np.ndarray[float]:
     """Performs a discrete convolution of two arrays, assumed to represent time-series data.
     
     Let ``f``:math:`=f(t)` and ``g``:math:`=g(t)` where both functions are 0 for :math:`t\leq0`. Then,
@@ -90,7 +90,7 @@ def calc_convolution_with_check(f: np.ndarray[float], g: np.ndarray[float], dt: 
 
 
 @numba.njit()
-def response_function_1tcm_c1(t: np.ndarray[float], k1: float, k2: float) -> np.ndarray:
+def response_function_1tcm_c1(t: np.ndarray[float], k1: float, k2: float) -> np.ndarray[float]:
     r"""The response function for the 1TCM :math:`f(t)=k_1 e^{-k_{2}t}`
     
     Args:
@@ -105,7 +105,7 @@ def response_function_1tcm_c1(t: np.ndarray[float], k1: float, k2: float) -> np.
 
 
 @numba.njit()
-def response_function_2tcm_with_k4zero_c1(t: np.ndarray[float], k1: float, k2: float, k3: float) -> np.ndarray:
+def response_function_2tcm_with_k4zero_c1(t: np.ndarray[float], k1: float, k2: float, k3: float) -> np.ndarray[float]:
     r"""The response function for first compartment in the serial 2TCM with :math:`k_{4}=0`; :math:`f(t)=k_{1}e^{-(k_{2} + k_{3})t}`.
     
     Args:
@@ -125,7 +125,7 @@ def response_function_2tcm_with_k4zero_c1(t: np.ndarray[float], k1: float, k2: f
 
 
 @numba.njit()
-def response_function_2tcm_with_k4zero_c2(t: np.ndarray[float], k1: float, k2: float, k3: float) -> np.ndarray:
+def response_function_2tcm_with_k4zero_c2(t: np.ndarray[float], k1: float, k2: float, k3: float) -> np.ndarray[float]:
     r"""The response function for second compartment in the serial 2TCM with :math:`k_{4}=0`; :math:`f(t)=\frac{k_{1}k_{3}}{k_{2}+k_{3}}(1-e^{-(k_{2} + k_{3})t})`.
 
     Args:
@@ -144,7 +144,7 @@ def response_function_2tcm_with_k4zero_c2(t: np.ndarray[float], k1: float, k2: f
 
 
 @numba.njit()
-def response_function_serial_2tcm_c1(t: np.ndarray[float], k1: float, k2: float, k3: float, k4: float) -> np.ndarray:
+def response_function_serial_2tcm_c1(t: np.ndarray[float], k1: float, k2: float, k3: float, k4: float) -> np.ndarray[float]:
     r"""The response function for first compartment in the *serial* 2TCM.
     
     .. math::
@@ -181,7 +181,7 @@ def response_function_serial_2tcm_c1(t: np.ndarray[float], k1: float, k2: float,
 
 
 @numba.njit()
-def response_function_serial_2tcm_c2(t: np.ndarray[float], k1: float, k2: float, k3: float, k4: float) -> np.ndarray:
+def response_function_serial_2tcm_c2(t: np.ndarray[float], k1: float, k2: float, k3: float, k4: float) -> np.ndarray[float]:
     r"""The response function for second compartment in the *serial* 2TCM.
 
     .. math::
