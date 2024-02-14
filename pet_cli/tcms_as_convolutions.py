@@ -31,18 +31,18 @@
 
         generate_tac_2tcm_with_k4zero_c1_from_tac(tac_times: np.ndarray, tac_vals: np.ndarray, k1: float, k2: float,
                                                    k3: float) -> np.ndarray:
-            Generates the TTAC for a two tissue compartment model (2TCM) with a zero k4 rate constant for the C1 compartment
-            based on an input TAC.
+            Generates the TTAC for a two tissue compartment model (2TCM) with a zero k4 rate constant for the C1
+            compartment based on an input TAC.
     
         generate_tac_2tcm_with_k4zero_c2_from_tac(tac_times: np.ndarray, tac_vals: np.ndarray, k1: float, k2: float, k3: float) -> np.ndarray:
             Generates the TTAC for a 2TCM with a zero k4 rate constant for the C2 compartment based on an input TAC.
     
-        generate_tac_2tcm_with_k4zero_cpet_from_tac(tac_times: np.ndarray, tac_vals: np.ndarray, k1: float, k2: float,
-                                                     k3: float, vb: float) -> np.ndarray:
+        generate_tac_2tcm_with_k4zero_cpet_from_tac(tac_times: np.ndarray, tac_vals: np.ndarray, k1: float, k2: float, k3: float) -> np.ndarray:
             Generates the TTAC for a 2TCM with a zero k4 rate constant for a CPET based on an input TAC.
     
         generate_tac_serial_2tcm_c1_from_tac(tac_times: np.ndarray, tac_vals: np.ndarray, k1: float, k2: float, k3: float) -> np.ndarray:
-            Generates the TTAC for a serial two tissue compartment model (s2TCM) for the C1 compartment based on an input TAC.
+            Generates the TTAC for a serial two tissue compartment model (s2TCM) for the C1 compartment based on an
+            input TAC.
     
         generate_tac_serial_2tcm_c2_from_tac(tac_times: np.ndarray, tac_vals: np.ndarray, k1: float, k2: float, k3: float, k4: float) -> np.ndarray:
             Generates the TTAC for a s2TCM for the C2 compartment based on an input TAC.
