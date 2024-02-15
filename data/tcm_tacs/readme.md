@@ -24,7 +24,7 @@ In these directories, you will find two versions of the TACs:
 2. **TACs with Gaussian Noise**: These TACs have been artificially modified with Gaussian noise. The variance of this noise is determined by the average value of counts in the input TAC. Explicitly, we have:
 
 $$
-\sigma = \frac{\int_0^{T}C_\mathrm{P}(t)\mathrm{d}t}{T},
+\sigma = \frac{\int_{t_0}^{t^n}C_\mathrm{P}(t)\mathrm{d}t}{t_n - t_0},
 $$
 
 The inclusion of both versions of TACs allows for a more robust analysis of the models and their performance under various conditions. 
