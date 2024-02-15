@@ -39,7 +39,7 @@ class EvenlyInterpolate:
         self.resample_vals = self.interp_func(self.resample_times)
 
     def get_resampled_tac(self) -> Tuple[np.ndarray[float], np.ndarray[float]]:
-        return self.resample_times, self.resample_vals
+        return np.asarray([self.resample_times, self.resample_vals])
     
     
     
