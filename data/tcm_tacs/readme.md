@@ -6,7 +6,6 @@ Currently, we have data for:
 * 1TCM in `1tcm`
   * $k_{1}=1.00;$ $k_{2}=0.25$
   * $k_{1}=0.25;$ $k_{2}=1.00$
-
 * Serial 2TCM with $k_4=0$ in `serial_2tcm_k4zero`
   * $k_{1}=0.50;$ $k_{2}=0.50;$ $k_{3}=0.01$
   * $k_{1}=0.50;$ $k_{2}=0.50;$ $k_{3}=0.25$
