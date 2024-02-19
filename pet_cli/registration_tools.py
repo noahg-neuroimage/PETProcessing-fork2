@@ -7,11 +7,17 @@ from nibabel.filebasedimages import FileBasedHeader, FileBasedImage
 import numpy as np
 
 
-class ImageUtil():
+class ImageIO():
     """
     Class handling 3D and 4D image file utilities.
     """
-    def __init__(self, file_path, verbose):
+    def __init__(self, file_path: str, verbose: bool=True):
+        """
+        Args:
+            file_path (str): Path to existing nifti image to be read.
+            verbose (bool): Set to True to print debugging info to shell. Defaults to True.
+        
+        """
         self.file_path = file_path
         self.verbose = verbose
 
@@ -172,6 +178,19 @@ class ImageUtil():
         return moving_on_fixed_image
 
 # Can we use numba?
+class ImageOps4D(ImageIO):
+    """
+    A class, extends ``ImageIO``, has tools to modify values of 4D images.
+    
+    Attricbutes:
+        verbose (bool): 
+
+    See Also:
+        :class:`ImageIO`
+    """
+    def __init__(self, file_path: str, verbose: bool):
+        super().__init__(file_path, verbose)
+
     def weighted_series_sum(self,
                             image_series: np.ndarray,
                             image_meta: dict,
@@ -194,7 +213,9 @@ class ImageUtil():
         image_frame_duration = image_meta['FrameDuration']
         image_decay_correction = image_meta['DecayCorrectionFactor']
         # TODO: Create a function to read half life from isotope
-        #tracer_isotope = image_meta['TracerRadionuclide']
+        tracer_isotope = image_meta['TracerRadionuclide']
+        if self.verbose:
+            print(f"(ImageOps4D): Radio isotope is {tracer_isotope} with half life {half_life} s")
         decay_constant = np.log(2) / half_life
 
         image_total_duration = np.sum(image_frame_duration)
