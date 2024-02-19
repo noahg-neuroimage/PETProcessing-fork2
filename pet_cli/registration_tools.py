@@ -22,15 +22,9 @@ class ImageIO():
         self.verbose = verbose
 
 
-
-    # File I/O functions: these will be in subclass ImageIO
     def load_nii(self) -> FileBasedImage:
         """
         Wrapper to load nifti from file path.
-
-        Args:
-            file_path: The full file path to the nifti file.
-            verbose:
 
         Returns:
             The nifti FileBasedImage.
@@ -39,30 +33,29 @@ class ImageIO():
         image = nibabel.load(self.file_path)
 
         if self.verbose:
-            print(f"(fileIO): {self.file_path} loaded")
+            print(f"(ImageIO): {self.file_path} loaded")
 
         return image
 
 
-    def save_nii(self,image,output_path) -> int:
+    def save_nii(self,image: nibabel.nifti1.Nifti1Image,output_path: str) -> int:
         """
         Wrap to save nifti to file path.
 
         Args:
-
-
-        Returns:
+            image (nibabel.nifti1.Nifti1Image): Nibabel-type image to write to file.
+            output_path (str): Path to which image will be written.
         """
         nibabel.save(image,output_path)
 
         return 0
 
-    def extract_image_from_nii_as_numpy(self, image: nibabel.nifti1) -> np.ndarray:
+    def extract_image_from_nii_as_numpy(self, image: nibabel.nifti1.Nifti1Image) -> np.ndarray:
         """
         Convenient wrapper to extract data from a .nii or .nii.gz file as a numpy array.
 
         Args:
-            image: The nifti file itself.
+            image: Nibabel-type image to write to file.
             verbose:
 
         Returns:
@@ -72,18 +65,18 @@ class ImageIO():
         image_data = image.get_fdata()
 
         if self.verbose:
-            print(f"(fileIO): Image has shape {image_data.shape}")
+            print(f"(ImageIO): Image has shape {image_data.shape}")
 
         return image_data
 
 
-    def extract_header_from_nii(self, image: np.ndarray) -> FileBasedHeader:
+    def extract_header_from_nii(self, image: nibabel.nifti1.Nifti1Image) -> FileBasedHeader:
         """
         Convenient wrapper to extract header information from a .nii or .nii.gz 
         file as a nibabel file-based header.
 
         Args:
-            image: The nifti file itself.
+            image: Nibabel-type image to write to file.
 
         Returns:
             The nifti header.
@@ -91,35 +84,76 @@ class ImageIO():
         image_header: FileBasedHeader = image.header
 
         if self.verbose:
-            print(f"(fileIO): Image header is: {image_header}")
+            print(f"(ImageIO): Image header is: {image_header}")
 
         return image_header
-    
 
-    def extract_np_to_nibabel(self, image: np.ndarray, header: FileBasedHeader, affine: np.ndarray) -> nibabel.nifti1:
+
+    def extract_np_to_nibabel(self,
+                              image_array: np.ndarray,
+                              header: FileBasedHeader,
+                              affine: np.ndarray) -> nibabel.nifti1.Nifti1Image:
         """
         Wrapper to convert an image array into nibabel object.
         
+        Args:
+            image_array (np.ndarray): Array containing image data.
+            header (FileBasedHeader): Header information to include.
+            affine (np.ndarray): Affine information we need to keep when rewriting image.
+
+        Returns:
+            image_nibabel (nibabel.nifti1.Nifti1Image): Image stored in nifti-like nibabel format. 
         """
+        image_nibabel = nibabel.nifti1.Nifti1Image(image_array,affine,header)
+        return image_nibabel
+    
 
-        return 0
+    def affine_parse(self,image_affine: np.ndarray) -> tuple:
+        """
+        Parse the components of an image affine to return origin, spacing, direction
+
+        WIP: Nibabel specifies three types of affines, sform, qform, and fall-back header
+        Which one should we use?
+        Is there already a function that does this?
+        """
+        origin = image_affine[:,3] # the last column in RAS is origin
+        spacing = image_affine.diagonal() # the diagonal is spacing
+        direction = 1
+
+        return origin, spacing, direction
 
 
-    def reorient_to_ras(self, image: np.ndarray) -> np.ndarray:
+
+class ImageReg(ImageIO):
+    """
+    A class, extends ``ImageIO``, supplies tools to compute and run image registrations.
+    Attributes:
+        xfm_path (str): Path to image transformation file.
+    """
+    def __init__(self, file_path: str, verbose: bool, xfm_path: str = None):
+        """
+        Args:
+            file_path (str): Path to existing nifti image to be read.
+            verbose (bool): Set to True to print debugging info to shell. Defaults to True.
+        """
+        self.xfm_path = xfm_path
+        super().__init__(file_path, verbose)
+
+
+    def reorient_to_ras(self, image: nibabel.nifti1.Nifti1Image) -> nibabel.nifti1.Nifti1Image:
         """
         Wrapper for the RAS reorientation used to ensure images are oriented the same.
 
         Args:
-            image: The nifti file itself.
-            verbose:
+            image: Nibabel-type image to write to file.
 
         Returns:
             The reoriented nifti file.
         """
-        reoriented_image: np.ndarray = nibabel.as_closest_canonical(image)
+        reoriented_image = nibabel.as_closest_canonical(image)
 
         if self.verbose:
-            print("(fileIO): Image has been reoriented to RAS")
+            print("(ImageReg): Image has been reoriented to RAS")
 
         return reoriented_image
 
@@ -127,6 +161,8 @@ class ImageIO():
     def rigid_registration_calc(self,
                            moving_image: np.ndarray,
                            fixed_image: np.ndarray,
+                           moving_affine: np.ndarray,
+                           fixed_affine: np.ndarray
                            ) -> np.ndarray:
         """
         Register two images and return the transformation matrix
@@ -138,8 +174,9 @@ class ImageIO():
         Returns:
             rigid_transform (np.ndarray): Rigid transform array
         """
-        moving_image_ants = ants.from_nibabel(moving_image)
-        fixed_image_ants = ants.from_nibabel(fixed_image)
+        moving_image_ants = ants.from_numpy(moving_image) # TODO: add origin, spacing, direction from affine
+        #moving_image_ants = ants.from_nibabel(moving_image)
+        fixed_image_ants = ants.from_numpy(fixed_image)
 
         _mov_fix_ants,_fix_mov_ants,mov_fix_xfm,_fix_mov_xfm = ants.registration(
             fixed_image_ants,
@@ -180,10 +217,9 @@ class ImageIO():
 # Can we use numba?
 class ImageOps4D(ImageIO):
     """
-    A class, extends ``ImageIO``, has tools to modify values of 4D images.
+    A class, extends ``ImageIO``, supplies tools to modify values of 4D images.
     
-    Attricbutes:
-        verbose (bool): 
+    Attributes:
 
     See Also:
         :class:`ImageIO`
@@ -207,12 +243,11 @@ class ImageOps4D(ImageIO):
         Returns:
             summed_image (np.ndarray): Summed image 
 
-        Credit to Avi Snyder who wrote the original version of this code.
+        Credit to Avi Snyder who wrote the original version of this code in C.
         """
         image_frame_start = image_meta['FrameTimesStart']
         image_frame_duration = image_meta['FrameDuration']
         image_decay_correction = image_meta['DecayCorrectionFactor']
-        # TODO: Create a function to read half life from isotope
         tracer_isotope = image_meta['TracerRadionuclide']
         if self.verbose:
             print(f"(ImageOps4D): Radio isotope is {tracer_isotope} with half life {half_life} s")
@@ -224,7 +259,6 @@ class ImageOps4D(ImageIO):
                 np.exp(-1*decay_constant*image_frame_start[0])
 
         image_series_scaled = image_series[:,:,:] * image_frame_duration / image_decay_correction
-        # TODO: Create a malleable solution to sum axis
         image_series_sum_scaled = np.sum(image_series_scaled,axis=3)
         image_weighted_sum = image_series_sum_scaled * total_decay / image_total_duration
 
