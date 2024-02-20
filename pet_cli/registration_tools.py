@@ -112,13 +112,19 @@ class ImageIO():
         """
         Parse the components of an image affine to return origin, spacing, direction
 
-        WIP: Nibabel specifies three types of affines, sform, qform, and fall-back header
-        Which one should we use?
-        Is there already a function that does this?
+        Note: this function is a placeholder as we decide what the specific input and output
+        of various functions should be. Should this not be useful, then it will be removed.
         """
         origin = image_affine[:,3] # the last column in RAS is origin
-        spacing = image_affine.diagonal() # the diagonal is spacing
-        direction = 1
+        spacing = image_affine[:3,:3].diagonal() # the diagonal is spacing
+
+        # quaternions seem to be the answer to the bizzare "direction" property
+        # that ants uses- but likely more foolproof to just use from_nibabel than from_numpy
+        quat = nibabel.quaternions.mat2quat(image_affine[:3,:3])
+        dir_3x3 = nibabel.quaternions.quat2mat(quat)
+        direction = np.zeros((4,4))
+        direction[-1,-1] = 1
+        direction[:3,:3] = dir_3x3
 
         return origin, spacing, direction
 
