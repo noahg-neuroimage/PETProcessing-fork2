@@ -115,8 +115,8 @@ class ImageIO():
         Note: this function is a placeholder as we decide what the specific input and output
         of various functions should be. Should this not be useful, then it will be removed.
         """
-        origin = image_affine[:,3] # the last column in RAS is origin
         spacing = image_affine[:3,:3].diagonal() # the diagonal is spacing
+        origin = image_affine[:,3] # the last column in the affine is origin
 
         # quaternions seem to be the answer to the bizzare "direction" property
         # that ants uses- but likely more foolproof to just use from_nibabel than from_numpy
@@ -126,7 +126,29 @@ class ImageIO():
         direction[-1,-1] = 1
         direction[:3,:3] = dir_3x3
 
-        return origin, spacing, direction
+        return spacing, origin, direction
+    
+
+    def extract_np_to_ants(self,
+                              image_array: np.ndarray,
+                              affine: np.ndarray) -> ants.ANTsImage:
+        """
+        Wrapper to convert an image array into ants object.
+        Note header info is lost as ANTs does not carry this metadata.
+        
+        Args:
+            image_array (np.ndarray): Array containing image data.
+            affine (np.ndarray): Affine information we need to keep when rewriting image.
+
+        Returns:
+            image_ants (ants.ANTsImage): Image stored in nifti-like nibabel format. 
+        """
+        origin, spacing, direction = self.affine_parse(affine)
+        image_ants = ants.from_numpy(data=image_array,
+                                     spacing=spacing,
+                                     origin=origin,
+                                     direction=direction)
+        return image_ants
 
 
 
