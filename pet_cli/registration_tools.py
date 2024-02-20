@@ -14,7 +14,7 @@ class ImageIO():
     def __init__(self, file_path: str, verbose: bool=True):
         """
         Args:
-            file_path (str): Path to existing nifti image to be read.
+            file_path (str): Path to existing Nifti image file.
             verbose (bool): Set to True to print debugging info to shell. Defaults to True.
         
         """
@@ -24,7 +24,7 @@ class ImageIO():
 
     def load_nii(self) -> FileBasedImage:
         """
-        Wrapper to load nifti from file path.
+        Wrapper to load nifti from file_path.
 
         Returns:
             The nifti FileBasedImage.
@@ -38,15 +38,15 @@ class ImageIO():
         return image
 
 
-    def save_nii(self,image: nibabel.nifti1.Nifti1Image,output_path: str) -> int:
+    def save_nii(self,image: nibabel.nifti1.Nifti1Image,out_file: str) -> int:
         """
-        Wrap to save nifti to file path.
+        Wrapper to save nifti to file.
 
         Args:
             image (nibabel.nifti1.Nifti1Image): Nibabel-type image to write to file.
-            output_path (str): Path to which image will be written.
+            out_file (str): File path to which image will be written.
         """
-        nibabel.save(image,output_path)
+        nibabel.save(image,out_file)
 
         return 0
 
@@ -106,7 +106,7 @@ class ImageIO():
         """
         image_nibabel = nibabel.nifti1.Nifti1Image(image_array,affine,header)
         return image_nibabel
-    
+
 
     def affine_parse(self,image_affine: np.ndarray) -> tuple:
         """
@@ -127,7 +127,7 @@ class ImageIO():
         direction[:3,:3] = dir_3x3
 
         return spacing, origin, direction
-    
+
 
     def extract_np_to_ants(self,
                               image_array: np.ndarray,
@@ -156,15 +156,13 @@ class ImageReg(ImageIO):
     """
     A class, extends ``ImageIO``, supplies tools to compute and run image registrations.
     Attributes:
-        xfm_path (str): Path to image transformation file.
     """
-    def __init__(self, file_path: str, verbose: bool, xfm_path: str = None):
+    def __init__(self, file_path: str, verbose: bool):
         """
         Args:
-            file_path (str): Path to existing nifti image to be read.
+            file_path (str): Path to existing Nifti image file.
             verbose (bool): Set to True to print debugging info to shell. Defaults to True.
         """
-        self.xfm_path = xfm_path
         super().__init__(file_path, verbose)
 
 
@@ -187,24 +185,21 @@ class ImageReg(ImageIO):
 
 
     def rigid_registration_calc(self,
-                           moving_image: np.ndarray,
-                           fixed_image: np.ndarray,
-                           moving_affine: np.ndarray,
-                           fixed_affine: np.ndarray
+                           moving_image: nibabel.nifti1.Nifti1Image,
+                           fixed_image: nibabel.nifti1.Nifti1Image
                            ) -> np.ndarray:
         """
         Register two images and return the transformation matrix
 
         Args:
-            moving_image (np.ndarray): Image to be registered
-            fixed_image (np.ndarray): Reference image to be registered to
+            moving_image (nibabel.nifti1.Nifti1Image): Image to be registered
+            fixed_image (nibabel.nifti1.Nifti1Image): Reference image to be registered to
 
         Returns:
             rigid_transform (np.ndarray): Rigid transform array
         """
-        moving_image_ants = ants.from_numpy(moving_image) # TODO: add origin, spacing, direction from affine
-        #moving_image_ants = ants.from_nibabel(moving_image)
-        fixed_image_ants = ants.from_numpy(fixed_image)
+        moving_image_ants = ants.from_nibabel(moving_image)
+        fixed_image_ants = ants.from_nibabel(fixed_image)
 
         _mov_fix_ants,_fix_mov_ants,mov_fix_xfm,_fix_mov_xfm = ants.registration(
             fixed_image_ants,
@@ -248,17 +243,28 @@ class ImageOps4D(ImageIO):
     A class, extends ``ImageIO``, supplies tools to modify values of 4D images.
     
     Attributes:
-
+        img_meta (dict): Image metadata pulled from BIDS-compliant json file.
+        half_life (float): Half life of radioisotope to be used for computations.
+                           Default value 0.
+    
     See Also:
         :class:`ImageIO`
     """
-    def __init__(self, file_path: str, verbose: bool):
-        super().__init__(file_path, verbose)
+    def __init__(self, image: ImageIO, img_meta: str, half_life: float=0):
+        """
+        Constructor for ImageOps4D
 
-    def weighted_series_sum(self,
-                            image_series: np.ndarray,
-                            image_meta: dict,
-                            half_life: float) -> np.ndarray:
+        Args:
+        
+        """
+        file_path = image.file_path
+        verbose = image.verbose
+        super().__init__(file_path, verbose)
+        self.img_meta = img_meta
+        self.half_life = half_life
+        self.image_series = self.load_nii().get_fdata()
+
+    def weighted_series_sum(self) -> np.ndarray:
         """
         Sum a 4D image series weighted based on time and re-corrected for decay correction.
 
@@ -273,20 +279,23 @@ class ImageOps4D(ImageIO):
 
         Credit to Avi Snyder who wrote the original version of this code in C.
         """
-        image_frame_start = image_meta['FrameTimesStart']
-        image_frame_duration = image_meta['FrameDuration']
-        image_decay_correction = image_meta['DecayCorrectionFactor']
-        tracer_isotope = image_meta['TracerRadionuclide']
+        image_frame_start = self.img_meta['FrameTimesStart']
+        image_frame_duration = self.img_meta['FrameDuration']
+        image_decay_correction = self.img_meta['DecayCorrectionFactor']
+        tracer_isotope = self.img_meta['TracerRadionuclide']
         if self.verbose:
-            print(f"(ImageOps4D): Radio isotope is {tracer_isotope} with half life {half_life} s")
-        decay_constant = np.log(2) / half_life
+            print(f"(ImageOps4D): Radio isotope is {tracer_isotope} \
+                   with half life {self.half_life} s")
+        decay_constant = np.log(2) / self.half_life
 
         image_total_duration = np.sum(image_frame_duration)
         total_decay    = decay_constant * image_total_duration / \
             (1-np.exp(-1*decay_constant*image_total_duration)) / \
                 np.exp(-1*decay_constant*image_frame_start[0])
 
-        image_series_scaled = image_series[:,:,:] * image_frame_duration / image_decay_correction
+        image_series_scaled = self.image_series[:,:,:] \
+            * image_frame_duration \
+            / image_decay_correction
         image_series_sum_scaled = np.sum(image_series_scaled,axis=3)
         image_weighted_sum = image_series_sum_scaled * total_decay / image_total_duration
 
