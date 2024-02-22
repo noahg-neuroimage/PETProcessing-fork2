@@ -6,13 +6,12 @@ TODO:
       avoid division by zero.
 """
 
-__version__ = '0.1'
+__version__ = '0.2'
 
 import numba
 import numpy as np
 
 
-# TODO: Check if documentation is good.
 @numba.njit()
 def _line_fitting_make_rhs_matrix_from_xdata(xdata: np.ndarray) -> np.ndarray:
     """Generates the RHS matrix for linear least squares fitting
@@ -28,7 +27,6 @@ def _line_fitting_make_rhs_matrix_from_xdata(xdata: np.ndarray) -> np.ndarray:
     out_matrix[:, 0] = xdata
     return out_matrix
 
-# TODO: Check if documentation is good.
 @numba.njit()
 def fit_line_to_data_using_lls(xdata: np.ndarray, ydata: np.ndarray) -> np.ndarray:
     """Find the linear least squares solution given the x and y variables.
@@ -127,13 +125,17 @@ def patlak_analysis(input_tac_values: np.ndarray,
     """Performs Patlak-Gjedde analysis given the input TAC, region TAC, times and threshold.
     
     Args:
-        input_tac_values (np.ndarray):
-        region_tac_values (np.ndarray):
-        tac_times_in_minutes (np.ndarray):
-        t_thresh_in_minutes (np.ndarray):
+        input_tac_values (np.ndarray): Array of input TAC values
+        region_tac_values (np.ndarray): Array of ROI TAC values
+        tac_times_in_minutes (np.ndarray): Array of times in minutes.
+        t_thresh_in_minutes (np.ndarray): Threshold time in minutes. Line is fit for all values after the threshold.
 
     Returns:
         np.ndarray: Array containing :math:`(K_{1}, V_{0})` values.
+    
+    Notes:
+        * We assume that the input TAC and ROI TAC values are sampled at the same times.
+    
     """
     t_thresh = get_index_from_threshold(times_in_minutes=tac_times_in_minutes, t_thresh_in_minutes=t_thresh_in_minutes)
     
@@ -153,16 +155,17 @@ def logan_analysis(input_tac_values: np.ndarray,
     """Performs Logan analysis on given input TAC, regional TAC, times and threshold.
     
     Args:
-        input_tac_values (np.ndarray):
-        region_tac_values (np.ndarray):
-        tac_times_in_minutes (np.ndarray):
-        t_thresh_in_minutes (np.ndarray):
+        input_tac_values (np.ndarray): Array of input TAC values
+        region_tac_values (np.ndarray): Array of ROI TAC values
+        tac_times_in_minutes (np.ndarray): Array of times in minutes.
+        t_thresh_in_minutes (np.ndarray): Threshold time in minutes. Line is fit for all values after the threshold.
 
     Returns:
         np.ndarray: :math:`(V_{d}, \mathrm{Int})`.
         
     Notes:
-        The interpretation of the values depends on the underlying kinetic model.
+        * The interpretation of the values depends on the underlying kinetic model.
+        * We assume that the input TAC and ROI TAC values are sampled at the same times.
     """
     
     t_thresh = get_index_from_threshold(times_in_minutes=tac_times_in_minutes, t_thresh_in_minutes=t_thresh_in_minutes)
@@ -175,7 +178,6 @@ def logan_analysis(input_tac_values: np.ndarray,
     return logan_values
 
 
-# TODO: Add detailed documentation?
 @numba.njit()
 def alternative_logan_analysis(input_tac_values: np.ndarray,
                                region_tac_values: np.ndarray,
@@ -184,16 +186,17 @@ def alternative_logan_analysis(input_tac_values: np.ndarray,
     """Performs alternative logan analysis on given input TAC, regional TAC, times and threshold.
 
     Args:
-        input_tac_values (np.ndarray):
-        region_tac_values (np.ndarray):
-        tac_times_in_minutes (np.ndarray):
-        t_thresh_in_minutes (np.ndarray):
+        input_tac_values (np.ndarray): Array of input TAC values
+        region_tac_values (np.ndarray): Array of ROI TAC values
+        tac_times_in_minutes (np.ndarray): Array of times in minutes.
+        t_thresh_in_minutes (np.ndarray): Threshold time in minutes. Line is fit for all values after the threshold.
 
     Returns:
         np.ndarray: :math:`(V_{d}, \mathrm{Int})`.
 
     Notes:
-        The interpretation of the values depends on the underlying kinetic model.
+        * The interpretation of the values depends on the underlying kinetic model.
+        * We assume that the input TAC and ROI TAC values are sampled at the same times.
     """
     
     t_thresh = get_index_from_threshold(times_in_minutes=tac_times_in_minutes, t_thresh_in_minutes=t_thresh_in_minutes)
@@ -204,3 +207,4 @@ def alternative_logan_analysis(input_tac_values: np.ndarray,
     alt_logan_values = fit_line_to_data_using_lls(xdata=alt_logan_x[t_thresh:], ydata=alt_logan_y[t_thresh:])
     
     return alt_logan_values
+
