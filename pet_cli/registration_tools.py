@@ -5,6 +5,7 @@ import ants
 import nibabel
 from nibabel.filebasedimages import FileBasedHeader, FileBasedImage
 import numpy as np
+import h5py
 
 
 class ImageIO():
@@ -184,6 +185,23 @@ class ImageReg(ImageIO):
         return reoriented_image
 
 
+    def h5_parse(self, h5_file: str) -> np.ndarray:
+        """
+        Parse an h5 transformation file into an affine transform.
+
+        Args:
+            h5_path (str): Path to an h5 transformation file.
+
+        Returns:
+            xfm_mat (np.ndarray): Affine transform.
+        """
+        xfm_hdf5 = h5py.File(h5_file)
+        xfm_mat  = xfm_hdf5['TransformGroup']['1']['TransformParameters'][:] \
+                   .reshape((4,3))
+
+        return xfm_mat
+
+
     def rigid_registration_calc(self,
                            moving_image: nibabel.nifti1.Nifti1Image,
                            fixed_image: nibabel.nifti1.Nifti1Image
@@ -201,18 +219,25 @@ class ImageReg(ImageIO):
         moving_image_ants = ants.from_nibabel(moving_image)
         fixed_image_ants = ants.from_nibabel(fixed_image)
 
-        _mov_fix_ants,_fix_mov_ants,mov_fix_xfm,_fix_mov_xfm = ants.registration(
+        xfm_output = ants.registration(
             fixed_image_ants,
             moving_image_ants,
-            type_of_transform='rigid'
-        )
+            type_of_transform='DenseRigid',
+            write_composite_transform=True
+        ) # NB: this is a dictionary!
 
-        return mov_fix_xfm
+        # TODO: Figure out how best to do functions that output
+        # transformations vs transformed images
+        _mov_on_fix_ants = xfm_output['warpedmovout']
+        xfm_file = xfm_output['fwdtransforms']
+        out_mat = self.h5_parse(xfm_file)
+
+        return xfm_output
 
 
     def apply_registration(self,
-                      moving_image: nibabel.nifti1,
-                      fixed_image: nibabel.nifti1,
+                      moving_image: nibabel.nifti1.Nifti1Image,
+                      fixed_image: nibabel.nifti1.Nifti1Image,
                       xfm_matrix: np.ndarray) -> np.ndarray:
         """
         Register a moving image to a fixed image using a supplied transform.
@@ -233,7 +258,7 @@ class ImageReg(ImageIO):
             moving_image_ants,
             transformlist=xfm_matrix)
 
-        moving_on_fixed_image = ants.to_nibabel(mov_fix_ants)
+        moving_on_fixed_image = ants.images_to_matrix([mov_fix_ants])
 
         return moving_on_fixed_image
 
