@@ -249,11 +249,11 @@ class ImageReg(ImageIO):
 
         Args:
             moving_image (nibabel.nifti1.Nifti1Image): Image to be resampled onto fixed
-                                                       reference image.
+                reference image.
             fixed_image (nibabel.nifti1.Nifti1Image): Reference image onto which the 
-                                                      moving_image is registered.
+                moving_image is registered.
             xfm_matrix (nibabel.nifti1.Nifti1Image): Ants-style transformation matrix used
-                                                      to apply transformation.
+                to apply transformation.
 
         Returns:
             mov_on_fix (nibabel.nifti1.Nifti1Image): Moving image registered onto the fixed image.
@@ -335,3 +335,23 @@ class ImageOps4D(ImageIO):
         image_weighted_sum = image_series_sum_scaled * total_decay / image_total_duration
 
         return image_weighted_sum
+
+
+    def mask_img_to_vals(self,
+                         image: nibabel.nifti1.Nifti1Image,
+                         mask: nibabel.nifti1.Nifti1Image,
+                         values: list[int]) -> np.ndarray:
+        """
+        Masks an input image based on a value or list of values, and returns an array
+        with original image values in the regions based on values specified for the mask.
+
+        Args:
+            image (nibabel.nifti1.Nifti1Image): Image to mask specific regions.
+            mask (nibabel.nifti1.Nifti1Image): Segmentation mask
+            values (list[int]): List of values corresponding to regions to be masked.
+
+        Returns:
+            masked_image (np.ndarray): Masked image
+        """
+
+        return 1
