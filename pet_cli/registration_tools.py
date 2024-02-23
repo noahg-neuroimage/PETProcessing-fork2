@@ -202,65 +202,75 @@ class ImageReg(ImageIO):
         return xfm_mat
 
 
-    def rigid_registration_calc(self,
+    def rigid_registration(self,
                            moving_image: nibabel.nifti1.Nifti1Image,
                            fixed_image: nibabel.nifti1.Nifti1Image
-                           ) -> np.ndarray:
+                           ) -> tuple[nibabel.nifti1.Nifti1Image,str,np.ndarray]:
         """
-        Register two images and return the transformation matrix
+        Register two images under rigid transform assumptions and return the transformed 
+        image and parameters.
 
         Args:
             moving_image (nibabel.nifti1.Nifti1Image): Image to be registered
             fixed_image (nibabel.nifti1.Nifti1Image): Reference image to be registered to
 
         Returns:
-            rigid_transform (np.ndarray): Rigid transform array
+            mov_on_fix (nibabel.nifti1.Nifti1Image): Moving image on reference fixed image
+            xfm_file (str): Path to the composite h5 transform written to file. Reference
+                            for using h5 files can be found at:
+                            https://open.win.ox.ac.uk/pages/fsl/fslpy/fsl.transform.x5.html
+            out_mat (np.ndarray): affine transform matrix of parameters from moving to fixed.
         """
         moving_image_ants = ants.from_nibabel(moving_image)
         fixed_image_ants = ants.from_nibabel(fixed_image)
 
         xfm_output = ants.registration(
-            fixed_image_ants,
-            moving_image_ants,
+            moving=moving_image_ants,
+            fixed=fixed_image_ants,
             type_of_transform='DenseRigid',
             write_composite_transform=True
         ) # NB: this is a dictionary!
 
-        # TODO: Figure out how best to do functions that output
-        # transformations vs transformed images
-        _mov_on_fix_ants = xfm_output['warpedmovout']
+
+        mov_on_fix_ants = xfm_output['warpedmovout']
+        mov_on_fix = ants.to_nibabel(mov_on_fix_ants)
         xfm_file = xfm_output['fwdtransforms']
         out_mat = self.h5_parse(xfm_file)
 
-        return xfm_output
+        return mov_on_fix, xfm_file, out_mat
 
 
-    def apply_registration(self,
-                      moving_image: nibabel.nifti1.Nifti1Image,
-                      fixed_image: nibabel.nifti1.Nifti1Image,
-                      xfm_matrix: np.ndarray) -> np.ndarray:
+    def apply_xfm(self,
+                  moving_image: nibabel.nifti1.Nifti1Image,
+                  fixed_image: nibabel.nifti1.Nifti1Image,
+                  xfm_path: str) -> nibabel.nifti1.Nifti1Image:
         """
         Register a moving image to a fixed image using a supplied transform.
 
         Args:
-            moving_image (np.ndarray): Image to be resampled onto fixed reference image.
-            fixed_image (np.ndarray): Reference image onto which the moving_image is registered.
-            xfm_matrix (np.ndarray): Ants-style transformation matrix used to apply transformation.
+            moving_image (nibabel.nifti1.Nifti1Image): Image to be resampled onto fixed
+                                                       reference image.
+            fixed_image (nibabel.nifti1.Nifti1Image): Reference image onto which the 
+                                                      moving_image is registered.
+            xfm_matrix (nibabel.nifti1.Nifti1Image): Ants-style transformation matrix used
+                                                      to apply transformation.
 
         Returns:
-            moving_on_fixed_image (np.ndarray): Moving image registered onto the fixed image.
+            mov_on_fix (nibabel.nifti1.Nifti1Image): Moving image registered onto the fixed image.
         """
         moving_image_ants = ants.from_nibabel(moving_image)
         fixed_image_ants = ants.from_nibabel(fixed_image)
+        img_type = len(fixed_image.shape) - 1  # specific to ants: 4D image has type 3
 
-        mov_fix_ants = ants.apply_transforms(
-            fixed_image_ants,
-            moving_image_ants,
-            transformlist=xfm_matrix)
+        mov_on_fix_ants = ants.apply_transforms(
+            moving=moving_image_ants,
+            fixed=fixed_image_ants,
+            transformlist=xfm_path,
+            imagetype=img_type)
 
-        moving_on_fixed_image = ants.images_to_matrix([mov_fix_ants])
+        mov_on_fix = ants.to_nibabel(mov_on_fix_ants)
 
-        return moving_on_fixed_image
+        return mov_on_fix
 
 # Can we use numba?
 class ImageOps4D(ImageIO):
