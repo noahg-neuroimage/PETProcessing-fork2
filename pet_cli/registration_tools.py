@@ -3,6 +3,7 @@ Image utilities
 """
 import ants
 import nibabel
+from nibabel import processing
 from nibabel.filebasedimages import FileBasedHeader, FileBasedImage
 import numpy as np
 import h5py
@@ -150,7 +151,6 @@ class ImageIO():
                                      origin=origin,
                                      direction=direction)
         return image_ants
-
 
 
 class ImageReg(ImageIO):
@@ -338,7 +338,7 @@ class ImageOps4D(ImageIO):
 
 
     def mask_img_to_vals(self,
-                         image: nibabel.nifti1.Nifti1Image,
+                         image_series: nibabel.nifti1.Nifti1Image,
                          mask: nibabel.nifti1.Nifti1Image,
                          values: list[int]) -> np.ndarray:
         """
@@ -346,12 +346,27 @@ class ImageOps4D(ImageIO):
         with original image values in the regions based on values specified for the mask.
 
         Args:
-            image (nibabel.nifti1.Nifti1Image): Image to mask specific regions.
+            image_series (nibabel.nifti1.Nifti1Image): Image to mask specific regions.
             mask (nibabel.nifti1.Nifti1Image): Segmentation mask
             values (list[int]): List of values corresponding to regions to be masked.
 
         Returns:
             masked_image (np.ndarray): Masked image
         """
+        image_fdata = image_series.get_fdata()
+        num_frames = image_fdata.shape[3]
+        image_first_frame = image_fdata[:,:,:,0]
+        mask_res = processing.resample_from_to(from_img=mask,to_vox_map=(image_first_frame.shape,image_series.affine))
+        image_fdata = image_series.get_fdata()
+        mask_fdata = mask_res.get_fdata()
 
-        return 1
+
+        masked_image = np.zeros(image_fdata.shape)
+        for region in values:
+            mask_region = np.where(mask_fdata==region)
+            for frame in range(num_frames):
+                # TODO: Be smarter about this whole operation.
+                masked_image[:,:,:,frame] += image_fdata[mask_region,frame]
+
+
+        return masked_image
