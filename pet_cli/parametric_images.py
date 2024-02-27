@@ -65,33 +65,33 @@ def generate_parametric_images_with_graphical_method(pTAC_times: np.ndarray,
                                                      t_thresh_in_mins: float,
                                                      method_name: str) -> Tuple[np.ndarray, np.ndarray]:
     """
-        Generates parametric images for 4D-PET data using a specified graphical analysis method.
+    Generates parametric images for 4D-PET data using a specified graphical analysis method.
 
-        This function maps one of the predefined method names to the corresponding analysis function,
-        and then generates parametric images by applying it to the given 4D-PET data using the
-        `apply_linearized_analysis_to_all_voxels` function.
+    This function maps one of the predefined method names to the corresponding analysis function,
+    and then generates parametric images by applying it to the given 4D-PET data using the
+    `apply_linearized_analysis_to_all_voxels` function.
 
-        Args:
-            pTAC_times (np.ndarray): A 1D array representing the input TAC times in minutes.
+    Args:
+        pTAC_times (np.ndarray): A 1D array representing the input TAC times in minutes.
 
-            pTAC_vals (np.ndarray): A 1D array representing the input TAC values. This array should
-                                    be of the same length as `pTAC_times`.
+        pTAC_vals (np.ndarray): A 1D array representing the input TAC values. This array should
+                                be of the same length as `pTAC_times`.
 
-            tTAC_img (np.ndarray): A 4D array representing the 3D PET image over time.
-                                   The shape of this array should be (x, y, z, time).
+        tTAC_img (np.ndarray): A 4D array representing the 3D PET image over time.
+                               The shape of this array should be (x, y, z, time).
 
-            t_thresh_in_mins (float): A float representing the threshold time in minutes.
+        t_thresh_in_mins (float): A float representing the threshold time in minutes.
 
-            method_name (str): The analysis method's name to apply. Must be one of: 'patlak', 'logan', or 'alt_logan'.
+        method_name (str): The analysis method's name to apply. Must be one of: 'patlak', 'logan', or 'alt_logan'.
 
-        Returns:
-            Tuple[np.ndarray, np.ndarray]: A tuple of two 3D numpy arrays representing the calculated slope image
-                                           and the intercept image, each of the same spatial dimensions as
-                                           `tTAC_img`.
+    Returns:
+        Tuple[np.ndarray, np.ndarray]: A tuple of two 3D numpy arrays representing the calculated slope image
+                                       and the intercept image, each of the same spatial dimensions as
+                                       `tTAC_img`.
 
-        Raises:
-           ValueError: If the `method_name` is not one of the following: 'patlak', 'logan', 'alt_logan'.
-        """
+    Raises:
+       ValueError: If the `method_name` is not one of the following: 'patlak', 'logan', 'alt_logan'.
+    """
     
     if method_name == "patlak":
         analysis_func = graphical_analysis.patlak_analysis
