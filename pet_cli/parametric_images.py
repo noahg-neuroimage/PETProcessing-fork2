@@ -1,15 +1,14 @@
-import nibabel
 import numpy as np
 import numba
-from typing import Tuple
-
+from typing import Tuple, Callable
+from . import graphical_analysis
 
 @numba.njit()
 def generate_graphical_analysis_parametric_images_with_method(pTAC_times: np.ndarray,
                                                               pTAC_vals: np.ndarray,
                                                               tTAC_img: np.ndarray,
                                                               t_thresh_in_mins: float,
-                                                              analysis_func) -> Tuple[np.ndarray, np.ndarray]:
+                                                              analysis_func: Callable) -> Tuple[np.ndarray, np.ndarray]:
     """
     Generates parametric images for 4D-PET data using the provided analysis method.
 
@@ -57,3 +56,28 @@ def generate_graphical_analysis_parametric_images_with_method(pTAC_times: np.nda
                 intercept_img[i, j, k] = analysis_vals[1]
     
     return slope_img, intercept_img
+
+
+def generate_parametric_images_with_graphical_method(pTAC_times: np.ndarray,
+                                           pTAC_vals: np.ndarray,
+                                           tTAC_img: np.ndarray,
+                                           t_thresh_in_mins: float,
+                                           method_name: str) -> Tuple[np.ndarray, np.ndarray]:
+    
+    if method_name == "patlak":
+        analysis_func = graphical_analysis.patlak_analysis
+    elif method_name == "logan":
+        analysis_func = graphical_analysis.logan_analysis
+    elif method_name == "alt_logan":
+        analysis_func = graphical_analysis.alternative_logan_analysis
+    else:
+        raise ValueError("Invalid method_name! Must be either 'patlak' or 'logan' or 'alt-logan'")
+    
+    slope_img, intercept_img = generate_graphical_analysis_parametric_images_with_method(pTAC_times=pTAC_times,
+                                                                                         pTAC_vals=pTAC_vals,
+                                                                                         tTAC_img=tTAC_img,
+                                                                                         t_thresh_in_mins=t_thresh_in_mins,
+                                                                                         analysis_func=analysis_func)
+
+    return slope_img, intercept_img
+    
