@@ -7,7 +7,7 @@ from nibabel import processing
 from nibabel.filebasedimages import FileBasedHeader, FileBasedImage
 import numpy as np
 import h5py
-
+import json
 
 class ImageIO():
     """
@@ -132,8 +132,8 @@ class ImageIO():
 
 
     def extract_np_to_ants(self,
-                              image_array: np.ndarray,
-                              affine: np.ndarray) -> ants.ANTsImage:
+                           image_array: np.ndarray,
+                           affine: np.ndarray) -> ants.ANTsImage:
         """
         Wrapper to convert an image array into ants object.
         Note header info is lost as ANTs does not carry this metadata.
@@ -151,6 +151,16 @@ class ImageIO():
                                      origin=origin,
                                      direction=direction)
         return image_ants
+    
+
+    def read_ctab(self,
+                  ctab_file: str) -> dict:
+        """
+        Function to read a color table, translating region indices to region names, as a dictionary.
+        Assumes json format.
+        """
+        ctab_json = json.load(ctab_file)
+        return ctab_json
 
 
 class ImageReg(ImageIO):
@@ -278,14 +288,14 @@ class ImageOps4D(ImageIO):
     A class, extends ``ImageIO``, supplies tools to modify values of 4D images.
     
     Attributes:
-        img_meta (dict): Image metadata pulled from BIDS-compliant json file.
+        image_meta (dict): Image metadata pulled from BIDS-compliant json file.
         half_life (float): Half life of radioisotope to be used for computations.
                            Default value 0.
     
     See Also:
         :class:`ImageIO`
     """
-    def __init__(self, image: ImageIO, img_meta: str, half_life: float=0):
+    def __init__(self, image: ImageIO, image_meta: str, out_dir: str, seg_mask: ImageIO, half_life: float=0):
         """
         Constructor for ImageOps4D
 
@@ -295,9 +305,11 @@ class ImageOps4D(ImageIO):
         file_path = image.file_path
         verbose = image.verbose
         super().__init__(file_path, verbose)
-        self.img_meta = img_meta
+        self.image_meta = image_meta
         self.half_life = half_life
         self.image_series = self.load_nii().get_fdata()
+        self.out_dir = out_dir
+        self.seg_mask = seg_mask
 
     def weighted_series_sum(self) -> np.ndarray:
         """
@@ -314,10 +326,10 @@ class ImageOps4D(ImageIO):
 
         Credit to Avi Snyder who wrote the original version of this code in C.
         """
-        image_frame_start = self.img_meta['FrameTimesStart']
-        image_frame_duration = self.img_meta['FrameDuration']
-        image_decay_correction = self.img_meta['DecayCorrectionFactor']
-        tracer_isotope = self.img_meta['TracerRadionuclide']
+        image_frame_start = self.image_meta['FrameTimesStart']
+        image_frame_duration = self.image_meta['FrameDuration']
+        image_decay_correction = self.image_meta['DecayCorrectionFactor']
+        tracer_isotope = self.image_meta['TracerRadionuclide']
         if self.verbose:
             print(f"(ImageOps4D): Radio isotope is {tracer_isotope} \
                    with half life {self.half_life} s")
@@ -338,7 +350,6 @@ class ImageOps4D(ImageIO):
 
 
     def mask_img_to_vals(self,
-                         mask: nibabel.nifti1.Nifti1Image,
                          values: list[int]) -> np.ndarray:
         """
         Masks an input image based on a value or list of values, and returns an array
@@ -352,13 +363,14 @@ class ImageOps4D(ImageIO):
         Returns:
             masked_image (np.ndarray): Masked image
         """
-        image_fdata = self.image_series.get_fdata()
+        image_fdata = self.image_series
+        image_nibabel = self.load_nii() # TODO: fix this garbage
         image_first_frame = image_fdata[:,:,:,0]
-        mask_res = processing.resample_from_to(from_img=mask,
+        mask_nibabel = self.seg_mask.load_nii()
+        mask_res = processing.resample_from_to(from_img=mask_nibabel,
                                                to_vox_map=(image_first_frame.shape,
-                                                           self.image_series.affine),
+                                                           image_nibabel.affine),
                                                order=0)
-        image_fdata = self.image_series.get_fdata()
         mask_fdata = mask_res.get_fdata()
 
         masked_image = np.zeros(image_fdata.shape)
@@ -370,3 +382,27 @@ class ImageOps4D(ImageIO):
                             masked_image[x,y,z,:] += image_fdata[x,y,z,:]
 
         return masked_image
+
+
+    def write_tacs(self,ctab):
+        """
+        Function to write Tissue Activity Curves for each region, given a segmentation,
+        4D PET image, and color table. Computes the average of the PET image within each
+        region. Writes a JSON for each region with region name, frame start time, and mean 
+        value within region.
+
+        Args:
+
+        Returns:
+        """
+        regions_list = ctab['data']
+        for region_pair in regions_list:
+            region_index, region_name = region_pair
+            region_json = {'region_name': region_name}
+            region_series = self.mask_img_to_vals([region_index])
+            series_means = np.mean(region_series,axis=(0,1,2),where=region_series>0).tolist()
+            region_json['frame_start_time'] = self.image_meta['FrameTimesStart']
+            region_json['activity'] = series_means
+            with open(f'{self.out_dir}/tacs/{region_name}-tac.json','w',encoding='ascii') as out_file:
+                json.dump(obj=region_json,fp=out_file,indent=4)
+        return 0
