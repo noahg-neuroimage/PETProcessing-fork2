@@ -306,7 +306,7 @@ class ImageOps4D(ImageIO):
         Args:
             image_series (np.ndarray): Input image to be summed.
             image_meta (dict): Metadata json file following BIDS standard, from which
-                                     we collect frame timing and decay correction info.
+                               we collect frame timing and decay correction info.
             half_life (float): Half life of the PET radioisotope in seconds.
 
         Returns:
@@ -338,7 +338,6 @@ class ImageOps4D(ImageIO):
 
 
     def mask_img_to_vals(self,
-                         image_series: nibabel.nifti1.Nifti1Image,
                          mask: nibabel.nifti1.Nifti1Image,
                          values: list[int]) -> np.ndarray:
         """
@@ -353,20 +352,21 @@ class ImageOps4D(ImageIO):
         Returns:
             masked_image (np.ndarray): Masked image
         """
-        image_fdata = image_series.get_fdata()
-        num_frames = image_fdata.shape[3]
+        image_fdata = self.image_series.get_fdata()
         image_first_frame = image_fdata[:,:,:,0]
-        mask_res = processing.resample_from_to(from_img=mask,to_vox_map=(image_first_frame.shape,image_series.affine))
-        image_fdata = image_series.get_fdata()
+        mask_res = processing.resample_from_to(from_img=mask,
+                                               to_vox_map=(image_first_frame.shape,
+                                                           self.image_series.affine),
+                                               order=0)
+        image_fdata = self.image_series.get_fdata()
         mask_fdata = mask_res.get_fdata()
-
 
         masked_image = np.zeros(image_fdata.shape)
         for region in values:
-            mask_region = np.where(mask_fdata==region)
-            for frame in range(num_frames):
-                # TODO: Be smarter about this whole operation.
-                masked_image[:,:,:,frame] += image_fdata[mask_region,frame]
-
+            for x in range(image_fdata.shape[0]):
+                for y in range(image_fdata.shape[1]):
+                    for z in range(image_fdata.shape[2]):
+                        if mask_fdata[x,y,z]==region:
+                            masked_image[x,y,z,:] += image_fdata[x,y,z,:]
 
         return masked_image
