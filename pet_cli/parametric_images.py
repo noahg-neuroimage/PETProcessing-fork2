@@ -3,12 +3,13 @@ import numba
 from typing import Tuple, Callable
 from . import graphical_analysis
 
+
 @numba.njit()
-def generate_graphical_analysis_parametric_images_with_method(pTAC_times: np.ndarray,
-                                                              pTAC_vals: np.ndarray,
-                                                              tTAC_img: np.ndarray,
-                                                              t_thresh_in_mins: float,
-                                                              analysis_func: Callable) -> Tuple[np.ndarray, np.ndarray]:
+def apply_linearized_analysis_to_all_voxels(pTAC_times: np.ndarray,
+                                            pTAC_vals: np.ndarray,
+                                            tTAC_img: np.ndarray,
+                                            t_thresh_in_mins: float,
+                                            analysis_func: Callable) -> Tuple[np.ndarray, np.ndarray]:
     """
     Generates parametric images for 4D-PET data using the provided analysis method.
 
@@ -59,16 +60,16 @@ def generate_graphical_analysis_parametric_images_with_method(pTAC_times: np.nda
 
 
 def generate_parametric_images_with_graphical_method(pTAC_times: np.ndarray,
-                                           pTAC_vals: np.ndarray,
-                                           tTAC_img: np.ndarray,
-                                           t_thresh_in_mins: float,
-                                           method_name: str) -> Tuple[np.ndarray, np.ndarray]:
+                                                     pTAC_vals: np.ndarray,
+                                                     tTAC_img: np.ndarray,
+                                                     t_thresh_in_mins: float,
+                                                     method_name: str) -> Tuple[np.ndarray, np.ndarray]:
     """
         Generates parametric images for 4D-PET data using a specified graphical analysis method.
 
         This function maps one of the predefined method names to the corresponding analysis function,
         and then generates parametric images by applying it to the given 4D-PET data using the
-        `generate_graphical_analysis_parametric_images_with_method` function.
+        `apply_linearized_analysis_to_all_voxels` function.
 
         Args:
             pTAC_times (np.ndarray): A 1D array representing the input TAC times in minutes.
@@ -101,11 +102,9 @@ def generate_parametric_images_with_graphical_method(pTAC_times: np.ndarray,
     else:
         raise ValueError("Invalid method_name! Must be either 'patlak' or 'logan' or 'alt-logan'")
     
-    slope_img, intercept_img = generate_graphical_analysis_parametric_images_with_method(pTAC_times=pTAC_times,
-                                                                                         pTAC_vals=pTAC_vals,
-                                                                                         tTAC_img=tTAC_img,
-                                                                                         t_thresh_in_mins=t_thresh_in_mins,
-                                                                                         analysis_func=analysis_func)
-
-    return slope_img, intercept_img
+    slope_img, intercept_img = apply_linearized_analysis_to_all_voxels(pTAC_times=pTAC_times, pTAC_vals=pTAC_vals,
+                                                                       tTAC_img=tTAC_img,
+                                                                       t_thresh_in_mins=t_thresh_in_mins,
+                                                                       analysis_func=analysis_func)
     
+    return slope_img, intercept_img
