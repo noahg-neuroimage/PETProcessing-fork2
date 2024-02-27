@@ -108,3 +108,25 @@ def save_parametric_image_from_4DPET_using_patlak(pet_file: str,
     nibabel.save(img=parametric_image, filename=f"{out_file}.nii.gz")
     
     return None
+
+
+@numba.njit()
+def generate_graphical_analysis_parametric_images_with_method(pTAC_times: np.ndarray,
+                                                              pTAC_vals: np.ndarray,
+                                                              tTAC_img: np.ndarray,
+                                                              t_thresh_in_mins: float,
+                                                              analysis_func) -> Tuple[np.ndarray, np.ndarray]:
+    img_dims = tTAC_img.shape
+    
+    slope_img = np.zeros((img_dims[0], img_dims[1], img_dims[2]), float)
+    intercept_img = np.zeros_like(slope_img)
+    
+    for i in range(0, img_dims[0], 1):
+        for j in range(0, img_dims[1], 1):
+            for k in range(0, img_dims[2], 1):
+                analysis_vals = analysis_func(input_tac_values=pTAC_vals, region_tac_values=tTAC_img[i, j, k, :],
+                                              tac_times_in_minutes=pTAC_times, t_thresh_in_minutes=t_thresh_in_mins)
+                slope_img[i, j, k] = analysis_vals[0]
+                intercept_img[i, j, k] = analysis_vals[1]
+    
+    return slope_img, intercept_img
