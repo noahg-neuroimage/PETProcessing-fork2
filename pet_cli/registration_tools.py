@@ -1,13 +1,13 @@
 """
 Image utilities
 """
+import json
 import ants
 import nibabel
 from nibabel import processing
 from nibabel.filebasedimages import FileBasedHeader, FileBasedImage
 import numpy as np
 import h5py
-import json
 
 class ImageIO():
     """
@@ -151,7 +151,7 @@ class ImageIO():
                                      origin=origin,
                                      direction=direction)
         return image_ants
-    
+
 
     def read_ctab(self,
                   ctab_file: str) -> dict:
@@ -295,7 +295,12 @@ class ImageOps4D(ImageIO):
     See Also:
         :class:`ImageIO`
     """
-    def __init__(self, image: ImageIO, image_meta: str, out_dir: str, seg_mask: ImageIO, half_life: float=0):
+    def __init__(self,
+                 image: ImageIO,
+                 image_meta: str,
+                 out_dir: str,
+                 seg_image: nibabel.nifti1.Nifti1Image,
+                 half_life: float=0):
         """
         Constructor for ImageOps4D
 
@@ -307,9 +312,11 @@ class ImageOps4D(ImageIO):
         super().__init__(file_path, verbose)
         self.image_meta = image_meta
         self.half_life = half_life
-        self.image_series = self.load_nii().get_fdata()
+        self.pet_image = self.load_nii()
+        self.image_series = self.pet_image.get_fdata()
+        self.pet_upsampled = None
         self.out_dir = out_dir
-        self.seg_mask = seg_mask
+        self.seg_image = seg_image
 
     def weighted_series_sum(self) -> np.ndarray:
         """
@@ -356,21 +363,19 @@ class ImageOps4D(ImageIO):
         with original image values in the regions based on values specified for the mask.
 
         Args:
-            image_series (nibabel.nifti1.Nifti1Image): Image to mask specific regions.
-            mask (nibabel.nifti1.Nifti1Image): Segmentation mask
             values (list[int]): List of values corresponding to regions to be masked.
 
         Returns:
             masked_image (np.ndarray): Masked image
         """
+
+
         image_fdata = self.image_series
-        image_nibabel = self.load_nii() # TODO: fix this garbage
         image_first_frame = image_fdata[:,:,:,0]
         num_frames = image_fdata.shape[3]
-        seg_nibabel = self.seg_mask.load_nii()
-        seg_resampled = processing.resample_from_to(from_img=seg_nibabel,
+        seg_resampled = processing.resample_from_to(from_img=self.seg_image,
                                                to_vox_map=(image_first_frame.shape,
-                                                           image_nibabel.affine),
+                                                           self.pet_image.affine),
                                                order=0)
         seg_fdata = seg_resampled.get_fdata()
 
@@ -400,6 +405,7 @@ class ImageOps4D(ImageIO):
             series_means = self.mask_img_to_vals([region_index]).tolist()
             region_json['frame_start_time'] = self.image_meta['FrameTimesStart']
             region_json['activity'] = series_means
-            with open(f'{self.out_dir}/tacs/{region_name}-tac.json','w',encoding='ascii') as out_file:
+            with open(f'{self.out_dir}/tacs/{region_name}-tac.json',
+                      'w',encoding='ascii') as out_file:
                 json.dump(obj=region_json,fp=out_file,indent=4)
         return 0
