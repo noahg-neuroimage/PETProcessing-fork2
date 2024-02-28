@@ -366,22 +366,20 @@ class ImageOps4D(ImageIO):
         image_fdata = self.image_series
         image_nibabel = self.load_nii() # TODO: fix this garbage
         image_first_frame = image_fdata[:,:,:,0]
-        mask_nibabel = self.seg_mask.load_nii()
-        mask_res = processing.resample_from_to(from_img=mask_nibabel,
+        num_frames = image_fdata.shape[3]
+        seg_nibabel = self.seg_mask.load_nii()
+        seg_resampled = processing.resample_from_to(from_img=seg_nibabel,
                                                to_vox_map=(image_first_frame.shape,
                                                            image_nibabel.affine),
                                                order=0)
-        mask_fdata = mask_res.get_fdata()
+        seg_fdata = seg_resampled.get_fdata()
 
-        masked_image = np.zeros(image_fdata.shape)
+        #masked_image = np.zeros(image_fdata.shape)
         for region in values:
-            for x in range(image_fdata.shape[0]):
-                for y in range(image_fdata.shape[1]):
-                    for z in range(image_fdata.shape[2]):
-                        if mask_fdata[x,y,z]==region:
-                            masked_image[x,y,z,:] += image_fdata[x,y,z,:]
-
-        return masked_image
+            masked_voxels = seg_fdata==region
+            masked_image = image_fdata[masked_voxels].reshape((-1,num_frames))
+            tac_out = np.mean(masked_image,axis=0)
+        return tac_out
 
 
     def write_tacs(self,ctab):
@@ -399,8 +397,7 @@ class ImageOps4D(ImageIO):
         for region_pair in regions_list:
             region_index, region_name = region_pair
             region_json = {'region_name': region_name}
-            region_series = self.mask_img_to_vals([region_index])
-            series_means = np.mean(region_series,axis=(0,1,2),where=region_series>0).tolist()
+            series_means = self.mask_img_to_vals([region_index]).tolist()
             region_json['frame_start_time'] = self.image_meta['FrameTimesStart']
             region_json['activity'] = series_means
             with open(f'{self.out_dir}/tacs/{region_name}-tac.json','w',encoding='ascii') as out_file:
