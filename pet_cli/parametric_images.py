@@ -167,6 +167,34 @@ def _safe_load_4dpet_nifty(filename: str) -> Nifti1Image:
 
 
 class GraphicalAnalysisParametricImage:
+    """
+    Class for graphical analysis of PET parametric images.
+
+    It provides methods to run graphical analysis, calculate properties of the resulting images, and save the results to
+     files.
+
+    Attributes:
+        input_tac_path (str): Absolute path to the input Time-Activity Curve (TAC) file.
+        pet4D_img_path (str): Absolute path to the 4D PET image file.
+        output_directory (str): Absolute path to the output directory.
+        output_filename_prefix (str): Prefix of the output file names.
+        analysis_props (dict): Dictionary of properties of the graphical analysis.
+        slope_image (np.ndarray): The slope image resulting from the graphical analysis, initialized to None.
+        intercept_image (np.ndarray): The intercept image resulting from the graphical analysis, initialized to None.
+
+    Methods:
+        init_analysis_props: Initializes the analysis properties dictionary.
+        run_analysis: Runs the graphical analysis using a provided method and threshold, updating the slope image and intercept image.
+        save_analysis: Saves the resulting images and analysis properties to files in the output directory.
+        calculate_analysis_properties: Calculates the properties of the resulting images and the analysis.
+        calculate_fit_properties: Updates the analysis properties related to the fit.
+        calculate_parametric_images_properties: Updates the analysis properties related to the parametric images.
+        calculate_slope_image_properties: Calculates and updates the analysis properties related to the slope image.
+        calculate_intercept_image_properties: Calculates and updates the analysis properties related to the intercept image.
+        calculate_parametric_images: Updates the slope and intercept images performing the graphical analysis.
+        save_parametric_images: Saves the slope and intercept images in '.nii.gz' format to the output directory.
+        save_analysis_properties: Saves the analysis properties to a '.json' file in the output directory.
+    """
     def __init__(self,
                  input_tac_path: str,
                  pet4D_img_path: str,
