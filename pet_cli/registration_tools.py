@@ -206,9 +206,10 @@ class ImageReg(ImageIO):
             xfm_mat (np.ndarray): Affine transform.
         """
         xfm_hdf5 = h5py.File(h5_file)
-        xfm_mat  = xfm_hdf5['TransformGroup']['1']['TransformParameters'][:] \
+        xfm_mat  = np.empty((4,4))
+        xfm_mat[:3,:3]  = xfm_hdf5['TransformGroup']['1']['TransformParameters'][:] \
                    .reshape((4,3))
-
+        xfm_mat[:,3] = [0,0,0,1]
         return xfm_mat
 
 
@@ -317,6 +318,8 @@ class ImageOps4D(ImageIO):
         self.pet_upsampled = None
         self.out_dir = out_dir
         self.seg_image = seg_image
+        self.seg_resampled = None
+
 
     def weighted_series_sum(self) -> np.ndarray:
         """
@@ -356,14 +359,38 @@ class ImageOps4D(ImageIO):
         return image_weighted_sum
 
 
+    def motion_correction(self) -> np.ndarray:
+        """
+        Motion correct PET series
+        """
+        pet_nibabel = self.pet_image
+        pet_sumimg = self.weighted_series_sum()
+        pet_ants = ants.from_nibabel(pet_nibabel)
+        pet_sumimg_ants = ants.from_numpy(pet_sumimg,
+            origin=pet_ants.origin,
+            spacing=pet_ants.spacing,
+             direction=pet_ants.direction)
+        pet_moco_ants_dict = ants.registration.interface.motion_correction(pet_ants,
+            pet_sumimg_ants,
+            type_of_transform='Rigid')
+        pet_moco_ants = pet_moco_ants_dict['motion_corrected']
+        pet_moco_pars = pet_moco_ants_dict['motion_parameters']
+        pet_moco_np = pet_moco_ants.to_numpy()
+        return pet_moco_np, pet_moco_pars
+
+
     def mask_img_to_vals(self,
-                         values: list[int]) -> np.ndarray:
+                         values: list[int],
+                         resample_seg: bool=False) -> np.ndarray:
         """
         Masks an input image based on a value or list of values, and returns an array
         with original image values in the regions based on values specified for the mask.
 
         Args:
             values (list[int]): List of values corresponding to regions to be masked.
+            resample_seg (bool): Determines whether or not to resample the segmentation.
+                                 Set to True when the PET input (registered to MPR) and
+                                 segmentation are different resolutions.
 
         Returns:
             masked_image (np.ndarray): Masked image
@@ -371,17 +398,18 @@ class ImageOps4D(ImageIO):
 
 
         image_fdata = self.image_series
-        image_first_frame = image_fdata[:,:,:,0]
         num_frames = image_fdata.shape[3]
-        seg_resampled = processing.resample_from_to(from_img=self.seg_image,
-                                               to_vox_map=(image_first_frame.shape,
-                                                           self.pet_image.affine),
-                                               order=0)
-        seg_fdata = seg_resampled.get_fdata()
-
-        #masked_image = np.zeros(image_fdata.shape)
+        if resample_seg:
+            image_first_frame = image_fdata[:,:,:,0]
+            seg_resampled = processing.resample_from_to(from_img=self.seg_image,
+                                to_vox_map=(image_first_frame.shape,
+                                self.pet_image.affine),
+                                order=0)
+            self.seg_resampled = seg_resampled.get_fdata()
+        else:
+            self.seg_resampled = self.seg_image.get_fdata()
         for region in values:
-            masked_voxels = seg_fdata==region
+            masked_voxels = self.seg_resampled==region
             masked_image = image_fdata[masked_voxels].reshape((-1,num_frames))
             tac_out = np.mean(masked_image,axis=0)
         return tac_out
