@@ -110,21 +110,23 @@ def generate_parametric_images_with_graphical_method(pTAC_times: np.ndarray,
     
     return slope_img, intercept_img
 
-def _safe_load_tac(filename: str) -> np.ndarray|None:
+
+def _safe_load_tac(filename: str) -> np.ndarray:
     try:
         return np.array(np.loadtxt(filename).T, dtype=float, order='C')
     except Exception as e:
         print(f"Couldn't read file {filename}. Error: {e}")
-        return None
+        raise e
+    
     
 def _safe_load_4dpet(filename: str) -> nibabel.Nifti1Image:
     try:
         return nibabel.load(filename=filename)
     except Exception as e:
         print(f"Couldn't read file {filename}. Error: {e}")
-        return None
-    
-    
+        raise e
+
+
 class GraphicalAnalysisParametricImage:
     def __init__(self,
                  input_tac_path: str,
@@ -141,39 +143,54 @@ class GraphicalAnalysisParametricImage:
     
     def init_analysis_props(self):
         props = {
-            'FilePathPTAC': self.input_tac_path,
-            'FilePathTTAC': self.pet4D_img_path,
-            'ImageDimensions': None,
-            'StartFrameTime': None,
-            'EndFrameTime': None,
-            'ThresholdTime': None,
-            'NumberOfPointsFit': None,
-            'SlopeMaximum': None,
-            'SlopeMinimum': None,
-            'SlopeMean': None,
-            'SlopeVariance': None,
-            'InterceptMaximum': None,
-            'InterceptMinimum': None,
-            'InterceptMean': None,
+            'FilePathPTAC'     : self.input_tac_path, 'FilePathTTAC': self.pet4D_img_path, 'MethodName': None,
+            'ImageDimensions'  : None, 'StartFrameTime': None, 'EndFrameTime': None, 'ThresholdTime': None,
+            'NumberOfPointsFit': None, 'SlopeMaximum': None, 'SlopeMinimum': None, 'SlopeMean': None,
+            'SlopeVariance'    : None, 'InterceptMaximum': None, 'InterceptMinimum': None, 'InterceptMean': None,
             'InterceptVariance': None,
             }
         return props
     
     def run_analysis(self, method_name: str, t_thresh_in_mins: float):
-        self.calculate_parametric_image(method_name=method_name,
-                                        t_thresh_in_mins=t_thresh_in_mins)
+        self.calculate_parametric_images(method_name=method_name, t_thresh_in_mins=t_thresh_in_mins)
+        self.calculate_analysis_properties(method_name=method_name, t_thresh_in_mins=t_thresh_in_mins)
+    
+    def calculate_analysis_properties(self, method_name: str, t_thresh_in_mins: float):
+        self.calculate_parametric_images_properties()
+        self.calculate_fit_properties(method_name=method_name, t_thresh_in_mins=t_thresh_in_mins)
+    
+    def calculate_fit_properties(self, method_name: str, t_thresh_in_mins: float):
+        self.analysis_props['ThresholdTime'] = t_thresh_in_mins
+        self.analysis_props['MethodName'] = method_name
         
-        pass
+        p_tac_times, _ = _safe_load_tac(filename=self.input_tac_path)
+        t_thresh_index = graphical_analysis.get_index_from_threshold(times_in_minutes=p_tac_times,
+                                                                     t_thresh_in_minutes=t_thresh_in_mins)
+        self.analysis_props['StartFrameTime'] = p_tac_times[t_thresh_index]
+        self.analysis_props['EndFrameTime'] = p_tac_times[-1]
+        self.analysis_props['NumberOfPointsFit'] = len(p_tac_times[t_thresh_index:])
     
+    def calculate_parametric_images_properties(self):
+        self.analysis_props['ImageDimensions'] = self.slope_image.shape
+        self.calculate_slope_image_properties()
+        self.calculate_intercept_image_properties()
     
+    def calculate_slope_image_properties(self):
+        self.analysis_props['SlopeMaximum'] = np.max(self.slope_image)
+        self.analysis_props['SlopeMinimum'] = np.min(self.slope_image)
+        self.analysis_props['SlopeMean'] = np.mean(self.slope_image)
+        self.analysis_props['SlopeVariance'] = np.var(self.slope_image)
+        
+    def calculate_intercept_image_properties(self):
+        self.analysis_props['InterceptMaximum'] = np.max(self.intercept_image)
+        self.analysis_props['InterceptMinimum'] = np.min(self.intercept_image)
+        self.analysis_props['InterceptMean'] = np.mean(self.intercept_image)
+        self.analysis_props['InterceptVariance'] = np.var(self.intercept_image)
     
-    def calculate_parametric_image(self, method_name: str, t_thresh_in_mins: float):
+    def calculate_parametric_images(self, method_name: str, t_thresh_in_mins: float):
         p_tac_times, p_tac_vals = _safe_load_tac(self.input_tac_path)
         nifty_img = _safe_load_4dpet(filename=self.pet4D_img_path)
         
-        self.slope_img, self.intercept_img = generate_parametric_images_with_graphical_method(pTAC_times=p_tac_times,
-                                                                                              pTAC_vals=p_tac_vals,
-                                                                                              tTAC_img=nifty_img.get_fdata(),
-                                                                                              t_thresh_in_mins=t_thresh_in_mins,
-                                                                                              method_name=method_name)
-        
+        self.slope_image, self.intercept_image = generate_parametric_images_with_graphical_method(
+            pTAC_times=p_tac_times, pTAC_vals=p_tac_vals, tTAC_img=nifty_img.get_fdata(),
+            t_thresh_in_mins=t_thresh_in_mins, method_name=method_name)
