@@ -168,8 +168,7 @@ def _safe_load_4dpet_nifty(filename: str) -> Nifti1Image:
         ValueError: If the file does not have a '.nii' or '.nii.gz' extension.
         Exception:  If an error occurred while loading the NIfTI file.
     """
-    file_extension = Path(filename).suffix
-    if file_extension not in ['.nii', '.nii.gz']:
+    if not filename.endswith(('.nii', '.nii.gz')):
         raise ValueError("Invalid file extension. Only '.nii' and '.nii.gz' are supported.")
     
     try:
