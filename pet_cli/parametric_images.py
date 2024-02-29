@@ -7,6 +7,7 @@ from nibabel import Nifti1Image
 from . import graphical_analysis
 import os
 from pathlib import Path
+import warnings
 
 @numba.njit()
 def apply_linearized_analysis_to_all_voxels(pTAC_times: np.ndarray,
@@ -306,9 +307,42 @@ class GraphicalAnalysisParametricImage:
     
     # TODO: Come up with a smarter way to get the PET data in the correct units. I would prefer that 4DPET is saved in the right units already.
     def calculate_parametric_images(self, method_name: str, t_thresh_in_mins: float):
+        """
+        Performs graphical analysis of PET parametric images and generates/updates the slope and intercept images.
+        
+        Warning:
+            This method divides the PET image values by 37000 for unit conversion to Bq/cc. Be aware of this if you are
+            using this function with PET images that are in other units!
+
+        This method uses the given graphical analysis method and threshold to perform the analysis given the input Time
+        Activity Curve (TAC) and 4D PET image, and updates the slope and intercept images accordingly. PET images are
+        loaded from the specified path and divided by 37000 to convert the values to Bq/cc. Then, the parametric images
+        are calculated using the specified graphical method and threshold time by explicitly analyzing each voxel in
+        the 4D PET image.
+
+        Args:
+            method_name (str): The name of the graphical analysis method to be used.
+            t_thresh_in_mins (float): The threshold time in minutes.
+
+        Returns:
+            None
+
+        Raises:
+            Exception: An error occurred during the graphical analysis. This could be due to an invalid method name or
+            incorrect inputs to the method.
+            
+        See Also:
+            * :func:`generate_parametric_images_with_graphical_method`
+            * :func:`pet_cli.graphical_analysis.patlak_analysis`
+            * :func:`pet_cli.graphical_analysis.logan_analysis`
+            * :func:`pet_cli.graphical_analysis.alternative_logan_analysis`
+            
+        Notes:
+            The conversion to Bq/cc is hard-coded, and could be changed in later versions of the module.
+        """
         p_tac_times, p_tac_vals = _safe_load_tac(self.input_tac_path)
         nifty_pet4d_img = _safe_load_4dpet_nifty(filename=self.pet4D_img_path)
-        
+        warnings.warn("PET image values are being divided by 37000 for unit conversion to Bq/cc.", UserWarning)
         self.slope_image, self.intercept_image = generate_parametric_images_with_graphical_method(
             pTAC_times=p_tac_times, pTAC_vals=p_tac_vals, tTAC_img=nifty_pet4d_img.get_fdata()/37000.,
             t_thresh_in_mins=t_thresh_in_mins, method_name=method_name)
