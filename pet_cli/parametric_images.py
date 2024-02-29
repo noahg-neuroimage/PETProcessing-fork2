@@ -127,6 +127,7 @@ def _safe_load_4dpet(filename: str) -> nibabel.Nifti1Image:
         raise e
 
 
+
 class GraphicalAnalysisParametricImage:
     def __init__(self,
                  input_tac_path: str,
@@ -189,8 +190,18 @@ class GraphicalAnalysisParametricImage:
     
     def calculate_parametric_images(self, method_name: str, t_thresh_in_mins: float):
         p_tac_times, p_tac_vals = _safe_load_tac(self.input_tac_path)
-        nifty_img = _safe_load_4dpet(filename=self.pet4D_img_path)
+        nifty_pet4d_img = _safe_load_4dpet(filename=self.pet4D_img_path)
         
         self.slope_image, self.intercept_image = generate_parametric_images_with_graphical_method(
-            pTAC_times=p_tac_times, pTAC_vals=p_tac_vals, tTAC_img=nifty_img.get_fdata(),
+            pTAC_times=p_tac_times, pTAC_vals=p_tac_vals, tTAC_img=nifty_pet4d_img.get_fdata(),
             t_thresh_in_mins=t_thresh_in_mins, method_name=method_name)
+
+def save_parametric_images(self):
+    file_name_prefix = f"{self.output_directory}/{self.output_filename_prefix}-parametric-{self.method_name}"
+    nifty_img_affine = _safe_load_4dpet(filename=self.pet4D_img_path).affine()
+    
+    tmp_slope_img = nibabel.Nifti1Image(dataobj=self.slope_image, affine=nifty_img_affine)
+    nibabel.save(tmp_slope_img, f"{file_name_prefix}-slope.nii.gz")
+    
+    tmp_intercept_img = nibabel.Nifti1Image(dataobj=self.intercept_image, affine=nifty_img_affine)
+    nibabel.save(tmp_intercept_img, f"{file_name_prefix}-intercept.nii")
