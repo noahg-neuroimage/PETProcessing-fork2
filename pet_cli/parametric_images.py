@@ -156,6 +156,12 @@ class GraphicalAnalysisParametricImage:
     def run_analysis(self, method_name: str, t_thresh_in_mins: float):
         self.calculate_parametric_images(method_name=method_name, t_thresh_in_mins=t_thresh_in_mins)
         self.calculate_analysis_properties(method_name=method_name, t_thresh_in_mins=t_thresh_in_mins)
+        
+    def save_analysis(self):
+        if self.slope_image is None:
+            raise RuntimeError("'run_analysis' method must be called before 'save_analysis'.")
+        self.save_parametric_images()
+        self.save_analysis_properties()
     
     def calculate_analysis_properties(self, method_name: str, t_thresh_in_mins: float):
         self.calculate_parametric_images_properties()
