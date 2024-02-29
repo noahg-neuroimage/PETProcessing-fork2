@@ -1,9 +1,11 @@
 import nibabel
 import numpy as np
 import numba
+import json
 from typing import Tuple, Callable
+from nibabel import Nifti1Image
 from . import graphical_analysis
-
+import os
 
 @numba.njit()
 def apply_linearized_analysis_to_all_voxels(pTAC_times: np.ndarray,
@@ -119,13 +121,12 @@ def _safe_load_tac(filename: str) -> np.ndarray:
         raise e
     
     
-def _safe_load_4dpet(filename: str) -> nibabel.Nifti1Image:
+def _safe_load_4dpet(filename: str) -> Nifti1Image:
     try:
         return nibabel.load(filename=filename)
     except Exception as e:
         print(f"Couldn't read file {filename}. Error: {e}")
         raise e
-
 
 
 class GraphicalAnalysisParametricImage:
@@ -134,9 +135,9 @@ class GraphicalAnalysisParametricImage:
                  pet4D_img_path: str,
                  output_directory: str,
                  output_filename_prefix: str) -> None:
-        self.input_tac_path = input_tac_path
-        self.pet4D_img_path = pet4D_img_path
-        self.output_directory = output_directory
+        self.input_tac_path = os.path.abspath(input_tac_path)
+        self.pet4D_img_path = os.path.abspath(pet4D_img_path)
+        self.output_directory = os.path.abspath(output_directory)
         self.output_filename_prefix = output_filename_prefix
         self.analysis_props = self.init_analysis_props()
         self.slope_image: np.ndarray = None
@@ -188,20 +189,28 @@ class GraphicalAnalysisParametricImage:
         self.analysis_props['InterceptMean'] = np.mean(self.intercept_image)
         self.analysis_props['InterceptVariance'] = np.var(self.intercept_image)
     
+    # TODO: Come up with a smarter way to get the PET data in the correct units. I would prefer that 4DPET is saved in the right units already.
     def calculate_parametric_images(self, method_name: str, t_thresh_in_mins: float):
         p_tac_times, p_tac_vals = _safe_load_tac(self.input_tac_path)
         nifty_pet4d_img = _safe_load_4dpet(filename=self.pet4D_img_path)
         
         self.slope_image, self.intercept_image = generate_parametric_images_with_graphical_method(
-            pTAC_times=p_tac_times, pTAC_vals=p_tac_vals, tTAC_img=nifty_pet4d_img.get_fdata(),
+            pTAC_times=p_tac_times, pTAC_vals=p_tac_vals, tTAC_img=nifty_pet4d_img.get_fdata()/37000.,
             t_thresh_in_mins=t_thresh_in_mins, method_name=method_name)
 
-def save_parametric_images(self):
-    file_name_prefix = f"{self.output_directory}/{self.output_filename_prefix}-parametric-{self.method_name}"
-    nifty_img_affine = _safe_load_4dpet(filename=self.pet4D_img_path).affine()
-    
-    tmp_slope_img = nibabel.Nifti1Image(dataobj=self.slope_image, affine=nifty_img_affine)
-    nibabel.save(tmp_slope_img, f"{file_name_prefix}-slope.nii.gz")
-    
-    tmp_intercept_img = nibabel.Nifti1Image(dataobj=self.intercept_image, affine=nifty_img_affine)
-    nibabel.save(tmp_intercept_img, f"{file_name_prefix}-intercept.nii")
+    def save_parametric_images(self):
+        file_name_prefix = f"{self.output_directory}/{self.output_filename_prefix}-parametric-{self.analysis_props['MethodName']}"
+        nifty_img_affine = _safe_load_4dpet(filename=self.pet4D_img_path).affine
+        
+        tmp_slope_img = nibabel.Nifti1Image(dataobj=self.slope_image, affine=nifty_img_affine)
+        nibabel.save(tmp_slope_img, f"{file_name_prefix}-slope.nii.gz")
+        
+        tmp_intercept_img = nibabel.Nifti1Image(dataobj=self.intercept_image, affine=nifty_img_affine)
+        nibabel.save(tmp_intercept_img, f"{file_name_prefix}-intercept.nii.gz")
+        
+    def save_analysis_properties(self):
+        analysis_props_file = f"{self.output_directory}/{self.output_filename_prefix}-analysis-props.json"
+        with open(analysis_props_file, 'w') as f:
+            json.dump(obj=self.analysis_props, fp=f, indent=4)
+        
+        
