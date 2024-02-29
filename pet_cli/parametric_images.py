@@ -18,8 +18,8 @@ from typing import Tuple, Callable
 from nibabel import Nifti1Image
 from . import graphical_analysis
 import os
-from pathlib import Path
 import warnings
+
 
 @numba.njit()
 def apply_linearized_analysis_to_all_voxels(pTAC_times: np.ndarray,
@@ -207,6 +207,7 @@ class GraphicalAnalysisParametricImage:
         save_parametric_images: Saves the slope and intercept images in '.nii.gz' format to the output directory.
         save_analysis_properties: Saves the analysis properties to a '.json' file in the output directory.
     """
+    
     def __init__(self,
                  input_tac_path: str,
                  pet4D_img_path: str,
@@ -296,7 +297,7 @@ class GraphicalAnalysisParametricImage:
         """
         self.calculate_parametric_images(method_name=method_name, t_thresh_in_mins=t_thresh_in_mins)
         self.calculate_analysis_properties(method_name=method_name, t_thresh_in_mins=t_thresh_in_mins)
-        
+    
     def save_analysis(self):
         """
         Stores the results from an analysis routine.
@@ -420,7 +421,7 @@ class GraphicalAnalysisParametricImage:
         self.analysis_props['SlopeMinimum'] = np.min(self.slope_image)
         self.analysis_props['SlopeMean'] = np.mean(self.slope_image)
         self.analysis_props['SlopeVariance'] = np.var(self.slope_image)
-        
+    
     def calculate_intercept_image_properties(self):
         """
         Calculates and stores statistical properties of the intercept image.
@@ -480,9 +481,9 @@ class GraphicalAnalysisParametricImage:
         nifty_pet4d_img = _safe_load_4dpet_nifty(filename=self.pet4D_img_path)
         warnings.warn("PET image values are being divided by 37000 for unit conversion to Bq/cc.", UserWarning)
         self.slope_image, self.intercept_image = generate_parametric_images_with_graphical_method(
-            pTAC_times=p_tac_times, pTAC_vals=p_tac_vals, tTAC_img=nifty_pet4d_img.get_fdata()/37000.,
-            t_thresh_in_mins=t_thresh_in_mins, method_name=method_name)
-
+                pTAC_times=p_tac_times, pTAC_vals=p_tac_vals, tTAC_img=nifty_pet4d_img.get_fdata() / 37000.,
+                t_thresh_in_mins=t_thresh_in_mins, method_name=method_name)
+    
     def save_parametric_images(self):
         """
         Saves the slope and intercept images as NIfTI files in the specified output directory.
@@ -515,7 +516,7 @@ class GraphicalAnalysisParametricImage:
         except IOError as e:
             print("An IOError occurred while attempting to write the NIfTI image files.")
             raise e from None
-        
+    
     def save_analysis_properties(self):
         """
         Saves the analysis properties to a JSON file in the output directory.
@@ -541,5 +542,3 @@ class GraphicalAnalysisParametricImage:
         analysis_props_file = f"{self.output_directory}/{self.output_filename_prefix}-analysis-props.json"
         with open(analysis_props_file, 'w') as f:
             json.dump(obj=self.analysis_props, fp=f, indent=4)
-        
-        
