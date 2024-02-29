@@ -200,6 +200,22 @@ class GraphicalAnalysisParametricImage:
                  pet4D_img_path: str,
                  output_directory: str,
                  output_filename_prefix: str) -> None:
+        """
+        Initializes the GraphicalAnalysisParametricImage with the specified parameters.
+
+        This method initializes necessary attributes for the GraphicalAnalysisParametricImage object with the provided
+        arguments. It sets the absolute file paths for the input TAC, 4D PET image, and output directory, and
+        initializes the analysis properties. Further, it initializes variables for the slope and intercept images.
+
+        Args:
+            input_tac_path (str): Path to the input Time-Activity Curve (TAC) file.
+            pet4D_img_path (str): Path to the 4D PET image file.
+            output_directory (str): Path to the destination directory where output files will be saved.
+            output_filename_prefix (str): Prefix to use for the names of the output files.
+
+        Returns:
+            None
+        """
         self.input_tac_path = os.path.abspath(input_tac_path)
         self.pet4D_img_path = os.path.abspath(pet4D_img_path)
         self.output_directory = os.path.abspath(output_directory)
