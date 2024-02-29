@@ -225,6 +225,34 @@ class GraphicalAnalysisParametricImage:
         self.intercept_image: np.ndarray = None
     
     def init_analysis_props(self):
+        """
+        Initializes the analysis properties dictionary.
+
+        The analysis properties dictionary contains properties derived from the analysis.
+        It begins with certain known values, such as file paths, but most values are initialized
+        to None and filled in later as the analysis is performed.
+
+        Properties include:
+            FilePathPTAC (str): The path to the input Time-Activity Curve (TAC) file.
+            FilePathTTAC (str): The path to the 4D PET image file.
+            MethodName (str): The name of the graphical analysis method used, to be filled in later.
+            ImageDimensions (tuple): The dimensions of the images resulting from the analysis, to be filled in later.
+            StartFrameTime (float): The start time of the frame used in the analysis, filled in after the analysis.
+            EndFrameTime (float): The end time of the frame used in the analysis, filled in after the analysis.
+            ThresholdTime (float): The time threshold used in the analysis, filled in after the analysis.
+            NumberOfPointsFit (int): The number of points fitted in the analysis, filled in after the analysis.
+            SlopeMaximum (float): The maximum slope found in the analysis, filled in after the analysis.
+            SlopeMinimum (float): The minimum slope found in the analysis, filled in after the analysis.
+            SlopeMean (float): The mean of the slopes found in the analysis, filled in after the analysis.
+            SlopeVariance (float): The variance of the slopes found in the analysis, filled in after the analysis.
+            InterceptMaximum (float): The maximum intercept found in the analysis, filled in after the analysis.
+            InterceptMinimum (float): The minimum intercept found in the analysis, filled in after the analysis.
+            InterceptMean (float): The mean of the intercepts found in the analysis, filled in after the analysis.
+            InterceptVariance (float): The variance of the intercepts found in the analysis, filled in after the analysis.
+
+        Returns:
+            props (dict): The initialized properties dictionary.
+        """
         props = {
             'FilePathPTAC'     : self.input_tac_path, 'FilePathTTAC': self.pet4D_img_path, 'MethodName': None,
             'ImageDimensions'  : None, 'StartFrameTime': None, 'EndFrameTime': None, 'ThresholdTime': None,
