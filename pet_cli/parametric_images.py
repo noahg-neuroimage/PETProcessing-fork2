@@ -125,7 +125,8 @@ def _safe_load_tac(filename: str) -> np.ndarray:
         filename (str): The name of the file to be loaded.
 
     Returns:
-        np.ndarray: A numpy array containing the loaded TAC. The first index corresponds to the times, and the second corresponds to the activity.
+        np.ndarray: A numpy array containing the loaded TAC. The first index corresponds to the times, and the second
+        corresponds to the activity.
 
     Raises:
         Exception: An error occurred loading the TAC.
@@ -138,6 +139,22 @@ def _safe_load_tac(filename: str) -> np.ndarray:
 
 
 def _safe_load_4dpet_nifty(filename: str) -> Nifti1Image:
+    """
+    Safely load a 4D PET NIfTI file.
+
+    This function checks if the given file has a '.nii' or '.nii.gz' extension, then tries to load it as a NIfTI file
+    using the nibabel library. If the file cannot be loaded, it raises an exception.
+
+    Args:
+        filename (str): The path of the NIfTI file to be loaded.
+
+    Returns:
+        Nifti1Image: The loaded NIfTI 4D PET image.
+
+    Raises:
+        ValueError: If the file does not have a '.nii' or '.nii.gz' extension.
+        Exception:  If an error occurred while loading the NIfTI file.
+    """
     file_extension = Path(filename).suffix
     if file_extension not in ['.nii', '.nii.gz']:
         raise ValueError("Invalid file extension. Only '.nii' and '.nii.gz' are supported.")
