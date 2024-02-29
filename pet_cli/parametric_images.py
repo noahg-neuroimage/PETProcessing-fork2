@@ -274,10 +274,55 @@ class GraphicalAnalysisParametricImage:
         self.save_analysis_properties()
     
     def calculate_analysis_properties(self, method_name: str, t_thresh_in_mins: float):
+        """
+        Performs a set of calculations to collate various analysis properties.
+
+        This method orchestrates the calculation of properties related to both the parametric images and the fitting process.
+        It does this by calling `calculate_parametric_images_properties` and `calculate_fit_properties` respectively.
+
+        Parameters:
+            method_name (str): The name of the method used for the fitting process.
+            t_thresh_in_mins (float): The threshold time (in minutes) used for the fitting process.
+
+        Note:
+            Calls to `calculate_parametric_images_properties` and `calculate_fit_properties` update the instance's
+            `analysis_props` variable.
+
+        See Also:
+            * :func:`calculate_parametric_images_properties`
+            * :func:`calculate_fit_properties`
+
+        Returns:
+            None. The results are stored within the instance's `analysis_props` variable.
+
+        """
         self.calculate_parametric_images_properties()
         self.calculate_fit_properties(method_name=method_name, t_thresh_in_mins=t_thresh_in_mins)
     
     def calculate_fit_properties(self, method_name: str, t_thresh_in_mins: float):
+        """
+        Calculates and stores the properties related to the fitting process.
+
+        This method calculates several properties related to the fitting process, including the threshold time, the name
+        of the method used, the start and end frame time, and the number of points used in the fit. These values are
+        stored in the instance's `analysis_props` variable.
+
+        Parameters:
+            method_name (str): The name of the methodology adopted for the fitting process.
+            t_thresh_in_mins (float): The threshold time (in minutes) used in the fitting process.
+
+        Note:
+            This method relies on the `_safe_load_tac` function to load time-activity curve (TAC) data from the file at
+            `self.input_tac_path`, and the `graphical_analysis.get_index_from_threshold` function to get the index from
+            the threshold time. Please ensure these dependencies are correctly implemented and accessible.
+
+        See also:
+            * :func:`_safe_load_tac`: Function to safely load TAC data from a file.
+            * :func:`graphical_analysis.get_index_from_threshold`: Function to get the index from the threshold time.
+
+        Returns:
+            None. The results are stored within the instance's `analysis_props` variable.
+        """
         self.analysis_props['ThresholdTime'] = t_thresh_in_mins
         self.analysis_props['MethodName'] = method_name
         
@@ -289,17 +334,62 @@ class GraphicalAnalysisParametricImage:
         self.analysis_props['NumberOfPointsFit'] = len(p_tac_times[t_thresh_index:])
     
     def calculate_parametric_images_properties(self):
+        """
+        Initiates the calculation of properties for parametric images.
+
+        This method triggers the calculation of statistical properties for slope and intercept images.
+        Additionally, it captures the shape of the slope image as the 'ImageDimensions' and stores it in `analysis_props`.
+
+        Note:
+            You should ensure the `slope_image` attribute has been correctly set before calling this method. This means
+            that `run_analysis` has already been called.
+
+        See Also:
+            calculate_slope_image_properties: Method to calculate various statistics for slope image.
+            calculate_intercept_image_properties: Method to calculate various statistics for intercept image.
+
+        Returns:
+            None. The results are stored within the instance's `analysis_props` variable.
+        """
         self.analysis_props['ImageDimensions'] = self.slope_image.shape
         self.calculate_slope_image_properties()
         self.calculate_intercept_image_properties()
     
     def calculate_slope_image_properties(self):
+        """
+        Calculates and stores statistical properties of the slope image.
+
+        This method calculates the maximum, minimum, mean, and variance of
+        the `slope_image` attribute, and stores these values in the `analysis_props` dictionary.
+
+        The keys in `analysis_props` for these values are: `SlopeMaximum`, `SlopeMinimum`,
+        `SlopeMean`, and `SlopeVariance`, respectively.
+
+        Note:
+            You should ensure the `slope_image` attribute has been correctly set before calling this method.
+
+        No explicit return value. The results are stored within the instance's `analysis_props` variable.
+        """
         self.analysis_props['SlopeMaximum'] = np.max(self.slope_image)
         self.analysis_props['SlopeMinimum'] = np.min(self.slope_image)
         self.analysis_props['SlopeMean'] = np.mean(self.slope_image)
         self.analysis_props['SlopeVariance'] = np.var(self.slope_image)
         
     def calculate_intercept_image_properties(self):
+        """
+        Calculates and stores statistical properties of the intercept image.
+
+        This method calculates the maximum, minimum, mean, and variance of
+        the `intercept_image` attribute, and stores these values in the `analysis_props` dictionary.
+
+        The keys in `analysis_props` for these values are: `InterceptMaximum`, `InterceptMinimum`, `InterceptMean`,
+        and `InterceptVariance`, respectively.
+
+        Note:
+            You should ensure the `intercept_image` attribute has been correctly set before calling this method.
+
+        No explicit return value. The results are stored within the instance's `analysis_props` variable.
+        """
         self.analysis_props['InterceptMaximum'] = np.max(self.intercept_image)
         self.analysis_props['InterceptMinimum'] = np.min(self.intercept_image)
         self.analysis_props['InterceptMean'] = np.mean(self.intercept_image)
