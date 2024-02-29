@@ -108,3 +108,45 @@ def generate_parametric_images_with_graphical_method(pTAC_times: np.ndarray,
                                                                        analysis_func=analysis_func)
     
     return slope_img, intercept_img
+
+
+class ParametricImageAnalysis:
+    def __init__(self,
+                 input_tac_path: str,
+                 pet4D_tac_path: str,
+                 output_directory: str,
+                 output_filename_prefix: str) -> None:
+        self.input_tac_path = input_tac_path
+        self.pet4D_tac_path = pet4D_tac_path
+        self.output_directory = output_directory
+        self.output_filename_prefix = output_filename_prefix
+        self.analysis_props = self.init_analysis_props()
+        self.slope_image: np.ndarray = None
+        self.intercept_image: np.ndarray = None
+    
+    def init_analysis_props(self):
+        props = {
+            'FilePathPTAC': None,
+            'FilePathTTAC': None,
+            'ImageDimensions': None,
+            'StartFrameTime': None,
+            'EndFrameTime': None,
+            'ThresholdTime': None,
+            'NumberOfPointsFit': None,
+            'SlopeMaximum': None,
+            'SlopeMinimum': None,
+            'SlopeMean': None,
+            'SlopeVariance': None,
+            'InterceptMaximum': None,
+            'InterceptMinimum': None,
+            'InterceptMean': None,
+            'InterceptVariance': None,
+            }
+        return props
+    
+    def run_analysis(self, method_name: str):
+        pTAC_times, pTAC_vals = _safe_load_tac(self.input_tac_path)
+        
+        
+        pass
+    
