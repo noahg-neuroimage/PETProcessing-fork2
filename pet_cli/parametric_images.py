@@ -1,3 +1,15 @@
+"""
+This is the 'parametric_images' module.
+
+This module provides functions and a key class, :class:`GraphicalAnalysisParametricImage`, for graphical analysis and
+creation of parametric images in PET scan data. It heavily utilizes Numpy for data manipulation and assumes the input as
+4D PET images along with other required inputs.
+
+The :class:`GraphicalAnalysisParametricImage` class encapsulates the main functionality of the module, and encompasses
+methods for initializing data, running and saving analysis, calculating various properties, and handling parametric
+image data.
+"""
+
 import nibabel
 import numpy as np
 import numba
