@@ -1,3 +1,4 @@
+import nibabel
 import numpy as np
 import numba
 from typing import Tuple, Callable
@@ -109,15 +110,29 @@ def generate_parametric_images_with_graphical_method(pTAC_times: np.ndarray,
     
     return slope_img, intercept_img
 
-
-class ParametricImageAnalysis:
+def _safe_load_tac(filename: str) -> np.ndarray|None:
+    try:
+        return np.array(np.loadtxt(filename).T, dtype=float, order='C')
+    except Exception as e:
+        print(f"Couldn't read file {filename}. Error: {e}")
+        return None
+    
+def _safe_load_4dpet(filename: str) -> nibabel.Nifti1Image:
+    try:
+        return nibabel.load(filename=filename)
+    except Exception as e:
+        print(f"Couldn't read file {filename}. Error: {e}")
+        return None
+    
+    
+class GraphicalAnalysisParametricImage:
     def __init__(self,
                  input_tac_path: str,
-                 pet4D_tac_path: str,
+                 pet4D_img_path: str,
                  output_directory: str,
                  output_filename_prefix: str) -> None:
         self.input_tac_path = input_tac_path
-        self.pet4D_tac_path = pet4D_tac_path
+        self.pet4D_img_path = pet4D_img_path
         self.output_directory = output_directory
         self.output_filename_prefix = output_filename_prefix
         self.analysis_props = self.init_analysis_props()
@@ -126,8 +141,8 @@ class ParametricImageAnalysis:
     
     def init_analysis_props(self):
         props = {
-            'FilePathPTAC': None,
-            'FilePathTTAC': None,
+            'FilePathPTAC': self.input_tac_path,
+            'FilePathTTAC': self.pet4D_img_path,
             'ImageDimensions': None,
             'StartFrameTime': None,
             'EndFrameTime': None,
@@ -144,9 +159,21 @@ class ParametricImageAnalysis:
             }
         return props
     
-    def run_analysis(self, method_name: str):
-        pTAC_times, pTAC_vals = _safe_load_tac(self.input_tac_path)
-        
+    def run_analysis(self, method_name: str, t_thresh_in_mins: float):
+        self.calculate_parametric_image(method_name=method_name,
+                                        t_thresh_in_mins=t_thresh_in_mins)
         
         pass
     
+    
+    
+    def calculate_parametric_image(self, method_name: str, t_thresh_in_mins: float):
+        p_tac_times, p_tac_vals = _safe_load_tac(self.input_tac_path)
+        nifty_img = _safe_load_4dpet(filename=self.pet4D_img_path)
+        
+        self.slope_img, self.intercept_img = generate_parametric_images_with_graphical_method(pTAC_times=p_tac_times,
+                                                                                              pTAC_vals=p_tac_vals,
+                                                                                              tTAC_img=nifty_img.get_fdata(),
+                                                                                              t_thresh_in_mins=t_thresh_in_mins,
+                                                                                              method_name=method_name)
+        
