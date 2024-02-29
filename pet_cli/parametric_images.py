@@ -264,10 +264,46 @@ class GraphicalAnalysisParametricImage:
         return props
     
     def run_analysis(self, method_name: str, t_thresh_in_mins: float):
+        """
+        Executes the complete analysis procedure.
+
+        This method orchestrates the full analysis by orchestrating the calculation of parametric images, as well as
+        compiling the properties related to the analysis. Both are determined based on the provided method name and the
+        threshold time.
+
+        Parameters:
+            method_name (str): The name of the methodology adopted for the process.
+            t_thresh_in_mins (float): The threshold time used through the analysis (in minutes).
+
+        See Also:
+            * :func:`calculate_parametric_images`
+            * :func:`calculate_analysis_properties`
+
+        Returns:
+            None
+
+        """
         self.calculate_parametric_images(method_name=method_name, t_thresh_in_mins=t_thresh_in_mins)
         self.calculate_analysis_properties(method_name=method_name, t_thresh_in_mins=t_thresh_in_mins)
         
     def save_analysis(self):
+        """
+        Stores the results from an analysis routine.
+
+        This method executes the storage of parametric images, as well as the properties related to the analysis. It
+        assumes that the method 'run_analysis' is called before this method.
+
+        Raises:
+            RuntimeError: If the method 'run_analysis' is not called before this method.
+
+        See Also:
+            * :func:`save_parametric_images`
+            * :func:`save_analysis_properties`
+
+        Returns:
+            None
+
+        """
         if self.slope_image is None:
             raise RuntimeError("'run_analysis' method must be called before 'save_analysis'.")
         self.save_parametric_images()
@@ -294,7 +330,6 @@ class GraphicalAnalysisParametricImage:
 
         Returns:
             None. The results are stored within the instance's `analysis_props` variable.
-
         """
         self.calculate_parametric_images_properties()
         self.calculate_fit_properties(method_name=method_name, t_thresh_in_mins=t_thresh_in_mins)
