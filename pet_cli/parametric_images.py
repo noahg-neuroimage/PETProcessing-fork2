@@ -314,16 +314,60 @@ class GraphicalAnalysisParametricImage:
             t_thresh_in_mins=t_thresh_in_mins, method_name=method_name)
 
     def save_parametric_images(self):
+        """
+        Saves the slope and intercept images as NIfTI files in the specified output directory.
+
+        This method generates and saves two NIfTI files: one for the slope image and one for the intercept image.
+        It uses the output directory and filename prefix provided during instantiation of the class,
+        along with the analysis method name, to generate a filename prefix for both images.
+        The filenames follow the patterns `{output_filename_prefix}-parametric-{method}-slope.nii.gz` and
+        `{output_filename_prefix}-parametric-{method}-intercept.nii.gz` respectively.
+        The affine transformation matrix for the new NIfTI images is derived from the original 4D PET image.
+
+        Args:
+            None
+
+        Returns:
+            None
+
+        Raises:
+            IOError: An error occurred accessing the output_directory or while writing to the NIfTI file.
+
+        """
         file_name_prefix = f"{self.output_directory}/{self.output_filename_prefix}-parametric-{self.analysis_props['MethodName']}"
         nifty_img_affine = _safe_load_4dpet_nifty(filename=self.pet4D_img_path).affine
-        
-        tmp_slope_img = nibabel.Nifti1Image(dataobj=self.slope_image, affine=nifty_img_affine)
-        nibabel.save(tmp_slope_img, f"{file_name_prefix}-slope.nii.gz")
-        
-        tmp_intercept_img = nibabel.Nifti1Image(dataobj=self.intercept_image, affine=nifty_img_affine)
-        nibabel.save(tmp_intercept_img, f"{file_name_prefix}-intercept.nii.gz")
+        try:
+            tmp_slope_img = nibabel.Nifti1Image(dataobj=self.slope_image, affine=nifty_img_affine)
+            nibabel.save(tmp_slope_img, f"{file_name_prefix}-slope.nii.gz")
+            
+            tmp_intercept_img = nibabel.Nifti1Image(dataobj=self.intercept_image, affine=nifty_img_affine)
+            nibabel.save(tmp_intercept_img, f"{file_name_prefix}-intercept.nii.gz")
+        except IOError as e:
+            print("An IOError occurred while attempting to write the NIfTI image files.")
+            raise e from None
         
     def save_analysis_properties(self):
+        """
+        Saves the analysis properties to a JSON file in the output directory.
+
+        This method involves saving a dictionary of analysis properties, which include file paths, analysis method,
+        start and end frame times, threshold time, number of points fitted, and various properties like the maximum,
+        minimum, mean, and variance of slopes and intercepts found in the analysis. These analysis properties are
+        written to a JSON file in the output directory with the name following the pattern
+        `{output_filename_prefix}-analysis-props.json`.
+
+        Args:
+            None
+
+        Returns:
+            None
+
+        Raises:
+            IOError: An error occurred accessing the output_directory or while writing to the JSON file.
+            
+        See Also:
+            * :func:`save_analysis_properties`
+        """
         analysis_props_file = f"{self.output_directory}/{self.output_filename_prefix}-analysis-props.json"
         with open(analysis_props_file, 'w') as f:
             json.dump(obj=self.analysis_props, fp=f, indent=4)
