@@ -59,7 +59,7 @@ class ImageIO():
         """
         Wrapper to load metadata. Assume same path as input image path.
         """
-        meta_path = re.sub('.nii|.nii.gz','.json',self.image_path)
+        meta_path = re.sub('.nii.gz|.nii','.json',self.image_path)
         with open(meta_path,'r',encoding='utf-8') as meta_file:
             image_meta = json.load(meta_file)
         return image_meta
@@ -174,3 +174,4 @@ class ImageIO():
         """
         ctab_json = json.load(ctab_file)
         return ctab_json
+    

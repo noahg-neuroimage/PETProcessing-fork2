@@ -7,6 +7,7 @@ import nibabel
 from nibabel import processing
 import numpy as np
 from . import image_io
+from . import image_reg
 
 
 ImageIO = image_io.ImageIO
@@ -22,12 +23,13 @@ class ImageOps4D():
                            Default value 0.
     
     See Also:
-        :class:`ImageIO`
+        :class: `ImageIO`
     """
     def __init__(self,
         images: list[ImageIO],
         out_path: str,
         half_life: float=0,
+        color_table_path: str=None,
         verbose: bool=True
     ):
         """
@@ -44,7 +46,8 @@ class ImageOps4D():
         self.images = {
             'pet': images[0].load_nii(),
             'mri': images[1].load_nii(),
-            'seg': images[2].load_nii()
+            'seg': images[2].load_nii(),
+            'seg_resampled': None
         }
 #        image_path = image.image_path
 #        verbose = image.verbose
@@ -54,6 +57,7 @@ class ImageOps4D():
 #        self.pet_series = self.pet_image.get_fdata()
 #        self.pet_upsampled = None
         self.out_path = out_path
+        self.color_table_path = color_table_path
         self.verbose = verbose
 #        self.seg_image = seg_image
 #        self.seg_resampled = None
@@ -115,16 +119,26 @@ class ImageOps4D():
         pet_sumimg = self.images['pet_sumimg']
         pet_sumimg_ants = ants.from_nibabel(pet_sumimg)
         pet_ants = ants.from_nibabel(pet_nibabel)
-        pet_moco_ants_dict = ants.registration.interface.motion_correction(pet_ants,
+        pet_moco_ants_dict = ants.motion_correction(pet_ants,
             pet_sumimg_ants,
             type_of_transform='Rigid')
         pet_moco_ants = pet_moco_ants_dict['motion_corrected']
         pet_moco_pars = pet_moco_ants_dict['motion_parameters']
-        pet_moco_np = pet_moco_ants.to_numpy()
-        pet_moco_nibabel = pet_moco_ants.to_nibabel()
+        pet_moco_np = pet_moco_ants.numpy()
+        pet_moco_nibabel = ants.to_nibabel(pet_moco_ants)
         self.images['pet_moco'] = pet_moco_nibabel
         return pet_moco_np, pet_moco_pars
 
+
+    def register_pet(self) -> nibabel.nifti1.Nifti1Image:
+        """
+        Perform registration PET -> MRI
+        """
+        dummy = image_reg.ImageReg()
+        _reg_out, xfm_path, _xfm_mat = dummy.rigid_registration(
+            self.images['pet_sumimg'],self.images['mri'])
+        pet_reg = dummy.apply_xfm(self.images['pet_moco'],self.images['mri'],xfm_path)
+        self.images['pet_moco_reg'] = pet_reg
 
     def mask_img_to_vals(self,
                          values: list[int],
@@ -142,7 +156,7 @@ class ImageOps4D():
         Returns:
             masked_image (np.ndarray): Masked image
         """
-        pet_image = self.images['pet']
+        pet_image = self.images['pet_moco_reg']
         seg_image = self.images['seg']
         pet_series = pet_image.get_fdata()
         num_frames = pet_series.shape[3]
@@ -165,7 +179,7 @@ class ImageOps4D():
         return tac_out
 
 
-    def write_tacs(self,ctab):
+    def write_tacs(self):
         """
         Function to write Tissue Activity Curves for each region, given a segmentation,
         4D PET image, and color table. Computes the average of the PET image within each
@@ -177,7 +191,9 @@ class ImageOps4D():
         Returns:
         """
         pet_meta = self.images_io['pet'].load_meta()
-        regions_list = ctab['data']
+        with open(self.color_table_path,'r',encoding='utf-8') as color_table_file:
+            color_table = json.load(color_table_file)
+        regions_list = color_table['data']
         for region_pair in regions_list:
             region_index, region_name = region_pair
             region_json = {'region_name': region_name}

@@ -11,7 +11,10 @@ class ImageReg():
     A class, supplies tools to compute and run image registrations.
     Attributes:
     """
-    def __init__(self, verbose: bool):
+    def __init__(
+        self,
+        verbose: bool=True
+    ):
         """
         Args:
             image_path (str): Path to existing Nifti image file.
@@ -20,7 +23,10 @@ class ImageReg():
         self.verbose = verbose
 
 
-    def reorient_to_ras(self, image: nibabel.nifti1.Nifti1Image) -> nibabel.nifti1.Nifti1Image:
+    def reorient_to_ras(
+        self,
+        image: nibabel.nifti1.Nifti1Image
+    ) -> nibabel.nifti1.Nifti1Image:
         """
         Wrapper for the RAS reorientation used to ensure images are oriented the same.
 
@@ -38,7 +44,10 @@ class ImageReg():
         return reoriented_image
 
 
-    def h5_parse(self, h5_file: str) -> np.ndarray:
+    def h5_parse(
+        self,
+        h5_file: str
+    ) -> np.ndarray:
         """
         Parse an h5 transformation file into an affine transform.
 
@@ -50,16 +59,17 @@ class ImageReg():
         """
         xfm_hdf5 = h5py.File(h5_file)
         xfm_mat  = np.empty((4,4))
-        xfm_mat[:3,:3]  = xfm_hdf5['TransformGroup']['1']['TransformParameters'][:] \
+        xfm_mat[:,:3]  = xfm_hdf5['TransformGroup']['1']['TransformParameters'][:] \
                    .reshape((4,3))
         xfm_mat[:,3] = [0,0,0,1]
         return xfm_mat
 
 
-    def rigid_registration(self,
-                           moving_image: nibabel.nifti1.Nifti1Image,
-                           fixed_image: nibabel.nifti1.Nifti1Image
-                           ) -> tuple[nibabel.nifti1.Nifti1Image,str,np.ndarray]:
+    def rigid_registration(
+        self,
+        moving_image: nibabel.nifti1.Nifti1Image,
+        fixed_image: nibabel.nifti1.Nifti1Image
+    ) -> tuple[nibabel.nifti1.Nifti1Image,str,np.ndarray]:
         """
         Register two images under rigid transform assumptions and return the transformed 
         image and parameters.
@@ -94,10 +104,12 @@ class ImageReg():
         return mov_on_fix, xfm_file, out_mat
 
 
-    def apply_xfm(self,
-                  moving_image: nibabel.nifti1.Nifti1Image,
-                  fixed_image: nibabel.nifti1.Nifti1Image,
-                  xfm_path: str) -> nibabel.nifti1.Nifti1Image:
+    def apply_xfm(
+        self,
+        moving_image: nibabel.nifti1.Nifti1Image,
+        fixed_image: nibabel.nifti1.Nifti1Image,
+        xfm_path: str
+    ) -> nibabel.nifti1.Nifti1Image:
         """
         Register a moving image to a fixed image using a supplied transform.
 
