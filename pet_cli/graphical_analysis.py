@@ -424,6 +424,32 @@ def _safe_load_tac(filename: str) -> np.ndarray:
 
 
 class GraphicalAnalysis:
+    """
+    :class:`GraphicalAnalysis` to handle Graphical Analysis for time activity curve (TAC) data.
+
+    The :class:`GraphicalAnalysis` class provides methods for managing TAC data analysis. The class is initialized
+    with paths to input TAC data, region of interest (ROI) TAC data files, an output directory, and output filename prefix.
+
+    Analysis is performed by specifying a method name and threshold time in the :func:`run_analysis` method. The results
+    of the analysis are stored within the instance's 'analysis_props' dictionary.
+
+    Key methods include:
+    - :func:`init_analysis_props`: Initializes a dictionary with keys for analysis properties and default values.
+    - :func:`run_analysis`: Runs the graphical analysis on the data using a specific method.
+    - :func:`calculate_fit`: Calculates the best fit values for a given graphical analysis method.
+    - :func:`calculate_fit_properties`: Calculates and stores the properties related to the fitting process.
+    - :func:`save_analysis`: Stores the 'analysis_props' dictionary into a JSON file.
+
+    Raises:
+        RuntimeError: If the :func:`run_analysis` method has not been run before :func:`save_analysis` method.
+
+    Attributes:
+        input_tac_path (str): The path to input TAC data file.
+        roi_tac_path (str): The path to ROI TAC data file.
+        output_directory (str): Directory where the output should be saved.
+        output_filename_prefix (str): Output filename prefix for saving the analysis.
+        analysis_props (dict): Property dictionary used to store results of the analysis.
+    """
     def __init__(self,
                  input_tac_path: str,
                  roi_tac_path: str,
