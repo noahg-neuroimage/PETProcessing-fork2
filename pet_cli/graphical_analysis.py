@@ -11,6 +11,7 @@ __version__ = '0.2'
 import numba
 import numpy as np
 from typing import Callable
+import os
 
 @numba.njit()
 def _line_fitting_make_rhs_matrix_from_xdata(xdata: np.ndarray) -> np.ndarray:
@@ -243,3 +244,29 @@ def get_graphical_analysis_method(method_name: str) -> Callable:
         return alternative_logan_analysis
     else:
         raise ValueError(f"Invalid method_name! Must be either 'patlak', 'logan', or 'alt_logan'. Got {method_name}")
+    
+class GraphicalAnalysis:
+    def __init__(self,
+                 input_tac_path: str,
+                 roi_tac_path: str,
+                 output_directory: str,
+                 output_filename_prefix: str) -> None:
+        self.input_tac_path = os.path.abspath(input_tac_path)
+        self.roi_tac_path = os.path.abspath(roi_tac_path)
+        self.output_directory = os.path.abspath(output_directory)
+        self.output_filename_prefix = output_filename_prefix
+        self.analysis_props = self.init_analysis_props()
+        
+    def init_analysis_props(self) -> dict:
+        props = {'FilePathPTAC': self.input_tac_path,
+                 'FilePathTTAC': self.roi_tac_path,
+                 'MethodName': None,
+                 'ThresholdTime': None,
+                 'StartFrameTime': None,
+                 'EndFrameTime': None,
+                 'NumberOfPointsFit': None}
+        return props
+    def run_analysis(self, method_name: str, t_thresh_in_minutes: float):
+        self.analysis_props['MethodName'] = method_name
+        self.analysis_props['ThresholdTime'] = t_thresh_in_minutes
+        
