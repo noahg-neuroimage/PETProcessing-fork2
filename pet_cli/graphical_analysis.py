@@ -10,7 +10,7 @@ __version__ = '0.2'
 
 import numba
 import numpy as np
-from typing import Callable
+from typing import Callable, Tuple
 import os
 
 @numba.njit()
@@ -48,6 +48,27 @@ def fit_line_to_data_using_lls(xdata: np.ndarray, ydata: np.ndarray) -> np.ndarr
     fit_ans = np.linalg.lstsq(matrix, ydata)[0]
     return fit_ans
 
+
+@numba.njit()
+def fit_line_to_data_using_lls_with_rsquared(xdata: np.ndarray, ydata: np.ndarray) -> Tuple[float, float, float]:
+    """Fits a line to the data using least squares and explicitly computes the r-squared value.
+
+    Args:
+        xdata (np.ndarray): X-coordinates of the data.
+        ydata (np.ndarray): Y-coordinates of the data.
+
+    Returns:
+        tuple: A tuple containing three float values: the intercept of the fitted line, the slope of the fitted line,
+        and the r-squared value.
+    """
+    make_2d_matrix = _line_fitting_make_rhs_matrix_from_xdata
+    matrix = make_2d_matrix(xdata)
+    fit_ans = np.linalg.lstsq(matrix, ydata)
+    
+    ss_res = fit_ans[1]
+    ss_tot = np.sum((np.mean(ydata) - ydata) ** 2.)
+    r_squared = 1.0 - ss_res / ss_tot
+    return fit_ans[0][0], fit_ans[0][1], r_squared
 
 @numba.njit()
 def cumulative_trapezoidal_integral(xdata: np.ndarray, ydata: np.ndarray, initial: float = 0.0) -> np.ndarray:
@@ -269,4 +290,5 @@ class GraphicalAnalysis:
     def run_analysis(self, method_name: str, t_thresh_in_minutes: float):
         self.analysis_props['MethodName'] = method_name
         self.analysis_props['ThresholdTime'] = t_thresh_in_minutes
+        
         
