@@ -497,7 +497,8 @@ class GraphicalAnalysisParametricImage:
             IOError: An error occurred accessing the output_directory or while writing to the NIfTI file.
 
         """
-        file_name_prefix = f"{self.output_directory}/{self.output_filename_prefix}-parametric-{self.analysis_props['MethodName']}"
+        file_name_prefix = os.path.join(self.output_directory,
+                                        f"{self.output_filename_prefix}-parametric-{self.analysis_props['MethodName']}")
         nifty_img_affine = _safe_load_4dpet_nifty(filename=self.pet4D_img_path).affine
         try:
             tmp_slope_img = nibabel.Nifti1Image(dataobj=self.slope_image, affine=nifty_img_affine)
