@@ -1,4 +1,15 @@
-"""Collection of functions to perform graphical analysis on tissue activity curves (TACs).
+"""
+This is the 'graphical_analysis' module.
+
+This module provides functions and a key class, :class:`GraphicalAnalysis`, for performing graphical analysis on Time
+Activity Curve (TAC) data. It heavily utilizes Numpy and supports various analysis methods like Patlak, Logan, and
+alternative Logan analysis.
+
+The :class:`GraphicalAnalysis` class encapsulates the main functionality of the module. It provides an organized way to
+perform graphical analysis where it initializes with paths to input data and output details, runs an analysis using a
+specific method, calculates the best fit parameters, computes properties related to the fitting process, and stores the
+analysis results. All these properties and results are stored within an instance's 'analysis_props' dictionary, providing
+an organized storage of result of an analysis task.
 
 TODO:
     * Check if it makes more sense to lift out the more mathy methods out into a separate module.
