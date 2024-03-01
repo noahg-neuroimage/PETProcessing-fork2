@@ -12,6 +12,7 @@ import numba
 import numpy as np
 from typing import Callable, Tuple
 import os
+import json
 
 @numba.njit()
 def _line_fitting_make_rhs_matrix_from_xdata(xdata: np.ndarray) -> np.ndarray:
@@ -552,4 +553,25 @@ class GraphicalAnalysis:
         self.analysis_props['StartFrameTime'] = p_tac_times[t_thresh_index]
         self.analysis_props['EndFrameTime'] = p_tac_times[-1]
         self.analysis_props['NumberOfPointsFit'] = len(p_tac_times[t_thresh_index:])
+    
+    def save_analysis(self):
+        """
+        Saves the analysis properties to a JSON file.
 
+        This method saves the 'analysis_props' dictionary to a JSON file. The file is saved in the specified output directory
+        under a filename constructed from the 'output_filename_prefix' and the method name used in analysis. Before executing,
+        the method checks if analysis has been run by verifying if 'RSquared' in 'analysis_props' is not None.
+    
+        Raises:
+            RuntimeError: If the 'run_analysis' method was not called before 'save_analysis' is invoked.
+    
+        Returns:
+            None
+        """
+        if self.analysis_props['RSquared'] is None:
+            raise RuntimeError("'run_analysis' method must be called before 'save_analysis'.")
+        file_name_prefix = os.path.join(self.output_directory,
+                                        f"{self.output_filename_prefix}-{self.analysis_props['MethodName']}")
+        analysis_props_file = f"{file_name_prefix}-analysis-props.json"
+        with open(analysis_props_file, 'w') as f:
+            json.dump(obj=self.analysis_props, fp=f, indent=4)
