@@ -110,15 +110,7 @@ def generate_parametric_images_with_graphical_method(pTAC_times: np.ndarray,
        ValueError: If the `method_name` is not one of the following: 'patlak', 'logan', 'alt_logan'.
     """
     
-    if method_name == "patlak":
-        analysis_func = graphical_analysis.patlak_analysis
-    elif method_name == "logan":
-        analysis_func = graphical_analysis.logan_analysis
-    elif method_name == "alt_logan":
-        analysis_func = graphical_analysis.alternative_logan_analysis
-    else:
-        raise ValueError("Invalid method_name! Must be either 'patlak' or 'logan' or 'alt-logan'")
-    
+    analysis_func = graphical_analysis.get_graphical_analysis_method(method_name=method_name)
     slope_img, intercept_img = apply_linearized_analysis_to_all_voxels(pTAC_times=pTAC_times, pTAC_vals=pTAC_vals,
                                                                        tTAC_img=tTAC_img,
                                                                        t_thresh_in_mins=t_thresh_in_mins,
