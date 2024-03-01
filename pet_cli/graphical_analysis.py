@@ -428,6 +428,18 @@ class GraphicalAnalysis:
                  roi_tac_path: str,
                  output_directory: str,
                  output_filename_prefix: str) -> None:
+        """
+        Initializes GraphicalAnalysis with provided paths and output details.
+
+        Args:
+            input_tac_path (str): The path to the file containing input Time Activity Curve (TAC) data.
+            roi_tac_path (str): The path to the file containing Region of Interest (ROI) TAC data.
+            output_directory (str): The directory where the output of the analysis should be saved.
+            output_filename_prefix (str): The prefix for the name of output file(s).
+    
+        Returns:
+            None
+        """
         self.input_tac_path = os.path.abspath(input_tac_path)
         self.roi_tac_path = os.path.abspath(roi_tac_path)
         self.output_directory = os.path.abspath(output_directory)
@@ -435,6 +447,19 @@ class GraphicalAnalysis:
         self.analysis_props = self.init_analysis_props()
         
     def init_analysis_props(self) -> dict:
+        """
+        Initializes analysis properties dictionary.
+
+        This method initializes a dictionary with keys for all the analysis properties and default values set to None.
+        The paths to the input TAC and ROI TAC files are set from the object's properties.
+
+        Returns:
+            dict: A dictionary with keys for each analysis property and default values. The keys include 'FilePathPTAC'
+            (the file path to the input TAC file), 'FilePathTTAC' (the file path to the ROI TAC file), 'MethodName'
+            (the name of the method used in the analysis), 'ThresholdTime' (the threshold time for the analysis),
+            'StartFrameTime' and 'EndFrameTime' (the start and end times for the frame), 'NumberOfPointsFit' (The number
+            of points used in the fit), 'Slope', 'Intercept' and 'RSquared' (the slope, intercept and R-squared of the fit).
+        """
         props = {'FilePathPTAC': self.input_tac_path,
                  'FilePathTTAC': self.roi_tac_path,
                  'MethodName': None,
@@ -448,10 +473,43 @@ class GraphicalAnalysis:
         return props
     
     def run_analysis(self, method_name: str, t_thresh_in_mins: float):
+        """
+        Runs the graphical analysis on the data using a specific method.
+
+        This method is the main entry point to carry out the analysis. It executes the steps in order – first calculating
+        the fit, then calculating the properties of the fit.
+
+        Args:
+            method_name (str): The name of the graphical analysis method to be utilised.
+            t_thresh_in_mins (float): The threshold time in minutes for the analysis method.
+
+        Returns:
+            None
+
+        Side Effects:
+            Computes and updates the analysis-related properties in the object based on the provided method and threshold.
+        """
         self.calculate_fit(method_name=method_name, t_thresh_in_mins=t_thresh_in_mins)
         self.calculate_fit_properties(method_name=method_name, t_thresh_in_mins=t_thresh_in_mins)
         
     def calculate_fit(self, method_name: str, t_thresh_in_mins: float):
+        """
+        Calculates the best fit parameters for a graphical analysis method.
+    
+        This method applies the specified graphical analysis method to the Time Activity Curve (TAC) data and stores
+        the slope, intercept, and r-squared values of the fit in the analysis properties.
+    
+        Args:
+            method_name (str): The name of the graphical analysis method for which the fit should be calculated.
+            t_thresh_in_mins (float): The threshold time in minutes for the analysis method.
+    
+        Returns:
+            None
+            
+        Side Effect:
+            Updates 'Slope', 'Intercept', and 'RSquared' in self.analysis_props dictionary with calculated fit parameters.
+
+        """
         analysis_func = get_graphical_analysis_method_with_rsquared(method_name)
         p_tac_times, p_tac_vals = _safe_load_tac(self.input_tac_path)
         t_tac_times, t_tac_vals = _safe_load_tac(self.roi_tac_path)
