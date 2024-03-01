@@ -10,7 +10,7 @@ __version__ = '0.2'
 
 import numba
 import numpy as np
-
+from typing import Callable
 
 @numba.njit()
 def _line_fitting_make_rhs_matrix_from_xdata(xdata: np.ndarray) -> np.ndarray:
@@ -208,3 +208,38 @@ def alternative_logan_analysis(input_tac_values: np.ndarray,
     
     return alt_logan_values
 
+
+def get_graphical_analysis_method(method_name: str) -> Callable:
+    """
+    Function for obtaining the appropriate graphical analysis method.
+
+    This function accepts a string specifying a graphical time-activity curve (TAC) analysis method. It returns a
+    reference to the function that performs the selected analysis method.
+
+    Args:
+        method_name (str): The name of the graphical method. This should be one of the following strings: 'patlak',
+        'logan', or 'alt_logan'.
+
+    Returns:
+        function: A reference to the function that performs the corresponding graphical TAC analysis. The returned
+        function will take arguments specific to the analysis method, such as input TAC values, tissue TAC values, TAC
+        times in minutes, and threshold time in minutes.
+    
+    Raises:
+        ValueError: If `method_name` is not one of the supported graphical analysis methods, i.e., 'patlak', 'logan', or
+         'alt_logan'.
+    
+    Example:
+        
+        selected_func = get_graphical_analysis_method('logan')
+        results = selected_func(input_tac_values, tissue_tac_values,
+        tac_times_in_minutes, t_thresh_in_minutes)
+    """
+    if method_name == "patlak":
+        return patlak_analysis
+    elif method_name == "logan":
+        return logan_analysis
+    elif method_name == "alt_logan":
+        return alternative_logan_analysis
+    else:
+        raise ValueError(f"Invalid method_name! Must be either 'patlak', 'logan', or 'alt_logan'. Got {method_name}")
