@@ -231,6 +231,99 @@ def alternative_logan_analysis(input_tac_values: np.ndarray,
     return alt_logan_values
 
 
+@numba.njit()
+def patlak_analysis_with_rsquared(input_tac_values: np.ndarray,
+                    region_tac_values: np.ndarray,
+                    tac_times_in_minutes: np.ndarray,
+                    t_thresh_in_minutes: float) -> Tuple[float, float, float]:
+    """Performs Patlak-Gjedde analysis given the input TAC, region TAC, times and threshold.
+
+    Args:
+        input_tac_values (np.ndarray): Array of input TAC values
+        region_tac_values (np.ndarray): Array of ROI TAC values
+        tac_times_in_minutes (np.ndarray): Array of times in minutes.
+        t_thresh_in_minutes (np.ndarray): Threshold time in minutes. Line is fit for all values after the threshold.
+
+    Returns:
+        tuple: (slope, intercept, :math:`R^2`)
+
+    Notes:
+        * We assume that the input TAC and ROI TAC values are sampled at the same times.
+
+    """
+    t_thresh = get_index_from_threshold(times_in_minutes=tac_times_in_minutes, t_thresh_in_minutes=t_thresh_in_minutes)
+    
+    patlak_x = calculate_patlak_x(tac_times=tac_times_in_minutes, tac_vals=input_tac_values)
+    patlak_y = region_tac_values / input_tac_values
+    
+    patlak_values = fit_line_to_data_using_lls_with_rsquared(xdata=patlak_x[t_thresh:], ydata=patlak_y[t_thresh:])
+    
+    return patlak_values
+
+
+@numba.njit()
+def logan_analysis_with_rsquared(input_tac_values: np.ndarray,
+                   region_tac_values: np.ndarray,
+                   tac_times_in_minutes: np.ndarray,
+                   t_thresh_in_minutes: float) -> Tuple[float, float, float]:
+    """Performs Logan analysis on given input TAC, regional TAC, times and threshold.
+
+    Args:
+        input_tac_values (np.ndarray): Array of input TAC values
+        region_tac_values (np.ndarray): Array of ROI TAC values
+        tac_times_in_minutes (np.ndarray): Array of times in minutes.
+        t_thresh_in_minutes (np.ndarray): Threshold time in minutes. Line is fit for all values after the threshold.
+
+    Returns:
+        tuple: (slope, intercept, :math:`R^2`)
+
+    Notes:
+        * The interpretation of the values depends on the underlying kinetic model.
+        * We assume that the input TAC and ROI TAC values are sampled at the same times.
+    """
+    
+    t_thresh = get_index_from_threshold(times_in_minutes=tac_times_in_minutes, t_thresh_in_minutes=t_thresh_in_minutes)
+    
+    logan_x = cumulative_trapezoidal_integral(xdata=tac_times_in_minutes, ydata=input_tac_values) / region_tac_values
+    logan_y = cumulative_trapezoidal_integral(xdata=tac_times_in_minutes, ydata=region_tac_values) / region_tac_values
+    
+    logan_values = fit_line_to_data_using_lls_with_rsquared(xdata=logan_x[t_thresh:], ydata=logan_y[t_thresh:])
+    
+    return logan_values
+
+
+@numba.njit()
+def alternative_logan_analysis_with_rsquared(input_tac_values: np.ndarray,
+                               region_tac_values: np.ndarray,
+                               tac_times_in_minutes: np.ndarray,
+                               t_thresh_in_minutes: float) -> Tuple[float, float, float]:
+    """Performs alternative logan analysis on given input TAC, regional TAC, times and threshold.
+
+    Args:
+        input_tac_values (np.ndarray): Array of input TAC values
+        region_tac_values (np.ndarray): Array of ROI TAC values
+        tac_times_in_minutes (np.ndarray): Array of times in minutes.
+        t_thresh_in_minutes (np.ndarray): Threshold time in minutes. Line is fit for all values after the threshold.
+
+    Returns:
+        tuple: (slope, intercept, :math:`R^2`)
+
+    Notes:
+        * The interpretation of the values depends on the underlying kinetic model.
+        * We assume that the input TAC and ROI TAC values are sampled at the same times.
+    """
+    
+    t_thresh = get_index_from_threshold(times_in_minutes=tac_times_in_minutes, t_thresh_in_minutes=t_thresh_in_minutes)
+    
+    alt_logan_x = cumulative_trapezoidal_integral(xdata=tac_times_in_minutes,
+                                                  ydata=input_tac_values) / region_tac_values
+    alt_logan_y = cumulative_trapezoidal_integral(xdata=tac_times_in_minutes,
+                                                  ydata=region_tac_values) / input_tac_values
+    
+    alt_logan_values = fit_line_to_data_using_lls_with_rsquared(xdata=alt_logan_x[t_thresh:], ydata=alt_logan_y[t_thresh:])
+    
+    return alt_logan_values
+
 def get_graphical_analysis_method(method_name: str) -> Callable:
     """
     Function for obtaining the appropriate graphical analysis method.
@@ -265,7 +358,70 @@ def get_graphical_analysis_method(method_name: str) -> Callable:
         return alternative_logan_analysis
     else:
         raise ValueError(f"Invalid method_name! Must be either 'patlak', 'logan', or 'alt_logan'. Got {method_name}")
-    
+
+
+def get_graphical_analysis_method_with_rsqaured(method_name: str) -> Callable:
+    """
+    Function for obtaining the appropriate graphical analysis method which also calculates the r-squared value.
+
+    This function accepts a string specifying a graphical time-activity curve (TAC) analysis method. It returns a
+    reference to the function that performs the selected analysis method.
+
+    Args:
+        method_name (str): The name of the graphical method. This should be one of the following strings: 'patlak',
+        'logan', or 'alt_logan'.
+
+    Returns:
+        function: A reference to the function that performs the corresponding graphical TAC analysis. The returned
+        function will take arguments specific to the analysis method, such as input TAC values, tissue TAC values, TAC
+        times in minutes, and threshold time in minutes.
+
+    Raises:
+        ValueError: If `method_name` is not one of the supported graphical analysis methods, i.e., 'patlak', 'logan', or
+         'alt_logan'.
+
+    Example:
+
+        selected_func = get_graphical_analysis_method_with_rsquared('logan')
+        results = selected_func(input_tac_values, tissue_tac_values,
+        tac_times_in_minutes, t_thresh_in_minutes)
+    """
+    if method_name == "patlak":
+        return patlak_analysis_with_rsquared
+    elif method_name == "logan":
+        return logan_analysis_with_rsquared
+    elif method_name == "alt_logan":
+        return alternative_logan_analysis_with_rsquared
+    else:
+        raise ValueError(f"Invalid method_name! Must be either 'patlak', 'logan', or 'alt_logan'. Got {method_name}")
+
+
+# TODO: Use the safe loading of TACs function from an IO module when it is implemented
+def _safe_load_tac(filename: str) -> np.ndarray:
+    """
+    Loads time-activity curves (TAC) from a file.
+
+    Tries to read a TAC from specified file and raises an exception if unable to do so. We assume that the file has two
+    columns, the first corresponding to time and second corresponding to activity.
+
+    Args:
+        filename (str): The name of the file to be loaded.
+
+    Returns:
+        np.ndarray: A numpy array containing the loaded TAC. The first index corresponds to the times, and the second
+        corresponds to the activity.
+
+    Raises:
+        Exception: An error occurred loading the TAC.
+    """
+    try:
+        return np.array(np.loadtxt(filename).T, dtype=float, order='C')
+    except Exception as e:
+        print(f"Couldn't read file {filename}. Error: {e}")
+        raise e
+
+
+
 class GraphicalAnalysis:
     def __init__(self,
                  input_tac_path: str,
@@ -287,6 +443,7 @@ class GraphicalAnalysis:
                  'EndFrameTime': None,
                  'NumberOfPointsFit': None}
         return props
+    
     def run_analysis(self, method_name: str, t_thresh_in_minutes: float):
         self.analysis_props['MethodName'] = method_name
         self.analysis_props['ThresholdTime'] = t_thresh_in_minutes
