@@ -66,7 +66,7 @@ def fit_line_to_data_using_lls_with_rsquared(xdata: np.ndarray, ydata: np.ndarra
     matrix = make_2d_matrix(xdata)
     fit_ans = np.linalg.lstsq(matrix, ydata)
     
-    ss_res = fit_ans[1]
+    ss_res = fit_ans[1][0]
     ss_tot = np.sum((np.mean(ydata) - ydata) ** 2.)
     r_squared = 1.0 - ss_res / ss_tot
     return fit_ans[0][0], fit_ans[0][1], r_squared

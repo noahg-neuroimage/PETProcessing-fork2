@@ -433,7 +433,7 @@ class GraphicalAnalysisParametricImage:
         self.analysis_props['InterceptMinimum'] = np.min(self.intercept_image)
         self.analysis_props['InterceptMean'] = np.mean(self.intercept_image)
         self.analysis_props['InterceptVariance'] = np.var(self.intercept_image)
-    
+        
     # TODO: Come up with a smarter way to get the PET data in the correct units. I would prefer that 4DPET is saved in the right units already.
     def calculate_parametric_images(self, method_name: str, t_thresh_in_mins: float):
         """
@@ -532,6 +532,7 @@ class GraphicalAnalysisParametricImage:
         See Also:
             * :func:`save_analysis_properties`
         """
-        analysis_props_file = f"{self.output_directory}/{self.output_filename_prefix}-analysis-props.json"
+        analysis_props_file = os.path.join(self.output_directory,
+                                           f"{self.output_filename_prefix}-parametric-{self.analysis_props['MethodName']}-analysis-props.json")
         with open(analysis_props_file, 'w') as f:
             json.dump(obj=self.analysis_props, fp=f, indent=4)
