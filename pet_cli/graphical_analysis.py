@@ -360,7 +360,7 @@ def get_graphical_analysis_method(method_name: str) -> Callable:
         raise ValueError(f"Invalid method_name! Must be either 'patlak', 'logan', or 'alt_logan'. Got {method_name}")
 
 
-def get_graphical_analysis_method_with_rsqaured(method_name: str) -> Callable:
+def get_graphical_analysis_method_with_rsquared(method_name: str) -> Callable:
     """
     Function for obtaining the appropriate graphical analysis method which also calculates the r-squared value.
 
@@ -441,11 +441,57 @@ class GraphicalAnalysis:
                  'ThresholdTime': None,
                  'StartFrameTime': None,
                  'EndFrameTime': None,
-                 'NumberOfPointsFit': None}
+                 'NumberOfPointsFit': None,
+                 'Slope': None,
+                 'Intercept': None,
+                 'RSquared': None}
         return props
     
-    def run_analysis(self, method_name: str, t_thresh_in_minutes: float):
+    def run_analysis(self, method_name: str, t_thresh_in_mins: float):
+        self.calculate_fit(method_name=method_name, t_thresh_in_mins=t_thresh_in_mins)
+        self.calculate_fit_properties(method_name=method_name, t_thresh_in_mins=t_thresh_in_mins)
+        
+    def calculate_fit(self, method_name: str, t_thresh_in_mins: float):
+        analysis_func = get_graphical_analysis_method_with_rsquared(method_name)
+        p_tac_times, p_tac_vals = _safe_load_tac(self.input_tac_path)
+        t_tac_times, t_tac_vals = _safe_load_tac(self.roi_tac_path)
+        slope, intercept, rsquared = analysis_func(input_tac_values=p_tac_vals,
+                                                   region_tac_values=t_tac_vals,
+                                                   tac_times_in_minutes=p_tac_times,
+                                                   t_thresh_in_minutes=t_thresh_in_mins)
+        self.analysis_props['Slope'] = slope
+        self.analysis_props['Intercept'] = intercept
+        self.analysis_props['RSquared'] = rsquared
+    
+    def calculate_fit_properties(self, method_name: str, t_thresh_in_mins: float):
+        """
+        Calculates and stores the properties related to the fitting process.
+
+        This method calculates several properties related to the fitting process, including the threshold time, the name
+        of the method used, the start and end frame time, and the number of points used in the fit. These values are
+        stored in the instance's `analysis_props` variable.
+
+        Parameters:
+            method_name (str): The name of the methodology adopted for the fitting process.
+            t_thresh_in_mins (float): The threshold time (in minutes) used in the fitting process.
+
+        Note:
+            This method relies on the `_safe_load_tac` function to load time-activity curve (TAC) data from the file at
+            `self.input_tac_path`, and the `graphical_analysis.get_index_from_threshold` function to get the index from
+            the threshold time. Please ensure these dependencies are correctly implemented and accessible.
+
+        See also:
+            * :func:`_safe_load_tac`: Function to safely load TAC data from a file.
+            * :func:`graphical_analysis.get_index_from_threshold`: Function to get the index from the threshold time.
+
+        Returns:
+            None. The results are stored within the instance's `analysis_props` variable.
+        """
+        self.analysis_props['ThresholdTime'] = t_thresh_in_mins
         self.analysis_props['MethodName'] = method_name
-        self.analysis_props['ThresholdTime'] = t_thresh_in_minutes
-        
-        
+        p_tac_times, _ = _safe_load_tac(filename=self.input_tac_path)
+        t_thresh_index = get_index_from_threshold(times_in_minutes=p_tac_times, t_thresh_in_minutes=t_thresh_in_mins)
+        self.analysis_props['StartFrameTime'] = p_tac_times[t_thresh_index]
+        self.analysis_props['EndFrameTime'] = p_tac_times[-1]
+        self.analysis_props['NumberOfPointsFit'] = len(p_tac_times[t_thresh_index:])
+
