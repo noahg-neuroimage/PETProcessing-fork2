@@ -82,6 +82,7 @@ def fit_line_to_data_using_lls_with_rsquared(xdata: np.ndarray, ydata: np.ndarra
     r_squared = 1.0 - ss_res / ss_tot
     return fit_ans[0][0], fit_ans[0][1], r_squared
 
+
 @numba.njit()
 def cumulative_trapezoidal_integral(xdata: np.ndarray, ydata: np.ndarray, initial: float = 0.0) -> np.ndarray:
     """Calculates the cumulative integral of `ydata` over `xdata` using the trapezoidal rule.
