@@ -3,6 +3,7 @@ BIDS utilities
 """
 import os
 import json
+import numpy
 from nibabel.nifti1 import Nifti1Image
 from nibabel.filebasedimages import FileBasedImage
 from registration_tools import ImageIO
@@ -131,7 +132,7 @@ class bidsProject:
         elif type(object) is dict:
             print("JSON")
             save_json(json_dict=object, filepath=bids_file_path)
-        elif type(object) is np.array:
+        elif type(object) is numpy.array:
             print("TSV")
             # save_tsv(object, bids_file_path)
 
