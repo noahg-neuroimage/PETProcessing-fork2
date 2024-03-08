@@ -14,7 +14,8 @@ class BidsProject:
     Class to handle BIDS project filepaths and to sort input data into output BIDS.
     """
 
-    def __init__(self, project_path: str) -> None:
+    def __init__(self,
+                 project_path: str) -> None:
 
         self.project_path = project_path
         self.prefixes = {"subject": "sub-",
@@ -54,7 +55,8 @@ class BidsProject:
             with open(full_path, 'w') as f:
                 f.write(content)
 
-    def add_prefixes(self, elements: dict) -> dict:
+    def add_prefixes(self,
+                     elements: dict) -> dict:
         for key in list(elements.keys()):
             value = elements[key]
             if isinstance(value, str):
@@ -187,12 +189,16 @@ def create_json() -> dict:
     return {}
 
 
-def append_json(json_dict: dict, **kwargs) -> dict:
+def append_json(json_dict: dict = None,
+                **kwargs) -> dict:
+    if json_dict is None:
+        json_dict = create_json()
     json_dict.update(**kwargs)
     return json_dict
 
 
-def save_json(json_dict: dict, filepath: str) -> None:
+def save_json(json_dict: dict,
+              filepath: str) -> None:
     if not filepath.endswith(".json"):
         filepath += ".json"
     with open(filepath, 'w') as file:
