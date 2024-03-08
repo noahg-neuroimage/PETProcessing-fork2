@@ -37,8 +37,8 @@ class ImageIO():
 
         return image
 
-
-    def save_nii(self,image: nibabel.nifti1.Nifti1Image,out_file: str) -> int:
+    @staticmethod
+    def save_nii(image: nibabel.nifti1.Nifti1Image,out_file: str) -> int:
         """
         Wrapper to save nifti to file.
 
