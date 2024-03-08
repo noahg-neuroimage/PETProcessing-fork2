@@ -8,7 +8,8 @@ from nibabel.nifti1 import Nifti1Image
 from nibabel.filebasedimages import FileBasedImage
 from registration_tools import ImageIO
 
-class bidsProject:
+
+class BidsProject:
     """
     Class to handle BIDS project filepaths and to sort input data into output BIDS.
     """
@@ -31,7 +32,6 @@ class bidsProject:
             "sourcedata",
         ]
         files_to_create = {
-            ".bidsignore": "",
             "CHANGES": "Initial commit.",
             #        "dataset_description.json": json.dumps({
             #            "Name": "Example Dataset",
@@ -110,8 +110,8 @@ class bidsProject:
 
         return bids_filename
 
-    def write_symbolic_link(self,
-                            input_file_path: str,
+    @staticmethod
+    def write_symbolic_link(input_file_path: str,
                             bids_file_path: str) -> None:
 
         input_filename = os.path.basename(input_file_path)
@@ -122,17 +122,17 @@ class bidsProject:
             os.remove(link_file_path)
         os.symlink(input_file_path, link_file_path)
 
-    def write_file(self,
-                   object,
+    @staticmethod
+    def write_file(file_input,
                    bids_file_path: str) -> None:
 
-        if isinstance(object, FileBasedImage) or isinstance(object, Nifti1Image):
+        if isinstance(file_input, FileBasedImage) or isinstance(file_input, Nifti1Image):
             print("Nifti")
-            ImageIO.save_nii(image=object, out_file=bids_file_path)
-        elif type(object) is dict:
+            ImageIO.save_nii(image=file_input, out_file=bids_file_path)
+        elif type(file_input) is dict:
             print("JSON")
-            save_json(json_dict=object, filepath=bids_file_path)
-        elif type(object) is numpy.array:
+            save_json(json_dict=file_input, filepath=bids_file_path)
+        elif type(file_input) is numpy.array:
             print("TSV")
             # save_tsv(object, bids_file_path)
 
@@ -173,8 +173,8 @@ class bidsProject:
 
         return filepath
 
-    def create_bids_filepath(self,
-                             bids_path: str,
+    @staticmethod
+    def create_bids_filepath(bids_path: str,
                              bids_filename: str,
                              extension: str = "") -> str:
 
