@@ -136,7 +136,7 @@ class BidsProject:
             save_json(json_dict=file_input, filepath=bids_file_path)
         elif type(file_input) is numpy.array:
             print("TSV")
-            # save_tsv(object, bids_file_path)
+            save_array_as_tsv(array=file_input, filepath=bids_file_path)
 
     def extract_filepath(self,
                          subject: str,
@@ -204,3 +204,8 @@ def save_json(json_dict: dict,
     with open(filepath, 'w') as file:
         json.dump(json_dict, file, indent=4)
         file.write('\n')
+
+
+def save_array_as_tsv(array: numpy.array,
+                      filepath: str) -> None:
+    numpy.savetxt(filepath, array, delimiter='\t', fmt='%s')
