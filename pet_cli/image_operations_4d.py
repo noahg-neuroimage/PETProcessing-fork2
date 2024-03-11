@@ -26,7 +26,7 @@ class ImageOps4D():
         :class: `ImageIO`
     """
     def __init__(self,
-        images: list[ImageIO],
+        image_paths: list[str],
         out_path: str,
         half_life: float=0,
         color_table_path: str=None,
@@ -38,29 +38,12 @@ class ImageOps4D():
         Args:
         
         """
-        self.images_io = {
-            'pet': images[0],
-            'mri': images[1],
-            'seg': images[2]
-        }
-        self.images = {
-            'pet': images[0].load_nii(),
-            'mri': images[1].load_nii(),
-            'seg': images[2].load_nii(),
-            'seg_resampled': None
-        }
-#        image_path = image.image_path
-#        verbose = image.verbose
-#        self.image_meta = image_meta
+        self.image_paths = image_paths
+        # NB protected keywords: {'pet': pet_path,'mri': mri_path,'seg': seg_path}
         self.half_life = half_life
-#        self.pet_image = self.load_nii()
-#        self.pet_series = self.pet_image.get_fdata()
-#        self.pet_upsampled = None
         self.out_path = out_path
         self.color_table_path = color_table_path
         self.verbose = verbose
-#        self.seg_image = seg_image
-#        self.seg_resampled = None
 
 
     def weighted_series_sum(self) -> np.ndarray:
@@ -106,7 +89,8 @@ class ImageOps4D():
             affine=pet_image.affine,
             header=pet_image.header
         )
-        self.images['pet_sumimg'] = pet_sumimg
+        self.image_paths['pet_sumimg'] = f'{self.out_path}/moco/TEMP.nii'
+        nibabel.save(pet_sumimg,self.image_paths['pet_sumimg'])
 
         return image_weighted_sum
 
@@ -115,8 +99,8 @@ class ImageOps4D():
         """
         Motion correct PET series
         """
-        pet_nibabel = self.images['pet']
-        pet_sumimg = self.images['pet_sumimg']
+        pet_nibabel = nibabel.load(self.image_paths['pet'])
+        pet_sumimg = nibabel.load(self.image_paths['pet_sumimg'])
         pet_sumimg_ants = ants.from_nibabel(pet_sumimg)
         pet_ants = ants.from_nibabel(pet_nibabel)
         pet_moco_ants_dict = ants.motion_correction(pet_ants,
@@ -126,7 +110,8 @@ class ImageOps4D():
         pet_moco_pars = pet_moco_ants_dict['motion_parameters']
         pet_moco_np = pet_moco_ants.numpy()
         pet_moco_nibabel = ants.to_nibabel(pet_moco_ants)
-        self.images['pet_moco'] = pet_moco_nibabel
+        self.image_paths['pet_moco'] = f'{self.out_path}/moco/TEMP.nii' # TODO: fix path saving
+        nibabel.save(pet_moco_nibabel,self.image_paths['pet_moco'])
         return pet_moco_np, pet_moco_pars
 
 
