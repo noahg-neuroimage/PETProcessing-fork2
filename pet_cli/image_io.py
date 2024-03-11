@@ -55,14 +55,7 @@ class ImageIO():
         return 0
 
 
-    def load_meta(self) -> dict:
-        """
-        Wrapper to load metadata. Assume same path as input image path.
-        """
-        meta_path = re.sub('.nii.gz|.nii','.json',self.image_path)
-        with open(meta_path,'r',encoding='utf-8') as meta_file:
-            image_meta = json.load(meta_file)
-        return image_meta
+
 
 
     def extract_image_from_nii_as_numpy(self, image: nibabel.nifti1.Nifti1Image) -> np.ndarray:
@@ -174,4 +167,13 @@ class ImageIO():
         """
         ctab_json = json.load(ctab_file)
         return ctab_json
-    
+
+
+def load_meta(image_path) -> dict:
+    """
+    Wrapper to load metadata. Assume same path as input image path.
+    """
+    meta_path = re.sub('.nii.gz|.nii','.json',image_path)
+    with open(meta_path,'r',encoding='utf-8') as meta_file:
+        image_meta = json.load(meta_file)
+    return image_meta

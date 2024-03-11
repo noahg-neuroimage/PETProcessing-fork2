@@ -14,7 +14,7 @@ ImageIO = image_io.ImageIO
 
 class ImageOps4D():
     """
-    A class, extends ``ImageIO``, supplies tools to modify values of 4D images.
+    A class, supplies tools to modify values of 4D images.
     
     Attributes:
         images (list[ImageIO]): Enforced order: PET, MRI, segmentation.
@@ -61,16 +61,16 @@ class ImageOps4D():
 
         Credit to Avi Snyder who wrote the original version of this code in C.
         """
-        pet_meta = self.images_io['pet'].load_meta()
-        pet_image = self.images['pet']
+        pet_meta = image_io.load_meta(self.image_paths['pet'])
+        pet_image = nibabel.load(self.image_paths['pet'])
         pet_series = pet_image.get_fdata()
         image_frame_start = pet_meta['FrameTimesStart']
         image_frame_duration = pet_meta['FrameDuration']
         image_decay_correction = pet_meta['DecayCorrectionFactor']
         tracer_isotope = pet_meta['TracerRadionuclide']
         if self.verbose:
-            print(f"(ImageOps4D): Radio isotope is {tracer_isotope} \
-                   with half life {self.half_life} s")
+            print(f"(ImageOps4D): Radio isotope is {tracer_isotope}",
+                   "with half life {self.half_life} s")
         decay_constant = np.log(2) / self.half_life
 
         image_total_duration = np.sum(image_frame_duration)
@@ -89,7 +89,7 @@ class ImageOps4D():
             affine=pet_image.affine,
             header=pet_image.header
         )
-        self.image_paths['pet_sumimg'] = f'{self.out_path}/moco/TEMP.nii'
+        self.image_paths['pet_sumimg'] = f'{self.out_path}/sum_img/TEMP.nii'
         nibabel.save(pet_sumimg,self.image_paths['pet_sumimg'])
 
         return image_weighted_sum
@@ -119,11 +119,15 @@ class ImageOps4D():
         """
         Perform registration PET -> MRI
         """
+        pet_sumimg = nibabel.load(self.image_paths['pet_sumimg'])
+        mri_img = nibabel.load(self.image_paths['mri'])
+        pet_moco = nibabel.load(self.image_paths['pet_moco'])
         dummy = image_reg.ImageReg()
         _reg_out, xfm_path, _xfm_mat = dummy.rigid_registration(
-            self.images['pet_sumimg'],self.images['mri'])
-        pet_reg = dummy.apply_xfm(self.images['pet_moco'],self.images['mri'],xfm_path)
-        self.images['pet_moco_reg'] = pet_reg
+            pet_sumimg,mri_img)
+        pet_reg = dummy.apply_xfm(pet_moco,mri_img,xfm_path)
+        self.image_paths['pet_moco_reg'] = f'{self.out_path}/registration/TEMP.nii'
+        nibabel.save(pet_reg,self.image_paths['pet_moco_reg'])
 
     def mask_img_to_vals(self,
                          values: list[int],
@@ -141,21 +145,23 @@ class ImageOps4D():
         Returns:
             masked_image (np.ndarray): Masked image
         """
-        pet_image = self.images['pet_moco_reg']
-        seg_image = self.images['seg']
+        pet_image = nibabel.load(self.image_paths['pet_moco_reg'])
+        seg_image = nibabel.load(self.image_paths['seg'])
         pet_series = pet_image.get_fdata()
         num_frames = pet_series.shape[3]
-        if not self.images['seg_resampled']:
+        if not self.image_paths['seg_resampled']:
             if resample_seg:
                 image_first_frame = pet_series[:,:,:,0]
-                seg_resampled = processing.resample_from_to(from_img=self.images['seg'],
+                seg_resampled = processing.resample_from_to(from_img=seg_image,
                                     to_vox_map=(image_first_frame.shape,
                                     pet_image.affine),
                                     order=0)
-                self.images['seg_resampled'] = seg_resampled
+                self.image_paths['seg_resampled'] = f'{self.out_path}/segmentation/TEMP.nii'
+                nibabel.save(seg_resampled,self.image_paths['seg_resampled'])
             else:
-                self.images['seg_resampled'] = seg_image
-        seg_for_masking = self.images['seg_resampled'].get_fdata()
+                self.image_paths['seg_resampled'] = self.image_paths['seg']
+
+        seg_for_masking = nibabel.load(self.image_paths['seg_resampled']).get_fdata()
 
         for region in values:
             masked_voxels = seg_for_masking==region
@@ -175,7 +181,7 @@ class ImageOps4D():
 
         Returns:
         """
-        pet_meta = self.images_io['pet'].load_meta()
+        pet_meta = image_io.load_meta(self.image_paths['pet'])
         with open(self.color_table_path,'r',encoding='utf-8') as color_table_file:
             color_table = json.load(color_table_file)
         regions_list = color_table['data']
