@@ -4,6 +4,7 @@ BIDS utilities
 import os
 import json
 import numpy
+import warnings
 from nibabel.nifti1 import Nifti1Image
 from nibabel.filebasedimages import FileBasedImage
 from registration_tools import ImageIO
