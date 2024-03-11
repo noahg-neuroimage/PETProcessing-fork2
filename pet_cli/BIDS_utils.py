@@ -66,7 +66,7 @@ class BidsInstance:
                          "space": "space-",
                          "description": "desc-"}
 
-    def add_prefixes(self, elements: dict) -> dict:
+    def _add_prefixes(self, elements: dict) -> dict:
         for key in list(elements.keys()):
             value = elements[key]
             if isinstance(value, str):
@@ -96,33 +96,33 @@ class BidsInstance:
         parameters_dictionary = locals().copy()
 
         if bids_directory_path is not None and bids_file_basename is not None:
-            self.manual_bids_filepath(bids_path=bids_directory_path,
-                                      bids_filename=bids_file_basename,
-                                      extension=file_extension)
+            self._manual_bids_filepath(bids_path=bids_directory_path,
+                                       bids_filename=bids_file_basename,
+                                       extension=file_extension)
             return
 
         # if bids_directory_path is None:
         if all(key is not None for key in (subject,
                                            session,
                                            modality)):
-            self.create_bids_directory_path(subject=subject,
-                                            session=session,
-                                            modality=modality,
-                                            derivative_directory=derivative_directory)
+            self._create_bids_directory_path(subject=subject,
+                                             session=session,
+                                             modality=modality,
+                                             derivative_directory=derivative_directory)
         elif any(key is not None for key in (subject,
                                              session,
                                              modality,
                                              derivative_directory)):
-            input_dictionary = self.edit_filepath_constituents(constituent_string=self.directory_path,
-                                                               input_dictionary=parameters_dictionary,
-                                                               constituent_delimiter="/")
+            input_dictionary = self._edit_filepath_constituents(constituent_string=self.directory_path,
+                                                                input_dictionary=parameters_dictionary,
+                                                                constituent_delimiter="/")
 
             previous_directory_path = self.directory_path
 
-            self.create_bids_directory_path(subject=input_dictionary.get("subject"),
-                                            session=input_dictionary.get("session"),
-                                            modality=input_dictionary.get("modality"),
-                                            derivative_directory=input_dictionary.get("derivative_directory"))
+            self._create_bids_directory_path(subject=input_dictionary.get("subject"),
+                                             session=input_dictionary.get("session"),
+                                             modality=input_dictionary.get("modality"),
+                                             derivative_directory=input_dictionary.get("derivative_directory"))
             if warn:
                 warnings.warn(f"The directory_path variable in this BidsPath object has been edited:\n\
                 FROM: \"{previous_directory_path}\"\n\
@@ -131,42 +131,42 @@ class BidsInstance:
         if all(key is not None for key in (subject,
                                            session,
                                            image_type)):
-            self.create_bids_file_basename(subject=subject,
-                                           session=session,
-                                           image_type=image_type,
-                                           acquisition=acquisition,
-                                           contrast_enhancing=contrast_enhancing,
-                                           reconstruction=reconstruction,
-                                           space=space,
-                                           description=description)
+            self._create_bids_file_basename(subject=subject,
+                                            session=session,
+                                            image_type=image_type,
+                                            acquisition=acquisition,
+                                            contrast_enhancing=contrast_enhancing,
+                                            reconstruction=reconstruction,
+                                            space=space,
+                                            description=description)
         elif any(key is not None for key in (subject,
                                              session,
                                              image_type)):
-            input_dictionary = self.edit_filepath_constituents(constituent_string=self.file_basename,
-                                                               input_dictionary=parameters_dictionary,
-                                                               constituent_delimiter="_")
+            input_dictionary = self._edit_filepath_constituents(constituent_string=self.file_basename,
+                                                                input_dictionary=parameters_dictionary,
+                                                                constituent_delimiter="_")
 
             previous_file_basename = self.file_basename
 
-            self.create_bids_file_basename(subject=input_dictionary.get("subject"),
-                                           session=input_dictionary.get("session"),
-                                           image_type=input_dictionary.get("image_type"),
-                                           acquisition=input_dictionary.get("acquisition"),
-                                           contrast_enhancing=input_dictionary.get("contrast_enhancing"),
-                                           reconstruction=input_dictionary.get("reconstruction"),
-                                           space=input_dictionary.get("space"),
-                                           description=input_dictionary.get("description"))
+            self._create_bids_file_basename(subject=input_dictionary.get("subject"),
+                                            session=input_dictionary.get("session"),
+                                            image_type=input_dictionary.get("image_type"),
+                                            acquisition=input_dictionary.get("acquisition"),
+                                            contrast_enhancing=input_dictionary.get("contrast_enhancing"),
+                                            reconstruction=input_dictionary.get("reconstruction"),
+                                            space=input_dictionary.get("space"),
+                                            description=input_dictionary.get("description"))
             if warn:
                 warnings.warn(f"The file_basename variable in this BidsPath object has been edited:\n\
                 FROM: \"{previous_file_basename}\"\n\
                 TO: \"{self.file_basename}\"")
 
-        self.compile_bids_filepath(extension=file_extension)
+        self._compile_bids_filepath(extension=file_extension)
 
-    def edit_filepath_constituents(self,
-                                   constituent_string: str,
-                                   input_dictionary: dict,
-                                   constituent_delimiter: str) -> dict:
+    def _edit_filepath_constituents(self,
+                                    constituent_string: str,
+                                    input_dictionary: dict,
+                                    constituent_delimiter: str) -> dict:
 
         constituent_string_parts = constituent_string.split(constituent_delimiter)
 
@@ -188,15 +188,15 @@ class BidsInstance:
 
         return input_dictionary
 
-    def create_bids_directory_path(self,
-                                   subject: str,
-                                   session: str,
-                                   modality: str,
-                                   derivative_directory: str = "main",
-                                   make_directories: bool = True) -> None:
+    def _create_bids_directory_path(self,
+                                    subject: str,
+                                    session: str,
+                                    modality: str,
+                                    derivative_directory: str = "main",
+                                    make_directories: bool = True) -> None:
 
         elements = locals().copy()
-        elements = self.add_prefixes(elements)
+        elements = self._add_prefixes(elements)
 
         if derivative_directory is not None and derivative_directory != "main":
             modality_path = os.path.join(self.project.path,
@@ -216,18 +216,18 @@ class BidsInstance:
 
         self.directory_path = modality_path
 
-    def create_bids_file_basename(self,
-                                  subject: str,
-                                  session: str,
-                                  image_type: str,
-                                  acquisition: str = None,
-                                  contrast_enhancing: str = None,
-                                  reconstruction: str = None,
-                                  space: str = None,
-                                  description: str = None) -> None:
+    def _create_bids_file_basename(self,
+                                   subject: str,
+                                   session: str,
+                                   image_type: str,
+                                   acquisition: str = None,
+                                   contrast_enhancing: str = None,
+                                   reconstruction: str = None,
+                                   space: str = None,
+                                   description: str = None) -> None:
 
         elements = locals().copy()
-        elements = self.add_prefixes(elements)
+        elements = self._add_prefixes(elements)
 
         bids_filename = '_'.join(
             [value for key, value in elements.items() if value is not None and key != "image_type"])
@@ -274,15 +274,15 @@ class BidsInstance:
         return filepath
     """
 
-    def compile_bids_filepath(self,
-                              extension: str = "") -> None:
+    def _compile_bids_filepath(self,
+                               extension: str = "") -> None:
 
         self.full_filepath = os.path.join(self.directory_path, self.file_basename) + extension
 
-    def manual_bids_filepath(self,
-                             bids_path: str,
-                             bids_filename: str,
-                             extension: str = "") -> None:
+    def _manual_bids_filepath(self,
+                              bids_path: str,
+                              bids_filename: str,
+                              extension: str = "") -> None:
 
         self.full_filepath = os.path.join(self.project.path, bids_path, bids_filename) + extension
 
