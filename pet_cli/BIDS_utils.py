@@ -18,7 +18,7 @@ class BidsProject:
     def __init__(self,
                  project_path: str) -> None:
 
-        self.project_path = project_path
+        self.path = project_path
 
     def create_bids_scaffold(self):
         dirs_to_create = [
@@ -40,19 +40,19 @@ class BidsProject:
 
         # Create directories
         for dir_name in dirs_to_create:
-            full_path = os.path.join(self.project_path, dir_name)
+            full_path = os.path.join(self.path, dir_name)
             os.makedirs(full_path, exist_ok=True)
 
         # Create files
         for file_name, content in files_to_create.items():
-            full_path = os.path.join(self.project_path, file_name)
+            full_path = os.path.join(self.path, file_name)
             with open(full_path, 'w') as f:
                 f.write(content)
 
 
-class BidsInstance(BidsProject):
+class BidsInstance:
 
-    def __init__(self, bids_project):
+    def __init__(self, bids_project: BidsProject):
         self.project = bids_project
         self.directory_path = ""
         self.file_basename = ""
@@ -96,9 +96,9 @@ class BidsInstance(BidsProject):
         parameters_dictionary = locals().copy()
 
         if bids_directory_path is not None and bids_file_basename is not None:
-            self.compile_bids_filepath(bids_path=bids_directory_path,
-                                       bids_filename=bids_file_basename,
-                                       extension=file_extension)
+            self.manual_bids_filepath(bids_path=bids_directory_path,
+                                      bids_filename=bids_file_basename,
+                                      extension=file_extension)
             return
 
         # if bids_directory_path is None:
@@ -116,8 +116,8 @@ class BidsInstance(BidsProject):
             input_dictionary = self.edit_filepath_constituents(constituent_string=self.directory_path,
                                                                input_dictionary=parameters_dictionary,
                                                                constituent_delimiter="/")
-            if warn:
-                previous_directory_path = self.directory_path
+
+            previous_directory_path = self.directory_path
 
             self.create_bids_directory_path(subject=input_dictionary.get("subject"),
                                             session=input_dictionary.get("session"),
@@ -145,8 +145,8 @@ class BidsInstance(BidsProject):
             input_dictionary = self.edit_filepath_constituents(constituent_string=self.file_basename,
                                                                input_dictionary=parameters_dictionary,
                                                                constituent_delimiter="_")
-            if warn:
-                previous_file_basename = self.file_basename
+
+            previous_file_basename = self.file_basename
 
             self.create_bids_file_basename(subject=input_dictionary.get("subject"),
                                            session=input_dictionary.get("session"),
@@ -179,8 +179,7 @@ class BidsInstance(BidsProject):
                             input_dictionary[key] = part[len(prefix):]
                             break
                 elif ((constituent_delimiter == "/" and key == "modality") or
-                      (
-                              constituent_delimiter == "_" and key == "image_type")):  # assumes last part is modality or image_type
+                      (constituent_delimiter == "_" and key == "image_type")):  # last part modality or image_type
                     input_dictionary[key] = constituent_string_parts[-1]
                 elif constituent_delimiter == "/" and key == "derivative_directory":
                     if "derivatives" in constituent_string_parts:
@@ -236,6 +235,7 @@ class BidsInstance(BidsProject):
 
         self.file_basename = bids_filename
 
+    """
     def extract_filepath(self,
                          subject: str,
                          session: str,
@@ -272,11 +272,19 @@ class BidsInstance(BidsProject):
             raise FileNotFoundError(f"The file '{filepath}' does not exist.")
 
         return filepath
+    """
 
     def compile_bids_filepath(self,
                               extension: str = "") -> None:
 
         self.full_filepath = os.path.join(self.directory_path, self.file_basename) + extension
+
+    def manual_bids_filepath(self,
+                             bids_path: str,
+                             bids_filename: str,
+                             extension: str = "") -> None:
+
+        self.full_filepath = os.path.join(self.project.path, bids_path, bids_filename) + extension
 
     def write_symbolic_link(self,
                             input_file_path: str) -> None:
@@ -290,15 +298,15 @@ class BidsInstance(BidsProject):
         os.symlink(input_file_path, link_file_path)
 
     def write_file(self,
-                   object) -> None:
+                   file_input) -> None:
 
-        if isinstance(object, FileBasedImage):
+        if isinstance(file_input, FileBasedImage) or isinstance(file_input, Nifti1Image):
             print("Nifti")
-            # save_nii(object, bids_file_path)
-        elif type(object) is dict:
+            ImageIO.save_nii(image=file_input, out_file=self.full_filepath)
+        elif type(file_input) is dict:
             print("JSON")
-            save_json(json_dict=object, filepath=self.full_filepath)
-        elif type(object) is np.array:
+            save_json(json_dict=file_input, filepath=self.full_filepath)
+        elif type(file_input) is numpy.array:
             print("TSV")
             # save_tsv(object, bids_file_path)
 
