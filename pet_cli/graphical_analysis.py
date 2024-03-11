@@ -421,9 +421,9 @@ def get_graphical_analysis_method(method_name: str) -> Callable:
     if method_name == "patlak":
         return patlak_analysis
     elif method_name == "logan":
-        return logan_analysis
+        return smart_logan_analysis
     elif method_name == "alt_logan":
-        return alternative_logan_analysis
+        return smart_alternative_logan_analysis
     else:
         raise ValueError(f"Invalid method_name! Must be either 'patlak', 'logan', or 'alt_logan'. Got {method_name}")
 
