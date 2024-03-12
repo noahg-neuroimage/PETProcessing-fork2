@@ -25,6 +25,7 @@ from typing import Callable, Tuple
 import os
 import json
 
+
 @numba.njit()
 def _line_fitting_make_rhs_matrix_from_xdata(xdata: np.ndarray) -> np.ndarray:
     """Generates the RHS matrix for linear least squares fitting
@@ -39,6 +40,7 @@ def _line_fitting_make_rhs_matrix_from_xdata(xdata: np.ndarray) -> np.ndarray:
     out_matrix = np.ones((len(xdata), 2), float)
     out_matrix[:, 0] = xdata
     return out_matrix
+
 
 @numba.njit()
 def fit_line_to_data_using_lls(xdata: np.ndarray, ydata: np.ndarray) -> np.ndarray:
@@ -104,6 +106,7 @@ def cumulative_trapezoidal_integral(xdata: np.ndarray, ydata: np.ndarray, initia
     cum_int[1:] = np.cumsum(dx * (ydata[1:] + ydata[:-1]) / 2.0)
     
     return cum_int
+
 
 # TODO: Add references for the TCMs and Patlak. Could maybe rely on Turku PET Center.
 # TODO: Handle cases when tac_vals = 0.0. Might be able to use t_thresh so that we are past the 0-values.
@@ -531,7 +534,6 @@ def _safe_load_tac(filename: str) -> np.ndarray:
     except Exception as e:
         print(f"Couldn't read file {filename}. Error: {e}")
         raise e
-
 
 
 class GraphicalAnalysis:
