@@ -1,6 +1,7 @@
 """"
 4D pet tools.
 """
+import os
 import json
 import ants
 import nibabel
@@ -64,11 +65,15 @@ class ImageOps4D():
         pet_series = pet_image.get_fdata()
         image_frame_start = pet_meta['FrameTimesStart']
         image_frame_duration = pet_meta['FrameDuration']
-        image_decay_correction = pet_meta['DecayCorrectionFactor']
-        tracer_isotope = pet_meta['TracerRadionuclide']
-        if self.verbose:
-            print(f"(ImageOps4D): Radio isotope is {tracer_isotope}",
-                   "with half life {self.half_life} s")
+        if 'DecayCorrectionFactor' in pet_meta.keys():
+            image_decay_correction = pet_meta['DecayCorrectionFactor']
+        elif 'DecayFactor' in pet_meta.keys():
+            image_decay_correction = pet_meta['DecayFactor']
+        if 'TracerRadionuclide' in pet_meta.keys():
+            tracer_isotope = pet_meta['TracerRadionuclide']
+            if self.verbose:
+                print(f"(ImageOps4D): Radio isotope is {tracer_isotope}",
+                    "with half life {self.half_life} s")
         decay_constant = np.log(2) / self.half_life
 
         image_total_duration = np.sum(image_frame_duration)
@@ -87,7 +92,9 @@ class ImageOps4D():
             affine=pet_image.affine,
             header=pet_image.header
         )
-        self.image_paths['pet_sum_image'] = f'{self.out_path}/sum_image/TEMP.nii'
+        sum_image_path = os.path.join(self.out_path,'sum_image')
+        os.makedirs(sum_image_path,exist_ok=True)
+        self.image_paths['pet_sum_image'] = os.path.join(sum_image_path,f'{self.sub_id}-sum-image.nii.gz')
         nibabel.save(pet_sum_image,self.image_paths['pet_sum_image'])
 
         return image_weighted_sum
@@ -108,7 +115,9 @@ class ImageOps4D():
         pet_moco_pars = pet_moco_ants_dict['motion_parameters']
         pet_moco_np = pet_moco_ants.numpy()
         pet_moco_nibabel = ants.to_nibabel(pet_moco_ants)
-        self.image_paths['pet_moco'] = f'{self.out_path}/moco/TEMP.nii' # TODO: fix path saving
+        moco_path = os.path.join(self.out_path,'motion-correction')
+        os.makedirs(moco_path,exist_ok=True)
+        self.image_paths['pet_moco'] = os.path.join(moco_path,f'{self.sub_id}-moco.nii.gz')
         nibabel.save(pet_moco_nibabel,self.image_paths['pet_moco'])
         return pet_moco_np, pet_moco_pars
 
@@ -133,7 +142,9 @@ class ImageOps4D():
             imagetype=3,
             verbose=True)
         print('applied registration')
-        self.image_paths['pet_moco_reg'] = f'{self.out_path}/registration/TEMP.nii'
+        reg_path = os.path.join(self.out_path,'registration')
+        os.makedirs(reg_path,exist_ok=True)
+        self.image_paths['pet_moco_reg'] = os.path.join(reg_path,f'{self.sub_id}-moco-reg.nii.gz')
         ants.image_write(xfm_apply,self.image_paths['pet_moco_reg'])
 
     def mask_image_to_vals(self,
@@ -162,7 +173,11 @@ class ImageOps4D():
                                 to_vox_map=(image_first_frame.shape,
                                 pet_image.affine),
                                 order=0)
-            self.image_paths['seg_resampled'] = f'{self.out_path}/segmentation/TEMP.nii'
+            seg_res_path = os.path.join(self.out_path,'segmentation')
+            os.makedirs(seg_res_path,exist_ok=True)
+            self.image_paths['seg_resampled'] = os.path.join(
+                seg_res_path,
+                f'{self.sub_id}-segmentation-resampled.nii.gz')
             nibabel.save(seg_resampled,self.image_paths['seg_resampled'])
         seg_for_masking = nibabel.load(self.image_paths['seg_resampled']).get_fdata()
         for region in values:
@@ -195,7 +210,9 @@ class ImageOps4D():
             res=False
             region_json['frame_start_time'] = pet_meta['FrameTimesStart']
             region_json['activity'] = series_means
-            with open(f'{self.out_path}/tacs/{region_name}-tac.json',
+            tac_path = os.path.join(f'{self.out_path}','tacs')
+            os.makedirs(tac_path,exist_ok=True)
+            with open(os.path.join(tac_path,f'{self.sub_id}-{region_name}-tac.json'),
                       'w',encoding='ascii') as out_file:
                 json.dump(obj=region_json,fp=out_file,indent=4)
         return 0

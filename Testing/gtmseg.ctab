@@ -12,6 +12,7 @@
   5  Left-Inf-Lat-Vent               196  58 250    0   4
   7  Left-Cerebellum-White-Matter    220 248 164    0   3
   8  Left-Cerebellum-Cortex          230 148  34    0   2
+  9  Left-Thalamus-Unused            100 100 100    0   2
  10  Left-Thalamus                     0 118  14    0   2
  11  Left-Caudate                    122 186 220    0   2
  12  Left-Putamen                    236  13 176    0   2
