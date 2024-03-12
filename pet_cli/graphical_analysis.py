@@ -391,7 +391,30 @@ def smart_alternative_logan_analysis(input_tac_values: np.ndarray,
                                      region_tac_values: np.ndarray,
                                      tac_times_in_minutes: np.ndarray,
                                      t_thresh_in_minutes: float) -> np.ndarray:
-    
+    """Performs Alternative Logan analysis on given input TAC, regional TAC, times and threshold,
+    considering non-zero values for regional TAC.
+
+    This function is similar to :func:`alternative_logan_analysis_with_rsquared`, but avoids the issue of division by
+    zero by only considering non-zero TAC values for the region TAC since it is in the denominator. If the number of
+    indices is less than or equal to 2, or if the number of time points after the threshold is less than or equal to 2,
+    the function returns an array of NaNs.
+
+    Args:
+        input_tac_values (np.ndarray): Array of input TAC values.
+        region_tac_values (np.ndarray): Array of ROI TAC values.
+        tac_times_in_minutes (np.ndarray): Array of times in minutes.
+        t_thresh_in_minutes (np.ndarray): Threshold time in minutes. Line is fit for all values after the threshold.
+
+    Returns:
+        np.ndarray: Array of two elements - (slope, intercept) of the best-fit line to the given data.
+
+    Notes:
+        * This function assumes that the input TAC does not have any 0 values.
+        * The interpretation of the returned values depends on
+            the underlying kinetic model.
+        * We assume that the input TAC and ROI TAC values are
+            sampled at the same times.
+    """
     non_zero_indices = np.argwhere(region_tac_values != 0.).T[0]
     
     if len(non_zero_indices) <= 2:
