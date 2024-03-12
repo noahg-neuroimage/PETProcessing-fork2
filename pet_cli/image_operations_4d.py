@@ -7,10 +7,6 @@ import nibabel
 from nibabel import processing
 import numpy as np
 from . import image_io
-from . import image_reg
-
-
-ImageIO = image_io.ImageIO
 
 class ImageOps4D():
     """
@@ -26,7 +22,8 @@ class ImageOps4D():
         :class: `ImageIO`
     """
     def __init__(self,
-        image_paths: list[str],
+        sub_id: str,
+        image_paths: dict,
         out_path: str,
         half_life: float=0,
         color_table_path: str=None,
@@ -38,6 +35,7 @@ class ImageOps4D():
         Args:
         
         """
+        self.sub_id = sub_id
         self.image_paths = image_paths
         # NB protected keywords: {'pet': pet_path,'mri': mri_path,'seg': seg_path}
         self.half_life = half_life
@@ -84,13 +82,13 @@ class ImageOps4D():
         pet_series_sum_scaled = np.sum(pet_series_scaled,axis=3)
         image_weighted_sum = pet_series_sum_scaled * total_decay / image_total_duration
 
-        pet_sumimg = nibabel.nifti1.Nifti1Image(
+        pet_sum_image = nibabel.nifti1.Nifti1Image(
             dataobj=image_weighted_sum,
             affine=pet_image.affine,
             header=pet_image.header
         )
-        self.image_paths['pet_sumimg'] = f'{self.out_path}/sum_img/TEMP.nii'
-        nibabel.save(pet_sumimg,self.image_paths['pet_sumimg'])
+        self.image_paths['pet_sum_image'] = f'{self.out_path}/sum_image/TEMP.nii'
+        nibabel.save(pet_sum_image,self.image_paths['pet_sum_image'])
 
         return image_weighted_sum
 
@@ -100,11 +98,11 @@ class ImageOps4D():
         Motion correct PET series
         """
         pet_nibabel = nibabel.load(self.image_paths['pet'])
-        pet_sumimg = nibabel.load(self.image_paths['pet_sumimg'])
-        pet_sumimg_ants = ants.from_nibabel(pet_sumimg)
+        pet_sum_image = nibabel.load(self.image_paths['pet_sum_image'])
+        pet_sum_image_ants = ants.from_nibabel(pet_sum_image)
         pet_ants = ants.from_nibabel(pet_nibabel)
         pet_moco_ants_dict = ants.motion_correction(pet_ants,
-            pet_sumimg_ants,
+            pet_sum_image_ants,
             type_of_transform='Rigid')
         pet_moco_ants = pet_moco_ants_dict['motion_corrected']
         pet_moco_pars = pet_moco_ants_dict['motion_parameters']
@@ -119,17 +117,26 @@ class ImageOps4D():
         """
         Perform registration PET -> MRI
         """
-        pet_sumimg = nibabel.load(self.image_paths['pet_sumimg'])
-        mri_img = nibabel.load(self.image_paths['mri'])
-        pet_moco = nibabel.load(self.image_paths['pet_moco'])
-        dummy = image_reg.ImageReg()
-        _reg_out, xfm_path, _xfm_mat = dummy.rigid_registration(
-            pet_sumimg,mri_img)
-        pet_reg = dummy.apply_xfm(pet_moco,mri_img,xfm_path)
+        pet_sum_image = ants.image_read(self.image_paths['pet_sum_image'])
+        mri_image = ants.image_read(self.image_paths['mri'])
+        pet_moco = ants.image_read(self.image_paths['pet_moco'])
+        print('loaded images')
+        xfm_output = ants.registration(
+            moving=pet_sum_image,
+            fixed=mri_image,
+            type_of_transform='DenseRigid',
+            write_composite_transform=True)
+        xfm_apply = ants.apply_transforms(
+            moving=pet_moco,
+            fixed=mri_image,
+            transformlist=xfm_output['fwdtransforms'],
+            imagetype=3,
+            verbose=True)
+        print('applied registration')
         self.image_paths['pet_moco_reg'] = f'{self.out_path}/registration/TEMP.nii'
-        nibabel.save(pet_reg,self.image_paths['pet_moco_reg'])
+        ants.image_write(xfm_apply,self.image_paths['pet_moco_reg'])
 
-    def mask_img_to_vals(self,
+    def mask_image_to_vals(self,
                          values: list[int],
                          resample_seg: bool=False) -> np.ndarray:
         """
@@ -149,20 +156,15 @@ class ImageOps4D():
         seg_image = nibabel.load(self.image_paths['seg'])
         pet_series = pet_image.get_fdata()
         num_frames = pet_series.shape[3]
-        if not self.image_paths['seg_resampled']:
-            if resample_seg:
-                image_first_frame = pet_series[:,:,:,0]
-                seg_resampled = processing.resample_from_to(from_img=seg_image,
-                                    to_vox_map=(image_first_frame.shape,
-                                    pet_image.affine),
-                                    order=0)
-                self.image_paths['seg_resampled'] = f'{self.out_path}/segmentation/TEMP.nii'
-                nibabel.save(seg_resampled,self.image_paths['seg_resampled'])
-            else:
-                self.image_paths['seg_resampled'] = self.image_paths['seg']
-
+        if resample_seg:
+            image_first_frame = pet_series[:,:,:,0]
+            seg_resampled = processing.resample_from_to(from_img=seg_image,
+                                to_vox_map=(image_first_frame.shape,
+                                pet_image.affine),
+                                order=0)
+            self.image_paths['seg_resampled'] = f'{self.out_path}/segmentation/TEMP.nii'
+            nibabel.save(seg_resampled,self.image_paths['seg_resampled'])
         seg_for_masking = nibabel.load(self.image_paths['seg_resampled']).get_fdata()
-
         for region in values:
             masked_voxels = seg_for_masking==region
             masked_image = pet_series[masked_voxels].reshape((-1,num_frames))
@@ -185,10 +187,12 @@ class ImageOps4D():
         with open(self.color_table_path,'r',encoding='utf-8') as color_table_file:
             color_table = json.load(color_table_file)
         regions_list = color_table['data']
+        res = True
         for region_pair in regions_list:
             region_index, region_name = region_pair
             region_json = {'region_name': region_name}
-            series_means = self.mask_img_to_vals([region_index]).tolist()
+            series_means = self.mask_image_to_vals([region_index],resample_seg=res).tolist()
+            res=False
             region_json['frame_start_time'] = pet_meta['FrameTimesStart']
             region_json['activity'] = series_means
             with open(f'{self.out_path}/tacs/{region_name}-tac.json',
