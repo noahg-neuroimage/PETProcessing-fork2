@@ -105,7 +105,7 @@ class PatlakPlot(GraphicalAnalysisPlot):
         
         fit_params = {'slope': fit_params[0],
                       'intercept': fit_params[1],
-                      'r_squared':fit_params[2]}
+                      'r_squared': fit_params[2]}
         return x, y, fit_params
 
     def generate_label_from_fit_params(self) -> str:
@@ -116,14 +116,13 @@ class PatlakPlot(GraphicalAnalysisPlot):
         return f"$K_1=${slope:<5.3f}\n$V_T=${intercept:<5.3f}\n$R^2=${r_sq:<5.3f}"
 
     def add_figure_labels_and_legend(self):
-        patlak_x_label = r"$\frac{\int_{0}^{t}C_\mathrm{P}(s)\mathrm{d}s}{C_\mathrm{P}(t)}$"
-        patlak_y_label = r"$\frac{R(t)}{C_\mathrm{P}(t)}$"
+        x_label = r"$\frac{\int_{0}^{t}C_\mathrm{P}(s)\mathrm{d}s}{C_\mathrm{P}(t)}$"
+        y_label = r"$\frac{R(t)}{C_\mathrm{P}(t)}$"
         for ax in self.ax_list:
-            ax.set_xlabel(patlak_x_label)
-            ax.set_ylabel(patlak_y_label)
+            ax.set_xlabel(x_label)
+            ax.set_ylabel(y_label)
         self.fig.legend(*self.ax_list[0].get_legend_handles_labels(),
                         bbox_to_anchor=(1.0, 0.8),
                         loc='upper left',
                         title='Patlak Analysis')
         self.fig.suptitle("Patlak Plots")
-        

@@ -237,9 +237,10 @@ def alternative_logan_analysis(input_tac_values: np.ndarray,
         * We assume that the input TAC and ROI TAC values are sampled at the same times.
     """
     
-    t_thresh = get_index_from_threshold(times_in_minutes=tac_times_in_minutes, t_thresh_in_minutes=t_thresh_in_minutes)
+    t_thresh = get_index_from_threshold(times_in_minutes=tac_times_in_minutes,
+                                        t_thresh_in_minutes=t_thresh_in_minutes)
     
-    alt_logan_x = cumulative_trapezoidal_integral(xdata=tac_times_in_minutes, ydata=input_tac_values) / region_tac_values
+    alt_logan_x = cumulative_trapezoidal_integral(xdata=tac_times_in_minutes, ydata=input_tac_values) / input_tac_values
     alt_logan_y = cumulative_trapezoidal_integral(xdata=tac_times_in_minutes, ydata=region_tac_values) / input_tac_values
     
     alt_logan_values = fit_line_to_data_using_lls(xdata=alt_logan_x[t_thresh:], ydata=alt_logan_y[t_thresh:])
@@ -332,11 +333,12 @@ def alternative_logan_analysis_with_rsquared(input_tac_values: np.ndarray,
     t_thresh = get_index_from_threshold(times_in_minutes=tac_times_in_minutes, t_thresh_in_minutes=t_thresh_in_minutes)
     
     alt_logan_x = cumulative_trapezoidal_integral(xdata=tac_times_in_minutes,
-                                                  ydata=input_tac_values) / region_tac_values
+                                                  ydata=input_tac_values) / input_tac_values
     alt_logan_y = cumulative_trapezoidal_integral(xdata=tac_times_in_minutes,
                                                   ydata=region_tac_values) / input_tac_values
     
-    alt_logan_values = fit_line_to_data_using_lls_with_rsquared(xdata=alt_logan_x[t_thresh:], ydata=alt_logan_y[t_thresh:])
+    alt_logan_values = fit_line_to_data_using_lls_with_rsquared(xdata=alt_logan_x[t_thresh:],
+                                                                ydata=alt_logan_y[t_thresh:])
     
     return alt_logan_values
 
@@ -418,7 +420,7 @@ def smart_alternative_logan_analysis(input_tac_values: np.ndarray,
         * We assume that the input TAC and ROI TAC values are
             sampled at the same times.
     """
-    non_zero_indices = np.argwhere(region_tac_values != 0.).T[0]
+    non_zero_indices = np.argwhere(input_tac_values != 0.).T[0]
     
     if len(non_zero_indices) <= 2:
         return np.asarray([np.nan, np.nan])
@@ -433,7 +435,7 @@ def smart_alternative_logan_analysis(input_tac_values: np.ndarray,
     alt_logan_y = cumulative_trapezoidal_integral(xdata=tac_times_in_minutes, ydata=region_tac_values)
     
     alt_logan_x = alt_logan_x[non_zero_indices][t_thresh:] / input_tac_values[non_zero_indices][t_thresh:]
-    alt_logan_y = alt_logan_y[non_zero_indices][t_thresh:] / region_tac_values[non_zero_indices][t_thresh:]
+    alt_logan_y = alt_logan_y[non_zero_indices][t_thresh:] / input_tac_values[non_zero_indices][t_thresh:]
     
     fit_ans = fit_line_to_data_using_lls(xdata=alt_logan_x, ydata=alt_logan_y)
     return fit_ans
