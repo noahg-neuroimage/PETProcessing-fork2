@@ -26,6 +26,10 @@ class GraphicalAnalysisPlot(ABC):
             ax_list = fig.get_axes()
         return fig, ax_list
 
+    def add_data_plots(self):
+        for ax in self.ax_list:
+            ax.plot(self.x, self.y, lw=1, alpha=0.9, ms=8, marker='.', zorder=1, color='black')
+
 
 
     @abstractmethod
