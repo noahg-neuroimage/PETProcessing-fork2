@@ -39,6 +39,14 @@ class GraphicalAnalysisPlot(ABC):
         for ax in self.ax_list:
             ax.axvspan(x_lo, x_hi, color='gray', alpha=0.2, zorder=0)
 
+    def add_fit_points(self):
+        good_points = np.argwhere(self.pTAC[1] != 0.0).T[0]
+        t_thresh = pet_grph.get_index_from_threshold(times_in_minutes=self.pTAC[0][good_points],
+                                                     t_thresh_in_minutes=self.t_thresh_in_mins)
+        for ax in self.ax_list:
+            ax.plot(self.x[t_thresh:], self.y[t_thresh:], 'o', alpha=0.9, ms='5', zorder=2, color='blue')
+    
+    
     @abstractmethod
     def calculate_x_and_y(self):
         pass
