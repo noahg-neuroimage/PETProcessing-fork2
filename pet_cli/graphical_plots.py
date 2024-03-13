@@ -2,7 +2,7 @@ from matplotlib import pyplot as plt
 import numpy as np
 from abc import ABC, abstractmethod
 import seaborn as sns
-from . import graphical_analysis
+from . import graphical_analysis as pet_grph
 
 
 class GraphicalAnalysisPlot(ABC):
@@ -10,9 +10,10 @@ class GraphicalAnalysisPlot(ABC):
     def __init__(self, pTAC: np.ndarray, tTAC: np.ndarray, t_thresh_in_mins: float, figObj: plt.Figure = None):
         self.pTAC = pTAC[:]
         self.tTAC = tTAC[:]
-        self.t_thres = t_thresh_in_mins
+        self.t_thresh = t_thresh_in_mins
         self.fig, self.ax_list = self.generate_figure_and_axes(figObj=figObj)
-    
+        self.x, self.y = self.calculate_x_and_y()
+        
     @staticmethod
     def generate_figure_and_axes(figObj: plt.Figure = None):
         if figObj is None:
@@ -26,3 +27,7 @@ class GraphicalAnalysisPlot(ABC):
         return fig, ax_list
 
 
+
+    @abstractmethod
+    def calculate_x_and_y(self):
+        pass
