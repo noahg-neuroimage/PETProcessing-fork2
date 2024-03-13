@@ -8,6 +8,7 @@ import nibabel
 from nibabel import processing
 import numpy as np
 from . import image_io
+from . import math_lib
 
 class ImageOps4D():
     """
@@ -24,19 +25,30 @@ class ImageOps4D():
     """
     def __init__(self,
         sub_id: str,
-        image_paths: dict,
         out_path: str,
+        image_paths: dict=None,
         half_life: float=0,
         color_table_path: str=None,
         verbose: bool=True
     ):
         """
-        Constructor for ImageOps4D
+        Constructor for ImageOps4d
 
         Args:
-        
+            sub_id (str):
+            image_paths (dict): Dictionary containing paths to files used in relevant
+                preprocessing steps. This variable has protected 
+            out_path (str): Path to output directory to which preprocessing files are written.
+            half_life (float): Half life of tracer radioisotope used for the study in seconds.
+                Default value 0.
+            color_table_path (str): Path to location of color table, matching region names to
+                region values in a segmentation file. See:
+                https://surfer.nmr.mgh.harvard.edu/fswiki/LabelsClutsAnnotationFiles.
+            verbose (bool): Control output of debugging information. Default value True.
         """
         self.sub_id = sub_id
+        if image_paths is None:
+            image_paths = {}
         self.image_paths = image_paths
         # NB protected keywords: {'pet': pet_path,'mri': mri_path,'seg': seg_path}
         self.half_life = half_life
@@ -57,8 +69,6 @@ class ImageOps4D():
 
         Returns:
             summed_image (np.ndarray): Summed image 
-
-        Credit to Avi Snyder who wrote the original version of this code in C.
         """
         pet_meta = image_io.load_meta(self.image_paths['pet'])
         pet_image = nibabel.load(self.image_paths['pet'])
@@ -74,19 +84,13 @@ class ImageOps4D():
             if self.verbose:
                 print(f"(ImageOps4D): Radio isotope is {tracer_isotope}",
                     "with half life {self.half_life} s")
-        decay_constant = np.log(2) / self.half_life
-
-        image_total_duration = np.sum(image_frame_duration)
-        total_decay    = decay_constant * image_total_duration / \
-            (1-np.exp(-1*decay_constant*image_total_duration)) / \
-                np.exp(-1*decay_constant*image_frame_start[0])
-
-        pet_series_scaled = pet_series[:,:,:] \
-            * image_frame_duration \
-            / image_decay_correction
-        pet_series_sum_scaled = np.sum(pet_series_scaled,axis=3)
-        image_weighted_sum = pet_series_sum_scaled * total_decay / image_total_duration
-
+        image_weighted_sum = math_lib.weighted_sum_computation(
+            image_frame_duration,
+            self.half_life,
+            pet_series,
+            image_frame_start,
+            image_decay_correction
+        )
         pet_sum_image = nibabel.nifti1.Nifti1Image(
             dataobj=image_weighted_sum,
             affine=pet_image.affine,
@@ -94,15 +98,23 @@ class ImageOps4D():
         )
         sum_image_path = os.path.join(self.out_path,'sum_image')
         os.makedirs(sum_image_path,exist_ok=True)
-        self.image_paths['pet_sum_image'] = os.path.join(sum_image_path,f'{self.sub_id}-sum-image.nii.gz')
+        self.image_paths['pet_sum_image'] = os.path.join(
+            sum_image_path,
+            f'{self.sub_id}-sum-image.nii.gz')
         nibabel.save(pet_sum_image,self.image_paths['pet_sum_image'])
 
         return image_weighted_sum
 
 
-    def motion_correction(self) -> np.ndarray:
+    def motion_correction(self) -> tuple[np.ndarray, list[str], list[float]]:
         """
-        Motion correct PET series
+        Motion correct PET image series.
+
+        Returns:
+            pet_moco_np (np.ndarray): Motion corrected PET image series as a numpy array.
+            pet_moco_pars (list[str]): List of ANTS registration files applied to each frame.
+            pet_moco_fd (list[float]): List of framewise displacement measure corresponding 
+                to each frame transform.
         """
         pet_nibabel = nibabel.load(self.image_paths['pet'])
         pet_sum_image = nibabel.load(self.image_paths['pet_sum_image'])
@@ -113,18 +125,20 @@ class ImageOps4D():
             type_of_transform='Rigid')
         pet_moco_ants = pet_moco_ants_dict['motion_corrected']
         pet_moco_pars = pet_moco_ants_dict['motion_parameters']
+        pet_moco_fd = pet_moco_ants_dict['FD']
         pet_moco_np = pet_moco_ants.numpy()
         pet_moco_nibabel = ants.to_nibabel(pet_moco_ants)
         moco_path = os.path.join(self.out_path,'motion-correction')
         os.makedirs(moco_path,exist_ok=True)
         self.image_paths['pet_moco'] = os.path.join(moco_path,f'{self.sub_id}-moco.nii.gz')
         nibabel.save(pet_moco_nibabel,self.image_paths['pet_moco'])
-        return pet_moco_np, pet_moco_pars
+        return pet_moco_np, pet_moco_pars, pet_moco_fd
 
 
-    def register_pet(self) -> nibabel.nifti1.Nifti1Image:
+    def register_pet(self):
         """
-        Perform registration PET -> MRI
+        Register PET image series to anatomical data. Computes transform based on weighted average,
+        which is then applied to the 4D PET image series.
         """
         pet_sum_image = ants.image_read(self.image_paths['pet_sum_image'])
         mri_image = ants.image_read(self.image_paths['mri'])
@@ -157,11 +171,11 @@ class ImageOps4D():
         Args:
             values (list[int]): List of values corresponding to regions to be masked.
             resample_seg (bool): Determines whether or not to resample the segmentation.
-                                 Set to True when the PET input (registered to MPR) and
-                                 segmentation are different resolutions.
+                Set to True when the PET input (registered to MPR) and segmentation are 
+                different resolutions.
 
         Returns:
-            masked_image (np.ndarray): Masked image
+            tac_out (np.ndarray): Mean of values within mask for each frame in 4D PET series.
         """
         pet_image = nibabel.load(self.image_paths['pet_moco_reg'])
         seg_image = nibabel.load(self.image_paths['seg'])
@@ -193,10 +207,6 @@ class ImageOps4D():
         4D PET image, and color table. Computes the average of the PET image within each
         region. Writes a JSON for each region with region name, frame start time, and mean 
         value within region.
-
-        Args:
-
-        Returns:
         """
         pet_meta = image_io.load_meta(self.image_paths['pet'])
         with open(self.color_table_path,'r',encoding='utf-8') as color_table_file:
@@ -215,4 +225,3 @@ class ImageOps4D():
             with open(os.path.join(tac_path,f'{self.sub_id}-{region_name}-tac.json'),
                       'w',encoding='ascii') as out_file:
                 json.dump(obj=region_json,fp=out_file,indent=4)
-        return 0
