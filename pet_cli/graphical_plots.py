@@ -50,7 +50,8 @@ class GraphicalAnalysisPlot(ABC):
     def add_fit_lines(self):
         y = self.x * self.fit_params['slope'] + self.fit_params['intercept']
         for ax in self.ax_list:
-            ax.plot(self.x, y, '-', color='orange', lw=2.5, zorder=3, label=self.generate_label_from_fit_params())
+            ax.plot(self.x, y, '-', color='orange', lw=2.5,
+                    zorder=3, label=self.generate_label_from_fit_params())
     
     def add_plots(self,
                   plot_data: bool = True,
@@ -76,7 +77,7 @@ class GraphicalAnalysisPlot(ABC):
                        plot_fit_points=plot_fit_points,
                        plot_fit_lines=plot_fit_lines,
                        fit_shading=fit_shading)
-        self.add_figure_labels()
+        self.add_figure_labels_and_legend()
     
     @abstractmethod
     def calculate_x_and_y(self) -> Tuple[np.ndarray, np.ndarray, Dict[str, float]]:
@@ -87,5 +88,41 @@ class GraphicalAnalysisPlot(ABC):
         pass
     
     @abstractmethod
-    def add_figure_labels(self):
+    def add_figure_labels_and_legend(self):
         pass
+    
+
+class PatlakPlot(GraphicalAnalysisPlot):
+    def calculate_x_and_y(self) -> Tuple[np.ndarray, np.ndarray, Dict[str, float]]:
+        good_points = np.argwhere(self.pTAC[1] != 0.0).T[0]
+        
+        x = pet_grph.cumulative_trapezoidal_integral(xdata=self.pTAC[0], ydata=self.pTAC[1])[good_points] / self.pTAC[1][good_points]
+        y = self.tTAC[1][good_points] / self.pTAC[1][good_points]
+        
+        fit_params = pet_grph.patlak_analysis_with_rsquared(input_tac_values=self.pTAC[1],
+                                                            region_tac_values=self.tTAC[1],
+                                                            tac_times_in_minutes=self.pTAC[0],
+                                                            t_thresh_in_minutes=self.t_thresh_in_mins)
+        
+        fit_params = {'slope': fit_params[0],
+                      'intercept': fit_params[1],
+                      'r_squared':fit_params[2]}
+        return x, y, fit_params
+
+    def generate_label_from_fit_params(self) -> str:
+        slope = self.fit_params['slope']
+        intercept = self.fit_params['intercept']
+        r_sq = self.fit_params['r_squared']
+        
+        return f"$K_1=${slope:<5.3f}\n$V_T=${intercept:<5.3f}\n$R^2=${r_sq:<5.3f}"
+
+    def add_figure_labels_and_legend(self):
+        patlak_x_label = r"$\frac{\int_{0}^{t}C_\mathrm{P}(s)\mathrm{d}s}{C_\mathrm{P}(t)}$"
+        patlak_y_label = r"$\frac{R(t)}{C_\mathrm{P}(t)}$"
+        for ax in self.ax_list:
+            ax.set_xlabel(patlak_x_label)
+            ax.set_ylabel(patlak_y_label)
+        self.fig.legend(*self.ax_list[0].get_legend_handles_labels(),
+                        bbox_to_anchor=(1.0, 0.8),
+                        loc='upper left')
+        
