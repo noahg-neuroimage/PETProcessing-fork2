@@ -58,15 +58,14 @@ class GraphicalAnalysisPlot(ABC):
                   plot_fit_points: bool = True,
                   plot_fit_lines: bool = True,
                   fit_shading: bool = True):
-        for ax in self.ax_list:
-            if plot_data:
-                self.add_data_plots()
-            if plot_fit_points:
-                self.add_fit_points()
-            if plot_fit_lines:
-                self.add_fit_lines()
-            if fit_shading:
-                self.add_shading_plots()
+        if plot_data:
+            self.add_data_plots()
+        if plot_fit_points:
+            self.add_fit_points()
+        if plot_fit_lines:
+            self.add_fit_lines()
+        if fit_shading:
+            self.add_shading_plots()
     
     def generate_figure(self,
                         plot_data: bool = True,
@@ -124,5 +123,7 @@ class PatlakPlot(GraphicalAnalysisPlot):
             ax.set_ylabel(patlak_y_label)
         self.fig.legend(*self.ax_list[0].get_legend_handles_labels(),
                         bbox_to_anchor=(1.0, 0.8),
-                        loc='upper left')
+                        loc='upper left',
+                        title='Patlak Analysis')
+        self.fig.suptitle("Patlak Plots")
         
