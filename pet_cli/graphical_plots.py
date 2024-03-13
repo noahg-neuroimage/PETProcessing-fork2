@@ -52,10 +52,11 @@ class GraphicalAnalysisPlot(ABC):
         for ax in self.ax_list:
             ax.plot(self.x, y, '-', color='orange', lw=2.5, zorder=3, label=self.generate_label_from_fit_params())
     
-    def add_plots(self, plot_data: bool = True,
-                        plot_fit_points: bool = True,
-                        plot_fit_lines: bool = True,
-                        fit_shading: bool = True):
+    def add_plots(self,
+                  plot_data: bool = True,
+                  plot_fit_points: bool = True,
+                  plot_fit_lines: bool = True,
+                  fit_shading: bool = True):
         for ax in self.ax_list:
             if plot_data:
                 self.add_data_plots()
@@ -65,7 +66,17 @@ class GraphicalAnalysisPlot(ABC):
                 self.add_fit_lines()
             if fit_shading:
                 self.add_shading_plots()
-        
+    
+    def generate_figure(self,
+                        plot_data: bool = True,
+                        plot_fit_points: bool = True,
+                        plot_fit_lines: bool = True,
+                        fit_shading: bool = True):
+        self.add_plots(plot_data=plot_data,
+                       plot_fit_points=plot_fit_points,
+                       plot_fit_lines=plot_fit_lines,
+                       fit_shading=fit_shading)
+        self.add_figure_labels()
     
     @abstractmethod
     def calculate_x_and_y(self) -> Tuple[np.ndarray, np.ndarray, Dict[str, float]]:
@@ -73,4 +84,8 @@ class GraphicalAnalysisPlot(ABC):
     
     @abstractmethod
     def generate_label_from_fit_params(self) -> str:
+        pass
+    
+    @abstractmethod
+    def add_figure_labels(self):
         pass
