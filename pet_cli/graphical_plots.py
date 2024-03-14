@@ -32,7 +32,7 @@ class GraphicalAnalysisPlot(ABC):
         This is an abstract class and should be inherited by a concrete class that implements the following methods:
         * :func:`calculate_valid_indicies_and_x_and_y`
         * :func:`generate_label_from_fit_params`
-        * :func:`add_figure_labels_and_legend`
+        * :func:`add_figure_axes_labels_and_legend`
     """
     def __init__(self, pTAC: np.ndarray, tTAC: np.ndarray, t_thresh_in_mins: float, figObj: plt.Figure = None):
         """
@@ -268,7 +268,7 @@ class GraphicalAnalysisPlot(ABC):
 
         See Also:
             * :func:`add_plots`: Composite function that adds different types of plots.
-            * :func:`add_figure_labels_and_legend`: Adds labels and a legend to the figure. (To be implemented in a
+            * :func:`add_figure_axes_labels_and_legend`: Adds labels and a legend to the figure. (To be implemented in a
             specific class)
         """
         self.add_plots(plot_data=plot_data,
@@ -279,7 +279,7 @@ class GraphicalAnalysisPlot(ABC):
                        points_kwargs=points_kwargs,
                        line_kwargs=line_kwargs,
                        shading_kwargs=shading_kwargs)
-        self.add_figure_labels_and_legend()
+        self.add_figure_axes_labels_and_legend()
         self.ax_list[0].set_title("Linear Plot")
         self.ax_list[1].set_title("LogLog Plot")
         
@@ -318,23 +318,40 @@ class GraphicalAnalysisPlot(ABC):
 
         Note:
             * This abstract method must be implemented in each subclass representing a different analysis method.
-            * The implementation of this function in subclasses MUST calculate and assign values to `x`, `y`, `t_thresh_idx`,
-        and `non_zero_idx` attributes.
+            * The implementation of this function in subclasses MUST calculate and assign values to `x`, `y`,
+            `t_thresh_idx`, and `non_zero_idx` attributes.
         
         Raises:
             NotImplementedError: This method needs to be implemented in a subclass.
             
         Example Implementation:
-            * :class:`PatlakPlot`: This class provides an example implementation of this method in a concrete subclass.
+            * :meth:`PatlakPlot.calculate_valid_indicies_and_x_and_y`: This class provides an example implementation of
+            this method in a concrete subclass.
         """
         raise NotImplementedError("This method must be implemented in a concrete class.")
     
     @abstractmethod
     def generate_label_from_fit_params(self) -> str:
+        """
+        Abstract method to generate a label string from fitting parameters.
+
+        This function reads the fitting parameters 'slope', 'intercept', and 'r_squared' from the class attribute
+        'fit_params', and formats them into a string that can be used as a label on plots or reports.
+
+        Note:
+            * This abstract method must be implemented in each subclass representing a different analysis method.
+
+        Raises:
+            NotImplementedError: This method needs to be implemented in a subclass.
+
+        Example Implementation:
+            * :meth:`PatlakPlot.generate_label_from_fit_params`: This method provides an example implementation of this
+            abstract method in a concrete subclass. Similarly, :meth:`LoganPlot.generate_label_from_fit_params`.
+        """
         raise NotImplementedError("This method must be implemented in a concrete class.")
     
     @abstractmethod
-    def add_figure_labels_and_legend(self):
+    def add_figure_axes_labels_and_legend(self):
         raise NotImplementedError("This method must be implemented in a concrete class.")
     
 
@@ -361,7 +378,7 @@ class PatlakPlot(GraphicalAnalysisPlot):
         
         return f"$K_1=${slope:<5.3f}\n$V_T=${intercept:<5.3f}\n$R^2=${r_sq:<5.3f}"
 
-    def add_figure_labels_and_legend(self):
+    def add_figure_axes_labels_and_legend(self):
         x_label = r"$\frac{\int_{0}^{t}C_\mathrm{P}(s)\mathrm{d}s}{C_\mathrm{P}(t)}$"
         y_label = r"$\frac{R(t)}{C_\mathrm{P}(t)}$"
         for ax in self.ax_list:
@@ -399,7 +416,7 @@ class LoganPlot(GraphicalAnalysisPlot):
         
         return f"$m=${slope:<5.3f}\n$b=${intercept:<5.3f}\n$R^2=${r_sq:<5.3f}"
     
-    def add_figure_labels_and_legend(self):
+    def add_figure_axes_labels_and_legend(self):
         x_label = r"$\frac{\int_{0}^{t}C_\mathrm{P}(s)\mathrm{d}s}{R(t)}$"
         y_label = r"$\frac{\int_{0}^{t}R(s)\mathrm{d}s}{R(t)}$"
         for ax in self.ax_list:
@@ -435,7 +452,7 @@ class AltLoganPlot(GraphicalAnalysisPlot):
         
         return f"$m=${slope:<5.3f}\n$b=${intercept:<5.3f}\n$R^2=${r_sq:<5.3f}"
     
-    def add_figure_labels_and_legend(self):
+    def add_figure_axes_labels_and_legend(self):
         x_label = r"$\frac{\int_{0}^{t}C_\mathrm{P}(s)\mathrm{d}s}{C_\mathrm{P}(t)}$"
         y_label = r"$\frac{\int_{0}^{t}R(s)\mathrm{d}s}{C_\mathrm{P}(t)}$"
         for ax in self.ax_list:
