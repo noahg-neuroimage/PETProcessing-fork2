@@ -12,7 +12,7 @@ def main():
     parser.add_argument('--PET_image', required=True, help="Input 4D PET image file")
     parser.add_argument('--PET_label', required=True, help="Label of PET type (E.g. 'FDG', 'CS1P1')")
     parser.add_argument('--T1w_image', help="Input T1-weighted MR image file")
-    parser.add_argument('--T1w_label', help="Label of T1-weighted MRI type (E.g. 'T1w', 'MPRAGE')")
+    parser.add_argument('--T1w_label', help="Label of T1-weighted MRI type (E.g. 'T1w', 'MP-RAGE')")
     parser.add_argument('--T2w_image', help="Input T2-weighted MR image file")
     parser.add_argument('--T2w_label', help="Label of T2-weighted MRI type (E.g. 'T2w', 'FLAIR')")
     # parser.add_argument('--acquisition', help="Acquisition details", default=None)
@@ -44,8 +44,6 @@ def main():
                                    image_type=args.T2w_label)
         bids_instance.write_symbolic_link(input_filepath=args.T2w_image)
         bids_instance.cache_filepath(name="raw_T2w")
-
-
 
 
 if __name__ == "__main__":
