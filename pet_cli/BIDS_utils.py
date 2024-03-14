@@ -299,7 +299,7 @@ class BidsInstance:
         return _update_method
 
     def change_parts(self,
-                     session: str,
+                     session: str = None,
                      modality: str = None,
                      image_type: str = None,
                      acquisition: str = None,
