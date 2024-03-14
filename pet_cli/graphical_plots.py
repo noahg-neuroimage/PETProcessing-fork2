@@ -352,6 +352,19 @@ class GraphicalAnalysisPlot(ABC):
     
     @abstractmethod
     def add_figure_axes_labels_and_legend(self):
+        """
+        Abstract method for adding analysis specific titles, axes labels and a legend to the figure.
+
+        This abstract method has to be implemented in each subclass representing a different analysis method.
+
+        Raises:
+            NotImplementedError: This method must be implemented in each subclass.
+
+        Example Implementation:
+            For an example of implementing this method, see :meth:`PatlakPlot.add_figure_axes_labels_and_legend`,
+            or :meth:`LoganPlot.add_figure_axes_labels_and_legend`.
+
+        """
         raise NotImplementedError("This method must be implemented in a concrete class.")
     
 
