@@ -24,10 +24,13 @@ def main():
     io_grp.add_argument('--subject', required=True, help="Subject ID")
     io_grp.add_argument('--session', required=True, help="Session ID")
     io_grp.add_argument('--PET_image', required=True, help="Input 4D PET image file")
+    io_grp.add_argument('--PET_sidecar', required=True, help="Input PET JSON sidecar file")
     io_grp.add_argument('--PET_label', required=True, help="Label of PET type (E.g. 'FDG', 'CS1P1')")
     io_grp.add_argument('--T1w_image', help="Input T1-weighted MR image file")
+    io_grp.add_argument('--T1w_sidecar', help="Input T1-weighted MR JSON sidecar file")
     io_grp.add_argument('--T1w_label', help="Label of T1-weighted MRI type (E.g. 'T1w', 'MP-RAGE')")
     io_grp.add_argument('--T2w_image', help="Input T2-weighted MR image file")
+    io_grp.add_argument('--T2w_sidecar', help="Input T2-weighted MR JSON sidecar file")
     io_grp.add_argument('--T2w_label', help="Label of T2-weighted MRI type (E.g. 'T2w', 'FLAIR')")
 
     # spec_grp = parser.add_argument_group("Specific filepath naming")
@@ -50,6 +53,8 @@ def main():
 
     args = parser.parse_args()
 
+    if args.PET_image and not args.PET_sidecar:
+        parser.error("--PET_sidecar is required for scanner time-series when --PET_image is used.")
     if args.T1w_image and not args.T1w_label:
         parser.error("--T1w_label is required when --T1w_image is used.")
     if args.T2w_image and not args.T2w_label:
@@ -60,17 +65,25 @@ def main():
                                   modality="pet",
                                   image_type=args.PET_label)
     bids_instance.write_symbolic_link(input_filepath=args.PET_image)
-    bids_instance.cache_filepath(name="raw_PET")
+    bids_instance.cache_filepath(name="raw_PET_image")
+    bids_instance.write_symbolic_link(input_filepath=args.PET_sidecar)
+    bids_instance.cache_filepath(name="raw_PET_sidecar")
     if args.T1w_image:
         bids_instance.change_parts(modality="anat",
                                    image_type=args.T1w_label)
         bids_instance.write_symbolic_link(input_filepath=args.T1w_image)
-        bids_instance.cache_filepath(name="raw_T1w")
+        bids_instance.cache_filepath(name="raw_T1w_image")
+        if args.T1w_sidecar:
+            bids_instance.write_symbolic_link(input_filepath=args.T1w_sidecar)
+            bids_instance.cache_filepath(name="raw_T1w_sidecar")
     if args.T2w_image:
         bids_instance.change_parts(modality="anat",
                                    image_type=args.T2w_label)
         bids_instance.write_symbolic_link(input_filepath=args.T2w_image)
-        bids_instance.cache_filepath(name="raw_T2w")
+        bids_instance.cache_filepath(name="raw_T2w_image")
+        if args.T2w_sidecar:
+            bids_instance.write_symbolic_link(input_filepath=args.T2w_sidecar)
+            bids_instance.cache_filepath(name="raw_T2w_sidecar")
 
 
 if __name__ == "__main__":
