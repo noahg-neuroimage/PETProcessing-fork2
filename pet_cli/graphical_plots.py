@@ -247,6 +247,30 @@ class GraphicalAnalysisPlot(ABC):
                         points_kwargs: dict = None,
                         line_kwargs: dict = None,
                         shading_kwargs: dict = None):
+        """
+        Generates the complete figure for graphical analysis.
+
+        This function is the preferred way for a user to interact with this class. It sets up and adds the desired plots
+        to the figure, adds the labels and legend, and sets the title and scale for the plots. By default, we generate
+        a figure where each panel has the analysis :math:`x` and :math:`y` data, the points used for the fitting, a
+        shading over the region for the fit, and the fit line.
+
+        Args:
+            plot_data (bool, optional): Determines if the :math:`x` and :math:`y` data points should be plotted.
+            Defaults to True.
+            plot_fit_points (bool, optional): Determines if the fit points should be plotted. Defaults to True.
+            plot_fit_lines (bool, optional): Determines if the line of best fit should be plotted. Defaults to True.
+            fit_shading (bool, optional): Determines if shading should be applied to the plots. Defaults to True.
+            data_kwargs (dict, optional): Keyword arguments for styling the data plot.
+            points_kwargs (dict, optional): Keyword arguments for styling the fit points plot.
+            line_kwargs (dict, optional): Keyword arguments for styling the line of best fit.
+            shading_kwargs (dict, optional): Keyword arguments for styling the shading.
+
+        See Also:
+            * :func:`add_plots`: Composite function that adds different types of plots.
+            * :func:`add_figure_labels_and_legend`: Adds labels and a legend to the figure. (To be implemented in a
+            specific class)
+        """
         self.add_plots(plot_data=plot_data,
                        plot_fit_points=plot_fit_points,
                        plot_fit_lines=plot_fit_lines,
