@@ -301,7 +301,9 @@ class GraphicalAnalysisPlot(ABC):
         fit_params = pet_grph.fit_line_to_data_using_lls_with_rsquared(xdata=self.x[t_thresh:], ydata=self.y[t_thresh:])
         
         fit_params = {
-            'slope': fit_params[0], 'intercept': fit_params[1], 'r_squared': fit_params[2]
+            'slope': fit_params[0],
+            'intercept': fit_params[1],
+            'r_squared': fit_params[2]
             }
         self.fit_params = fit_params
 
