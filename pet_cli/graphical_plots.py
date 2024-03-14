@@ -33,49 +33,78 @@ class GraphicalAnalysisPlot(ABC):
             ax_list = fig.get_axes()
         return fig, ax_list
 
-    def add_data_plots(self):
-        for ax in self.ax_list:
-            ax.plot(self.x, self.y, lw=1, alpha=0.9, ms=8, marker='.', zorder=1, color='black')
-
-    def add_shading_plots(self):
+    def add_data_plots(self, pl_kwargs: dict = None):
+        if pl_kwargs is None:
+            for ax in self.ax_list:
+                ax.plot(self.x, self.y, lw=1, alpha=0.9, ms=8, marker='.', zorder=1, color='black')
+        else:
+            for ax in self.ax_list:
+                ax.plot(self.x, self.y, **pl_kwargs)
+                
+    def add_shading_plots(self, pl_kwargs: dict = None):
         x_lo, x_hi = self.x[self.t_thresh_idx], self.x[-1]
-        for ax in self.ax_list:
-            ax.axvspan(x_lo, x_hi, color='gray', alpha=0.2, zorder=0)
-
-    def add_fit_points(self):
+        
+        if pl_kwargs is None:
+            for ax in self.ax_list:
+                ax.axvspan(x_lo, x_hi, color='gray', alpha=0.2, zorder=0)
+        else:
+            for ax in self.ax_list:
+                ax.axvspan(x_lo, x_hi, **pl_kwargs)
+                
+    def add_fit_points(self, pl_kwargs: dict = None):
         t_thresh = self.t_thresh_idx
-        for ax in self.ax_list:
-            ax.plot(self.x[t_thresh:], self.y[t_thresh:], 'o', alpha=0.9, ms='5', zorder=2, color='blue')
-    
-    def add_fit_lines(self):
+        if pl_kwargs is None:
+            for ax in self.ax_list:
+                ax.plot(self.x[t_thresh:], self.y[t_thresh:], 'o', alpha=0.9, ms='5', zorder=2, color='blue')
+        else:
+            for ax in self.ax_list:
+                ax.plot(self.x[t_thresh:], self.y[t_thresh:], **pl_kwargs)
+                
+    def add_fit_lines(self, pl_kwargs: dict = None):
         y = self.x * self.fit_params['slope'] + self.fit_params['intercept']
-        for ax in self.ax_list:
-            ax.plot(self.x, y, '-', color='orange', lw=2.5,
-                    zorder=3, label=self.generate_label_from_fit_params())
+        if pl_kwargs is None:
+            for ax in self.ax_list:
+                ax.plot(self.x, y, '-', color='orange', lw=2.5,
+                        zorder=3, label=self.generate_label_from_fit_params())
+        else:
+            for ax in self.ax_list:
+                ax.plot(self.x, y,  **pl_kwargs)
     
     def add_plots(self,
                   plot_data: bool = True,
                   plot_fit_points: bool = True,
                   plot_fit_lines: bool = True,
-                  fit_shading: bool = True):
+                  fit_shading: bool = True,
+                  data_kwargs: dict = None,
+                  points_kwargs: dict = None,
+                  line_kwargs: dict = None,
+                  shading_kwargs: dict = None):
         if plot_data:
-            self.add_data_plots()
+            self.add_data_plots(pl_kwargs=data_kwargs)
         if plot_fit_points:
-            self.add_fit_points()
+            self.add_fit_points(pl_kwargs=points_kwargs)
         if plot_fit_lines:
-            self.add_fit_lines()
+            self.add_fit_lines(pl_kwargs=line_kwargs)
         if fit_shading:
-            self.add_shading_plots()
+            self.add_shading_plots(pl_kwargs=shading_kwargs)
     
     def generate_figure(self,
                         plot_data: bool = True,
                         plot_fit_points: bool = True,
                         plot_fit_lines: bool = True,
-                        fit_shading: bool = True):
+                        fit_shading: bool = True,
+                        data_kwargs: dict = None,
+                        points_kwargs: dict = None,
+                        line_kwargs: dict = None,
+                        shading_kwargs: dict = None):
         self.add_plots(plot_data=plot_data,
                        plot_fit_points=plot_fit_points,
                        plot_fit_lines=plot_fit_lines,
-                       fit_shading=fit_shading)
+                       fit_shading=fit_shading,
+                       data_kwargs=data_kwargs,
+                       points_kwargs=points_kwargs,
+                       line_kwargs=line_kwargs,
+                       shading_kwargs=shading_kwargs)
         self.add_figure_labels_and_legend()
         self.ax_list[0].set_title("Linear Plot")
         self.ax_list[1].set_title("LogLog Plot")
