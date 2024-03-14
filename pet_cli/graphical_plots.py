@@ -307,15 +307,15 @@ class GraphicalAnalysisPlot(ABC):
 
     @abstractmethod
     def calculate_valid_indicies_and_x_and_y(self) -> None:
-        pass
+        raise NotImplementedError("This method must be implemented in a concrete class.")
     
     @abstractmethod
     def generate_label_from_fit_params(self) -> str:
-        pass
+        raise NotImplementedError("This method must be implemented in a concrete class.")
     
     @abstractmethod
     def add_figure_labels_and_legend(self):
-        pass
+        raise NotImplementedError("This method must be implemented in a concrete class.")
     
 
 class PatlakPlot(GraphicalAnalysisPlot):
