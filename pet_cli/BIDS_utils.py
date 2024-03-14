@@ -381,13 +381,10 @@ class BidsInstance:
             print("Nifti")
             # ImageIO.save_nii(image=file_input, out_file=self.filepath)
         elif type(file_input) is dict:
-            print("JSON")
             save_json(json_dict=file_input, filepath=filepath)
         elif type(file_input) is numpy.array:
-            print("TSV")
             save_array_as_tsv(array=file_input, filepath=filepath)
         elif type(file_input) is list:
-            print("TSV")
             save_tsv_simple(data=file_input, filepath=filepath)
 
     def load_file(self, filepath: str = None):
@@ -412,10 +409,8 @@ class BidsInstance:
                 print("Nifti")
                 # file = ImageIO.load_nii(filepath=self.filepath)
             elif filepath.endswith(".json"):
-                print("JSON")
                 file = load_json(filepath=filepath)
             elif filepath.endswith(".tsv"):
-                print("TSV")
                 file = load_tsv_simple(filepath=filepath)
             else:
                 raise ValueError(f"Unsupported file type for {filepath}.")
@@ -559,7 +554,6 @@ def save_tsv_simple(filepath: str, data: list) -> None:
         filepath (str): The destination file path for the TSV file.
         data (list): A list of lists, where each sublist represents a row in the TSV file.
     """
-    print("made")
     with open(filepath, 'w', encoding='utf-8') as file:
         for row in data:
             line = '\t'.join(row)
