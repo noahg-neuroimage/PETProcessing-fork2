@@ -169,6 +169,21 @@ class GraphicalAnalysisPlot(ABC):
                 ax.plot(self.x[t_thresh:], self.y[t_thresh:], **pl_kwargs)
                 
     def add_fit_lines(self, pl_kwargs: dict = None):
+        """
+        Add line of best fit to the Axes in the instance's Axes list.
+
+        This method plots the line of best fit based on the instance's fit parameters (slope and intercept) on each
+        Axes in the instance's Axes list. The style of the line can be customized by passing a dictionary of keyword
+        arguments for `matplotlib.pyplot.plot`.
+
+        Args:
+            pl_kwargs (dict, optional): A dictionary of keyword arguments to be passed to `matplotlib.pyplot.plot`
+                for styling of the line. If not provided, the line is plotted as an orange solid line with line
+                width=2.5, z-order=3, and labelled using the `generate_label_from_fit_params` method.
+
+        Raises:
+            ValueError: If pl_kwargs contains an argument not supported by `matplotlib.pyplot.plot`.
+        """
         y = self.x * self.fit_params['slope'] + self.fit_params['intercept']
         if pl_kwargs is None:
             for ax in self.ax_list:
