@@ -7,16 +7,42 @@ from . import graphical_analysis as pet_grph
 
 
 class GraphicalAnalysisPlot(ABC):
-    
+    """
+    This is an abstract base class designed for creating customizable plots for graphical analysis.
+    It takes Time-Activity Curves (TACs) as input and creates various plots (x vs. y, fit lines, fit area
+    shading plots, and fit points) based on user input. This class also calculates fit parameters for the plotting data
+    and determines relevant indices based on given thresholds.
+
+    Attributes:
+        pTAC (np.ndarray): The input Time Activity Curve, an array containing time points and corresponding activity.
+        tTAC (np.ndarray): The Tissue or Region Time Activity Curve, an array with time points and corresponding activity.
+        t_thresh_in_mins (float): The threshold time in minutes to consider in the analysis.
+        fig (plt.Figure): A matplotlib Figure object where the plots will be drawn.
+        ax_list (list): A list of matplotlib Axes associated with `fig` where the plots will be drawn.
+        non_zero_idx (np.ndarray): Indexes of non-zero values in TAC (calculated in specific implementations).
+        t_thresh_idx (int): The index at which the time threshold is crossed in the TACs (calculated in specific
+        implementations).
+        x (np.ndarray): The "x" values for plotting (calculated in specific implementations).
+        y (np.ndarray): The "y" values for plotting (calculated in specific implementations).
+        fit_params (dict): The parameters fit to the data using least squares.
+                           Contains 'slope', 'intercept', and 'r_squared' (calculated in specific implementations).
+
+    Note:
+        This is an abstract class and should be inherited by a concrete class that implements the following methods:
+        * :func:`calculate_valid_indicies_and_x_and_y`
+        * :func:`generate_label_from_fit_params`
+        * :func:`add_figure_labels_and_legend`
+    """
     def __init__(self, pTAC: np.ndarray, tTAC: np.ndarray, t_thresh_in_mins: float, figObj: plt.Figure = None):
+        
         self.pTAC: np.ndarray = pTAC[:]
-        self.tTAC: np.ndarray  = tTAC[:]
+        self.tTAC: np.ndarray = tTAC[:]
         self.t_thresh_in_mins: float = t_thresh_in_mins
         self.fig, self.ax_list = self.generate_figure_and_axes(figObj=figObj)
         self.non_zero_idx: np.ndarray = None
         self.t_thresh_idx: int = None
-        self.x: np.ndarray  = None
-        self.y: np.ndarray  = None
+        self.x: np.ndarray = None
+        self.y: np.ndarray = None
         self.fit_params: Dict = None
         self.calculate_valid_indicies_and_x_and_y()
         self.calculate_fit_params()
