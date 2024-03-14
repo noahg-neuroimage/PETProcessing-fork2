@@ -1,8 +1,20 @@
+"""
+This module provides a command-line interface (CLI) for interacting with the BIDS utilities package.
+
+It allows users to perform tasks such as creating a BIDS scaffold, manipulating BIDS datasets,
+and processing imaging data using command-line arguments.
+"""
 import argparse
 from . import BIDS_utils
 
 
 def main():
+    """
+    Parses command-line arguments and invokes the appropriate functions from the BIDS utilities package.
+
+    The script supports various operations, including creating a BIDS scaffold,
+    validating BIDS datasets (future), and converting user-provided files to BIDS format.
+    """
     parser = argparse.ArgumentParser(prog="PET Processing",
                                      description="General purpose suite for processing PET images.",
                                      epilog="PET Processing complete.")
