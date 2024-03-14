@@ -294,7 +294,7 @@ class GraphicalAnalysisPlot(ABC):
 
         See Also:
             * :func:`calculate_valid_indicies_and_x_and_y`: Method used to generate the x and y values.
-            * :func:`graphical_analysis.fit_line_to_data_using_lls_with_rsquared`: Method used to fit a line to data
+            * :func:`pet_cli.graphical_analysis.fit_line_to_data_using_lls_with_rsquared`: Method used to fit a line to data
             points using Least Square fitting with R-squared value.
         """
         t_thresh = self.t_thresh_idx
@@ -307,6 +307,26 @@ class GraphicalAnalysisPlot(ABC):
 
     @abstractmethod
     def calculate_valid_indicies_and_x_and_y(self) -> None:
+        """
+        Abstract method for calculating the :math:`x` and :math:`y` values given a particular analysis in a concrete
+        class, valid indices where the denominator is 0, and the index corresponding to the provided threshold.
+
+        This is a two-fold method:
+        1. Calculates valid x and y values derived from the analysis where each concrete class represents a different
+        method. Valid points are those where the denominator (which varies by analysis type) is non-zero.
+        2. Saves the indices of the non-zero valid values and the indices that correspond to the given t_thresh_in_mins.
+
+        Note:
+            * This abstract method must be implemented in each subclass representing a different analysis method.
+            * The implementation of this function in subclasses MUST calculate and assign values to `x`, `y`, `t_thresh_idx`,
+        and `non_zero_idx` attributes.
+        
+        Raises:
+            NotImplementedError: This method needs to be implemented in a subclass.
+            
+        Example Implementation:
+            * :class:`PatlakPlot`: This class provides an example implementation of this method in a concrete subclass.
+        """
         raise NotImplementedError("This method must be implemented in a concrete class.")
     
     @abstractmethod
