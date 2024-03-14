@@ -1,5 +1,7 @@
 """
-BIDS utilities
+This module provides utilities for working with Brain Imaging Data Structure (BIDS) datasets. It includes
+functionality for creating a BIDS project scaffold, managing file paths, and reading/writing various file types
+commonly used in neuroimaging research.
 """
 import os
 import json
@@ -12,10 +14,36 @@ from registration_tools import ImageIO
 
 
 class BidsInstance:
+    """
+    A class to manage BIDS dataset file paths and to create a BIDS project scaffold.
 
+    Attributes:
+        project_path (str): The root path of the BIDS project.
+        path_cache (dict): A cache for storing and retrieving file paths.
+        parts (dict): Components of the BIDS file path.
+        filepath (str): The current file path being worked on.
+        prefixes (dict): Prefixes for various components in BIDS file naming convention.
+        directory_parts_names (tuple): Names of components used in directory paths.
+        file_parts_names (tuple): Names of components used in file naming.
+
+    Methods:
+        create_filepath: Constructs a file path based on BIDS naming conventions and updates class attributes.
+        manual_filepath: Manually sets the file path and updates class attributes based on the provided path.
+        cache_filepath: Caches the current file path with a given name for later retrieval.
+        change_session: Updates the session part of the file path and optionally recompiles the path.
+        delete_file: Deletes a specified file within the project.
+        delete_directory: Deletes a specified directory within the project.
+    """
     def __init__(self,
                  project_path: str,
                  subject: str):
+        """
+        Initializes a BidsInstance object with project path and subject.
+
+        Args:
+            project_path (str): The root directory of the BIDS project.
+            subject (str): The subject identifier.
+        """
         self.project_path = project_path
         self.path_cache = {}
         self.parts = {"derivative_directory": "main",
@@ -52,6 +80,9 @@ class BidsInstance:
         self._create_bids_scaffold()
 
     def _create_bids_scaffold(self):
+        """
+        Creates the necessary directories and files for a BIDS project scaffold.
+        """
         dirs_to_create = [
             "code",
             "derivatives",
@@ -82,16 +113,35 @@ class BidsInstance:
                     f.write(content)
 
     def _update_participants(self, session: str) -> None:
+        """
+        Updates the participants.tsv file with a new session for the current subject.
+
+        Args:
+            session (str): The session identifier to add for the current subject.
+        """
         if self.parts['session'] != session:
             self._add_subject_session_to_participants(subject=self.parts['subject'], session=session)
 
     def _add_subject_session_to_participants(self, subject: str, session: str) -> None:
+        """
+        Adds a subject-session pair to the participants.tsv file.
+
+        Args:
+            subject (str): The subject identifier.
+            session (str): The session identifier.
+        """
         participants_tsv_path = os.path.join(self.project_path, "participants.tsv")
         participants_tsv = self.load_file(filepath=participants_tsv_path)
         participants_tsv.append([subject, session])
         self.write_file(file_input=participants_tsv, filepath=participants_tsv_path)
 
     def _prefixed_dictionary(self) -> dict:
+        """
+        Prepares a dictionary with prefixed components for constructing BIDS file paths.
+
+        Returns:
+            dict: A dictionary with BIDS components prefixed according to BIDS naming conventions.
+        """
         out_dict = self.parts.copy()
         for key in list(out_dict.keys()):
             value = out_dict[key]
@@ -114,6 +164,21 @@ class BidsInstance:
                         description: str = None,
                         derivative_directory: str = "main",
                         extension: str = "") -> None:
+        """
+        Constructs and updates the filepath attribute based on BIDS naming conventions.
+
+        Args:
+            session (str): The session identifier.
+            modality (str): The modality or type of data.
+            image_type (str): The type of image.
+            acquisition (str, optional): The acquisition type.
+            contrast_enhancing (str, optional): The contrast enhancing agent.
+            reconstruction (str, optional): The reconstruction algorithm.
+            space (str, optional): The space or coordinate system.
+            description (str, optional): A description of the file.
+            derivative_directory (str, optional): The directory for derivatives.
+            extension (str, optional): The file extension.
+        """
 
         parameters_dictionary = locals().copy()
         self._update_participants(session=session)
@@ -121,6 +186,9 @@ class BidsInstance:
         self._compile_filepath()
 
     def _compile_filepath(self) -> None:
+        """
+        Compiles the full file path from the individual BIDS components stored in the object.
+        """
         extension = self.parts['extension']
         parts_prefixed = self._prefixed_dictionary()
         filename_parts = [parts_prefixed[key] for key in self.file_parts_names if self.parts.get(key) is not None]
@@ -134,6 +202,12 @@ class BidsInstance:
         self.filepath = os.path.join(directory_path, filename)
 
     def manual_filepath(self, filepath: str) -> None:
+        """
+        Manually sets the file path based on a provided path and updates class attributes.
+
+        Args:
+            filepath (str): The file path to set.
+        """
         slash_parts = filepath.split("/")
         underscore_parts = slash_parts[-1].split("_")
         dot_parts = underscore_parts[-1].split(".")
@@ -160,29 +234,63 @@ class BidsInstance:
         self._compile_filepath()
 
     def cache_filepath(self, name: str) -> None:
+        """
+        Caches the current file path with a given name for later retrieval.
+
+        Args:
+            name (str): The name under which to cache the current file path.
+        """
         self.path_cache[name] = self.filepath
 
     #    def load_from_cache(self, name: str) -> None: # get, if none -> warning
     #        return self.path_cache[name]
 
     def change_session(self, value: str, compile_filepath: bool = True):
+        """
+        Updates the session part of the file path and optionally recompiles the path.
+
+        Args:
+            value (str): The new session value to set.
+            compile_filepath (bool, optional): Whether to recompile the file path after updating. Defaults to True.
+        """
         self._update_participants(session=value)
         self.parts['session'] = value
         if compile_filepath:
             self._compile_filepath()
 
     def _update_part(self, key, value, compile_filepath: bool = True):
+        """
+        Updates a specified part of the file path and optionally recompiles the path.
+
+        Args:
+            key (str): The key of the part to update.
+            value (str): The new value for the specified part.
+            compile_filepath (bool, optional): Whether to recompile the file path after updating. Defaults to True.
+        """
         self.parts[key] = value
         if compile_filepath:
             self._compile_filepath()
 
     def _setup_dynamic_methods(self):
+        """
+        Dynamically creates and assigns methods for changing individual parts of the BIDS file path.
+        """
+
         for key in self.parts.keys():
             if key != "session":  # so that session can call _update_participants()
                 update_method = self._create_update_method(key)
                 setattr(self, f'change_{key}', update_method)
 
     def _create_update_method(self, key):
+        """
+        Creates a method for updating a specific part of the BIDS file path.
+
+        Args:
+            key (str): The key of the part to create an update method for.
+
+        Returns:
+            function: A function that updates the specified part.
+        """
         def _update_method(value, compile_filepath: bool = True):
             self._update_part(key, value, compile_filepath)
 
@@ -199,6 +307,21 @@ class BidsInstance:
                      description: str = None,
                      derivative_directory: str = "main",
                      extension: str = None, ) -> None:
+        """
+        Updates multiple parts of the BIDS file path at once based on provided arguments.
+
+        Args:
+            session (str): Session identifier.
+            modality (str, optional): Modality or type of data.
+            image_type (str, optional): Type of image.
+            acquisition (str, optional): Acquisition type.
+            contrast_enhancing (str, optional): Contrast enhancing agent.
+            reconstruction (str, optional): Reconstruction algorithm.
+            space (str, optional): Space or coordinate system.
+            description (str, optional): Description of the file.
+            derivative_directory (str, optional): Directory for derivatives.
+            extension (str, optional): File extension.
+        """
         parameters_dictionary = locals().copy()
         for key, value in parameters_dictionary.items():
             if value is not None:
@@ -218,6 +341,13 @@ class BidsInstance:
         self._compile_filepath()
 
     def write_symbolic_link(self, input_filepath: str, link_filepath: str = None) -> None:
+        """
+        Creates a symbolic link to a specified input file at a given location.
+
+        Args:
+            input_filepath (str): The path of the file to link to.
+            link_filepath (str, optional): The path where the symbolic link should be created. Defaults to current filepath.
+        """
         if link_filepath is None:
             link_filepath = self.filepath
 
@@ -234,6 +364,13 @@ class BidsInstance:
         os.symlink(input_filepath, link_filepath)
 
     def write_file(self, file_input, filepath: str = None) -> None:
+        """
+        Writes input data to a file of an appropriate format based on the file's extension.
+
+        Args:
+            file_input: The data to be written to the file. Its type determines how it's written.
+            filepath (str, optional): The path where the data should be written. Defaults to current filepath.
+        """
         if filepath is None:
             filepath = self.filepath
         os.makedirs(os.path.dirname(filepath), exist_ok=True)
@@ -251,6 +388,19 @@ class BidsInstance:
             save_tsv_simple(data=file_input, filepath=filepath)
 
     def load_file(self, filepath: str = None):
+        """
+        Loads a file based on its extension and returns its content.
+
+        Args:
+            filepath (str, optional): The path of the file to load. Defaults to current filepath.
+
+        Returns:
+            The content of the loaded file, in a format depending on the file type.
+
+        Raises:
+            FileNotFoundError: If the specified file does not exist.
+            RuntimeError: If unable to load the file or unsupported file format.
+        """
         file = None
         if filepath is None:
             filepath = self.filepath
@@ -274,6 +424,12 @@ class BidsInstance:
         return file
 
     def delete_file(self, filepath: str = None) -> None:
+        """
+        Deletes a specified file within the project.
+
+        Args:
+            filepath (str, optional): The path of the file to delete. If None, deletes current filepath.
+        """
         if filepath is None:
             filepath = self.filepath
         elif not filepath.startswith(self.project_path):
@@ -287,6 +443,12 @@ class BidsInstance:
             print(f"No permission to delete the file {filepath}.")
 
     def delete_directory(self, directory_path: str) -> None:
+        """
+        Deletes a specified directory within the project.
+
+        Args:
+            directory_path (str): The path of the directory to delete.
+        """
         directory_path = os.path.join(self.project_path, directory_path)
         try:
             shutil.rmtree(directory_path)
