@@ -28,7 +28,7 @@ def main():
     io_grp.add_argument('--PET_label', required=True, help="Label of PET type (E.g. 'FDG', 'CS1P1')")
     io_grp.add_argument('--T1w_image', help="Input T1-weighted MR image file")
     io_grp.add_argument('--T1w_sidecar', help="Input T1-weighted MR JSON sidecar file")
-    io_grp.add_argument('--T1w_label', help="Label of T1-weighted MRI type (E.g. 'T1w', 'MP-RAGE')")
+    io_grp.add_argument('--T1w_label', help="Label of T1-weighted MRI type (E.g. 'T1w', 'MPRAGE')")
     io_grp.add_argument('--T2w_image', help="Input T2-weighted MR image file")
     io_grp.add_argument('--T2w_sidecar', help="Input T2-weighted MR JSON sidecar file")
     io_grp.add_argument('--T2w_label', help="Label of T2-weighted MRI type (E.g. 'T2w', 'FLAIR')")
