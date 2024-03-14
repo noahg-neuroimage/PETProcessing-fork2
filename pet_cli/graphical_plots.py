@@ -101,8 +101,8 @@ class GraphicalAnalysisPlot(ABC):
         """
         Add data plots to the Axes in the instance's Axes list.
 
-        This method plots the instance's `x` and `y` values (from the particular analysis) on each Axes in the
-        instance's Axes list. The style of the plotted points can be customized by passing a dictionary of keyword
+        This method plots the instance's :math:`x` and :math:`y` values (from the particular analysis) on each Axes in
+        the instance's Axes list. The style of the plotted points can be customized by passing a dictionary of keyword
         arguments for `matplotlib.pyplot.plot`.
 
         Args:
@@ -145,6 +145,21 @@ class GraphicalAnalysisPlot(ABC):
                 ax.axvspan(x_lo, x_hi, **pl_kwargs)
                 
     def add_fit_points(self, pl_kwargs: dict = None):
+        """
+        Add fit points to the Axes in the instance's Axes list.
+
+        This method plots the instance's :math:`x` and :math:`y` values that were used in fitting, i.e., the points past the threshold
+        index, on each Axes in the instance's Axes list. The style of the plotted points can be customized by passing
+        a dictionary of keyword arguments for `matplotlib.pyplot.plot`.
+
+        Args:
+            pl_kwargs (dict, optional): A dictionary of keyword arguments to be passed to `matplotlib.pyplot.plot`
+                for styling the points. If not provided, the points are plotted as blue circles with alpha=0.9,
+                marker size='5', and z-order=2.
+
+        Raises:
+            ValueError: If pl_kwargs contains an argument not supported by `matplotlib.pyplot.plot`.
+        """
         t_thresh = self.t_thresh_idx
         if pl_kwargs is None:
             for ax in self.ax_list:
