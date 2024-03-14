@@ -202,6 +202,33 @@ class GraphicalAnalysisPlot(ABC):
                   points_kwargs: dict = None,
                   line_kwargs: dict = None,
                   shading_kwargs: dict = None):
+        """
+        Generate and add various types of plots to the Axes in the instance's Axes list.
+
+        Depending on the boolean values of `plot_data`, `plot_fit_points`, `plot_fit_lines`, and `fit_shading`,
+        this method determines which types of plots to generate and include. This includes the data points plot,
+        fitting points, line of best fit, and shading between the line of best fit and the x-axis.
+
+        Args:
+            plot_data (bool, optional): Determines if the analysis :math:`x` and :math:`y` points should be plotted.
+            Defaults to True.
+            plot_fit_points (bool, optional): Determines if the fit points should be plotted. Defaults to True.
+            plot_fit_lines (bool, optional): Determines if the line of best fit should be plotted. Defaults to True.
+            fit_shading (bool, optional): Determines if shading should be applied to the plots. Defaults to True.
+            data_kwargs (dict, optional): Keyword arguments for styling the data plot.
+            points_kwargs (dict, optional): Keyword arguments for styling the fit points plot.
+            line_kwargs (dict, optional): Keyword arguments for styling the line of best fit.
+            shading_kwargs (dict, optional): Keyword arguments for styling the shading.
+
+        Raises:
+            ValueError: If any of the keyword argument dictionaries contain unsupported arguments.
+
+        See Also:
+            * :func:`add_data_plots`: Method used to plot the :math:`x` and :math:`y` data.
+            * :func:`add_fit_points`: Method used to plot the fit points.
+            * :func:`add_fit_lines`: Method used to plot the line of best fit.
+            * :func:`add_shading_plots`: Method used to add shading to the plots.
+        """
         if plot_data:
             self.add_data_plots(pl_kwargs=data_kwargs)
         if plot_fit_points:
