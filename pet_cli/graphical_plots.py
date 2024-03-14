@@ -286,6 +286,17 @@ class GraphicalAnalysisPlot(ABC):
         self.ax_list[1].set(yscale='log', xscale='log')
     
     def calculate_fit_params(self):
+        """
+        Calculates the parameters (slope, intercept, r_squared) for line fitting.
+
+        This function fits a line to the :math:`x` and :math:`y` values that are generated, beyond the provided threshold.
+        The fit line is computed using Least Square fitting with R-squared method.
+
+        See Also:
+            * :func:`calculate_valid_indicies_and_x_and_y`: Method used to generate the x and y values.
+            * :func:`graphical_analysis.fit_line_to_data_using_lls_with_rsquared`: Method used to fit a line to data
+            points using Least Square fitting with R-squared value.
+        """
         t_thresh = self.t_thresh_idx
         fit_params = pet_grph.fit_line_to_data_using_lls_with_rsquared(xdata=self.x[t_thresh:], ydata=self.y[t_thresh:])
         
