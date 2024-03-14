@@ -7,3 +7,5 @@ Requires-Dist: scipy
 Requires-Dist: numba
 Requires-Dist: pandas
 Requires-Dist: nibabel
+Requires-Dist: antspyx
+Requires-Dist: SimpleITK

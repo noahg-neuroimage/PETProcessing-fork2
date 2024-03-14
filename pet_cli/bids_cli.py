@@ -1,5 +1,5 @@
 import argparse
-import BIDS_utils
+from . import BIDS_utils
 
 
 def main():
