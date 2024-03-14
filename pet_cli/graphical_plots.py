@@ -98,6 +98,20 @@ class GraphicalAnalysisPlot(ABC):
         return fig, ax_list
 
     def add_data_plots(self, pl_kwargs: dict = None):
+        """
+        Add data plots to the Axes in the instance's Axes list.
+
+        This method plots the instance's x and y values on each Axes in the instance's Axes list. The style of the
+        plotted points can be customized by passing a dictionary of keyword arguments for `matplotlib.pyplot.plot`.
+
+        Args:
+            pl_kwargs (dict, optional): A dictionary of keyword arguments to be passed to `matplotlib.pyplot.plot` for
+            styling the points. If not provided, the points are plotted with line width=1, alpha=0.9, marker size=8,
+            marker style='.', z-order=1, and color='black'.
+
+        Raises:
+            ValueError: If pl_kwargs contains an argument not supported by `matplotlib.pyplot.plot`.
+        """
         if pl_kwargs is None:
             for ax in self.ax_list:
                 ax.plot(self.x, self.y, lw=1, alpha=0.9, ms=8, marker='.', zorder=1, color='black')
