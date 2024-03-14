@@ -35,7 +35,26 @@ class GraphicalAnalysisPlot(ABC):
         * :func:`add_figure_labels_and_legend`
     """
     def __init__(self, pTAC: np.ndarray, tTAC: np.ndarray, t_thresh_in_mins: float, figObj: plt.Figure = None):
-        
+        """
+        Initialize an instance of the GraphicalAnalysisPlot class.
+
+        The instance is initialized with two Time-Activity Curves (TACs), a threshold time, and an optional matplotlib
+        Figure. It calculates valid indices (where the denominator is non-zero for the particular analysis), 'x' and 'y'
+        values for plotting based on the TACs and the threshold time, and also analyzes the TACs to generate the fits.
+
+        Args:
+            pTAC (np.ndarray): The input Time Activity Curve, an array containing time points and corresponding activity.
+            tTAC (np.ndarray): The Tissue or Region Time Activity Curve, an array with time points and corresponding
+            activity.
+            t_thresh_in_mins (float): The threshold time in minutes to consider when performing calculations for the
+            plots.
+            figObj (plt.Figure, optional): An optional matplotlib Figure object. If not provided, a new Figure object is
+             created.
+
+        Raises:
+            matplotlib error: Error handling for the plot generation is managed by matplotlib. Any exceptions thrown
+            during plotting are handled by the matplotlib library internally.
+        """
         self.pTAC: np.ndarray = pTAC[:]
         self.tTAC: np.ndarray = tTAC[:]
         self.t_thresh_in_mins: float = t_thresh_in_mins
