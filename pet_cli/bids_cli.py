@@ -3,23 +3,38 @@ from . import BIDS_utils
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Client interface for BIDS utilities.")
-    parser.add_argument('--project_path', required=True, help="Path to the BIDS project")
-    parser.add_argument('--subject', required=True, help="Subject ID")
-    parser.add_argument('--session', required=True, help="Session ID")
-    # parser.add_argument('--modality', required=True, help="Modality (E.g. 'anat', 'pet')")
-    # parser.add_argument('--image_type', required=True, help="Image type (E.g. 'T1w', 'FLAIR', 'FDG')")
-    parser.add_argument('--PET_image', required=True, help="Input 4D PET image file")
-    parser.add_argument('--PET_label', required=True, help="Label of PET type (E.g. 'FDG', 'CS1P1')")
-    parser.add_argument('--T1w_image', help="Input T1-weighted MR image file")
-    parser.add_argument('--T1w_label', help="Label of T1-weighted MRI type (E.g. 'T1w', 'MP-RAGE')")
-    parser.add_argument('--T2w_image', help="Input T2-weighted MR image file")
-    parser.add_argument('--T2w_label', help="Label of T2-weighted MRI type (E.g. 'T2w', 'FLAIR')")
-    # parser.add_argument('--acquisition', help="Acquisition details", default=None)
-    # parser.add_argument('--contrast_enhancing', help="Contrast enhancing agent ID", default=None)
-    # parser.add_argument('--reconstruction', help="Reconstruction method", default=None)
-    # parser.add_argument('--space', help="Reference image space", default=None)
-    # parser.add_argument('--description', help="Other descriptions", default=None)
+    parser = argparse.ArgumentParser(prog="PET Processing",
+                                     description="General purpose suite for processing PET images.",
+                                     epilog="PET Processing complete.")
+
+    io_grp = parser.add_argument_group("I/O")
+    io_grp.add_argument('--project_path', required=True, help="Path to the BIDS project")
+    io_grp.add_argument('--subject', required=True, help="Subject ID")
+    io_grp.add_argument('--session', required=True, help="Session ID")
+    io_grp.add_argument('--PET_image', required=True, help="Input 4D PET image file")
+    io_grp.add_argument('--PET_label', required=True, help="Label of PET type (E.g. 'FDG', 'CS1P1')")
+    io_grp.add_argument('--T1w_image', help="Input T1-weighted MR image file")
+    io_grp.add_argument('--T1w_label', help="Label of T1-weighted MRI type (E.g. 'T1w', 'MP-RAGE')")
+    io_grp.add_argument('--T2w_image', help="Input T2-weighted MR image file")
+    io_grp.add_argument('--T2w_label', help="Label of T2-weighted MRI type (E.g. 'T2w', 'FLAIR')")
+
+    # spec_grp = parser.add_argument_group("Specific filepath naming")
+    # spec_grp.add_argument('--project_path', required=True, help="Path to the BIDS project")
+    # spec_grp.add_argument('--subject', required=True, help="Subject ID")
+    # spec_grp.add_argument('--session', required=True, help="Session ID")
+    # spec_grp.add_argument('--modality', required=True, help="Modality (E.g. 'anat', 'pet')")
+    # spec_grp.add_argument('--image_type', required=True, help="Image type (E.g. 'T1w', 'FLAIR', 'FDG')")
+    # spec_grp.add_argument('--acquisition', help="Acquisition details", default=None)
+    # spec_grp.add_argument('--contrast_enhancing', help="Contrast enhancing agent ID", default=None)
+    # spec_grp.add_argument('--reconstruction', help="Reconstruction method", default=None)
+    # spec_grp.add_argument('--space', help="Reference image space", default=None)
+    # spec_grp.add_argument('--description', help="Other descriptions", default=None)
+
+    verb_group = parser.add_argument_group("Additional information")
+    verb_group.add_argument("-p", "--print", action="store_true",
+                            help="Print the calculated values to screen.", required=False)
+    verb_group.add_argument("-v", "--verbose", action="store_true",
+                            help="Print the shape of the mask and images files.", required=False)
 
     args = parser.parse_args()
 
