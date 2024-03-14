@@ -10,7 +10,7 @@ import shutil
 # import warnings
 from nibabel.nifti1 import Nifti1Image
 from nibabel.filebasedimages import FileBasedImage
-from registration_tools import ImageIO
+# from .registration_tools import ImageIO
 
 
 class BidsInstance:
@@ -379,7 +379,7 @@ class BidsInstance:
         os.makedirs(os.path.dirname(filepath), exist_ok=True)
         if isinstance(file_input, FileBasedImage) or isinstance(file_input, Nifti1Image):
             print("Nifti")
-            ImageIO.save_nii(image=file_input, out_file=self.filepath)
+            # ImageIO.save_nii(image=file_input, out_file=self.filepath)
         elif type(file_input) is dict:
             print("JSON")
             save_json(json_dict=file_input, filepath=filepath)
