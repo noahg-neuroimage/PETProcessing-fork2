@@ -101,8 +101,9 @@ class GraphicalAnalysisPlot(ABC):
         """
         Add data plots to the Axes in the instance's Axes list.
 
-        This method plots the instance's x and y values on each Axes in the instance's Axes list. The style of the
-        plotted points can be customized by passing a dictionary of keyword arguments for `matplotlib.pyplot.plot`.
+        This method plots the instance's `x` and `y` values (from the particular analysis) on each Axes in the
+        instance's Axes list. The style of the plotted points can be customized by passing a dictionary of keyword
+        arguments for `matplotlib.pyplot.plot`.
 
         Args:
             pl_kwargs (dict, optional): A dictionary of keyword arguments to be passed to `matplotlib.pyplot.plot` for
@@ -120,8 +121,22 @@ class GraphicalAnalysisPlot(ABC):
                 ax.plot(self.x, self.y, **pl_kwargs)
                 
     def add_shading_plots(self, pl_kwargs: dict = None):
+        """
+        Add shaded regions to the Axes in the instance's Axes list.
+
+        This method shades a vertical span on each Axes in the instance's Axes list, from the x-value at the threshold
+        index to the last x-value. The style of the shaded region can be customized by passing a dictionary of keyword
+        arguments for `matplotlib.pyplot.axvspan`.
+
+        Args:
+            pl_kwargs (dict, optional): A dictionary of keyword arguments to be passed to `matplotlib.pyplot.axvspan`
+                for styling the shaded region. If not provided, the region is shaded with color='gray', alpha=0.2,
+                and z-order=0.
+
+        Raises:
+            ValueError: If pl_kwargs contains an argument not supported by `matplotlib.pyplot.axvspan`.
+        """
         x_lo, x_hi = self.x[self.t_thresh_idx], self.x[-1]
-        
         if pl_kwargs is None:
             for ax in self.ax_list:
                 ax.axvspan(x_lo, x_hi, color='gray', alpha=0.2, zorder=0)
