@@ -30,10 +30,11 @@ class BidsInstance:
         create_filepath: Constructs a file path based on BIDS naming conventions and updates class attributes.
         manual_filepath: Manually sets the file path and updates class attributes based on the provided path.
         cache_filepath: Caches the current file path with a given name for later retrieval.
-        change_session: Updates the session part of the file path and optionally recompiles the path.
+        change_session: Updates the session part of the file path and optionally recompile the path.
         delete_file: Deletes a specified file within the project.
         delete_directory: Deletes a specified directory within the project.
     """
+
     def __init__(self,
                  project_path: str,
                  subject: str):
@@ -247,7 +248,7 @@ class BidsInstance:
 
     def change_session(self, value: str, compile_filepath: bool = True):
         """
-        Updates the session part of the file path and optionally recompiles the path.
+        Updates the session part of the file path and optionally recompile the path.
 
         Args:
             value (str): The new session value to set.
@@ -260,7 +261,7 @@ class BidsInstance:
 
     def _update_part(self, key, value, compile_filepath: bool = True):
         """
-        Updates a specified part of the file path and optionally recompiles the path.
+        Updates a specified part of the file path and optionally recompile the path.
 
         Args:
             key (str): The key of the part to update.
@@ -291,6 +292,7 @@ class BidsInstance:
         Returns:
             function: A function that updates the specified part.
         """
+
         def _update_method(value, compile_filepath: bool = True):
             self._update_part(key, value, compile_filepath)
 
@@ -346,7 +348,8 @@ class BidsInstance:
 
         Args:
             input_filepath (str): The path of the file to link to.
-            link_filepath (str, optional): The path where the symbolic link should be created. Defaults to current filepath.
+            link_filepath (str, optional): The path where the symbolic link should be created.
+                Defaults to current filepath.
         """
         if link_filepath is None:
             link_filepath = self.filepath
@@ -460,17 +463,46 @@ class BidsInstance:
 
 
 def create_json(**kwargs) -> dict:
+    """
+    Creates a dictionary from provided keyword arguments.
+
+    Args:
+        **kwargs: Arbitrary keyword arguments.
+
+    Returns:
+        A dictionary constructed from the keyword arguments.
+    """
     return kwargs
 
 
 def update_json(json_dict: dict,
                 **kwargs) -> dict:
+    """
+    Updates an existing JSON dictionary with additional key-value pairs.
+
+    Args:
+        json_dict (dict): The original dictionary to be updated.
+        **kwargs: Arbitrary keyword arguments to update json_dict with.
+
+    Returns:
+        The updated dictionary.
+    """
     json_dict.update(**kwargs)
     return json_dict
 
 
 def save_json(json_dict: dict,
               filepath: str) -> None:
+    """
+    Saves a dictionary as a JSON file at the specified filepath.
+
+    Args:
+        json_dict (dict): The dictionary to save as JSON.
+        filepath (str): The destination file path. If the path does not end with ".json", it will be appended.
+
+    Note:
+        The JSON file is formatted with an indentation of 4 spaces for readability.
+    """
     if not filepath.endswith(".json"):
         filepath += ".json"
     with open(filepath, 'w') as file:
@@ -480,13 +512,17 @@ def save_json(json_dict: dict,
 
 def load_json(filepath: str):
     """
-    Reads a JSON file and converts it into a dictionary.
+    Loads a JSON file from the specified filepath and returns its content as a dictionary.
 
-    Parameters:
-    - json_file_path: The file path to the JSON file.
+    Args:
+        filepath (str): The path to the JSON file to be loaded.
 
     Returns:
-    A dictionary representing the JSON data.
+        dict: The JSON file content as a dictionary.
+
+    Raises:
+        FileNotFoundError: If the specified file does not exist.
+        json.JSONDecodeError: If the file content is not valid JSON.
     """
     try:
         with open(filepath, 'r') as file:
@@ -502,10 +538,27 @@ def load_json(filepath: str):
 
 def save_array_as_tsv(array: numpy.array,
                       filepath: str) -> None:
+    """
+    Saves a NumPy array as a TSV (Tab-Separated Values) file.
+
+    Args:
+        array (numpy.array): The NumPy array to save.
+        filepath (str): The destination file path for the TSV file.
+
+    Note:
+        Each row of the array is saved as a separate line in the TSV file.
+    """
     numpy.savetxt(filepath, array, delimiter='\t', fmt='%s')
 
 
 def save_tsv_simple(filepath: str, data: list) -> None:
+    """
+    Saves a list of lists as a TSV (Tab-Separated Values) file.
+
+    Args:
+        filepath (str): The destination file path for the TSV file.
+        data (list): A list of lists, where each sublist represents a row in the TSV file.
+    """
     print("made")
     with open(filepath, 'w', encoding='utf-8') as file:
         for row in data:
@@ -514,6 +567,15 @@ def save_tsv_simple(filepath: str, data: list) -> None:
 
 
 def load_tsv_simple(filepath: str) -> list:
+    """
+    Loads a TSV (Tab-Separated Values) file from the specified filepath and returns its content as a list of lists.
+
+    Args:
+        filepath (str): The path to the TSV file to be loaded.
+
+    Returns:
+        A list of lists, where each sublist represents a row in the TSV file, split by tabs.
+    """
     with open(filepath, 'r', encoding='utf-8') as file:
         data = [line.strip().split('\t') for line in file]
     return data
