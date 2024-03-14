@@ -77,6 +77,10 @@ class GraphicalAnalysisPlot(ABC):
                        plot_fit_lines=plot_fit_lines,
                        fit_shading=fit_shading)
         self.add_figure_labels_and_legend()
+        self.ax_list[0].set_title("Linear Plot")
+        self.ax_list[1].set_title("LogLog Plot")
+        
+        self.ax_list[1].set(yscale='log', xscale='log')
     
     @abstractmethod
     def calculate_x_and_y(self) -> Tuple[np.ndarray, np.ndarray, Dict[str, float]]:
@@ -93,15 +97,15 @@ class GraphicalAnalysisPlot(ABC):
 
 class PatlakPlot(GraphicalAnalysisPlot):
     def calculate_x_and_y(self) -> Tuple[np.ndarray, np.ndarray, Dict[str, float]]:
-        good_points = np.argwhere(self.pTAC[1] != 0.0).T[0]
+        non_zero_indices = np.argwhere(self.pTAC[1] != 0.0).T[0]
+        t_thresh = pet_grph.get_index_from_threshold(times_in_minutes=self.pTAC[0][non_zero_indices],
+                                                     t_thresh_in_minutes=self.t_thresh_in_mins)
         
-        x = pet_grph.cumulative_trapezoidal_integral(xdata=self.pTAC[0], ydata=self.pTAC[1])[good_points] / self.pTAC[1][good_points]
-        y = self.tTAC[1][good_points] / self.pTAC[1][good_points]
+        x = pet_grph.cumulative_trapezoidal_integral(xdata=self.pTAC[0], ydata=self.pTAC[1])
+        x = x[non_zero_indices] / self.pTAC[1][non_zero_indices]
+        y = self.tTAC[1][non_zero_indices] / self.pTAC[1][non_zero_indices]
         
-        fit_params = pet_grph.patlak_analysis_with_rsquared(input_tac_values=self.pTAC[1],
-                                                            region_tac_values=self.tTAC[1],
-                                                            tac_times_in_minutes=self.pTAC[0],
-                                                            t_thresh_in_minutes=self.t_thresh_in_mins)
+        fit_params = pet_grph.fit_line_to_data_using_lls_with_rsquared(xdata=x[t_thresh:], ydata=y[t_thresh:])
         
         fit_params = {'slope': fit_params[0],
                       'intercept': fit_params[1],
@@ -126,3 +130,78 @@ class PatlakPlot(GraphicalAnalysisPlot):
                         loc='upper left',
                         title='Patlak Analysis')
         self.fig.suptitle("Patlak Plots")
+
+
+class LoganPlot(GraphicalAnalysisPlot):
+    def calculate_x_and_y(self) -> Tuple[np.ndarray, np.ndarray, Dict[str, float]]:
+        non_zero_indices = np.argwhere(self.tTAC[1] != 0.0).T[0]
+        t_thresh = pet_grph.get_index_from_threshold(times_in_minutes=self.pTAC[0][non_zero_indices],
+                                                     t_thresh_in_minutes=self.t_thresh_in_mins)
+        
+        x = pet_grph.cumulative_trapezoidal_integral(xdata=self.pTAC[0], ydata=self.pTAC[1])
+        y = pet_grph.cumulative_trapezoidal_integral(xdata=self.tTAC[0], ydata=self.tTAC[1])
+        
+        x = x[non_zero_indices] / self.tTAC[1][non_zero_indices]
+        y = y[non_zero_indices] / self.tTAC[1][non_zero_indices]
+        
+        fit_params = pet_grph.fit_line_to_data_using_lls_with_rsquared(xdata=x[t_thresh:], ydata=y[t_thresh:])
+        
+        fit_params = {
+            'slope': fit_params[0], 'intercept': fit_params[1], 'r_squared': fit_params[2]
+            }
+        return x, y, fit_params
+    
+    def generate_label_from_fit_params(self) -> str:
+        slope = self.fit_params['slope']
+        intercept = self.fit_params['intercept']
+        r_sq = self.fit_params['r_squared']
+        
+        return f"$m=${slope:<5.3f}\n$b=${intercept:<5.3f}\n$R^2=${r_sq:<5.3f}"
+    
+    def add_figure_labels_and_legend(self):
+        x_label = r"$\frac{\int_{0}^{t}C_\mathrm{P}(s)\mathrm{d}s}{R(t)}$"
+        y_label = r"$\frac{\int_{0}^{t}R(s)\mathrm{d}s}{R(t)}$"
+        for ax in self.ax_list:
+            ax.set_xlabel(x_label)
+            ax.set_ylabel(y_label)
+        self.fig.legend(*self.ax_list[0].get_legend_handles_labels(), bbox_to_anchor=(1.0, 0.8), loc='upper left',
+                        title='Logan Analysis')
+        self.fig.suptitle("Logan Plots")
+
+
+class AltLoganPlot(GraphicalAnalysisPlot):
+    def calculate_x_and_y(self) -> Tuple[np.ndarray, np.ndarray, Dict[str, float]]:
+        
+        non_zero_indices = np.argwhere(self.pTAC[1] != 0.0).T[0]
+        t_thresh = pet_grph.get_index_from_threshold(times_in_minutes=self.pTAC[0][non_zero_indices],
+                                                     t_thresh_in_minutes=self.t_thresh_in_mins)
+        
+        x = pet_grph.cumulative_trapezoidal_integral(xdata=self.pTAC[0], ydata=self.pTAC[1])
+        y = pet_grph.cumulative_trapezoidal_integral(xdata=self.tTAC[0], ydata=self.tTAC[1])
+        
+        x = x[non_zero_indices] / self.pTAC[1][non_zero_indices]
+        y = y[non_zero_indices] / self.pTAC[1][non_zero_indices]
+        
+        fit_params = pet_grph.fit_line_to_data_using_lls_with_rsquared(xdata=x[t_thresh:], ydata=y[t_thresh:])
+        
+        fit_params = {
+            'slope': fit_params[0], 'intercept': fit_params[1], 'r_squared': fit_params[2]
+            }
+        return x, y, fit_params
+    
+    def generate_label_from_fit_params(self) -> str:
+        slope = self.fit_params['slope']
+        intercept = self.fit_params['intercept']
+        r_sq = self.fit_params['r_squared']
+        
+        return f"$m=${slope:<5.3f}\n$b=${intercept:<5.3f}\n$R^2=${r_sq:<5.3f}"
+    
+    def add_figure_labels_and_legend(self):
+        x_label = r"$\frac{\int_{0}^{t}C_\mathrm{P}(s)\mathrm{d}s}{C_\mathrm{P}(t)}$"
+        y_label = r"$\frac{\int_{0}^{t}R(s)\mathrm{d}s}{C_\mathrm{P}(t)}$"
+        for ax in self.ax_list:
+            ax.set_xlabel(x_label)
+            ax.set_ylabel(y_label)
+        self.fig.legend(*self.ax_list[0].get_legend_handles_labels(), bbox_to_anchor=(1.0, 0.8), loc='upper left',
+                        title='Alt-Logan Analysis')
+        self.fig.suptitle("Alt-Logan Plots")
