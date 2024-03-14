@@ -4,23 +4,54 @@ BIDS utilities
 import os
 import json
 import numpy
-import warnings
+import shutil
+# import warnings
 from nibabel.nifti1 import Nifti1Image
 from nibabel.filebasedimages import FileBasedImage
 from registration_tools import ImageIO
 
 
-class BidsProject:
-    """
-    Class to handle BIDS project filepaths and to sort input data into output BIDS.
-    """
+class BidsInstance:
 
     def __init__(self,
-                 project_path: str) -> None:
+                 project_path: str,
+                 subject: str):
+        self.project_path = project_path
+        self.path_cache = {}
+        self.parts = {"derivative_directory": "main",
+                      "subject": subject,
+                      "session": None,
+                      "modality": None,
+                      "acquisition": None,
+                      "contrast_enhancing": None,
+                      "reconstruction": None,
+                      "space": None,
+                      "description": None,
+                      "image_type": None,
+                      "extension": None}
+        self.filepath = ""
+        self.prefixes = {"subject": "sub-",
+                         "session": "ses-",
+                         "acquisition": "acq-",
+                         "contrast_enhancing": "ce-",
+                         "reconstruction": "rec-",
+                         "space": "space-",
+                         "description": "desc-"}
+        self.directory_parts_names = ("subject",
+                                      "session",
+                                      "modality")
+        self.file_parts_names = ("subject",
+                                 "session",
+                                 "acquisition",
+                                 "contrast_enhancing",
+                                 "reconstruction",
+                                 "space",
+                                 "description",
+                                 "image_type")
+        self._setup_dynamic_methods()
+        self._create_bids_scaffold()
 
-        self.path = project_path
-
-    def create_bids_scaffold(self):
+    def _create_bids_scaffold(self):
         dirs_to_create = [
             "code",
             "derivatives",
@@ -34,291 +65,244 @@ class BidsProject:
             #            "DatasetType": "raw"
             #        }, indent=4),
             "participants.json": "{}",
-            "participants.tsv": "participant_id\tsession_id",
+            "participants.tsv": "subject_id\tsession_id",
             "README": "This BIDS dataset was created for the file outputs of the PetProcessing Pipeline."
         }
 
         # Create directories
         for dir_name in dirs_to_create:
-            full_path = os.path.join(self.path, dir_name)
+            full_path = os.path.join(self.project_path, dir_name)
             os.makedirs(full_path, exist_ok=True)
 
         # Create files
         for file_name, content in files_to_create.items():
-            full_path = os.path.join(self.path, file_name)
-            with open(full_path, 'w') as f:
-                f.write(content)
+            full_path = os.path.join(self.project_path, file_name)  # change to only write if not existing
+            if not os.path.exists(full_path):
+                with open(full_path, 'w') as f:
+                    f.write(content)
 
+    def _update_participants(self, session: str) -> None:
+        if self.parts['session'] != session:
+            self._add_subject_session_to_participants(subject=self.parts['subject'], session=session)
 
-class BidsInstance:
+    def _add_subject_session_to_participants(self, subject: str, session: str) -> None:
+        participants_tsv_path = os.path.join(self.project_path, "participants.tsv")
+        participants_tsv = self.load_file(filepath=participants_tsv_path)
+        participants_tsv.append([subject, session])
+        self.write_file(file_input=participants_tsv, filepath=participants_tsv_path)
 
-    def __init__(self, bids_project: BidsProject):
-        self.project = bids_project
-        self.directory_path = ""
-        self.file_basename = ""
-        self.full_filepath = ""
-
-        self.prefixes = {"subject": "sub-",
-                         "session": "ses-",
-                         "acquisition": "acq-",
-                         "contrast_enhancing": "ce-",
-                         "reconstruction": "rec-",
-                         "space": "space-",
-                         "description": "desc-"}
-
-    def _add_prefixes(self, elements: dict) -> dict:
-        for key in list(elements.keys()):
-            value = elements[key]
+    def _prefixed_dictionary(self) -> dict:
+        out_dict = self.parts.copy()
+        for key in list(out_dict.keys()):
+            value = out_dict[key]
             if isinstance(value, str):
                 if key in self.prefixes:
                     if not value.startswith(self.prefixes[key]):
-                        elements[key] = self.prefixes[key] + elements[key]
+                        out_dict[key] = self.prefixes[key] + out_dict[key]
             else:
-                elements.pop(key)
-        return elements
+                out_dict.pop(key)
+        return out_dict
 
-    def create_bids_filepath(self,
-                             warn: bool = True,
-                             bids_directory_path: str = None,
-                             bids_file_basename: str = None,
-                             file_extension: str = "",
-                             subject: str = None,
-                             session: str = None,
-                             modality: str = None,
-                             image_type: str = None,
-                             acquisition: str = None,
-                             contrast_enhancing: str = None,
-                             reconstruction: str = None,
-                             space: str = None,
-                             description: str = None,
-                             derivative_directory: str = None) -> None:
+    def create_filepath(self,
+                        session: str,
+                        modality: str,
+                        image_type: str,
+                        acquisition: str = None,
+                        contrast_enhancing: str = None,
+                        reconstruction: str = None,
+                        space: str = None,
+                        description: str = None,
+                        derivative_directory: str = "main",
+                        extension: str = "") -> None:
 
         parameters_dictionary = locals().copy()
+        self._update_participants(session=session)
+        self.parts = {**self.parts, **parameters_dictionary}
+        self._compile_filepath()
 
-        if bids_directory_path is not None and bids_file_basename is not None:
-            self._manual_bids_filepath(bids_path=bids_directory_path,
-                                       bids_filename=bids_file_basename,
-                                       extension=file_extension)
-            return
+    def _compile_filepath(self) -> None:
+        extension = self.parts['extension']
+        parts_prefixed = self._prefixed_dictionary()
+        filename_parts = [parts_prefixed[key] for key in self.file_parts_names if self.parts.get(key) is not None]
+        filename = '_'.join(filename_parts) + extension
 
-        # if bids_directory_path is None:
-        if all(key is not None for key in (subject,
-                                           session,
-                                           modality)):
-            self._create_bids_directory_path(subject=subject,
-                                             session=session,
-                                             modality=modality,
-                                             derivative_directory=derivative_directory)
-        elif any(key is not None for key in (subject,
-                                             session,
-                                             modality,
-                                             derivative_directory)):
-            input_dictionary = self._edit_filepath_constituents(constituent_string=self.directory_path,
-                                                                input_dictionary=parameters_dictionary,
-                                                                constituent_delimiter="/")
-
-            previous_directory_path = self.directory_path
-
-            self._create_bids_directory_path(subject=input_dictionary.get("subject"),
-                                             session=input_dictionary.get("session"),
-                                             modality=input_dictionary.get("modality"),
-                                             derivative_directory=input_dictionary.get("derivative_directory"))
-            if warn:
-                warnings.warn(f"The directory_path variable in this BidsPath object has been edited:\n\
-                FROM: \"{previous_directory_path}\"\n\
-                TO: \"{self.directory_path}\"")
-
-        if all(key is not None for key in (subject,
-                                           session,
-                                           image_type)):
-            self._create_bids_file_basename(subject=subject,
-                                            session=session,
-                                            image_type=image_type,
-                                            acquisition=acquisition,
-                                            contrast_enhancing=contrast_enhancing,
-                                            reconstruction=reconstruction,
-                                            space=space,
-                                            description=description)
-        elif any(key is not None for key in (subject,
-                                             session,
-                                             image_type)):
-            input_dictionary = self._edit_filepath_constituents(constituent_string=self.file_basename,
-                                                                input_dictionary=parameters_dictionary,
-                                                                constituent_delimiter="_")
-
-            previous_file_basename = self.file_basename
-
-            self._create_bids_file_basename(subject=input_dictionary.get("subject"),
-                                            session=input_dictionary.get("session"),
-                                            image_type=input_dictionary.get("image_type"),
-                                            acquisition=input_dictionary.get("acquisition"),
-                                            contrast_enhancing=input_dictionary.get("contrast_enhancing"),
-                                            reconstruction=input_dictionary.get("reconstruction"),
-                                            space=input_dictionary.get("space"),
-                                            description=input_dictionary.get("description"))
-            if warn:
-                warnings.warn(f"The file_basename variable in this BidsPath object has been edited:\n\
-                FROM: \"{previous_file_basename}\"\n\
-                TO: \"{self.file_basename}\"")
-
-        self._compile_bids_filepath(extension=file_extension)
-
-    def _edit_filepath_constituents(self,
-                                    constituent_string: str,
-                                    input_dictionary: dict,
-                                    constituent_delimiter: str) -> dict:
-
-        constituent_string_parts = constituent_string.split(constituent_delimiter)
-
-        for key, value in input_dictionary.items():
-            if value is None:
-                prefix = self.prefixes.get(key)
-                if prefix is not None:
-                    for part in constituent_string_parts:
-                        if part.startswith(prefix):
-                            input_dictionary[key] = part[len(prefix):]
-                            break
-                elif ((constituent_delimiter == "/" and key == "modality") or
-                      (constituent_delimiter == "_" and key == "image_type")):  # last part modality or image_type
-                    input_dictionary[key] = constituent_string_parts[-1]
-                elif constituent_delimiter == "/" and key == "derivative_directory":
-                    if "derivatives" in constituent_string_parts:
-                        input_dictionary[key] = constituent_string_parts[
-                            constituent_string_parts.index("derivatives") + 1]
-
-        return input_dictionary
-
-    def _create_bids_directory_path(self,
-                                    subject: str,
-                                    session: str,
-                                    modality: str,
-                                    derivative_directory: str = "main",
-                                    make_directories: bool = True) -> None:
-
-        elements = locals().copy()
-        elements = self._add_prefixes(elements)
-
+        derivative_directory = self.parts['derivative_directory']
+        directory_parts = [parts_prefixed[key] for key in self.directory_parts_names if self.parts.get(key) is not None]
         if derivative_directory is not None and derivative_directory != "main":
-            modality_path = os.path.join(self.project.path,
-                                         "derivatives",
-                                         derivative_directory,
-                                         elements["subject"],
-                                         elements["session"],
-                                         modality)
+            directory_parts = ["derivatives", derivative_directory] + directory_parts
+        directory_path = os.path.join(self.project_path, '/'.join(directory_parts))
+        self.filepath = os.path.join(directory_path, filename)
+
+    def manual_filepath(self, filepath: str) -> None:
+        slash_parts = filepath.split("/")
+        underscore_parts = slash_parts[-1].split("_")
+        dot_parts = underscore_parts[-1].split(".")
+        directory_parts = slash_parts[0:-1]
+        filename_parts = underscore_parts[0:-1] + [dot_parts[0]]
+        if len(dot_parts) > 1:
+            extension = '.' + '.'.join(dot_parts[1:])
         else:
-            modality_path = os.path.join(self.project.path,
-                                         elements["subject"],
-                                         elements["session"],
-                                         modality)
+            extension = ""
+        all_parts = directory_parts + filename_parts + [extension]
 
-        if make_directories:
-            os.makedirs(modality_path, exist_ok=True)
+        for key, prefix in self.prefixes.items():
+            for part in (part for part in all_parts if part.startswith(prefix)):
+                if key == "session":
+                    self._update_participants(session=part[len(prefix):])
+                self.parts[key] = part[len(prefix):]
+                break
+        if "derivatives" in directory_parts:
+            self.parts['derivative_directory'] = directory_parts[directory_parts.index("derivatives") + 1]
+        self.parts['modality'] = directory_parts[-1]
+        self.parts['image_type'] = filename_parts[-1]
+        self.parts['extension'] = extension
 
-        self.directory_path = modality_path
+        self._compile_filepath()
 
-    def _create_bids_file_basename(self,
-                                   subject: str,
-                                   session: str,
-                                   image_type: str,
-                                   acquisition: str = None,
-                                   contrast_enhancing: str = None,
-                                   reconstruction: str = None,
-                                   space: str = None,
-                                   description: str = None) -> None:
+    def cache_filepath(self, name: str) -> None:
+        self.path_cache[name] = self.filepath
 
-        elements = locals().copy()
-        elements = self._add_prefixes(elements)
+    #    def load_from_cache(self, name: str) -> None: # get, if none -> warning
+    #        return self.path_cache[name]
 
-        bids_filename = '_'.join(
-            [value for key, value in elements.items() if value is not None and key != "image_type"])
-        bids_filename = bids_filename + "_" + elements["image_type"]
+    def change_session(self, value: str, compile_filepath: bool = True):
+        self._update_participants(session=value)
+        self.parts['session'] = value
+        if compile_filepath:
+            self._compile_filepath()
 
-        self.file_basename = bids_filename
+    def _update_part(self, key, value, compile_filepath: bool = True):
+        self.parts[key] = value
+        if compile_filepath:
+            self._compile_filepath()
 
-    """
-    def extract_filepath(self,
-                         subject: str,
-                         session: str,
-                         modality: str,
-                         image_type: str,
-                         extension: str,
-                         acquisition: str = None,
-                         contrast_enhancing: str = None,
-                         reconstruction: str = None,
-                         space: str = None,
-                         description: str = None,
-                         derivative_directory: str = None) -> str:
+    def _setup_dynamic_methods(self):
+        for key in self.parts.keys():
+            if key != "session":  # so that session can call _update_participants()
+                update_method = self._create_update_method(key)
+                setattr(self, f'change_{key}', update_method)
 
-        bids_path = self.create_bids_path(subject=subject,
-                                          session=session,
-                                          modality=modality,
-                                          derivative_directory=derivative_directory,
-                                          make_directories=False)
+    def _create_update_method(self, key):
+        def _update_method(value, compile_filepath: bool = True):
+            self._update_part(key, value, compile_filepath)
 
-        bids_filename = self.create_bids_filename(subject=subject,
-                                                  session=session,
-                                                  image_type=image_type,
-                                                  acquisition=acquisition,
-                                                  contrast_enhancing=contrast_enhancing,
-                                                  reconstruction=reconstruction,
-                                                  space=space,
-                                                  description=description)
+        return _update_method
 
-        filepath = self.create_bids_filepath(bids_path=bids_path,
-                                             bids_filename=bids_filename,
-                                             extension=extension)
+    def change_parts(self,
+                     session: str,
+                     modality: str = None,
+                     image_type: str = None,
+                     acquisition: str = None,
+                     contrast_enhancing: str = None,
+                     reconstruction: str = None,
+                     space: str = None,
+                     description: str = None,
+                     derivative_directory: str = "main",
+                     extension: str = None, ) -> None:
+        parameters_dictionary = locals().copy()
+        for key, value in parameters_dictionary.items():
+            if value is not None:
+                # Construct the method name expected based on the key
+                method_name = f'change_{key}'
 
-        if not os.path.exists(filepath) and not os.path.islink(filepath):
-            raise FileNotFoundError(f"The file '{filepath}' does not exist.")
+                # Check if this instance has a method with that name
+                if hasattr(self, method_name):
+                    # Get the method
+                    method = getattr(self, method_name)
 
-        return filepath
-    """
+                    # Call the method with the provided value
+                    method(value, compile_filepath=False)
+                elif key != "self":
+                    print(f"No method found for key: {key}")
 
-    def _compile_bids_filepath(self,
-                               extension: str = "") -> None:
+        self._compile_filepath()
 
-        self.full_filepath = os.path.join(self.directory_path, self.file_basename) + extension
+    def write_symbolic_link(self, input_filepath: str, link_filepath: str = None) -> None:
+        if link_filepath is None:
+            link_filepath = self.filepath
 
-    def _manual_bids_filepath(self,
-                              bids_path: str,
-                              bids_filename: str,
-                              extension: str = "") -> None:
-
-        self.full_filepath = os.path.join(self.project.path, bids_path, bids_filename) + extension
-
-    def write_symbolic_link(self,
-                            input_file_path: str) -> None:
-
-        input_filename = os.path.basename(input_file_path)
+        input_filename = os.path.basename(input_filepath)
         extension = '.' + '.'.join(input_filename.split('.')[1:])
-        link_file_path = self.full_filepath + extension
+        self.parts['extension'] = extension
+        self._compile_filepath()
+        link_filepath_base = link_filepath.split('.')[0]
+        link_filepath = link_filepath_base + extension
+        os.makedirs(os.path.dirname(link_filepath), exist_ok=True)
 
-        if os.path.exists(link_file_path) or os.path.islink(link_file_path):
-            os.remove(link_file_path)
-        os.symlink(input_file_path, link_file_path)
+        if os.path.exists(link_filepath) or os.path.islink(link_filepath):
+            os.remove(link_filepath)
+        os.symlink(input_filepath, link_filepath)
 
-    def write_file(self,
-                   file_input) -> None:
-
+    def write_file(self, file_input, filepath: str = None) -> None:
+        if filepath is None:
+            filepath = self.filepath
+        os.makedirs(os.path.dirname(filepath), exist_ok=True)
         if isinstance(file_input, FileBasedImage) or isinstance(file_input, Nifti1Image):
             print("Nifti")
-            ImageIO.save_nii(image=file_input, out_file=self.full_filepath)
+            ImageIO.save_nii(image=file_input, out_file=self.filepath)
         elif type(file_input) is dict:
             print("JSON")
-            save_json(json_dict=file_input, filepath=self.full_filepath)
+            save_json(json_dict=file_input, filepath=filepath)
         elif type(file_input) is numpy.array:
             print("TSV")
-            # save_tsv(object, bids_file_path)
+            save_array_as_tsv(array=file_input, filepath=filepath)
+        elif type(file_input) is list:
+            print("TSV")
+            save_tsv_simple(data=file_input, filepath=filepath)
+
+    def load_file(self, filepath: str = None):
+        file = None
+        if filepath is None:
+            filepath = self.filepath
+        if os.path.exists(filepath) or os.path.islink(filepath):
+            if filepath.endswith(".nii") or filepath.endswith(".nii.gz"):
+                print("Nifti")
+                # file = ImageIO.load_nii(filepath=self.filepath)
+            elif filepath.endswith(".json"):
+                print("JSON")
+                file = load_json(filepath=filepath)
+            elif filepath.endswith(".tsv"):
+                print("TSV")
+                file = load_tsv_simple(filepath=filepath)
+            else:
+                raise ValueError(f"Unsupported file type for {filepath}.")
+        else:
+            raise FileNotFoundError(f"The file '{filepath}' does not exist.")
+        if file is None:
+            raise RuntimeError(f"Failed to load the file or unsupported file format: {filepath}")
+
+        return file
+
+    def delete_file(self, filepath: str = None) -> None:
+        if filepath is None:
+            filepath = self.filepath
+        elif not filepath.startswith(self.project_path):
+            filepath = os.path.join(self.project_path, filepath)
+        try:
+            os.remove(filepath)
+            # print(f"File {file_path} has been removed successfully.")
+        except FileNotFoundError:
+            print(f"File {filepath} does not exist.")
+        except PermissionError:
+            print(f"No permission to delete the file {filepath}.")
+
+    def delete_directory(self, directory_path: str) -> None:
+        directory_path = os.path.join(self.project_path, directory_path)
+        try:
+            shutil.rmtree(directory_path)
+            # print(f"Directory {directory_path} and all its contents have been removed successfully.")
+        except FileNotFoundError:
+            print(f"Directory {directory_path} does not exist.")
+        except PermissionError:
+            print(f"No permission to delete the directory {directory_path}.")
 
 
-def create_json() -> dict:
-    return {}
+def create_json(**kwargs) -> dict:
+    return kwargs
 
 
-def append_json(json_dict: dict = None,
+def update_json(json_dict: dict,
                 **kwargs) -> dict:
-    if json_dict is None:
-        json_dict = create_json()
     json_dict.update(**kwargs)
     return json_dict
 
@@ -332,6 +316,42 @@ def save_json(json_dict: dict,
         file.write('\n')
 
 
+def load_json(filepath: str):
+    """
+    Reads a JSON file and converts it into a dictionary.
+
+    Parameters:
+    - json_file_path: The file path to the JSON file.
+
+    Returns:
+    A dictionary representing the JSON data.
+    """
+    try:
+        with open(filepath, 'r') as file:
+            data = json.load(file)
+        return data
+    except FileNotFoundError:
+        print(f"File not found: {filepath}")
+        return None
+    except json.JSONDecodeError:
+        print(f"Error decoding JSON from file: {filepath}")
+        return None
+
+
 def save_array_as_tsv(array: numpy.array,
                       filepath: str) -> None:
     numpy.savetxt(filepath, array, delimiter='\t', fmt='%s')
+
+
+def save_tsv_simple(filepath: str, data: list) -> None:
+    print("made")
+    with open(filepath, 'w', encoding='utf-8') as file:
+        for row in data:
+            line = '\t'.join(row)
+            file.write(line + '\n')
+
+
+def load_tsv_simple(filepath: str) -> list:
+    with open(filepath, 'r', encoding='utf-8') as file:
+        data = [line.strip().split('\t') for line in file]
+    return data
