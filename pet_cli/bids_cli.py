@@ -37,6 +37,13 @@ def main():
     if args.T1w_image:
         bids_instance.change_parts(modality="anat",
                                    image_type=args.T1w_label)
+        bids_instance.write_symbolic_link(input_filepath=args.T1w_image)
+        bids_instance.cache_filepath(name="raw_T1w")
+    if args.T2w_image:
+        bids_instance.change_parts(modality="anat",
+                                   image_type=args.T2w_label)
+        bids_instance.write_symbolic_link(input_filepath=args.T2w_image)
+        bids_instance.cache_filepath(name="raw_T2w")
 
 
 
