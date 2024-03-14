@@ -14,12 +14,13 @@ class GraphicalAnalysisPlot(ABC):
     and determines relevant indices based on given thresholds.
 
     Attributes:
-        pTAC (np.ndarray): The input Time Activity Curve, an array containing time points and corresponding activity.
-        tTAC (np.ndarray): The Tissue or Region Time Activity Curve, an array with time points and corresponding activity.
-        t_thresh_in_mins (float): The threshold time in minutes to consider in the analysis.
+        pTAC (np.ndarray): The Input/Plasma TAC, an array containing time points and corresponding activity.
+        tTAC (np.ndarray): The Tissue/Region TAC, an array with time points and corresponding activity.
+        t_thresh_in_mins (float): The threshold time, in minutes, to consider in the analysis. Points are fit after this
+        threshold.
         fig (plt.Figure): A matplotlib Figure object where the plots will be drawn.
         ax_list (list): A list of matplotlib Axes associated with `fig` where the plots will be drawn.
-        non_zero_idx (np.ndarray): Indexes of non-zero values in TAC (calculated in specific implementations).
+        non_zero_idx (np.ndarray): Indexes of non-zero values in appropriate TAC (calculated in specific implementations).
         t_thresh_idx (int): The index at which the time threshold is crossed in the TACs (calculated in specific
         implementations).
         x (np.ndarray): The "x" values for plotting (calculated in specific implementations).
