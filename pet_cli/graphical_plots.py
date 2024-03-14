@@ -69,6 +69,24 @@ class GraphicalAnalysisPlot(ABC):
         
     @staticmethod
     def generate_figure_and_axes(figObj: plt.Figure = None):
+        """
+        Generate a matplotlib Figure and Axes for plotting.
+
+        A new Figure and Axes are created if no Figure object is provided. If a Figure object is provided, the method
+        retrieves the existing axes from the Figure object. In either case, the method returns the Figure and a list of
+        its Axes.
+
+        Args:
+            figObj (plt.Figure, optional): An optional matplotlib Figure object. If not provided, a new Figure object is
+             created with 2 subplots arranged in 1 row, a figure size of 8x4, line width of 3.0, and edge color 'k'.
+
+        Returns:
+            fig (plt.Figure): The resulting matplotlib Figure object.
+            ax_list (list): A list of Axes objects associated with 'fig'.
+
+        Raises:
+            None
+        """
         if figObj is None:
             fig, ax_list = plt.subplots(1, 2,
                                         constrained_layout=True, figsize=[8, 4],
