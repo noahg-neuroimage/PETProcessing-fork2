@@ -27,7 +27,7 @@ class ImageOps4D():
         sub_id: str,
         out_path: str,
         image_paths: dict=None,
-        half_life: float=0,
+        half_life: float=None,
         color_table_path: str=None,
         verbose: bool=True
     ):
@@ -70,7 +70,10 @@ class ImageOps4D():
         Returns:
             summed_image (np.ndarray): Summed image 
         """
-        pet_meta = image_io.load_meta(self.image_paths['pet'])
+        if self.half_life is None:
+            raise ValueError('(ImageOps4d): Radioisotope half life not set, cannot \
+                run weighted_series_sum.')
+        pet_meta = image_io.ImageIO.load_meta(self.image_paths['pet'])
         pet_image = nibabel.load(self.image_paths['pet'])
         pet_series = pet_image.get_fdata()
         image_frame_start = pet_meta['FrameTimesStart']
@@ -82,7 +85,7 @@ class ImageOps4D():
         if 'TracerRadionuclide' in pet_meta.keys():
             tracer_isotope = pet_meta['TracerRadionuclide']
             if self.verbose:
-                print(f"(ImageOps4D): Radio isotope is {tracer_isotope}",
+                print(f"(ImageOps4d): Radio isotope is {tracer_isotope}",
                     "with half life {self.half_life} s")
         image_weighted_sum = math_lib.weighted_sum_computation(
             image_frame_duration,
@@ -100,8 +103,10 @@ class ImageOps4D():
         os.makedirs(sum_image_path,exist_ok=True)
         self.image_paths['pet_sum_image'] = os.path.join(
             sum_image_path,
-            f'{self.sub_id}-sum-image.nii.gz')
+            f'{self.sub_id}-sum.nii.gz')
         nibabel.save(pet_sum_image,self.image_paths['pet_sum_image'])
+        if self.verbose:
+            print(f"(ImageOps4d): weighted sum image saved to {self.image_paths['pet_sum_image']}")
 
         return image_weighted_sum
 
@@ -132,6 +137,9 @@ class ImageOps4D():
         os.makedirs(moco_path,exist_ok=True)
         self.image_paths['pet_moco'] = os.path.join(moco_path,f'{self.sub_id}-moco.nii.gz')
         nibabel.save(pet_moco_nibabel,self.image_paths['pet_moco'])
+        if self.verbose:
+            print(f"(ImageOps4d): motion corrected image saved to {self.image_paths['pet_moco']}")
+
         return pet_moco_np, pet_moco_pars, pet_moco_fd
 
 
@@ -208,7 +216,7 @@ class ImageOps4D():
         region. Writes a JSON for each region with region name, frame start time, and mean 
         value within region.
         """
-        pet_meta = image_io.load_meta(self.image_paths['pet'])
+        pet_meta = image_io.ImageIO.load_meta(self.image_paths['pet'])
         with open(self.color_table_path,'r',encoding='utf-8') as color_table_file:
             color_table = json.load(color_table_file)
         regions_list = color_table['data']
