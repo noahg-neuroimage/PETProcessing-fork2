@@ -386,7 +386,7 @@ class PatlakPlot(GraphicalAnalysisPlot):
     Note: The class inherits from the :class:`GraphicalAnalysisPlot` abstract base class.
 
     Example:
-        In the proceeding examples, ``pTAC`` represent the plasma TAC (or input TAC) and tTAC represents the tissue TAC.
+        In the proceeding examples, ``pTAC`` represent the plasma TAC (or input TAC) and ``tTAC`` represents the tissue TAC.
         
         For the quickest way to generate the Patlak Plot, we just instantiate the class and run the :meth:`generate_figure`
         method.
@@ -394,8 +394,8 @@ class PatlakPlot(GraphicalAnalysisPlot):
         .. code-block:: python
         
             from pet_cli.graphical_plots import PatlakPlot
-            patlak = PatlakPlot(tTAC=tTAC, pTAC=pTAC, t_thresh_in_mins=45.0)
-            patlak.generate_figure()
+            patlak_plot = PatlakPlot(tTAC=tTAC, pTAC=pTAC, t_thresh_in_mins=45.0)
+            patlak_plot.generate_figure()
             plt.show() # Or use plt.savefig() to save the figure.
         
         If the default styling needs to be changed, we can pass keyword arguments to each of the plotting methods:
@@ -403,12 +403,15 @@ class PatlakPlot(GraphicalAnalysisPlot):
         .. code-block:: python
         
             from pet_cli.graphical_plots import PatlakPlot
-            patlak_plot = pet_plt.PatlakPlot(tTAC=tTAC, pTAC=pTAC, t_thresh_in_mins=45.0)
+            patlak_plot = PatlakPlot(tTAC=tTAC, pTAC=pTAC, t_thresh_in_mins=45.0)
             patlak_plot.generate_figure(line_kwargs=dict(lw=2, alpha=0.95, color='red', label=patlak_plot.generate_label_from_fit_params()),
                                         shading_kwargs=dict(color='palegreen', alpha=0.2),
                                         data_kwargs=dict(alpha=0.85, color='k', marker='.'))
                                            
-                                           
+    See Also:
+            * :class:`LoganPlot`
+            * :class:`AltLoganPlot`
+            
     """
     def calculate_valid_indicies_and_x_and_y(self) -> None:
         r"""
@@ -509,6 +512,50 @@ class PatlakPlot(GraphicalAnalysisPlot):
 
 
 class LoganPlot(GraphicalAnalysisPlot):
+    r"""
+    This class handles generation of Logan plots for PET analysis.
+
+    The :class:`LoganPlot` class is designed to process PET data and display it in the form of Logan plots.
+    The class handles data processing including computation of valid indices and calculation of plot-specific
+    parameters, setting of plot labels and legends, as well as the actual plotting of data.
+
+    The processing steps involve computations such as handling of non-zero indices in the plasma time-activity curve
+    (pTAC), calculation of x and y coordinates for the Logan plot, and generation of plot labeling information.
+
+    The class also provides a capability to add labels, legends and title to the figure to present the data in a
+    meaningful way.
+
+    Note: The class inherits from the :class:`GraphicalAnalysisPlot` abstract base class.
+
+    Example:
+        In the proceeding examples, ``pTAC`` represent the plasma TAC (or input TAC) and ``tTAC`` represents the tissue
+        TAC.
+        
+        For the quickest way to generate the Logan Plot, we just instantiate the class and run the :meth:`generate_figure`
+        method.
+        
+        .. code-block:: python
+        
+            from pet_cli.graphical_plots import LoganPlot
+            logan_plot = PatlakPlot(tTAC=tTAC, pTAC=pTAC, t_thresh_in_mins=45.0)
+            logan_plot.generate_figure()
+            plt.show() # Or use plt.savefig() to save the figure.
+        
+        If the default styling needs to be changed, we can pass keyword arguments to each of the plotting methods:
+        
+        .. code-block:: python
+        
+            from pet_cli.graphical_plots import LoganPlot
+            logan_plot = LoganPlot(tTAC=tTAC, pTAC=pTAC, t_thresh_in_mins=45.0)
+            logan_plot.generate_figure(line_kwargs=dict(lw=2, alpha=0.95, color='red', label=patlak_plot.generate_label_from_fit_params()),
+                                        shading_kwargs=dict(color='palegreen', alpha=0.2),
+                                        data_kwargs=dict(alpha=0.85, color='k', marker='.'))
+                                        
+    See Also:
+        * :class:`PatlakPlot`
+        * :class:`AltLoganPlot`
+            
+    """
     def calculate_valid_indicies_and_x_and_y(self) -> None:
         non_zero_indices = np.argwhere(self.tTAC[1] != 0.0).T[0]
         t_thresh = pet_grph.get_index_from_threshold(times_in_minutes=self.pTAC[0][non_zero_indices],
