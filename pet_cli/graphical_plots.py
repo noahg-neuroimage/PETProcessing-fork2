@@ -1,12 +1,12 @@
 from matplotlib import pyplot as plt
 import numpy as np
 from abc import ABC, abstractmethod
-import seaborn as sns
-from typing import Tuple, Dict
+import os
+from typing import Tuple, Dict, Union, Type
 from . import graphical_analysis as pet_grph
 
 
-class GraphicalAnalysisPlot(ABC):
+class GraphicalAnalysisPlotBase(ABC):
     """
     This is an abstract base class designed for creating customizable plots for graphical analysis.
     It takes Time-Activity Curves (TACs) as input and creates various plots (x vs. y, fit lines, fit area
@@ -23,7 +23,7 @@ class GraphicalAnalysisPlot(ABC):
         non_zero_idx (np.ndarray): Indexes of non-zero values in appropriate TAC (calculated in specific implementations).
         t_thresh_idx (int): The index at which the time threshold is crossed in the TACs (calculated in specific
         implementations).
-        x (np.ndarray): The "x" values for plotting (calculated in specific implementations).
+        x (np.ndarray): The "x" valu0es for plotting (calculated in specific implementations).
         y (np.ndarray): The "y" values for plotting (calculated in specific implementations).
         fit_params (dict): The parameters fit to the data using least squares.
                            Contains 'slope', 'intercept', and 'r_squared' (calculated in specific implementations).
@@ -369,7 +369,7 @@ class GraphicalAnalysisPlot(ABC):
         raise NotImplementedError("This method must be implemented in a concrete class.")
     
 
-class PatlakPlot(GraphicalAnalysisPlot):
+class PatlakPlot(GraphicalAnalysisPlotBase):
     r"""
     This class handles generation of Patlak plots for PET analysis.
 
@@ -512,7 +512,7 @@ class PatlakPlot(GraphicalAnalysisPlot):
         self.fig.suptitle("Patlak Plots")
 
 
-class LoganPlot(GraphicalAnalysisPlot):
+class LoganPlot(GraphicalAnalysisPlotBase):
     r"""
     This class handles generation of Logan plots for PET analysis.
 
@@ -656,7 +656,7 @@ class LoganPlot(GraphicalAnalysisPlot):
         self.fig.suptitle("Logan Plots")
 
 
-class AltLoganPlot(GraphicalAnalysisPlot):
+class AltLoganPlot(GraphicalAnalysisPlotBase):
     r"""
     This class handles generation of Alternative Logan plots (or "new plots") for PET analysis.
 
@@ -798,3 +798,28 @@ class AltLoganPlot(GraphicalAnalysisPlot):
         self.fig.legend(*self.ax_list[0].get_legend_handles_labels(), bbox_to_anchor=(1.0, 0.8), loc='upper left',
                         title='Alt-Logan Analysis')
         self.fig.suptitle("Alt-Logan Plots")
+
+# TODO: Use the safe loading of TACs function from an IO module when it is implemented
+def _safe_load_tac(filename: str) -> np.ndarray:
+    """
+    Loads time-activity curves (TAC) from a file.
+
+    Tries to read a TAC from specified file and raises an exception if unable to do so. We assume that the file has two
+    columns, the first corresponding to time and second corresponding to activity.
+
+    Args:
+        filename (str): The name of the file to be loaded.
+
+    Returns:
+        np.ndarray: A numpy array containing the loaded TAC. The first index corresponds to the times, and the second
+        corresponds to the activity.
+
+    Raises:
+        Exception: An error occurred loading the TAC.
+    """
+    try:
+        return np.array(np.loadtxt(filename).T, dtype=float, order='C')
+    except Exception as e:
+        print(f"Couldn't read file {filename}. Error: {e}")
+        raise e
+
