@@ -823,3 +823,35 @@ def _safe_load_tac(filename: str) -> np.ndarray:
         print(f"Couldn't read file {filename}. Error: {e}")
         raise e
 
+
+class Plot:
+    
+    def __init__(self,
+                 input_tac_path: str,
+                 roi_tac_path: str,
+                 threshold_in_mins: float,
+                 method_name: str,
+                 output_directory: str,
+                 output_filename_prefix: str = "") -> None:
+        self.input_tac_path = os.path.abspath(input_tac_path)
+        self.roi_tac_path = os.path.abspath(roi_tac_path)
+        self.output_directory = os.path.abspath(output_directory)
+        self.method_name = method_name
+        self.thresh_in_mins = threshold_in_mins
+        self.output_filename_prefix = output_filename_prefix
+        self._pTAC = _safe_load_tac(self.input_tac_path)
+        self._tTAC = _safe_load_tac(self.roi_tac_path)
+        self.Figure = self._select_fig_class_based_on_method(method_name=self.method_name)
+        self.Figure(pTAC=self._pTAC, tTAC=self._tTAC, t_thresh_in_mins=self.thresh_in_mins)
+    
+    @staticmethod
+    def _select_fig_class_based_on_method(method_name: str) -> Union[
+        Type[PatlakPlot], Type[LoganPlot], Type[AltLoganPlot]]:
+        if method_name == "patlak":
+            return PatlakPlot
+        elif method_name == "logan":
+            return LoganPlot
+        elif method_name == "alt-logan":
+            return AltLoganPlot
+        else:
+            raise ValueError("Invalid method name. Please choose either 'patlak', 'logan', or 'alt-logan'.")
