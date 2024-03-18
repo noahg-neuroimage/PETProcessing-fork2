@@ -537,7 +537,7 @@ class LoganPlot(GraphicalAnalysisPlot):
         .. code-block:: python
         
             from pet_cli.graphical_plots import LoganPlot
-            logan_plot = PatlakPlot(tTAC=tTAC, pTAC=pTAC, t_thresh_in_mins=45.0)
+            logan_plot = LoganPlot(tTAC=tTAC, pTAC=pTAC, t_thresh_in_mins=45.0)
             logan_plot.generate_figure()
             plt.show() # Or use plt.savefig() to save the figure.
         
