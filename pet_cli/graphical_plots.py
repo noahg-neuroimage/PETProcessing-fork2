@@ -381,6 +381,7 @@ class PatlakPlot(GraphicalAnalysisPlot):
         values are:
         
         .. math::
+        
             \begin{align*}
             y&= \frac{R(t)}{C_\mathrm{P}(t)}\\
             x&= \frac{\int_{0}^{t}C_\mathrm{P}(s)\mathrm{d}s}{C_\mathrm{P}(t)},
@@ -417,6 +418,7 @@ class PatlakPlot(GraphicalAnalysisPlot):
         for later rendering inside a plot's label. For example:
         
         .. math::
+        
             \begin{align*}
             K_{1}&=0.1\\
             V_{\mathrm{T}}&=0.2\\
@@ -433,6 +435,28 @@ class PatlakPlot(GraphicalAnalysisPlot):
         return f"$K_1=${slope:<5.3f}\n$V_\mathrm{T}=${intercept:<5.3f}\n$R^2=${r_sq:<5.3f}"
 
     def add_figure_axes_labels_and_legend(self):
+        r"""
+        Adds labels and a legend to the axes of the figure.
+
+        This method sets the `x_label` and `y_label` for all axes on the figure. It also adds a legend to the figure,
+        which is anchored to the upper left corner. Lastly, we also give a title to the figure: Patlak Plots.
+
+        The labels are set to:
+
+        .. math::
+
+           \begin{align*}
+           y&= \frac{R(t)}{C_\mathrm{P}(t)}\\
+           x&= \frac{\int_{0}^{t}C_\mathrm{P}(s)\mathrm{d}s}{C_\mathrm{P}(t)},
+           \end{align*}
+
+        where :math:`C_\mathrm{P}` is the input function and :math:`R(t)` is PET activity in the particular region of
+        interest.
+        
+        See Also:
+            * :meth:`calculate_valid_indicies_and_x_and_y` for the calculation implementation.
+        
+        """
         x_label = r"$\frac{\int_{0}^{t}C_\mathrm{P}(s)\mathrm{d}s}{C_\mathrm{P}(t)}$"
         y_label = r"$\frac{R(t)}{C_\mathrm{P}(t)}$"
         for ax in self.ax_list:
