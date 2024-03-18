@@ -1,0 +1,2 @@
+[console_scripts]
+pet-cli = pet_cli.bids_cli:main
