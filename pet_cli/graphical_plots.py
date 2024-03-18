@@ -389,7 +389,8 @@ class PatlakPlot(GraphicalAnalysisPlot):
         In the proceeding examples, ``pTAC`` represent the plasma TAC (or input TAC) and ``tTAC`` represents the tissue TAC.
         
         For the quickest way to generate the Patlak Plot, we just instantiate the class and run the :meth:`generate_figure`
-        method.
+        method. This will generate 2 plots in a row. The first one having a linear-linear scale, and the second one
+        having a log-log scale.
         
         .. code-block:: python
         
@@ -532,7 +533,8 @@ class LoganPlot(GraphicalAnalysisPlot):
         TAC.
         
         For the quickest way to generate the Logan Plot, we just instantiate the class and run the :meth:`generate_figure`
-        method.
+        method. This will generate 2 plots in a row. The first one having a linear-linear scale, and the second one
+        having a log-log scale.
         
         .. code-block:: python
         
@@ -663,9 +665,10 @@ class AltLoganPlot(GraphicalAnalysisPlot):
     setting of plot labels and legends, as well as the actual plotting of data.
 
     The processing steps involve computations such as handling of non-zero indices in the plasma time-activity curve
-    (pTAC), calculation of x and y coordinates for the Patlak plot, and generation of plot labeling information.
+    (pTAC), calculation of :math:`x` and :math:`y` coordinates for the Alt-Logan plot, and generation of plot labeling
+    information.
 
-    The class also provides a capability to add labels, legends and title to the figure  to present the data in a
+    The class also provides a capability to add labels, legends and title to the figure to present the data in a
     meaningful way.
 
     Note: The class inherits from the :class:`GraphicalAnalysisPlot` abstract base class.
@@ -674,7 +677,8 @@ class AltLoganPlot(GraphicalAnalysisPlot):
         In the proceeding examples, ``pTAC`` represent the plasma TAC (or input TAC) and ``tTAC`` represents the tissue TAC.
 
         For the quickest way to generate the Alt-Logan Plot, we just instantiate the class and run the
-        :meth:`generate_figure` method.
+        :meth:`generate_figure` method. This will generate 2 plots in a row. The first one having a linear-linear scale,
+        and the second one having a log-log scale.
 
         .. code-block:: python
 
@@ -688,7 +692,7 @@ class AltLoganPlot(GraphicalAnalysisPlot):
         .. code-block:: python
 
             from pet_cli.graphical_plots import AltLoganPlot
-            alt_logan_plot = PatlakPlot(tTAC=tTAC, pTAC=pTAC, t_thresh_in_mins=45.0)
+            alt_logan_plot = AltLoganPlot(tTAC=tTAC, pTAC=pTAC, t_thresh_in_mins=45.0)
             alt_logan_plot.generate_figure(line_kwargs=dict(lw=2, alpha=0.95, color='red', label=patlak_plot.generate_label_from_fit_params()),
                                         shading_kwargs=dict(color='palegreen', alpha=0.2),
                                         data_kwargs=dict(alpha=0.85, color='k', marker='.'))
@@ -699,11 +703,11 @@ class AltLoganPlot(GraphicalAnalysisPlot):
 
     """
     def calculate_valid_indicies_and_x_and_y(self) -> None:
-        r"""Calculates the valid indices along with :math:`x` and :math:`y` for Logan plot analysis.
+        r"""Calculates the valid indices along with :math:`x` and :math:`y` for Alt-Logan plot analysis.
 
         This method performs the computation for the non-zero indices in the provided region time-activity curve (tTAC).
         It further calculates the values of :math:`x` and :math:`y` used in Logan analysis based on these non-zero
-        indices. This is done to avoid singularities caused by zero denominators. The Logan :math:`x` and :math:`y`
+        indices. This is done to avoid singularities caused by zero denominators. The Alt-Logan :math:`x` and :math:`y`
         values are:
 
         .. math::
@@ -714,7 +718,7 @@ class AltLoganPlot(GraphicalAnalysisPlot):
             \end{align*}
 
         where :math:`C_\mathrm{P}` is the input function and :math:`R(t)` is PET activity in the particular region of
-        interest.
+        interest. Compared to :class:`LoganPlot`, the denominator is the input function.
 
         The method updates the instance variables ``x``, ``y``, ``non_zero_idx``, and ``t_thresh_idx``.
 
