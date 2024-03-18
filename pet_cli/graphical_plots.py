@@ -557,6 +557,29 @@ class LoganPlot(GraphicalAnalysisPlot):
             
     """
     def calculate_valid_indicies_and_x_and_y(self) -> None:
+        r"""Calculates the valid indices along with :math:`x` and :math:`y` for Logan plot analysis.
+        
+        This method performs the computation for the non-zero indices in the provided region time-activity curve (tTAC).
+        It further calculates the values of :math:`x` and :math:`y` used in Logan analysis based on these non-zero
+        indices. This is done to avoid singularities caused by zero denominators. The Logan :math:`x` and :math:`y`
+        values are:
+    
+        .. math::
+        
+            \begin{align*}
+            y&= \frac{\int_{0}^{t}R(s)\mathrm{d}s}{R(t)}\\
+            x&= \frac{\int_{0}^{t}C_\mathrm{P}(s)\mathrm{d}s}{R(t)},
+            \end{align*}
+
+        where :math:`C_\mathrm{P}` is the input function and :math:`R(t)` is PET activity in the particular region of
+        interest.
+    
+        The method updates the instance variables ``x``, ``y``, ``non_zero_idx``, and ``t_thresh_idx``.
+        
+        Returns:
+            None
+
+        """
         non_zero_indices = np.argwhere(self.tTAC[1] != 0.0).T[0]
         t_thresh = pet_grph.get_index_from_threshold(times_in_minutes=self.pTAC[0][non_zero_indices],
                                                      t_thresh_in_minutes=self.t_thresh_in_mins)
@@ -574,13 +597,53 @@ class LoganPlot(GraphicalAnalysisPlot):
         return None
     
     def generate_label_from_fit_params(self) -> str:
+        r"""
+        Creates a label string from the fit parameters for graphical presentation.
+
+        This method retrieves slope, intercept, and R-squared values from the instance's fit parameters, and then
+        formats these values into a string that is LaTeX compatible for later rendering inside a plot's label.
+        For example:
+
+        .. math::
+        
+            \begin{align*}
+            V_\mathrm{T}&=0.1\\
+            b&=0.2\\
+            R^{2}&=0.95
+            \end{align*}
+
+        Returns:
+            str: The created label. Each parameter is formatted as a separate line.
+        """
         slope = self.fit_params['slope']
         intercept = self.fit_params['intercept']
         r_sq = self.fit_params['r_squared']
         
-        return f"$m=${slope:<5.3f}\n$b=${intercept:<5.3f}\n$R^2=${r_sq:<5.3f}"
+        return f"$V_\mathrm{{T}}=${slope:<5.3f}\n$b=${intercept:<5.3f}\n$R^2=${r_sq:<5.3f}"
     
     def add_figure_axes_labels_and_legend(self):
+        """
+        Adds labels and a legend to the axes of the figure.
+
+        This method sets the `x_label` and `y_label` for all axes on the figure. It also adds a legend to the figure,
+        which is anchored to the upper left corner. Lastly, we also give a title to the figure: Logan Plots.
+
+        The labels are set to:
+
+        .. math::
+        
+            \begin{align*}
+            y&= \frac{\int_{0}^{t}R(s)\mathrm{d}s}{R(t)}\\
+            x&= \frac{\int_{0}^{t}C_\mathrm{P}(s)\mathrm{d}s}{R(t)},
+            \end{align*}
+
+        where :math:`C_\mathrm{P}` is the input function and :math:`R(t)` is PET activity in the particular region of
+        interest.
+
+        See Also:
+            * :meth:`calculate_valid_indicies_and_x_and_y` for the calculation implementation.
+
+        """
         x_label = r"$\frac{\int_{0}^{t}C_\mathrm{P}(s)\mathrm{d}s}{R(t)}$"
         y_label = r"$\frac{\int_{0}^{t}R(s)\mathrm{d}s}{R(t)}$"
         for ax in self.ax_list:
