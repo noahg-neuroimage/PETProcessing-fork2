@@ -1,7 +1,7 @@
 import argparse
 import numpy as np
 from . import tac_interpolation as tac_intp
-
+import os
 
 # TODO: Use the safe loading of TACs function from an IO module when it is implemented
 def _safe_load_tac(filename: str) -> np.ndarray:
@@ -90,6 +90,8 @@ def main():
                             help="Print the sizes of the input and output TACs", required=False)
     
     args = parser.parse_args()
+    args.tac_path = os.path.abspath(args.tac_path)
+    args.out_tac_path = os.path.abspath(args.out_tac_path)
     
     in_tac_times, in_tac_values = _safe_load_tac(args.tac_path)
     
