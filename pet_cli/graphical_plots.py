@@ -831,6 +831,7 @@ class Plot:
     def _validate_filepath(filename: str) -> None:
         if not os.path.isfile(filename):
             raise ValueError(f"Invalid file path: {filename}")
+        
     @staticmethod
     def _validate_directory(directory: str) -> None:
         if not os.path.isdir(directory):
@@ -854,9 +855,9 @@ class Plot:
         self.output_filename_prefix = output_filename_prefix
         self._pTAC = _safe_load_tac(self.input_tac_path)
         self._tTAC = _safe_load_tac(self.roi_tac_path)
-        fig_cls = self._select_fig_class_based_on_method(method_name=self.method_name)
-        self.fig_cls = fig_cls(pTAC=self._pTAC, tTAC=self._tTAC, t_thresh_in_mins=self.thresh_in_mins)
-        self.fig_cls.generate_figure()
+        self.fig_cls = self._select_fig_class_based_on_method(method_name=self.method_name)
+        # self.fig_cls = fig_cls(pTAC=self._pTAC, tTAC=self._tTAC, t_thresh_in_mins=self.thresh_in_mins)
+        # self.fig_cls.generate_figure()
     
     @staticmethod
     def _select_fig_class_based_on_method(method_name: str) -> Union[
@@ -871,10 +872,16 @@ class Plot:
             raise ValueError("Invalid method name. Please choose either 'patlak', 'logan', or 'alt-logan'.")
         
     def save_figure(self):
-        plt.rc('pdf', fonttype=42)
+        pTAC = _safe_load_tac(self.input_tac_path)
+        tTAC = _safe_load_tac(self.roi_tac_path)
+        
         filename = f"{self.output_filename_prefix}_analysis-{self.method_name}"
         out_path = os.path.join(self.output_directory, filename)
-        plt.savefig(f"{out_path}.png", bbox_inches='tight', dpi=72)
-        plt.savefig(f"{out_path}.pdf", bbox_inches='tight', transparent=True)
-        plt.close(self.fig_cls.fig)
+        
+        with plt.rc_context(rc={'pdf.fonttype': 42}):
+            fig_cls = self.fig_cls(pTAC=pTAC, tTAC=tTAC, t_thresh_in_mins=self.thresh_in_mins)
+            fig_cls.generate_figure()
+            plt.savefig(f"{out_path}.png", bbox_inches='tight', dpi=72)
+            plt.savefig(f"{out_path}.pdf", bbox_inches='tight', transparent=True)
+            plt.close()
     
