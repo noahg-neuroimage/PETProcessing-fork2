@@ -856,8 +856,6 @@ class Plot:
         self._pTAC = _safe_load_tac(self.input_tac_path)
         self._tTAC = _safe_load_tac(self.roi_tac_path)
         self.fig_cls = self._select_fig_class_based_on_method(method_name=self.method_name)
-        # self.fig_cls = fig_cls(pTAC=self._pTAC, tTAC=self._tTAC, t_thresh_in_mins=self.thresh_in_mins)
-        # self.fig_cls.generate_figure()
     
     @staticmethod
     def _select_fig_class_based_on_method(method_name: str) -> Union[
@@ -878,10 +876,10 @@ class Plot:
         filename = f"{self.output_filename_prefix}_analysis-{self.method_name}"
         out_path = os.path.join(self.output_directory, filename)
         
-        with plt.rc_context(rc={'pdf.fonttype': 42}):
+        with plt.rc_context(rc={'pdf.fonttype': 42, 'ps.fonttype': 42, 'text.usetex': True}):
             fig_cls = self.fig_cls(pTAC=p_tac, tTAC=t_tac, t_thresh_in_mins=self.thresh_in_mins)
             fig_cls.generate_figure()
-            plt.savefig(f"{out_path}.png", bbox_inches='tight', dpi=72)
+            plt.savefig(f"{out_path}.png", bbox_inches='tight', dpi=150)
             plt.savefig(f"{out_path}.pdf", bbox_inches='tight', transparent=True)
             plt.close()
     
