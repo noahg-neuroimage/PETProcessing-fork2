@@ -2,11 +2,12 @@ from matplotlib import pyplot as plt
 import numpy as np
 from abc import ABC, abstractmethod
 import os
-from typing import Tuple, Dict, Union, Type
+from typing import Dict, Union, Type
 from . import graphical_analysis as pet_grph
 
 
-class GraphicalAnalysisPlotBase(ABC):
+
+class GraphicalAnalysisPlot(ABC):
     """
     This is an abstract base class designed for creating customizable plots for graphical analysis.
     It takes Time-Activity Curves (TACs) as input and creates various plots (x vs. y, fit lines, fit area
@@ -369,7 +370,7 @@ class GraphicalAnalysisPlotBase(ABC):
         raise NotImplementedError("This method must be implemented in a concrete class.")
     
 
-class PatlakPlot(GraphicalAnalysisPlotBase):
+class PatlakPlot(GraphicalAnalysisPlot):
     r"""
     This class handles generation of Patlak plots for PET analysis.
 
@@ -512,7 +513,7 @@ class PatlakPlot(GraphicalAnalysisPlotBase):
         self.fig.suptitle("Patlak Plots")
 
 
-class LoganPlot(GraphicalAnalysisPlotBase):
+class LoganPlot(GraphicalAnalysisPlot):
     r"""
     This class handles generation of Logan plots for PET analysis.
 
@@ -656,7 +657,7 @@ class LoganPlot(GraphicalAnalysisPlotBase):
         self.fig.suptitle("Logan Plots")
 
 
-class AltLoganPlot(GraphicalAnalysisPlotBase):
+class AltLoganPlot(GraphicalAnalysisPlot):
     r"""
     This class handles generation of Alternative Logan plots (or "new plots") for PET analysis.
 
@@ -825,7 +826,6 @@ def _safe_load_tac(filename: str) -> np.ndarray:
 
 
 class Plot:
-    
     def __init__(self,
                  input_tac_path: str,
                  roi_tac_path: str,
@@ -841,8 +841,9 @@ class Plot:
         self.output_filename_prefix = output_filename_prefix
         self._pTAC = _safe_load_tac(self.input_tac_path)
         self._tTAC = _safe_load_tac(self.roi_tac_path)
-        self.Figure = self._select_fig_class_based_on_method(method_name=self.method_name)
-        self.Figure(pTAC=self._pTAC, tTAC=self._tTAC, t_thresh_in_mins=self.thresh_in_mins)
+        fig_cls = self._select_fig_class_based_on_method(method_name=self.method_name)
+        self.fig_cls = fig_cls(pTAC=self._pTAC, tTAC=self._tTAC, t_thresh_in_mins=self.thresh_in_mins)
+        self.fig_cls.generate_figure()
     
     @staticmethod
     def _select_fig_class_based_on_method(method_name: str) -> Union[
@@ -855,3 +856,12 @@ class Plot:
             return AltLoganPlot
         else:
             raise ValueError("Invalid method name. Please choose either 'patlak', 'logan', or 'alt-logan'.")
+        
+    def save_figure(self):
+        plt.rc('pdf', fonttype=42)
+        filename = f"{self.output_filename_prefix}_analysis-{self.method_name}"
+        out_path = os.path.join(self.output_directory, filename)
+        plt.savefig(f"{out_path}.png", bbox_inches='tight', dpi=72)
+        plt.savefig(f"{out_path}.pdf", bbox_inches='tight', transparent=True)
+        plt.close(self.fig_cls.fig)
+    
