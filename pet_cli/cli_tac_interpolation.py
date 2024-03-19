@@ -27,3 +27,39 @@ def _safe_load_tac(filename: str) -> np.ndarray:
         print(f"Couldn't read file {filename}. Error: {e}")
         raise e
 
+
+def main():
+    parser = argparse.ArgumentParser(prog="TAC Interpolation", description="Resample unevenly sampled TACs",
+                                     epilog="TAC interpolation complete.")
+    
+    io_grp = parser.add_argument_group("I/O")
+    io_grp.add_argument("-i", "--tac-path", help="Path to TAC file.", required=True)
+    io_grp.add_argument("-o", "--outfile", help="Path of output file.", required=True)
+    
+    interp_grp = parser.add_argument_group("Interpolation")
+    interp_grp.add_argument("--delta-time", type=float, help="The time difference for the resampled times.",
+                            default=None)
+    interp_grp.add_argument("--samples-before-max", type=float, help="Number of samples before the max TAC value.",
+                            default=None)
+    
+    args = parser.parse_args()
+    
+    # load TAC file
+    tac_times, tac_values = _safe_load_tac(args.tac_path)  # replace with actual function to load TAC file
+    
+    if args.samples_before_max is not None:
+        # use EvenlyInterpolateWithMax class for interpolation
+        interpolator = tac_intp.EvenlyInterpolateWithMax(tac_times, tac_values, samples_before_max=args.samples_before_max)
+    elif args.delta_time is not None:
+        # use EvenlyInterpolate class for interpolation
+        interpolator = tac_intp.EvenlyInterpolate(tac_times, tac_values, delta_time=args.delta_time)
+    else:
+        raise ValueError("Either --delta-time or --samples-before-max must be specified.".format(args.delta_time))
+    
+    resampled_tac = interpolator.get_resampled_tac()
+    
+    # save resampled TAC to file (pseudo code)  # save_to_file(args.outfile, resampled_tac)
+
+
+if __name__ == "__main__":
+    main()
