@@ -6,7 +6,6 @@ from typing import Dict, Union, Type
 from . import graphical_analysis as pet_grph
 
 
-
 class GraphicalAnalysisPlot(ABC):
     """
     This is an abstract base class designed for creating customizable plots for graphical analysis.
@@ -799,6 +798,7 @@ class AltLoganPlot(GraphicalAnalysisPlot):
         self.fig.legend(*self.ax_list[0].get_legend_handles_labels(), bbox_to_anchor=(1.0, 0.8), loc='upper left',
                         title='Alt-Logan Analysis')
         self.fig.suptitle("Alt-Logan Plots")
+
 
 # TODO: Use the safe loading of TACs function from an IO module when it is implemented
 def _safe_load_tac(filename: str) -> np.ndarray:
