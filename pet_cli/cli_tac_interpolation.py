@@ -52,7 +52,7 @@ def _safe_write_tac(tac_times: np.ndarray, tac_values : np.ndarray, filename: st
         raise e
 
 
-def _print_tac_to_screen(tac_times:np.ndarray, tac_values:np.ndarray):
+def _print_tac_to_screen(tac_times: np.ndarray, tac_values: np.ndarray):
     """
     Prints the Time-Activity Curve (TAC) times and values to the console.
 
