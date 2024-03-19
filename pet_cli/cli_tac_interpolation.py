@@ -3,6 +3,7 @@ import numpy as np
 from . import tac_interpolation as tac_intp
 import os
 
+
 # TODO: Use the safe loading of TACs function from an IO module when it is implemented
 def _safe_load_tac(filename: str) -> np.ndarray:
     """
