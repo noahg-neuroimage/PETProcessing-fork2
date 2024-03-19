@@ -712,7 +712,7 @@ class GraphicalAnalysis:
         if self.analysis_props['RSquared'] is None:
             raise RuntimeError("'run_analysis' method must be called before 'save_analysis'.")
         file_name_prefix = os.path.join(self.output_directory,
-                                        f"{self.output_filename_prefix}-{self.analysis_props['MethodName']}")
-        analysis_props_file = f"{file_name_prefix}-analysis-props.json"
+                                        f"{self.output_filename_prefix}_analysis-{self.analysis_props['MethodName']}")
+        analysis_props_file = f"{file_name_prefix}_props.json"
         with open(analysis_props_file, 'w') as f:
             json.dump(obj=self.analysis_props, fp=f, indent=4)
