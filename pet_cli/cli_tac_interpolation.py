@@ -28,13 +28,19 @@ def _safe_load_tac(filename: str) -> np.ndarray:
         raise e
 
 
+def _safe_write_tac(tac_times: np.ndarray, tac_values : np.ndarray, filename:str) -> None:
+    
+    out_arr = np.array([tac_times, tac_values]).T
+    np.savetxt(fname=filename, X=out_arr, delimiter="\t", header="Time\tActivity", fmt="%.6e")
+
+
 def main():
     parser = argparse.ArgumentParser(prog="TAC Interpolation", description="Resample unevenly sampled TACs",
                                      epilog="TAC interpolation complete.")
     
     io_grp = parser.add_argument_group("I/O")
     io_grp.add_argument("-i", "--tac-path", help="Path to TAC file.", required=True)
-    io_grp.add_argument("-o", "--outfile", help="Path of output file.", required=True)
+    io_grp.add_argument("-o", "--out-tac-path", help="Path of output file.", required=True)
     
     interp_grp = parser.add_argument_group("Interpolation")
     interp_grp.add_argument("--delta-time", type=float, help="The time difference for the resampled times.",
@@ -48,7 +54,7 @@ def main():
     tac_times, tac_values = _safe_load_tac(args.tac_path)  # replace with actual function to load TAC file
     
     if args.samples_before_max is not None:
-        # use EvenlyInterpolateWithMax class for interpolation
+        # Use EvenlyInterpolateWithMax class for interpolation
         interpolator = tac_intp.EvenlyInterpolateWithMax(tac_times, tac_values, samples_before_max=args.samples_before_max)
     elif args.delta_time is not None:
         # use EvenlyInterpolate class for interpolation
@@ -58,8 +64,7 @@ def main():
     
     resampled_tac = interpolator.get_resampled_tac()
     
-    # save resampled TAC to file (pseudo code)  # save_to_file(args.outfile, resampled_tac)
-
+    _safe_write_tac(tac_times=resampled_tac[0], tac_values=resampled_tac[1], filename=args.out_tac_path)
 
 if __name__ == "__main__":
     main()
