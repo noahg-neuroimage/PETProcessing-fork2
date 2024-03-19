@@ -42,10 +42,10 @@ class EvenlyInterpolate:
         return np.asarray([self.resample_times, self.resample_vals])
     
     
-    
 class EvenlyInterpolateWithMax(EvenlyInterpolate):
     r"""A class, extends ``EvenlyInterpolate``, and modifies the :math:`\Delta t` calculation such that the maximum value
     of the TAC is explicitly sampled.
+    
     Attributes:
         interp_func (scipy.interpolate.interp1d): Interpolation function given the provided TAC.
         resample_times (np.ndarray): Array containing evenly spaced TAC times.
