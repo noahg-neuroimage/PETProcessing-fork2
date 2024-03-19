@@ -94,7 +94,8 @@ def _print_tac_to_screen(tac_times: np.ndarray, tac_values: np.ndarray):
 
 def main():
     parser = argparse.ArgumentParser(prog="TAC Interpolation", description="Evenly resample TACs.",
-                                     epilog="TAC interpolation complete.")
+                                     epilog="Example of usage: pet-cli-tac-interpolate -i /path/to/input/file.txt -o "
+                                            "/path/to/output/file.txt --delta-time 0.1")
     
     io_grp = parser.add_argument_group("I/O")
     io_grp.add_argument("-i", "--tac-path", help="Path to TAC file.", required=True)
