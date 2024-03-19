@@ -28,10 +28,28 @@ def _safe_load_tac(filename: str) -> np.ndarray:
         raise e
 
 
-def _safe_write_tac(tac_times: np.ndarray, tac_values : np.ndarray, filename:str) -> None:
-    
+# TODO: Use the safe writing of TACs function from an IO module when it is implemented
+def _safe_write_tac(tac_times: np.ndarray, tac_values : np.ndarray, filename: str) -> None:
+    """
+    Writes time-activity curves (TAC) to a file.
+
+    Tries to write a TAC to the specified file and raises an exception if unable to do so. The TAC is expected to be a
+    numpy array where the first index corresponds to the times, and the second corresponds to the activity.
+
+    Args:
+        tac_times (np.ndarray): A numpy array containing the time points of the TAC.
+        tac_values (np.ndarray): A numpy array containing the activity values of the TAC.
+        filename (str): The name of the file to write to.
+
+    Raises:
+        Exception: An error occurred writing the TAC.
+    """
     out_arr = np.array([tac_times, tac_values]).T
-    np.savetxt(fname=filename, X=out_arr, delimiter="\t", header="Time\tActivity", fmt="%.6e")
+    try:
+        np.savetxt(fname=filename, X=out_arr, delimiter="\t", header="Time\tActivity", fmt="%.6e")
+    except Exception as e:
+        print(f"Couldn't write file {filename}. Error: {e}")
+        raise e
 
 
 def main():
