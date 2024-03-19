@@ -826,7 +826,43 @@ def _safe_load_tac(filename: str) -> np.ndarray:
 
 
 class Plot:
-    
+    """
+    A class used to generate and save graphical analysis plots of PET Time-Activity Curves (TACs).
+
+    This class provides a simple and convenient interface to generate plots from TACs for the 'patlak', 'logan', or
+    'alt-logan' methods and save them in the specified output directory. The plots are saved in both PNG and PDF formats.
+
+    It is initialized with paths to the input TACs, the method name, the output directory, and an optional filename
+    prefix. During initialization, it checks the validity of the file paths and directory, loads the TACs, and selects
+    the appropriate figure class based on the given method. Later on, the `save_figure` method can be called to generate
+    and save the plots.
+
+    Attributes:
+        input_tac_path (str): Path to the input TAC file.
+        roi_tac_path (str): Path to the Region of Interest (ROI) TAC file.
+        output_directory (str): Path to the directory where the plot output will be saved.
+        method_name (str): Name of the method for generating the plot ('patlak', 'logan', 'alt-logan').
+        thresh_in_mins (float): A threshold in minutes below which data points will be discarded from the plot.
+        output_filename_prefix (str): An optional prefix for the output filenames.
+
+    Example:
+        An example of how to use this class to save a Patlak graphical analysis plot:
+
+        ```python
+        import pet_cli.graphical_plots as pet_plt
+        # ptac_path points to a plasma TAC (or input TAC)
+        # ttac_path points to a ROI TAC.
+        grph_plot = pet_plt.Plot(input_tac_path=ptac_path,
+                                 roi_tac_path=ttac_path,
+                                 threshold_in_mins=30.0,
+                                 method_name='patlak',
+                                 output_directory='./',
+                                 output_filename_prefix="plot")
+        grph_plot.save_figure()
+        ```
+
+    """
+
     def __init__(self,
                  input_tac_path: str,
                  roi_tac_path: str,
