@@ -52,6 +52,22 @@ def _safe_write_tac(tac_times: np.ndarray, tac_values : np.ndarray, filename: st
         raise e
 
 
+def _print_tac_to_screen(tac_times:np.ndarray, tac_values:np.ndarray):
+    """
+    Prints the Time-Activity Curve (TAC) times and values to the console.
+
+    This function takes as input two numpy arrays, one with the TAC times and the other with the TAC values, and prints
+    them to the console in a formatted manner. The format is '%.6e\t%.6e'.
+
+    Args:
+        tac_times (np.ndarray): A numpy array containing the TAC times.
+        tac_values (np.ndarray): A numpy array containing the TAC values.
+
+    """
+    print(f"#{'Time':<9}\tActivity")
+    for time, value in zip(tac_times, tac_values):
+        print(f"{time:<.6e}\t{value:<.6e}")
+
 def main():
     parser = argparse.ArgumentParser(prog="TAC Interpolation", description="Resample unevenly sampled TACs",
                                      epilog="TAC interpolation complete.")
@@ -84,16 +100,16 @@ def main():
         interpolator = tac_intp.EvenlyInterpolate(tac_times=in_tac_times, tac_values=in_tac_values,
                                                   delta_time=args.delta_time)
     
-    resampled_tac = interpolator.get_resampled_tac()
+    resampled_times, resampled_values = interpolator.get_resampled_tac()
     
-    _safe_write_tac(tac_times=resampled_tac[0], tac_values=resampled_tac[1], filename=args.out_tac_path)
+    _safe_write_tac(tac_times=resampled_times, tac_values=resampled_values, filename=args.out_tac_path)
     
     if args.verbose:
-        print(f"Input TAC size:  {in_tac_values.shape[0]}.")
-        print(f"Output TAC size: {resampled_tac[0].shape[0]}.")
+        print(f"Input TAC size:  {len(in_tac_values)}.")
+        print(f"Output TAC size: {len(resampled_values)}.")
         
     if args.print:
-        print(resampled_tac)
+        _print_tac_to_screen(tac_times=resampled_times, tac_values=resampled_values)
 
 
 if __name__ == "__main__":
