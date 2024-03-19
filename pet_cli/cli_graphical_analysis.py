@@ -34,8 +34,8 @@ def main():
     graphical_analysis.save_analysis()
     
     if args.print:
-        # TODO: Print analyses. This feature will be implemented later.
-        pass
+        for key, val in graphical_analysis.analysis_props.items():
+            print(f"{key:<20}:  {val}")
     
 
 if __name__ == "__main__":
