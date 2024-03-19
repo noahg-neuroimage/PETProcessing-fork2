@@ -834,6 +834,33 @@ class Plot:
                  method_name: str,
                  output_directory: str,
                  output_filename_prefix: str = "") -> None:
+        """
+        Initializes the :class:`Plot` object given the paths and the method.
+
+        During the initialization, it validates the given file paths and directory,  and selects the appropriate figure
+        class based on the provided method name.
+
+        Args:
+            input_tac_path (str): Path to the input Time Activity Curve (TAC) file.
+            roi_tac_path (str): Path to the Region of Interest (ROI) TAC file.
+            threshold_in_mins (float): Threshold in minutes below which data points will be discarded.
+            method_name (str): Name of the method to be used ('patlak', 'logan', or 'alt-logan').
+            output_directory (str): Path to the directory where output files will be stored.
+            output_filename_prefix (str, optional): Prefix to be appended to the output files. Defaults to an empty string.
+        
+        Raises:
+            ValueError: If any of the file paths or the directory path does not exist, or if the method name is invalid.
+        
+        Note:
+            This method does not return a value. It's an initializer of this class.
+
+        Calls:
+            * :meth:`_validate_filepath`
+            * :meth:`_validate_directory`
+            * :func:`_safe_load_tac`
+            * :meth:`_select_fig_class_based_on_method`
+
+        """
         self.input_tac_path = os.path.abspath(input_tac_path)
         self.roi_tac_path = os.path.abspath(roi_tac_path)
         self.output_directory = os.path.abspath(output_directory)
@@ -843,8 +870,6 @@ class Plot:
         self.method_name = method_name
         self.thresh_in_mins = threshold_in_mins
         self.output_filename_prefix = output_filename_prefix
-        self._pTAC = _safe_load_tac(self.input_tac_path)
-        self._tTAC = _safe_load_tac(self.roi_tac_path)
         self.fig_cls = self._select_fig_class_based_on_method(method_name=self.method_name)
         
     def save_figure(self):
