@@ -847,8 +847,8 @@ class Plot:
         self.input_tac_path = os.path.abspath(input_tac_path)
         self.roi_tac_path = os.path.abspath(roi_tac_path)
         self.output_directory = os.path.abspath(output_directory)
-        self._validate_directory(self.input_tac_path)
-        self._validate_directory(self.roi_tac_path)
+        self._validate_filepath(self.input_tac_path)
+        self._validate_filepath(self.roi_tac_path)
         self._validate_directory(self.output_directory)
         self.method_name = method_name
         self.thresh_in_mins = threshold_in_mins
@@ -872,14 +872,14 @@ class Plot:
             raise ValueError("Invalid method name. Please choose either 'patlak', 'logan', or 'alt-logan'.")
         
     def save_figure(self):
-        pTAC = _safe_load_tac(self.input_tac_path)
-        tTAC = _safe_load_tac(self.roi_tac_path)
+        p_tac = _safe_load_tac(self.input_tac_path)
+        t_tac = _safe_load_tac(self.roi_tac_path)
         
         filename = f"{self.output_filename_prefix}_analysis-{self.method_name}"
         out_path = os.path.join(self.output_directory, filename)
         
         with plt.rc_context(rc={'pdf.fonttype': 42}):
-            fig_cls = self.fig_cls(pTAC=pTAC, tTAC=tTAC, t_thresh_in_mins=self.thresh_in_mins)
+            fig_cls = self.fig_cls(pTAC=p_tac, tTAC=t_tac, t_thresh_in_mins=self.thresh_in_mins)
             fig_cls.generate_figure()
             plt.savefig(f"{out_path}.png", bbox_inches='tight', dpi=72)
             plt.savefig(f"{out_path}.pdf", bbox_inches='tight', transparent=True)
