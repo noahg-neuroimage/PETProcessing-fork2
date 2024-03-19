@@ -2,3 +2,4 @@
 ./data/tcm_tacs/.ipynb_checkpoints/
 ./test_notebooks/testing_graphical_analyses/.ipynb_checkpoints/
 ./.idea/
+./pet_cli.egg-info/
