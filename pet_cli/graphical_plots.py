@@ -863,17 +863,70 @@ class Plot:
     
     @staticmethod
     def _validate_filepath(filename: str) -> None:
+        """
+        Checks if the provided filename is a valid file.
+
+        This is a private static method and should be called internally by the class while processing files.
+
+        If the file is not valid, it raises a ValueError.
+
+        Args:
+            filename (:class:`str`): The path to the file.
+
+        Raises:
+            ValueError: if the file at provided path does not exist.
+
+        No return value.
+
+        """
         if not os.path.isfile(filename):
             raise ValueError(f"Invalid file path: {filename}")
     
     @staticmethod
     def _validate_directory(directory: str) -> None:
+        """
+        Validates if the provided directory path is an existing directory.
+
+        This is a private static method and should be called internally by the class while processing directories.
+
+        If the directory does not exist, it raises a ValueError.
+
+        Args:
+            directory (:class:`str`): Path to the directory.
+
+        Raises:
+            ValueError: if the provided directory path does not exist.
+        
+        No return value.
+
+        """
         if not os.path.isdir(directory):
             raise ValueError(f"Invalid directory: {directory}.")
     
     @staticmethod
     def _select_fig_class_based_on_method(method_name: str) -> Union[
         Type[PatlakPlot], Type[LoganPlot], Type[AltLoganPlot]]:
+        """
+        Selects and returns the appropriate class based on the provided method name.
+
+        This private static method returns the corresponding class object (`PatlakPlot`, `LoganPlot`, or `AltLoganPlot`)
+        according to the provided method name ('patlak', 'logan', or 'alt-logan').
+
+        Args:
+            method_name (str): Name of the method.
+
+        Returns:
+            :class:`PatlakPlot` | :class:`LoganPlot` | :class:`AltLoganPlot`: Corresponding class.
+
+        Raises:
+            ValueError: The method name is invalid.
+
+        See Also:
+            * :class:`PatlakPlot`
+            * :class:`LoganPlot`
+            * :class:`AltLoganPlot`
+        
+        """
         if method_name == "patlak":
             return PatlakPlot
         elif method_name == "logan":
@@ -882,3 +935,4 @@ class Plot:
             return AltLoganPlot
         else:
             raise ValueError("Invalid method name. Please choose either 'patlak', 'logan', or 'alt-logan'.")
+        
