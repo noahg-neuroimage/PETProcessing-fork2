@@ -826,6 +826,16 @@ def _safe_load_tac(filename: str) -> np.ndarray:
 
 
 class Plot:
+    
+    @staticmethod
+    def _validate_filepath(filename: str) -> None:
+        if not os.path.isfile(filename):
+            raise ValueError(f"Invalid file path: {filename}")
+    @staticmethod
+    def _validate_directory(directory: str) -> None:
+        if not os.path.isdir(directory):
+            raise ValueError(f"Invalid directory: {directory}.")
+    
     def __init__(self,
                  input_tac_path: str,
                  roi_tac_path: str,
@@ -836,6 +846,9 @@ class Plot:
         self.input_tac_path = os.path.abspath(input_tac_path)
         self.roi_tac_path = os.path.abspath(roi_tac_path)
         self.output_directory = os.path.abspath(output_directory)
+        self._validate_directory(self.input_tac_path)
+        self._validate_directory(self.roi_tac_path)
+        self._validate_directory(self.output_directory)
         self.method_name = method_name
         self.thresh_in_mins = threshold_in_mins
         self.output_filename_prefix = output_filename_prefix
