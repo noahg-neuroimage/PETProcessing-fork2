@@ -38,7 +38,17 @@ class EvenlyInterpolate:
         self.resample_times = np.arange(tac_times[0], tac_times[-1], delta_time)
         self.resample_vals = self.interp_func(self.resample_times)
 
-    def get_resampled_tac(self) -> Tuple[np.ndarray[float], np.ndarray[float]]:
+    def get_resampled_tac(self) -> np.ndarray:
+        """
+        Returns the resampled times and values of the Time-Activity Curve (TAC).
+
+        The function combines the resampled times and values into a single numpy array.
+
+        Returns:
+            Tuple[np.ndarray, np.ndarray]: A tuple containing two numpy arrays. The first array corresponds to the
+            resampled times and the second array corresponds to the resampled activity values of the TAC.
+            
+        """
         return np.asarray([self.resample_times, self.resample_vals])
     
     

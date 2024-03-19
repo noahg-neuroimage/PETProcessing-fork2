@@ -46,7 +46,7 @@ def _safe_write_tac(tac_times: np.ndarray, tac_values : np.ndarray, filename: st
     """
     out_arr = np.array([tac_times, tac_values]).T
     try:
-        np.savetxt(fname=filename, X=out_arr, delimiter="\t", header="Time\tActivity", fmt="%.6e")
+        np.savetxt(fname=f"{filename}.tsv", X=out_arr, delimiter="\t", header="Time\tActivity", fmt="%.6e")
     except Exception as e:
         print(f"Couldn't write file {filename}. Error: {e}")
         raise e
@@ -67,20 +67,35 @@ def main():
     mutually_exclusive_group.add_argument("--samples-before-max", type=float,
                                           help="Number of samples before the max TAC value.")
     
+    verb_group = parser.add_argument_group("Additional information")
+    verb_group.add_argument("-p", "--print", action="store_true", help="Print the resampled TAC values.",
+                            required=False)
+    verb_group.add_argument("-v", "--verbose", action="store_true",
+                            help="Print the sizes of the input and output TACs", required=False)
+    
     args = parser.parse_args()
     
-    tac_times, tac_values = _safe_load_tac(args.tac_path)
+    in_tac_times, in_tac_values = _safe_load_tac(args.tac_path)
     
     if args.samples_before_max is not None:
-        interpolator = tac_intp.EvenlyInterpolateWithMax(tac_times=tac_times, tac_values=tac_values,
+        interpolator = tac_intp.EvenlyInterpolateWithMax(tac_times=in_tac_times, tac_values=in_tac_values,
                                                          samples_before_max=args.samples_before_max)
     else:
-        interpolator = tac_intp.EvenlyInterpolate(tac_times=tac_times, tac_values=tac_values,
+        interpolator = tac_intp.EvenlyInterpolate(tac_times=in_tac_times, tac_values=in_tac_values,
                                                   delta_time=args.delta_time)
     
     resampled_tac = interpolator.get_resampled_tac()
     
     _safe_write_tac(tac_times=resampled_tac[0], tac_values=resampled_tac[1], filename=args.out_tac_path)
+    
+    if args.verbose:
+        print(f"Input TAC size:  {in_tac_values.shape[0]}.")
+        print(f"Output TAC size: {resampled_tac[0].shape[0]}.")
+        
+    if args.print:
+        print(resampled_tac)
+
 
 if __name__ == "__main__":
     main()
+    
