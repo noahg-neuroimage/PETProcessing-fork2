@@ -827,16 +827,6 @@ def _safe_load_tac(filename: str) -> np.ndarray:
 
 class Plot:
     
-    @staticmethod
-    def _validate_filepath(filename: str) -> None:
-        if not os.path.isfile(filename):
-            raise ValueError(f"Invalid file path: {filename}")
-        
-    @staticmethod
-    def _validate_directory(directory: str) -> None:
-        if not os.path.isdir(directory):
-            raise ValueError(f"Invalid directory: {directory}.")
-    
     def __init__(self,
                  input_tac_path: str,
                  roi_tac_path: str,
@@ -856,18 +846,6 @@ class Plot:
         self._pTAC = _safe_load_tac(self.input_tac_path)
         self._tTAC = _safe_load_tac(self.roi_tac_path)
         self.fig_cls = self._select_fig_class_based_on_method(method_name=self.method_name)
-    
-    @staticmethod
-    def _select_fig_class_based_on_method(method_name: str) -> Union[
-        Type[PatlakPlot], Type[LoganPlot], Type[AltLoganPlot]]:
-        if method_name == "patlak":
-            return PatlakPlot
-        elif method_name == "logan":
-            return LoganPlot
-        elif method_name == "alt-logan":
-            return AltLoganPlot
-        else:
-            raise ValueError("Invalid method name. Please choose either 'patlak', 'logan', or 'alt-logan'.")
         
     def save_figure(self):
         p_tac = _safe_load_tac(self.input_tac_path)
@@ -883,3 +861,24 @@ class Plot:
             plt.savefig(f"{out_path}.pdf", bbox_inches='tight', transparent=True)
             plt.close()
     
+    @staticmethod
+    def _validate_filepath(filename: str) -> None:
+        if not os.path.isfile(filename):
+            raise ValueError(f"Invalid file path: {filename}")
+    
+    @staticmethod
+    def _validate_directory(directory: str) -> None:
+        if not os.path.isdir(directory):
+            raise ValueError(f"Invalid directory: {directory}.")
+    
+    @staticmethod
+    def _select_fig_class_based_on_method(method_name: str) -> Union[
+        Type[PatlakPlot], Type[LoganPlot], Type[AltLoganPlot]]:
+        if method_name == "patlak":
+            return PatlakPlot
+        elif method_name == "logan":
+            return LoganPlot
+        elif method_name == "alt-logan":
+            return AltLoganPlot
+        else:
+            raise ValueError("Invalid method name. Please choose either 'patlak', 'logan', or 'alt-logan'.")
