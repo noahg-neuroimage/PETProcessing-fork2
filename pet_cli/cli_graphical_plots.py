@@ -1,3 +1,31 @@
+"""
+CLI - Graphical Analysis Plots
+------------------------------
+
+Command-line interface (CLI) for generating graphical analysis plots of PET Time-Activity Curves (TACs).
+
+This module provides a CLI to work with the graphical_plots module. It uses argparse to handle command-line arguments.
+
+The user must provide:
+    * input TAC file path
+    * Region of Interest (ROI) TAC file path
+    * Threshold in minutes (below which data points will be discarded)
+    * The method name for generating the plot. Supported methods are 'patlak', 'logan', or 'alt-logan'.
+    * Output directory where the plot will be saved
+
+An optional filename prefix for the output files can also be supplied.
+
+This script uses the 'Plot' class from the 'graphical_plots' module to generate and save the plots.
+
+Example usage:
+    python cli_graphical_plots.py --input-tac-path /path/to/input.tac --roi-tac-path /path/to/roi.tac
+        --threshold-in-mins 30.0 --method-name patlak --output-directory ./plots --output-filename-prefix plot
+
+See also:
+    * :mod:`pet_cli.graphical_plots` - module for creating and saving graphical analysis plots of PET TACs.
+    
+"""
+
 import argparse
 from . import graphical_plots as pet_plt
 
