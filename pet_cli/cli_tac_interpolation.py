@@ -30,7 +30,7 @@ def _safe_load_tac(filename: str) -> np.ndarray:
 
 
 # TODO: Use the safe writing of TACs function from an IO module when it is implemented
-def _safe_write_tac(tac_times: np.ndarray, tac_values : np.ndarray, filename: str) -> None:
+def _safe_write_tac(tac_times: np.ndarray, tac_values: np.ndarray, filename: str) -> None:
     """
     Writes time-activity curves (TAC) to a file.
 
@@ -69,6 +69,7 @@ def _print_tac_to_screen(tac_times: np.ndarray, tac_values: np.ndarray):
     for time, value in zip(tac_times, tac_values):
         print(f"{time:<.6e}\t{value:<.6e}")
 
+
 def main():
     parser = argparse.ArgumentParser(prog="TAC Interpolation", description="Evenly resample TACs.",
                                      epilog="TAC interpolation complete.")
@@ -87,8 +88,8 @@ def main():
     verb_group = parser.add_argument_group("Additional information")
     verb_group.add_argument("-p", "--print", action="store_true", help="Print the resampled TAC values.",
                             required=False)
-    verb_group.add_argument("-v", "--verbose", action="store_true",
-                            help="Print the sizes of the input and output TACs", required=False)
+    verb_group.add_argument("-v", "--verbose", action="store_true", help="Print the sizes of the input and output TACs",
+                            required=False)
     
     args = parser.parse_args()
     args.tac_path = os.path.abspath(args.tac_path)
@@ -110,11 +111,10 @@ def main():
     if args.verbose:
         print(f"Input TAC size:  {len(in_tac_values)}.")
         print(f"Output TAC size: {len(resampled_values)}.")
-        
+    
     if args.print:
         _print_tac_to_screen(tac_times=resampled_times, tac_values=resampled_values)
 
 
 if __name__ == "__main__":
     main()
-    
