@@ -1,3 +1,25 @@
+"""
+CLI - TAC Interpolation
+-----------------------
+
+This module contains various functions related to the Time-Activity Curve (TAC)
+interpolation process in the PET (Positron Emission Tomography) pipeline.
+
+It includes the following main functions:
+
+1. :func:`_safe_load_tac`: Safely loads TAC data from a file.
+
+2. :func:`_safe_write_tac`: Safely writes the TAC data to a file.
+
+3. :func:`_print_tac_to_screen`: Prints the TAC times and values to the console.
+
+4. :func:`main`: The main function that invokes these processes.
+
+TODO:
+    * Refactor the reading and writing of TACs when IO module is mature.
+
+"""
+
 import argparse
 import numpy as np
 from . import tac_interpolation as tac_intp
