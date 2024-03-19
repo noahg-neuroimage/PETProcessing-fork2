@@ -43,24 +43,22 @@ def main():
     io_grp.add_argument("-o", "--out-tac-path", help="Path of output file.", required=True)
     
     interp_grp = parser.add_argument_group("Interpolation")
-    interp_grp.add_argument("--delta-time", type=float, help="The time difference for the resampled times.",
-                            default=None)
-    interp_grp.add_argument("--samples-before-max", type=float, help="Number of samples before the max TAC value.",
-                            default=None)
+    mutually_exclusive_group = interp_grp.add_mutually_exclusive_group(required=True)
+    mutually_exclusive_group.add_argument("--delta-time", type=float,
+                                          help="The time difference for the resampled times.")
+    mutually_exclusive_group.add_argument("--samples-before-max", type=float,
+                                          help="Number of samples before the max TAC value.")
     
     args = parser.parse_args()
     
-    # load TAC file
-    tac_times, tac_values = _safe_load_tac(args.tac_path)  # replace with actual function to load TAC file
+    tac_times, tac_values = _safe_load_tac(args.tac_path)
     
     if args.samples_before_max is not None:
-        # Use EvenlyInterpolateWithMax class for interpolation
-        interpolator = tac_intp.EvenlyInterpolateWithMax(tac_times, tac_values, samples_before_max=args.samples_before_max)
-    elif args.delta_time is not None:
-        # use EvenlyInterpolate class for interpolation
-        interpolator = tac_intp.EvenlyInterpolate(tac_times, tac_values, delta_time=args.delta_time)
+        interpolator = tac_intp.EvenlyInterpolateWithMax(tac_times=tac_times, tac_values=tac_values,
+                                                         samples_before_max=args.samples_before_max)
     else:
-        raise ValueError("Either --delta-time or --samples-before-max must be specified.".format(args.delta_time))
+        interpolator = tac_intp.EvenlyInterpolate(tac_times=tac_times, tac_values=tac_values,
+                                                  delta_time=args.delta_time)
     
     resampled_tac = interpolator.get_resampled_tac()
     
