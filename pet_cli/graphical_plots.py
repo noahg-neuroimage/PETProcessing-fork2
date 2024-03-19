@@ -873,6 +873,24 @@ class Plot:
         self.fig_cls = self._select_fig_class_based_on_method(method_name=self.method_name)
         
     def save_figure(self):
+        """
+        Creates and saves the figure in both PNG and PDF formats.
+        
+        We first safely load the TACS. Then, this method generates the figure using the method selected during the
+        initialization of the class. The figure is then saved inside the specified  output directory with a filename
+        based on parameters provided at initialization.
+
+        The saved files are in both PNG (with a resolution of 150 dpi) and PDF formats (with the PDF file being saved
+        with transparency).
+
+        Note:
+            This method does not return any value. It is responsible for saving the generated figure to the specified
+            output directory in PNG and PDF formats.
+            
+        Raises:
+            Exception: An error occurred while loading the TACs from the input or ROI files.
+            
+        """
         p_tac = _safe_load_tac(self.input_tac_path)
         t_tac = _safe_load_tac(self.roi_tac_path)
         
