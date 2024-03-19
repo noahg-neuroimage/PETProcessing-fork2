@@ -69,7 +69,7 @@ def _print_tac_to_screen(tac_times:np.ndarray, tac_values:np.ndarray):
         print(f"{time:<.6e}\t{value:<.6e}")
 
 def main():
-    parser = argparse.ArgumentParser(prog="TAC Interpolation", description="Resample unevenly sampled TACs",
+    parser = argparse.ArgumentParser(prog="TAC Interpolation", description="Evenly resample TACs.",
                                      epilog="TAC interpolation complete.")
     
     io_grp = parser.add_argument_group("I/O")
