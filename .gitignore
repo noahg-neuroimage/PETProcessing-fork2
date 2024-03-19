@@ -1,5 +1,5 @@
-/doc/build/
-/dist/pet_cli-0.0.1.tar.gz
-/pet_cli.egg-info/
-/data/tcm_tacs/.ipynb_checkpoints/
-/test_notebooks/
+./pet_cli/__pycache__/
+./data/tcm_tacs/.ipynb_checkpoints/
+./test_notebooks/testing_graphical_analyses/.ipynb_checkpoints/
+./.idea/
+./pet_cli.egg-info/
