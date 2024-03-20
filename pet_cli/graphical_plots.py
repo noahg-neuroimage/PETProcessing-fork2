@@ -23,14 +23,18 @@ class GraphicalAnalysisPlot(ABC):
     Attributes:
         pTAC (np.ndarray): The Input/Plasma TAC, an array containing time points and corresponding activity.
         tTAC (np.ndarray): The Tissue/Region TAC, an array with time points and corresponding activity.
-        t_thresh_in_mins (float): The threshold time, in minutes, to consider in the analysis. Points are fit after this threshold.
+        t_thresh_in_mins (float): The threshold time, in minutes, to consider in the analysis. Points are fit after this
+            threshold.
         fig (plt.Figure): A matplotlib Figure object where the plots will be drawn.
         ax_list (list): A list of matplotlib Axes associated with `fig` where the plots will be drawn.
-        non_zero_idx (np.ndarray): Indexes of non-zero values in appropriate TAC (calculated in specific implementations).
-        t_thresh_idx (int): The index at which the time threshold is crossed in the TACs (calculated in specific implementations).
+        non_zero_idx (np.ndarray): Indexes of non-zero values in appropriate TAC (calculated in specific
+            implementations).
+        t_thresh_idx (int): The index at which the time threshold is crossed in the TACs (calculated in specific
+            implementations).
         x (np.ndarray): The "x" valu0es for plotting (calculated in specific implementations).
         y (np.ndarray): The "y" values for plotting (calculated in specific implementations).
-        fit_params (dict): The parameters fit to the data using least squares. Contains 'slope', 'intercept', and 'r_squared' (calculated in specific implementations).
+        fit_params (dict): The parameters fit to the data using least squares. Contains 'slope', 'intercept', and
+            'r_squared' (calculated in specific implementations).
 
     Note:
         This is an abstract class and should be inherited by a concrete class that implements the following methods:
@@ -50,15 +54,15 @@ class GraphicalAnalysisPlot(ABC):
         Args:
             pTAC (np.ndarray): The input Time Activity Curve, an array containing time points and corresponding activity.
             tTAC (np.ndarray): The Tissue or Region Time Activity Curve, an array with time points and corresponding
-            activity.
+                activity.
             t_thresh_in_mins (float): The threshold time in minutes to consider when performing calculations for the
-            plots.
+                plots.
             figObj (plt.Figure, optional): An optional matplotlib Figure object. If not provided, a new Figure object is
-             created.
+                created.
 
         Raises:
             matplotlib error: Error handling for the plot generation is managed by matplotlib. Any exceptions thrown
-            during plotting are handled by the matplotlib library internally.
+                during plotting are handled by the matplotlib library internally.
         """
         self.pTAC: np.ndarray = pTAC[:]
         self.tTAC: np.ndarray = tTAC[:]
@@ -201,7 +205,7 @@ class GraphicalAnalysisPlot(ABC):
         """
         Generate and add various types of plots to the Axes in the instance's Axes list.
 
-        Depending on the boolean values of `plot_data`, `plot_fit_points`, `plot_fit_lines`, and `fit_shading`,
+        Depending on the boolean values of ``plot_data``, ``plot_fit_points``, ``plot_fit_lines``, and ``fit_shading``,
         this method determines which types of plots to generate and include. This includes the data points plot,
         fitting points, line of best fit, and shading between the line of best fit and the x-axis.
 
@@ -298,7 +302,9 @@ class GraphicalAnalysisPlot(ABC):
         fit_params = pet_grph.fit_line_to_data_using_lls_with_rsquared(xdata=self.x[t_thresh:], ydata=self.y[t_thresh:])
         
         fit_params = {
-            'slope': fit_params[0], 'intercept': fit_params[1], 'r_squared': fit_params[2]
+            'slope': fit_params[0],
+            'intercept': fit_params[1],
+            'r_squared': fit_params[2]
             }
         self.fit_params = fit_params
 
@@ -312,10 +318,12 @@ class GraphicalAnalysisPlot(ABC):
         1. Calculates valid x and y values derived from the analysis where each concrete class represents a different
         method. Valid points are those where the denominator (which varies by analysis type) is non-zero.
         2. Saves the indices of the non-zero valid values and the indices that correspond to the given t_thresh_in_mins.
-
+        
+        .. important::
+            This abstract method must be implemented in each subclass representing a different analysis method.
+        
         Note:
-            * This abstract method must be implemented in each subclass representing a different analysis method.
-            * The implementation of this function in subclasses MUST calculate and assign values to ``x``, ``y``,
+            The implementation of this function in subclasses MUST calculate and assign values to ``x``, ``y``,
             ``t_thresh_idx``, and ``non_zero_idx`` attributes.
         
         Raises:
@@ -336,7 +344,7 @@ class GraphicalAnalysisPlot(ABC):
         This function reads the fitting parameters 'slope', 'intercept', and 'r_squared' from the class attribute
         'fit_params', and formats them into a string that can be used as a label on plots or reports.
 
-        Note:
+        .. important::
             This abstract method must be implemented in each subclass representing a different analysis method.
 
         Raises:
@@ -354,7 +362,8 @@ class GraphicalAnalysisPlot(ABC):
         """
         Abstract method for adding analysis specific titles, axes labels and a legend to the figure.
 
-        This abstract method has to be implemented in each subclass representing a different analysis method.
+        .. important::
+            This abstract method must be implemented in each subclass representing a different analysis method.
 
         Raises:
             NotImplementedError: This method must be implemented in each subclass.
@@ -423,10 +432,8 @@ class PatlakPlot(GraphicalAnalysisPlot):
         
         .. math::
         
-            \begin{align*}
             y&= \frac{R(t)}{C_\mathrm{P}(t)}\\
             x&= \frac{\int_{0}^{t}C_\mathrm{P}(s)\mathrm{d}s}{C_\mathrm{P}(t)},
-            \end{align*}
 
         where :math:`C_\mathrm{P}` is the input function and :math:`R(t)` is PET activity in the particular region of
         interest.
@@ -460,11 +467,9 @@ class PatlakPlot(GraphicalAnalysisPlot):
         
         .. math::
         
-            \begin{align*}
             K_{1}&=0.1\\
             V_{\mathrm{T}}&=0.2\\
             R^{2}&=0.95
-            \end{align*}
             
         Returns:
             str: The created label. Each parameter is formatted as a separate line.
@@ -566,10 +571,8 @@ class LoganPlot(GraphicalAnalysisPlot):
     
         .. math::
         
-            \begin{align*}
             y&= \frac{\int_{0}^{t}R(s)\mathrm{d}s}{R(t)}\\
             x&= \frac{\int_{0}^{t}C_\mathrm{P}(s)\mathrm{d}s}{R(t)},
-            \end{align*}
 
         where :math:`C_\mathrm{P}` is the input function and :math:`R(t)` is PET activity in the particular region of
         interest.
@@ -606,11 +609,9 @@ class LoganPlot(GraphicalAnalysisPlot):
 
         .. math::
         
-            \begin{align*}
             V_\mathrm{T}&=0.1\\
             b&=0.2\\
             R^{2}&=0.95
-            \end{align*}
 
         Returns:
             str: The created label. Each parameter is formatted as a separate line.
@@ -632,10 +633,8 @@ class LoganPlot(GraphicalAnalysisPlot):
 
         .. math::
         
-            \begin{align*}
             y&= \frac{\int_{0}^{t}R(s)\mathrm{d}s}{R(t)}\\
             x&= \frac{\int_{0}^{t}C_\mathrm{P}(s)\mathrm{d}s}{R(t)},
-            \end{align*}
 
         where :math:`C_\mathrm{P}` is the input function and :math:`R(t)` is PET activity in the particular region of
         interest.
@@ -710,10 +709,8 @@ class AltLoganPlot(GraphicalAnalysisPlot):
 
         .. math::
 
-            \begin{align*}
             y&= \frac{\int_{0}^{t}R(s)\mathrm{d}s}{C_\mathrm{P}(t)}\\
             x&= \frac{\int_{0}^{t}C_\mathrm{P}(s)\mathrm{d}s}{C_\mathrm{P}(t)},
-            \end{align*}
 
         where :math:`C_\mathrm{P}` is the input function and :math:`R(t)` is PET activity in the particular region of
         interest. Compared to :class:`LoganPlot`, the denominator is the input function.
@@ -750,11 +747,9 @@ class AltLoganPlot(GraphicalAnalysisPlot):
 
         .. math::
 
-            \begin{align*}
             V_\mathrm{T}&=0.1\\
             b&=0.2\\
             R^{2}&=0.95
-            \end{align*}
 
         Returns:
             str: The created label. Each parameter is formatted as a separate line.
@@ -776,10 +771,8 @@ class AltLoganPlot(GraphicalAnalysisPlot):
 
         .. math::
 
-            \begin{align*}
             y&= \frac{\int_{0}^{t}R(s)\mathrm{d}s}{C_\mathrm{P}(t)}\\
             x&= \frac{\int_{0}^{t}C_\mathrm{P}(s)\mathrm{d}s}{C_\mathrm{P}},
-            \end{align*}
 
         where :math:`C_\mathrm{P}` is the input function and :math:`R(t)` is PET activity in the particular region of
         interest.
@@ -845,19 +838,20 @@ class Plot:
 
     Example:
         An example of how to use this class to save a Patlak graphical analysis plot:
-
-        ```python
-        import pet_cli.graphical_plots as pet_plt
-        # ptac_path points to a plasma TAC (or input TAC)
-        # ttac_path points to a ROI TAC.
-        grph_plot = pet_plt.Plot(input_tac_path=ptac_path,
-                                 roi_tac_path=ttac_path,
-                                 threshold_in_mins=30.0,
-                                 method_name='patlak',
-                                 output_directory='./',
-                                 output_filename_prefix="plot")
-        grph_plot.save_figure()
-        ```
+        
+        
+        .. code-block:: python
+        
+            import pet_cli.graphical_plots as pet_plt
+            # ptac_path points to a plasma TAC (or input TAC)
+            # ttac_path points to a ROI TAC.
+            grph_plot = pet_plt.Plot(input_tac_path=ptac_path,
+                                     roi_tac_path=ttac_path,
+                                     threshold_in_mins=30.0,
+                                     method_name='patlak',
+                                     output_directory='./',
+                                     output_filename_prefix="plot")
+            grph_plot.save_figure()
 
     """
 
@@ -948,7 +942,7 @@ class Plot:
         If the file is not valid, it raises a ValueError.
 
         Args:
-            filename (:class:`str`): The path to the file.
+            filename (str): The path to the file.
 
         Raises:
             ValueError: if the file at provided path does not exist.
@@ -969,7 +963,7 @@ class Plot:
         If the directory does not exist, it raises a ValueError.
 
         Args:
-            directory (:class:`str`): Path to the directory.
+            directory (str): Path to the directory.
 
         Raises:
             ValueError: if the provided directory path does not exist.
