@@ -1,6 +1,6 @@
 """
 CLI - Graphical Analysis
-------------------------
+========================
 
 Command-line interface (CLI) for conducting graphical analysis of PET Time-Activity Curves (TACs).
 
@@ -16,12 +16,14 @@ The user must provide:
 
 An optional filename prefix for the output files can also be supplied.
 
-This script utilizes the :class:'pet_cli.graphical_analysis.GraphicalAnalysis' class to perform the graphical analysis
+This script utilizes the :class:`pet_cli.graphical_analysis.GraphicalAnalysis` class to perform the graphical analysis
 and save the results accordingly.
 
 Example usage:
-    pet-cli-graph-analysis --input-tac-path /path/to/input.tac --roi-tac-path /path/to/roi.tac
-        --threshold-in-mins 30.0 --method-name patlak --output-directory ./analysis --output-filename-prefix analysis
+
+    .. code-block:: bash
+    
+        pet-cli-graph-analysis --input-tac-path /path/to/input.tac --roi-tac-path /path/to/roi.tac --threshold-in-mins 30.0 --method-name patlak --output-directory ./analysis --output-filename-prefix analysis
 
 See also:
     * :mod:`pet_cli.graphical_analysis` - module responsible for conducting and saving graphical analysis of PET TACs.

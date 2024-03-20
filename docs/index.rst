@@ -7,15 +7,29 @@ Welcome to PET Processing Module's documentation!
 =================================================
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
    :caption: Contents:
 
+   pet_cli.parametric_images
    pet_cli.tcms_as_convolutions
    pet_cli.tac_interpolation
    pet_cli.parametric_images
    pet_cli.graphical_analysis
    pet_cli.graphical_plots
    pet_cli.blood_input
+   pet_cli.cli_tac_interpolation
+   pet_cli.BIDS_utils
+   pet_cli.bids_cli
+   pet_cli.blood_input
+   pet_cli.cli_graphical_analysis
+   pet_cli.cli_graphical_plots
+   pet_cli.cli_parametric_images
+   pet_cli.cli_tac_interpolation
+   pet_cli.image_io
+   pet_cli.image_operations_4d
+   pet_cli.math_lib
+
+
 
 Indices and tables
 ==================
