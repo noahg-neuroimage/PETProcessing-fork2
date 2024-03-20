@@ -15,6 +15,7 @@ TODO:
     * Check if it makes more sense to lift out the more mathy methods out into a separate module.
     * Might have to change the division of the TACS cumulative integral by the TACS to be from ``[t_thresh:]`` to
       avoid division by zero.
+      
 """
 
 __version__ = '0.2'
