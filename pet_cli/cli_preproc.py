@@ -1,3 +1,6 @@
+"""
+Command Line Interface for preprocessing tools.
+"""
 import argparse
 from pet_cli.image_operations_4d import ImageOps4D
 
@@ -10,8 +13,8 @@ def main():
     validating BIDS datasets (future), and converting user-provided files to BIDS format.
     """
     parser = argparse.ArgumentParser(prog="PET Processing",
-                                     description="General purpose suite for processing PET images.",
-                                     epilog="PET Processing complete.")
+        description="General purpose suite for processing PET images.",
+        epilog="PET Processing complete.")
 
     io_grp = parser.add_argument_group("I/O")
     io_grp.add_argument('--subject', required=True, help="Name of the subject.")
@@ -28,7 +31,7 @@ def main():
         Required format .nii or .nii.gz")
     io_grp.add_argument('--color_table', required=False, help="Path to the color table.")
     io_grp.add_argument('--half_life', required=False, help="Half life of tracer radioisotope \
-        in seconds.")
+        in seconds.",type=float)
 
     comp_group = parser.add_argument_group("Computations")
     comp_group.add_argument('--weighted_sum', required=False, help="Compute a weighted sum PET \
@@ -42,7 +45,7 @@ def main():
 
     verb_group = parser.add_argument_group("Additional information")
     verb_group.add_argument("-v", "--verbose", action="store_true",
-                            help="Print the shape of the mask and images files.", required=False)
+        help="Print the shape of the mask and images files.", required=False)
 
     args = parser.parse_args()
 
@@ -57,7 +60,7 @@ def main():
             out_path=args.out_path,
             verbose=args.verbose
         )
-        operations.weighted_series_sum()
+        operations.run_weighted_series_sum()
         sum_image = f'{args.out_path}/sum_image/{args.subject}-sum.nii.gz'
 
     if args.motion_correct:
@@ -72,8 +75,8 @@ def main():
             out_path=args.out_path,
             verbose=args.verbose
         )
-        operations.motion_correction()
-        motion_corrected = f'{args.out_path}/pet_moco/{args.subject}-moco.nii.gz'
+        operations.run_motion_correction()
+        motion_corrected = f'{args.out_path}/motion-correction/{args.subject}-moco.nii.gz'
 
     if args.register:
         image_paths = {'pet': args.pet,'mri': args.anatomical}
@@ -91,11 +94,11 @@ def main():
             out_path=args.out_path,
             verbose=args.verbose
         )
-        operations.register_pet()
+        operations.run_register_pet()
         pet_reg = f'{args.out_path}/registration/{args.subject}-moco-reg.nii.gz'
 
     if args.tacs:
-        image_paths = {'pet_moco_reg': pet_reg, 'seg': args.segmentation}
+        image_paths = {'pet': args.pet, 'pet_moco_reg': pet_reg, 'seg': args.segmentation}
         operations = ImageOps4D(
             sub_id=args.subject,
             image_paths=image_paths,
