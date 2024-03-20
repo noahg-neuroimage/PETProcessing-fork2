@@ -33,7 +33,8 @@ from . import graphical_plots as pet_plt
 def main():
     parser = argparse.ArgumentParser(prog="Graphical Analysis Plots",
                                      description="Generate graphical analysis plots of PET TACs.",
-                                     epilog="Example: --input-tac-path /path/to/input.tac --roi-tac-path "
+                                     epilog="Example: pet-cli-graph-plot "
+                                            "--input-tac-path /path/to/input.tac --roi-tac-path "
                                             "/path/to/roi.tac --threshold-in-mins 30.0 --method-name patlak "
                                             "--output-directory /path/to/output --output-filename-prefix plot")
     
