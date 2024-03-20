@@ -3,7 +3,13 @@ import pet_cli.graphical_analysis as pet_ga
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Perform graphical analysis on TAC data.")
+    parser = argparse.ArgumentParser(prog="Graphical Analysis", description="Perform graphical analysis on TAC data.",
+                                     epilog="Example: pet-cli-graph-analysis "
+                                            "--input-tac-path /path/to/input.tac "
+                                            "--pet4D-img-path /path/to/pet4D.img "
+                                            "--output-directory /path/to/output "
+                                            "--output-filename-prefix graph_ana"
+                                            "--method-name patlak --threshold-in-mins 30.0 ")
     
     # IO group
     grp_io = parser.add_argument_group('IO Paths and Prefixes')
