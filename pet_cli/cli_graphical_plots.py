@@ -7,11 +7,11 @@ Command-line interface (CLI) for generating graphical analysis plots of PET Time
 This module provides a CLI to work with the graphical_plots module. It uses argparse to handle command-line arguments.
 
 The user must provide:
-    * input TAC file path
+    * Input TAC file path
     * Region of Interest (ROI) TAC file path
-    * Threshold in minutes (below which data points will be discarded)
+    * Threshold in minutes (below which data points will be not be fit)
     * The method name for generating the plot. Supported methods are 'patlak', 'logan', or 'alt-logan'.
-    * Output directory where the plot will be saved
+    * Output directory where the plots will be saved
 
 An optional filename prefix for the output files can also be supplied.
 
