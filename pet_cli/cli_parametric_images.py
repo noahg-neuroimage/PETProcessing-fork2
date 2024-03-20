@@ -1,6 +1,29 @@
 """
-CLI - Parametric Images
------------------------
+CLI - Parametric Images Using Graphical Analysis
+------------------------------------------------
+
+Command-line interface (CLI) for generating PET parametric images using graphical analysis of Time-Activity Curves (TACs).
+
+This module provides a CLI to work with the parametric_images module. It uses argparse to handle command-line arguments.
+
+The user must provide:
+    * Input TAC file path
+    * Path to the 4D PET image file
+    * Threshold in minutes (below which data points will be not be used for fitting)
+    * The method name for generating the images. Supported methods are 'patlak', 'logan', or 'alt-logan'.
+    * Output directory where the parametric images will be saved
+
+An optional filename prefix for the output files can also be supplied.
+
+This script uses the :class:'pet_cli.parametric_images.GraphicalAnalysisParametricImage' class to calculate and save
+the images.
+
+Example usage:
+     pet-cli-parametric-image --input-tac-path /path/to/input.tac --pet4D-img-path /path/to/pet4D.img
+        --threshold-in-mins 30.0 --method-name patlak --output-directory ./images --output-filename-prefix image
+
+See also:
+    * :mod:`pet_cli.parametric_images` - module for initiating and saving the graphical analysis of PET parametric images.
 
 """
 
