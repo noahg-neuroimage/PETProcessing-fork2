@@ -36,16 +36,21 @@ def main():
                                      epilog="Example: --input-tac-path /path/to/input.tac --roi-tac-path "
                                             "/path/to/roi.tac --threshold-in-mins 30.0 --method-name patlak "
                                             "--output-directory /path/to/output --output-filename-prefix plot")
-    parser.add_argument("-i", "--input-tac-path", required=True, help="Path to the input TAC file.")
-    parser.add_argument("-r", "--roi-tac-path", required=True, help="Path to the Region of Interest (ROI) TAC file.")
-    parser.add_argument("-t", "--threshold-in-mins", required=True, type=float,
-                        help="Threshold in minutes below which data points will be discarded.")
-    parser.add_argument("-m", "--method-name", required=True, choices=['patlak', 'logan', 'alt-logan'],
-                        help="Name of the method for generating the plot.")
-    parser.add_argument("-o", "--output-directory", required=True,
+    
+    grp_io = parser.add_argument_group("I/O Paths And Prefixes")
+    grp_io.add_argument("-i", "--input-tac-path", required=True, help="Path to the input TAC file.")
+    grp_io.add_argument("-r", "--roi-tac-path", required=True, help="Path to the Region of Interest (ROI) TAC file.")
+    grp_io.add_argument("-o", "--output-directory", required=True,
                         help="Path to the directory where the plot output will be saved.")
-    parser.add_argument("-p", "--output-filename-prefix", default="",
+    grp_io.add_argument("-p", "--output-filename-prefix", default="",
                         help="An optional prefix for the output filenames.")
+    
+    grp_params = parser.add_argument_group("Method Parameters")
+    grp_params.add_argument("-t", "--threshold-in-mins", required=True, type=float,
+                        help="Threshold in minutes below which data points will be discarded.")
+    grp_params.add_argument("-m", "--method-name", required=True, choices=['patlak', 'logan', 'alt-logan'],
+                        help="Name of the method for generating the plot.")
+    
     args = parser.parse_args()
     
     grph_plot = pet_plt.Plot(input_tac_path=args.input_tac_path, roi_tac_path=args.roi_tac_path,
