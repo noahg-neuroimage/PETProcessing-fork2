@@ -1,4 +1,7 @@
 """
+Graphical Analysis
+==================
+
 This is the 'graphical_analysis' module.
 
 This module provides functions and a key class, :class:`GraphicalAnalysis`, for performing graphical analysis on Time
@@ -8,8 +11,8 @@ alternative Logan analysis.
 The :class:`GraphicalAnalysis` class encapsulates the main functionality of the module. It provides an organized way to
 perform graphical analysis where it initializes with paths to input data and output details, runs an analysis using a
 specific method, calculates the best fit parameters, computes properties related to the fitting process, and stores the
-analysis results. All these properties and results are stored within an instance's 'analysis_props' dictionary, providing
-an organized storage of result of an analysis task.
+analysis results. All these properties and results are stored within an instance's 'analysis_props' dictionary,
+providing an organized storage of result of an analysis task.
 
 TODO:
     * Check if it makes more sense to lift out the more mathy methods out into a separate module.
@@ -118,7 +121,9 @@ def calculate_patlak_x(tac_times: np.ndarray, tac_vals: np.ndarray) -> np.ndarra
     Patlak-Gjedde analysis is a linearization of the 2-TCM with irreversible uptake in the second compartment.
     Therefore, we essentially have to fit a line to some data :math:`y = mx+b`. This function calculates the :math:`x`
     variable for Patlak analysis where,
+    
     .. math::
+    
         x = \frac{\int_{0}_{T} C_\mathrm{P}(t) \mathrm{d}t}{C_\mathrm{P}(t)},
     
     where further :math:`C_\mathrm{P}` is usually the plasma TAC.

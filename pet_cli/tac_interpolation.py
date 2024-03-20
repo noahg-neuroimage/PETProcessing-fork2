@@ -1,4 +1,8 @@
-"""Module for interpolating Time Activity Curves (TACs). Mostly used for evenly interpolating PET TACs which tend to be
+"""
+TAC Interpolation
+=================
+
+Module for interpolating Time Activity Curves (TACs). Mostly used for evenly interpolating PET TACs which tend to be
 sampled unevenly with respect to time.
 
 """

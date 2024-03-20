@@ -1,3 +1,10 @@
+"""
+Graphical Analysis Plots
+========================
+
+"""
+
+
 from matplotlib import pyplot as plt
 import numpy as np
 from abc import ABC, abstractmethod
@@ -16,23 +23,21 @@ class GraphicalAnalysisPlot(ABC):
     Attributes:
         pTAC (np.ndarray): The Input/Plasma TAC, an array containing time points and corresponding activity.
         tTAC (np.ndarray): The Tissue/Region TAC, an array with time points and corresponding activity.
-        t_thresh_in_mins (float): The threshold time, in minutes, to consider in the analysis. Points are fit after this
-        threshold.
+        t_thresh_in_mins (float): The threshold time, in minutes, to consider in the analysis. Points are fit after this threshold.
         fig (plt.Figure): A matplotlib Figure object where the plots will be drawn.
         ax_list (list): A list of matplotlib Axes associated with `fig` where the plots will be drawn.
         non_zero_idx (np.ndarray): Indexes of non-zero values in appropriate TAC (calculated in specific implementations).
-        t_thresh_idx (int): The index at which the time threshold is crossed in the TACs (calculated in specific
-        implementations).
+        t_thresh_idx (int): The index at which the time threshold is crossed in the TACs (calculated in specific implementations).
         x (np.ndarray): The "x" valu0es for plotting (calculated in specific implementations).
         y (np.ndarray): The "y" values for plotting (calculated in specific implementations).
-        fit_params (dict): The parameters fit to the data using least squares.
-                           Contains 'slope', 'intercept', and 'r_squared' (calculated in specific implementations).
+        fit_params (dict): The parameters fit to the data using least squares. Contains 'slope', 'intercept', and 'r_squared' (calculated in specific implementations).
 
     Note:
         This is an abstract class and should be inherited by a concrete class that implements the following methods:
-        * :func:`calculate_valid_indicies_and_x_and_y`
-        * :func:`generate_label_from_fit_params`
-        * :func:`add_figure_axes_labels_and_legend`
+            * :func:`calculate_valid_indicies_and_x_and_y`
+            * :func:`generate_label_from_fit_params`
+            * :func:`add_figure_axes_labels_and_legend`
+        
     """
     def __init__(self, pTAC: np.ndarray, tTAC: np.ndarray, t_thresh_in_mins: float, figObj: plt.Figure = None):
         """
@@ -77,8 +82,7 @@ class GraphicalAnalysisPlot(ABC):
         its Axes.
 
         Args:
-            figObj (plt.Figure, optional): An optional matplotlib Figure object. If not provided, a new Figure object is
-             created with 2 subplots arranged in 1 row, a figure size of 8x4, line width of 3.0, and edge color 'k'.
+            figObj (plt.Figure, optional): An optional matplotlib Figure object. If not provided, a new Figure object is created with 2 subplots arranged in 1 row, a figure size of 8x4, line width of 3.0, and edge color 'k'.
 
         Returns:
             fig (plt.Figure): The resulting matplotlib Figure object.
@@ -106,12 +110,10 @@ class GraphicalAnalysisPlot(ABC):
         arguments for `matplotlib.pyplot.plot`.
 
         Args:
-            pl_kwargs (dict, optional): A dictionary of keyword arguments to be passed to `matplotlib.pyplot.plot` for
-            styling the points. If not provided, the points are plotted with line width=1, alpha=0.9, marker size=8,
-            marker style='.', z-order=1, and color='black'.
+            pl_kwargs (dict, optional): A dictionary of keyword arguments to be passed to `matplotlib.pyplot.plot` for styling the points. If not provided, the points are plotted with ``line width=1``, ``alpha=0.9``, ``marker size=8``, ``marker style='.'``, ``z-order=1``, and ``color='black'``.
 
         Raises:
-            ValueError: If pl_kwargs contains an argument not supported by `matplotlib.pyplot.plot`.
+            ValueError: If pl_kwargs contains an argument not supported by ``matplotlib.pyplot.plot``.
         """
         if pl_kwargs is None:
             for ax in self.ax_list:
@@ -129,9 +131,7 @@ class GraphicalAnalysisPlot(ABC):
         arguments for `matplotlib.pyplot.axvspan`.
 
         Args:
-            pl_kwargs (dict, optional): A dictionary of keyword arguments to be passed to `matplotlib.pyplot.axvspan`
-                for styling the shaded region. If not provided, the region is shaded with color='gray', alpha=0.2,
-                and z-order=0.
+            pl_kwargs (dict, optional): A dictionary of keyword arguments to be passed to `matplotlib.pyplot.axvspan` for styling the shaded region. If not provided, the region is shaded with ``color='gray'``, ``alpha=0.2``, and ``z-order=0``.
 
         Raises:
             ValueError: If pl_kwargs contains an argument not supported by `matplotlib.pyplot.axvspan`.
@@ -153,12 +153,10 @@ class GraphicalAnalysisPlot(ABC):
         a dictionary of keyword arguments for `matplotlib.pyplot.plot`.
 
         Args:
-            pl_kwargs (dict, optional): A dictionary of keyword arguments to be passed to `matplotlib.pyplot.plot`
-                for styling the points. If not provided, the points are plotted as blue circles with alpha=0.9,
-                marker size='5', and z-order=2.
+            pl_kwargs (dict, optional): A dictionary of keyword arguments to be passed to ``matplotlib.pyplot.plot`` for styling the points. If not provided, the points are plotted as blue circles with alpha=0.9, marker size='5', and z-order=2.
 
         Raises:
-            ValueError: If pl_kwargs contains an argument not supported by `matplotlib.pyplot.plot`.
+            ValueError: If pl_kwargs contains an argument not supported by ``matplotlib.pyplot.plot``.
         """
         t_thresh = self.t_thresh_idx
         if pl_kwargs is None:
@@ -177,9 +175,7 @@ class GraphicalAnalysisPlot(ABC):
         arguments for `matplotlib.pyplot.plot`.
 
         Args:
-            pl_kwargs (dict, optional): A dictionary of keyword arguments to be passed to `matplotlib.pyplot.plot`
-                for styling of the line. If not provided, the line is plotted as an orange solid line with line
-                width=2.5, z-order=3, and labelled using the `generate_label_from_fit_params` method.
+            pl_kwargs (dict, optional): A dictionary of keyword arguments to be passed to `matplotlib.pyplot.plot` for styling of the line. If not provided, the line is plotted as an orange solid line with line ``width=2.5``, ``z-order=3``, and labelled using the :meth:`generate_label_from_fit_params` method.
 
         Raises:
             ValueError: If pl_kwargs contains an argument not supported by `matplotlib.pyplot.plot`.
@@ -224,10 +220,11 @@ class GraphicalAnalysisPlot(ABC):
             ValueError: If any of the keyword argument dictionaries contain unsupported arguments.
 
         See Also:
-            * :func:`add_data_plots`: Method used to plot the :math:`x` and :math:`y` data.
-            * :func:`add_fit_points`: Method used to plot the fit points.
-            * :func:`add_fit_lines`: Method used to plot the line of best fit.
-            * :func:`add_shading_plots`: Method used to add shading to the plots.
+            * :meth:`add_data_plots`: Method used to plot the :math:`x` and :math:`y` data.
+            * :meth:`add_fit_points`: Method used to plot the fit points.
+            * :meth:`add_fit_lines`: Method used to plot the line of best fit.
+            * :meth:`add_shading_plots`: Method used to add shading to the plots.
+            
         """
         if plot_data:
             self.add_data_plots(pl_kwargs=data_kwargs)
@@ -268,8 +265,8 @@ class GraphicalAnalysisPlot(ABC):
 
         See Also:
             * :func:`add_plots`: Composite function that adds different types of plots.
-            * :func:`add_figure_axes_labels_and_legend`: Adds labels and a legend to the figure. (To be implemented in a
-            specific class)
+            * :func:`add_figure_axes_labels_and_legend`: Adds labels and a legend to the figure. (To be implemented in a specific class)
+            
         """
         self.add_plots(plot_data=plot_data,
                        plot_fit_points=plot_fit_points,
@@ -294,8 +291,8 @@ class GraphicalAnalysisPlot(ABC):
 
         See Also:
             * :func:`calculate_valid_indicies_and_x_and_y`: Method used to generate the x and y values.
-            * :func:`pet_cli.graphical_analysis.fit_line_to_data_using_lls_with_rsquared`: Method used to fit a line to data
-            points using Least Square fitting with R-squared value.
+            * :func:`pet_cli.graphical_analysis.fit_line_to_data_using_lls_with_rsquared`: Method used to fit a line to data points using Least Square fitting with R-squared value.
+            
         """
         t_thresh = self.t_thresh_idx
         fit_params = pet_grph.fit_line_to_data_using_lls_with_rsquared(xdata=self.x[t_thresh:], ydata=self.y[t_thresh:])
@@ -325,7 +322,7 @@ class GraphicalAnalysisPlot(ABC):
             NotImplementedError: This method needs to be implemented in a subclass.
             
         Example Implementation:
-            * :meth:`PatlakPlot.calculate_valid_indicies_and_x_and_y`: This class provides an example implementation of
+            :meth:`PatlakPlot.calculate_valid_indicies_and_x_and_y`: This class provides an example implementation of
             this method in a concrete subclass.
             
         """
@@ -340,14 +337,15 @@ class GraphicalAnalysisPlot(ABC):
         'fit_params', and formats them into a string that can be used as a label on plots or reports.
 
         Note:
-            * This abstract method must be implemented in each subclass representing a different analysis method.
+            This abstract method must be implemented in each subclass representing a different analysis method.
 
         Raises:
             NotImplementedError: This method needs to be implemented in a subclass.
 
         Example Implementation:
-            * :meth:`PatlakPlot.generate_label_from_fit_params`: This method provides an example implementation of this
+            :meth:`PatlakPlot.generate_label_from_fit_params`: This method provides an example implementation of this
             abstract method in a concrete subclass. Similarly, :meth:`LoganPlot.generate_label_from_fit_params`.
+            
         """
         raise NotImplementedError("This method must be implemented in a concrete class.")
     
