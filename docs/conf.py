@@ -47,7 +47,7 @@ napoleon_include_private_with_doc = True
 napoleon_use_ivar=True
 
 autodoc_default_options = {'members': True,
-                           'inherited-members': True,
+                           'inherited-members': False,
                            'show-inheritance': True}
 
 html_title = 'PET Processing Module'

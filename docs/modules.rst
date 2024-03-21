@@ -1,0 +1,18 @@
+Modules
+=======
+
+.. toctree::
+   :maxdepth: 2
+
+   pet_cli.image_io
+   pet_cli.tac_interpolation
+   pet_cli.tcms_as_convolutions
+   pet_cli.graphical_analysis
+   pet_cli.parametric_images
+   pet_cli.graphical_plots
+   pet_cli.blood_input
+   pet_cli.image_operations_4d
+   pet_cli.math_lib
+
+
+

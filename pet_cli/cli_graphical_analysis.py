@@ -1,7 +1,4 @@
 """
-CLI - Graphical Analysis
-========================
-
 Command-line interface (CLI) for conducting graphical analysis of PET Time-Activity Curves (TACs).
 
 This module provides a CLI to interact with the graphical_analysis module. It leverages argparse to handle command-line

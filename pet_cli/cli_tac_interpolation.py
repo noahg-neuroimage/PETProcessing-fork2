@@ -1,11 +1,8 @@
 """
-CLI - TAC Interpolation
-------------------------
-
 Command-line interface (CLI) for interpolating Time-Activity Curves (TACs).
 
 This module provides a CLI to interpolate TACs, enabling the conversion of these curves to a desired time scale. It uses
- argparse to handle command-line arguments.
+argparse to handle command-line arguments.
 
 The user must provide:
     * Input TAC file path
@@ -19,11 +16,16 @@ file.
 An option to print the interpolated TAC to screen is also provided for visual inspection of the results.
 
 Example usage:
-    * `pet-cli-tac-interpolation --input-tac-path /path/to/input.tac --output-tac-path /path/to/output.tac --delta-time 0.1`
-    * `pet-cli-tac-interpolation --input-tac-path /path/to/input.tac --output-tac-path /path/to/output.tac --samples-before-max 4`
+    .. code-block:: bash
+    
+        pet-cli-tac-interpolation --input-tac-path /path/to/input.tac --output-tac-path /path/to/output.tac --delta-time 0.1
+        
+    .. code-block:: bash
+        
+        pet-cli-tac-interpolation --input-tac-path /path/to/input.tac --output-tac-path /path/to/output.tac --samples-before-max 4
     
 See also:
-    * :mod:`pet_cli.tac_interpolation` - module for performing interpolation on PET Time-Activity Curves (TACs).
+    * :mod:`tac_interpolation <pet_cli.tac_interpolation>` - module for performing interpolation on PET Time-Activity Curves (TACs).
 
 TODO:
     * Refactor the reading and writing of TACs when IO module is mature.

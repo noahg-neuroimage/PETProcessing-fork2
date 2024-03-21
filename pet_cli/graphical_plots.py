@@ -417,7 +417,8 @@ class PatlakPlot(GraphicalAnalysisPlot):
     The class also provides a capability to add labels, legends and title to the figure  to present the data in a
     meaningful way.
 
-    Note: The class inherits from the :class:`GraphicalAnalysisPlot` abstract base class.
+    Note:
+        The class inherits from the :class:`GraphicalAnalysisPlot` abstract base class.
 
     Example:
         In the proceeding examples, ``pTAC`` represent the plasma TAC (or input TAC) and ``tTAC`` represents the tissue TAC.
@@ -556,7 +557,8 @@ class LoganPlot(GraphicalAnalysisPlot):
     The class also provides a capability to add labels, legends and title to the figure to present the data in a
     meaningful way.
 
-    Note: The class inherits from the :class:`GraphicalAnalysisPlot` abstract base class.
+    Note:
+        The class inherits from the :class:`GraphicalAnalysisPlot` abstract base class.
 
     Example:
         In the proceeding examples, ``pTAC`` represent the plasma TAC (or input TAC) and ``tTAC`` represents the tissue
@@ -695,7 +697,8 @@ class AltLoganPlot(GraphicalAnalysisPlot):
     The class also provides a capability to add labels, legends and title to the figure to present the data in a
     meaningful way.
 
-    Note: The class inherits from the :class:`GraphicalAnalysisPlot` abstract base class.
+    Note:
+        The class inherits from the :class:`GraphicalAnalysisPlot` abstract base class.
 
     Example:
         In the proceeding examples, ``pTAC`` represent the plasma TAC (or input TAC) and ``tTAC`` represents the tissue TAC.
