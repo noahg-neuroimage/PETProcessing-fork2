@@ -114,7 +114,9 @@ class GraphicalAnalysisPlot(ABC):
         arguments for `matplotlib.pyplot.plot`.
 
         Args:
-            pl_kwargs (dict, optional): A dictionary of keyword arguments to be passed to `matplotlib.pyplot.plot` for styling the points. If not provided, the points are plotted with ``line width=1``, ``alpha=0.9``, ``marker size=8``, ``marker style='.'``, ``z-order=1``, and ``color='black'``.
+            pl_kwargs (dict, optional): A dictionary of keyword arguments to be passed to `matplotlib.pyplot.plot` for
+                styling the points. If not provided, the points are plotted with ``line width=1``, ``alpha=0.9``,
+                ``marker size=8``, ``marker style='.'``, ``z-order=1``, and ``color='black'``.
 
         Raises:
             ValueError: If pl_kwargs contains an argument not supported by ``matplotlib.pyplot.plot``.
@@ -135,7 +137,9 @@ class GraphicalAnalysisPlot(ABC):
         arguments for `matplotlib.pyplot.axvspan`.
 
         Args:
-            pl_kwargs (dict, optional): A dictionary of keyword arguments to be passed to `matplotlib.pyplot.axvspan` for styling the shaded region. If not provided, the region is shaded with ``color='gray'``, ``alpha=0.2``, and ``z-order=0``.
+            pl_kwargs (dict, optional): A dictionary of keyword arguments to be passed to `matplotlib.pyplot.axvspan`
+                for styling the shaded region. If not provided, the region is shaded with ``color='gray'``,
+                ``alpha=0.2``, and ``z-order=0``.
 
         Raises:
             ValueError: If pl_kwargs contains an argument not supported by `matplotlib.pyplot.axvspan`.
@@ -157,7 +161,9 @@ class GraphicalAnalysisPlot(ABC):
         a dictionary of keyword arguments for `matplotlib.pyplot.plot`.
 
         Args:
-            pl_kwargs (dict, optional): A dictionary of keyword arguments to be passed to ``matplotlib.pyplot.plot`` for styling the points. If not provided, the points are plotted as blue circles with alpha=0.9, marker size='5', and z-order=2.
+            pl_kwargs (dict, optional): A dictionary of keyword arguments to be passed to ``matplotlib.pyplot.plot``
+            for styling the points. If not provided, the points are plotted as blue circles with alpha=0.9,
+             marker size='5', and z-order=2.
 
         Raises:
             ValueError: If pl_kwargs contains an argument not supported by ``matplotlib.pyplot.plot``.
@@ -179,7 +185,9 @@ class GraphicalAnalysisPlot(ABC):
         arguments for `matplotlib.pyplot.plot`.
 
         Args:
-            pl_kwargs (dict, optional): A dictionary of keyword arguments to be passed to `matplotlib.pyplot.plot` for styling of the line. If not provided, the line is plotted as an orange solid line with line ``width=2.5``, ``z-order=3``, and labelled using the :meth:`generate_label_from_fit_params` method.
+            pl_kwargs (dict, optional): A dictionary of keyword arguments to be passed to `matplotlib.pyplot.plot` for
+                styling of the line. If not provided, the line is plotted as an orange solid line with line
+                ``width=2.5``, ``z-order=3``, and labelled using the :meth:`generate_label_from_fit_params` method.
 
         Raises:
             ValueError: If pl_kwargs contains an argument not supported by `matplotlib.pyplot.plot`.

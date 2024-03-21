@@ -3,25 +3,16 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to PET Processing Module's documentation!
-=================================================
+###################################
+PET Processing Module Documentation
+###################################
 
 .. toctree::
-   :maxdepth: 2
-   :caption: Contents:
+   :maxdepth: 1
+   :caption: API Reference:
 
-   pet_cli.tcms_as_convolutions
-   pet_cli.tac_interpolation
-   pet_cli.parametric_images
-   pet_cli.graphical_analysis
-   pet_cli.graphical_plots
-   pet_cli.blood_input
-   pet_cli.cli_graphical_analysis
-   pet_cli.cli_graphical_plots
-   pet_cli.cli_tac_interpolation
-   pet_cli.image_io
-   pet_cli.image_operations_4d
-   pet_cli.math_lib
+   modules
+   cli_ref
 
 
 
