@@ -19,11 +19,12 @@ This script uses the :class:'pet_cli.parametric_images.GraphicalAnalysisParametr
 the images.
 
 Example usage:
-     pet-cli-parametric-image --input-tac-path /path/to/input.tac --pet4D-img-path /path/to/pet4D.img
-        --threshold-in-mins 30.0 --method-name patlak --output-directory ./images --output-filename-prefix image
+    .. code-block:: bash
+    
+         pet-cli-parametric-image --input-tac-path /path/to/input.tac --pet4D-img-path /path/to/pet4D.img --threshold-in-mins 30.0 --method-name patlak --output-directory ./images --output-filename-prefix image
 
-See also:
-    * :mod:`pet_cli.parametric_images` - module for initiating and saving the graphical analysis of PET parametric images.
+See Also:
+    :mod:`pet_cli.parametric_images` - module for initiating and saving the graphical analysis of PET parametric images.
 
 """
 

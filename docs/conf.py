@@ -33,15 +33,29 @@ language = 'English (US)'
 html_theme = 'pydata_sphinx_theme'
 html_static_path = ['_static']
 
+add_function_parentheses = False
 add_module_names = False
 autoclass_content = 'both'
 todo_include_todos = True
-napoleon_include_init_with_doc = False
-napoleon_include_private_with_doc = True
-napoleon_use_ivar=True
+
 autodoc_member_order = 'bysource'
 autosummary_generate = True
 autodoc_docstring_signature = True
 
+napoleon_include_init_with_doc = False
+napoleon_include_private_with_doc = True
+napoleon_use_ivar=True
+
+autodoc_default_options = {'members': True,
+                           'inherited-members': True,
+                           'show-inheritance': True}
 
 html_title = 'PET Processing Module'
+
+
+intersphinx_mapping = {
+    'scipy': ('https://docs.scipy.org/doc/scipy/', None),
+    'matplotlib': ('https://matplotlib.org/stable/', None),
+    'numpy': ('https://numpy.org/doc/stable/', None),
+    'numba': ('https://numba.readthedocs.io/en/stable/', None),
+}

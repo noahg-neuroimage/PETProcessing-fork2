@@ -3,14 +3,14 @@ TCMs As Convolutions
 ====================
 
 This module contains a collection of functions to compute Time-Activity Curves (TACs) for common Tissue Compartment
- Models (TCMs). These models are commonly used for kinetic analysis of PET TACs.
+Models (TCMs). These models are commonly used for kinetic analysis of PET TACs.
 
 Notes:
-    All response functions in this module are decorated with ``numba.njit()``. It compiles the function to machine code
-    at runtime (Just-In-Time compilation), which usually provides a significant speed-up.
+    All response functions in this module are decorated with :func:`numba.jit`. It compiles the function to
+    machine code at runtime (Just-In-Time compilation), which usually provides a significant speed-up.
 
 Requires:
-    The module relies on the ``numpy`` and ``numba`` libraries.
+    The module relies on the :doc:`numpy <numpy:index>` and :doc:`numba <numba:index>` modules.
 
 TODO:
     Add the derivations of the solutions to the Tissue Compartment Models in the module docstring.

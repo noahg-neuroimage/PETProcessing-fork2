@@ -86,7 +86,8 @@ class GraphicalAnalysisPlot(ABC):
         its Axes.
 
         Args:
-            figObj (plt.Figure, optional): An optional matplotlib Figure object. If not provided, a new Figure object is created with 2 subplots arranged in 1 row, a figure size of 8x4, line width of 3.0, and edge color 'k'.
+            figObj (plt.Figure, optional): An optional matplotlib Figure object. If not provided, a new Figure object is
+                created with 2 subplots arranged in 1 row, a figure size of 8x4, line width of 3.0, and edge color 'k'.
 
         Returns:
             fig (plt.Figure): The resulting matplotlib Figure object.
@@ -134,7 +135,7 @@ class GraphicalAnalysisPlot(ABC):
 
         This method shades a vertical span on each Axes in the instance's Axes list, from the x-value at the threshold
         index to the last x-value. The style of the shaded region can be customized by passing a dictionary of keyword
-        arguments for `matplotlib.pyplot.axvspan`.
+        arguments for :func:`matplotlib.pyplot.axvspan`.
 
         Args:
             pl_kwargs (dict, optional): A dictionary of keyword arguments to be passed to `matplotlib.pyplot.axvspan`
@@ -142,7 +143,7 @@ class GraphicalAnalysisPlot(ABC):
                 ``alpha=0.2``, and ``z-order=0``.
 
         Raises:
-            ValueError: If pl_kwargs contains an argument not supported by `matplotlib.pyplot.axvspan`.
+            ValueError: If pl_kwargs contains an argument not supported by :func:`matplotlib.pyplot.axvspan`.
         """
         x_lo, x_hi = self.x[self.t_thresh_idx], self.x[-1]
         if pl_kwargs is None:
@@ -156,17 +157,17 @@ class GraphicalAnalysisPlot(ABC):
         """
         Add fit points to the Axes in the instance's Axes list.
 
-        This method plots the instance's :math:`x` and :math:`y` values that were used in fitting, i.e., the points past the threshold
-        index, on each Axes in the instance's Axes list. The style of the plotted points can be customized by passing
-        a dictionary of keyword arguments for `matplotlib.pyplot.plot`.
+        This method plots the instance's :math:`x` and :math:`y` values that were used in fitting, i.e., the points past
+        the threshold index, on each Axes in the instance's Axes list. The style of the plotted points can be customized
+        by passing a dictionary of keyword arguments for :func:`matplotlib.pyplot.plot`.
 
         Args:
-            pl_kwargs (dict, optional): A dictionary of keyword arguments to be passed to ``matplotlib.pyplot.plot``
-            for styling the points. If not provided, the points are plotted as blue circles with alpha=0.9,
-             marker size='5', and z-order=2.
+            pl_kwargs (dict, optional): A dictionary of keyword arguments to be passed to :func:`matplotlib.pyplot.plot`
+                for styling the points. If not provided, the points are plotted as blue circles with ``alpha=0.9``,
+                ``markersize=5``, and ``zorder=2``.
 
         Raises:
-            ValueError: If pl_kwargs contains an argument not supported by ``matplotlib.pyplot.plot``.
+            ValueError: If pl_kwargs contains an argument not supported by :func:`matplotlib.pyplot.plot`.
         """
         t_thresh = self.t_thresh_idx
         if pl_kwargs is None:
@@ -182,15 +183,15 @@ class GraphicalAnalysisPlot(ABC):
 
         This method plots the line of best fit based on the instance's fit parameters (slope and intercept) on each
         Axes in the instance's Axes list. The style of the line can be customized by passing a dictionary of keyword
-        arguments for `matplotlib.pyplot.plot`.
+        arguments for :func:`matplotlib.pyplot.plot`.
 
         Args:
-            pl_kwargs (dict, optional): A dictionary of keyword arguments to be passed to `matplotlib.pyplot.plot` for
-                styling of the line. If not provided, the line is plotted as an orange solid line with line
+            pl_kwargs (dict, optional): A dictionary of keyword arguments to be passed to :func:`matplotlib.pyplot.plot`
+                for styling of the line. If not provided, the line is plotted as an orange solid line with line
                 ``width=2.5``, ``z-order=3``, and labelled using the :meth:`generate_label_from_fit_params` method.
 
         Raises:
-            ValueError: If pl_kwargs contains an argument not supported by `matplotlib.pyplot.plot`.
+            ValueError: If pl_kwargs contains an argument not supported by :func:`matplotlib.pyplot.plot`.
         """
         y = self.x * self.fit_params['slope'] + self.fit_params['intercept']
         if pl_kwargs is None:

@@ -25,8 +25,8 @@ Example usage:
     
         pet-cli-graph-analysis --input-tac-path /path/to/input.tac --roi-tac-path /path/to/roi.tac --threshold-in-mins 30.0 --method-name patlak --output-directory ./analysis --output-filename-prefix analysis
 
-See also:
-    * :mod:`pet_cli.graphical_analysis` - module responsible for conducting and saving graphical analysis of PET TACs.
+See Also:
+    :mod:`pet_cli.graphical_analysis` - module responsible for conducting and saving graphical analysis of PET TACs.
 
 """
 
