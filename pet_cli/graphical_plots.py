@@ -1,7 +1,22 @@
 """
-Graphical Analysis Plots
-========================
+This module contains the plotting functionalities for the project. It contains various classes that handle different
+types of plots.
 
+Classes defined in this module are:
+    - :class:`GraphicalAnalysisPlot`: It handles various parameters for graphical plot analysis. Provides
+      functionalities for generating figures, adding plot data, shading, and more.
+    - :class:`PatlakPlot`: This class is responsible for plotting functionalities specific to Patlak method. It includes
+      methods for calculating indexes, generating labels, and more.
+    - :class:`LoganPlot`: This class handles plotting functionalities for the Logan method. It also includes methods for
+      calculating indexes, generating labels, etc.
+    - :class:`AltLoganPlot`: This class is primarily for enhancing the LoganPlot with additional or alternate features.
+    - :class:`Plot`: A general plot class that handles common plot factors such as output directory, method name, ROI
+      TAC paths, etc. It includes utilities for validating file path, directory and more.
+
+Functions and methods in this module use :mod:`matplotlib` and :mod:`numpy` packages for creating and manipulating
+plots.
+
+Please refer to the documentation of each class for more detailed information.
 """
 
 
@@ -36,7 +51,8 @@ class GraphicalAnalysisPlot(ABC):
         fit_params (dict): The parameters fit to the data using least squares. Contains 'slope', 'intercept', and
             'r_squared' (calculated in specific implementations).
 
-    Note:
+    .. important::
+    
         This is an abstract class and should be inherited by a concrete class that implements the following methods:
             * :func:`calculate_valid_indicies_and_x_and_y`
             * :func:`generate_label_from_fit_params`
@@ -62,7 +78,7 @@ class GraphicalAnalysisPlot(ABC):
 
         Raises:
             matplotlib error: Error handling for the plot generation is managed by matplotlib. Any exceptions thrown
-                during plotting are handled by the matplotlib library internally.
+                during plotting are handled by the :mod:`matplotlib` internally.
         """
         self.pTAC: np.ndarray = pTAC[:]
         self.tTAC: np.ndarray = tTAC[:]
@@ -116,8 +132,8 @@ class GraphicalAnalysisPlot(ABC):
 
         Args:
             pl_kwargs (dict, optional): A dictionary of keyword arguments to be passed to `matplotlib.pyplot.plot` for
-                styling the points. If not provided, the points are plotted with ``line width=1``, ``alpha=0.9``,
-                ``marker size=8``, ``marker style='.'``, ``z-order=1``, and ``color='black'``.
+                styling the points. If not provided, the points are plotted with ``linewidth=1``, ``alpha=0.9``,
+                ``markersize=8``, ``markerstyle='.'``, ``zorder=1``, and ``color='black'``.
 
         Raises:
             ValueError: If pl_kwargs contains an argument not supported by ``matplotlib.pyplot.plot``.
@@ -140,7 +156,7 @@ class GraphicalAnalysisPlot(ABC):
         Args:
             pl_kwargs (dict, optional): A dictionary of keyword arguments to be passed to `matplotlib.pyplot.axvspan`
                 for styling the shaded region. If not provided, the region is shaded with ``color='gray'``,
-                ``alpha=0.2``, and ``z-order=0``.
+                ``alpha=0.2``, and ``zorder=0``.
 
         Raises:
             ValueError: If pl_kwargs contains an argument not supported by :func:`matplotlib.pyplot.axvspan`.
@@ -188,7 +204,7 @@ class GraphicalAnalysisPlot(ABC):
         Args:
             pl_kwargs (dict, optional): A dictionary of keyword arguments to be passed to :func:`matplotlib.pyplot.plot`
                 for styling of the line. If not provided, the line is plotted as an orange solid line with line
-                ``width=2.5``, ``z-order=3``, and labelled using the :meth:`generate_label_from_fit_params` method.
+                ``linewidth=2.5``, ``zorder=3``, and labelled using the :meth:`generate_label_from_fit_params` method.
 
         Raises:
             ValueError: If pl_kwargs contains an argument not supported by :func:`matplotlib.pyplot.plot`.
@@ -278,7 +294,8 @@ class GraphicalAnalysisPlot(ABC):
 
         See Also:
             * :func:`add_plots`: Composite function that adds different types of plots.
-            * :func:`add_figure_axes_labels_and_legend`: Adds labels and a legend to the figure. (To be implemented in a specific class)
+            * :func:`add_figure_axes_labels_and_legend`: Adds labels and a legend to the figure.
+              (To be implemented in a specific class)
             
         """
         self.add_plots(plot_data=plot_data,
@@ -304,7 +321,8 @@ class GraphicalAnalysisPlot(ABC):
 
         See Also:
             * :func:`calculate_valid_indicies_and_x_and_y`: Method used to generate the x and y values.
-            * :func:`pet_cli.graphical_analysis.fit_line_to_data_using_lls_with_rsquared`: Method used to fit a line to data points using Least Square fitting with R-squared value.
+            * :func:`pet_cli.graphical_analysis.fit_line_to_data_using_lls_with_rsquared`: Method used to fit a line to
+              data points using Least Square fitting with R-squared value.
             
         """
         t_thresh = self.t_thresh_idx

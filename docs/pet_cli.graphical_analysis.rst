@@ -1,5 +1,5 @@
-pet\_cli.graphical\_analysis module
-===================================
+Graphical Analysis Of TACs
+==========================
 
 .. automodule:: pet_cli.graphical_analysis
    :members:

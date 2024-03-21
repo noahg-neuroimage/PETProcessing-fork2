@@ -1,7 +1,4 @@
 """
-Parametric Images Module
-========================
-
 This module provides functions and a key class, :class:`GraphicalAnalysisParametricImage`, for graphical analysis and
 creation of parametric images of 4D-PET scan data. It heavily utilizes :mod:`numpy` for data manipulation and assumes
 the input as 4D PET images along with other required inputs.

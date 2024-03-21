@@ -1,5 +1,5 @@
-pet\_cli.tcms\_as\_convolutions module
-======================================
+TCMs As Convolutions
+====================
 
 .. automodule:: pet_cli.tcms_as_convolutions
    :members:

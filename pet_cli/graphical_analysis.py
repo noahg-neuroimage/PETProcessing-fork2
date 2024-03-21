@@ -1,9 +1,4 @@
 """
-Graphical Analysis
-==================
-
-This is the 'graphical_analysis' module.
-
 This module provides functions and a key class, :class:`GraphicalAnalysis`, for performing graphical analysis on Time
 Activity Curve (TAC) data. It heavily utilizes Numpy and supports various analysis methods like Patlak, Logan, and
 alternative Logan analysis.

@@ -1,5 +1,5 @@
-pet\_cli.tac\_interpolation module
-==================================
+TAC Interpolation
+=================
 
 .. automodule:: pet_cli.tac_interpolation
    :members:

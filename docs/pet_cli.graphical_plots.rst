@@ -1,5 +1,5 @@
-pet\_cli.graphical\_plots module
-================================
+Graphical Analysis Plots
+========================
 
 .. automodule:: pet_cli.graphical_plots
    :members:
