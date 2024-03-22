@@ -3,6 +3,7 @@
 """
 import os
 import json
+import re
 import ants
 import nibabel
 from nibabel import processing
@@ -93,6 +94,8 @@ def motion_correction(
     pet_moco_fd = pet_moco_ants_dict['FD']
     pet_moco_np = pet_moco_ants.numpy()
     pet_moco_nibabel = ants.to_nibabel(pet_moco_ants)
+    copy_meta_path = re.sub('.nii.gz|.nii','.json',out_image_path)
+    image_io.copy_meta(image_io.ImageIO.load_meta(input_image_4d_path),copy_meta_path)
     nibabel.save(pet_moco_nibabel,out_image_path)
     if verbose:
         print(f"(ImageOps4d): motion corrected image saved to {out_image_path}")
@@ -210,16 +213,14 @@ def write_tacs(
     for region_pair in regions_list:
         region_index, region_name = region_pair
         region_json = {'region_name': region_name}
-        series_means = mask_image_to_vals(
+        region_json['frame_start_time'] = pet_meta['FrameTimesStart']
+        region_json['activity'] = mask_image_to_vals(
             input_image_4d_path=input_image_4d_path,
             segmentation_image_path=segmentation_image_path,
             values=[region_index],
             verbose=verbose
         ).tolist()
-        region_json['frame_start_time'] = pet_meta['FrameTimesStart']
-        region_json['activity'] = series_means
-        tac_path = os.path.join(f'{out_tac_path}','tacs')
-        with open(os.path.join(tac_path,f'-{region_name}-tac.json'),
+        with open(os.path.join(out_tac_path,f'tac-{region_name}.json'),
                     'w',encoding='ascii') as out_file:
             json.dump(obj=region_json,fp=out_file,indent=4)
 
@@ -379,20 +380,12 @@ class ImageOps4D():
         region. Writes a JSON for each region with region name, frame start time, and mean 
         value within region.
         """
-        pet_meta = image_io.ImageIO.load_meta(self.image_paths['pet'])
-        with open(self.color_table_path,'r',encoding='utf-8') as color_table_file:
-            color_table = json.load(color_table_file)
-        regions_list = color_table['data']
-        res = True
-        for region_pair in regions_list:
-            region_index, region_name = region_pair
-            region_json = {'region_name': region_name}
-            series_means = self.run_mask_image_to_vals([region_index],resample_seg=res).tolist()
-            res=False
-            region_json['frame_start_time'] = pet_meta['FrameTimesStart']
-            region_json['activity'] = series_means
-            tac_path = os.path.join(f'{self.out_path}','tacs')
-            os.makedirs(tac_path,exist_ok=True)
-            with open(os.path.join(tac_path,f'{self.sub_id}-{region_name}-tac.json'),
-                      'w',encoding='ascii') as out_file:
-                json.dump(obj=region_json,fp=out_file,indent=4)
+        tac_path = os.path.join(f'{self.out_path}','tacs')
+        os.makedirs(tac_path,exist_ok=True)
+        write_tacs(
+            input_image_4d_path=self.image_paths['pet_moco_reg'],
+            color_table_path=self.color_table_path,
+            segmentation_image_path=self.image_paths['seg_resampled'],
+            out_tac_path=tac_path,
+            verbose=self.verbose
+        )

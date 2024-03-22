@@ -9,6 +9,24 @@ import nibabel
 from nibabel.filebasedimages import FileBasedHeader, FileBasedImage
 import numpy as np
 
+
+def make_path(args):
+    """
+    Join paths and create any necessary directories, if necessary.
+    """
+    out_path = os.path.join(args)
+    os.makedirs(out_path,exist_ok=True)
+    return out_path
+
+
+def copy_meta(meta_file,copy_path):
+    """
+    Copy a metadata file in python to another directory.
+    """
+    with open(copy_path,'w',encoding='utf-8') as copy_file:
+        json.dump(meta_file,copy_file,indent=4)
+
+
 class ImageIO():
     """
     Class handling 3D and 4D image file utilities.
