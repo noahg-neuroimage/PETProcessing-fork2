@@ -68,15 +68,26 @@ class EvenlyInterpolate:
         resample_times (np.ndarray): Array containing evenly spaced TAC times.
         resample_vals (np.ndarray): Interpolated activities at the calculated resample times.
     """
-    def __init__(self, tac_times: np.ndarray[float], tac_values: np.ndarray[float], delta_time: float) -> None:
-        r"""Constructor for EvenlyInterpolate.
-        
-        Uses ``scipy.interpolate.interp1d`` to perform linear interpolation of the provided TAC.
+    def __init__(self, tac_times: np.ndarray, tac_values: np.ndarray, delta_time: float) -> None:
+        r"""Initializes an instance of the EvenlyInterpolate class for TAC interpolation.
+
+        The constructor takes the Time-Activity Curve (TAC) times and values as inputs, along with a delta time
+        value. It utilizes the SciPy function `scipy.interpolate.interp1d` to perform a linear interpolation of the
+        provided TAC.
+
+        After initializing, it generates an interpolation function based on the TAC times and values. It uses this function
+        to calculate interpolated activities for a new array of evenly spaced times. These times start at the
+        start time of the original TAC and end at the end time, with steps of delta time.
+
 
         Args:
-            tac_times (np.ndarray[float]): The time-points of the provided TAC.
-            tac_values (np.ndarray[float]): The activity values of the provided TAC.
-            delta_time (float): The :math:`\Delta t` for the resampled times.
+            tac_times (np.ndarray): The time-points at which the original TAC activities were sampled.
+                It should be a 1D numpy array with increasing float values.
+            tac_values (np.ndarray): The corresponding activity values of the provided TAC sampled at tac_times.
+                It should be a 1D numpy array of float values.
+            delta_time (float): The time-step to use for the creation of evenly spaced resample times. It should be
+                a positive float value.
+
         """
         self._tac_times = tac_times
         self._tac_values = tac_values
@@ -91,7 +102,7 @@ class EvenlyInterpolate:
         The function combines the resampled times and values into a single numpy array.
 
         Returns:
-            Tuple[np.ndarray, np.ndarray]: A tuple containing two numpy arrays. The first array corresponds to the
+            (np.ndarray): An array containing two numpy arrays. The first array corresponds to the
             resampled times and the second array corresponds to the resampled activity values of the TAC.
             
         """
@@ -112,24 +123,26 @@ class EvenlyInterpolateWithMax(EvenlyInterpolate):
         :class:`EvenlyInterpolate`
         
     """
-    def __init__(self, tac_times: np.ndarray[float], tac_values: np.ndarray[float], samples_before_max: float = 10.0):
+    def __init__(self, tac_times: np.ndarray, tac_values: np.ndarray, samples_before_max: float = 10.0):
         """
         
         Args:
-            tac_times (np.ndarray[float]): The time-points of the provided TAC.
-            tac_values (np.ndarray[float]): The activity values of the provided TAC.
+            tac_times (np.ndarray): The time-points of the provided TAC.
+            tac_values (np.ndarray): The activity values of the provided TAC.
             samples_before_max (float): Number of samples before the max TAC value. Defaults to 10.0.
         """
         self.dt = self.calculate_dt_for_even_spacing_with_max_sampled(tac_times, tac_values, samples_before_max)
         super().__init__(tac_times, tac_values, self.dt)
     
     @staticmethod
-    def calculate_dt_for_even_spacing_with_max_sampled(tac_times: np.ndarray[float],
-                                                       tac_values: np.ndarray[float],
+    def calculate_dt_for_even_spacing_with_max_sampled(tac_times: np.ndarray,
+                                                       tac_values: np.ndarray,
                                                        samples_before_max: float) -> float:
         r"""Calculate :math:`\Delta t` such that TAC is evenly sampled while still sampling the maximum TAC value.
 
-        .. math:: \Delta t = \frac{t_{\mathrm{max} - t_{0}}{N}
+        .. math::
+            
+            \Delta t = \frac{t_{\mathrm{max} - t_{0}}{N}
         
 
         Args:
@@ -138,7 +151,8 @@ class EvenlyInterpolateWithMax(EvenlyInterpolate):
             samples_before_max (float):
 
         Returns:
-            (float): dt such that the TAC is evenly sampled and the TAC max is still explicitly sampled.
+            (float): dt, :math:`\Delta t`, such that the TAC is evenly sampled and the TAC max is still explicitly
+            sampled.
         """
         t_start = tac_times[0]
         t_for_max_val = tac_times[np.argmax(tac_values)]
