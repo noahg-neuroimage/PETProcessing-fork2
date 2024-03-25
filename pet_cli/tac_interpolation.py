@@ -13,6 +13,8 @@ calculation of delta time, :math:`\\Delta t`, to explicitly sample the maximum v
 
 Example:
 
+In the proceeding example, we shall use the two classes to resample a fake TAC. For better visualization, we shall
+plot the resampled TACs shifted in the y-direction.
     
     .. plot::
         :include-source:
@@ -33,10 +35,13 @@ Example:
         even_interp_max = EvenlyInterpolateWithMax(tac_times=tac_times, tac_values=tac_values+0.5, samples_before_max=3)
         resampled_tac_max = even_interp_max.get_resampled_tac()
         
+        # plot the TAC and the resampled TACs
         fig, ax = plt.subplots(1,1, constrained_layout=True, figsize=(8,4))
         plt.plot(tac_times, tac_values, 'ko--', label='Raw TAC', zorder=2)
         plt.plot(*resampled_tac, 'ro-', label='Evenly Resampled TAC', zorder=1)
         plt.plot(*resampled_tac_max, 'bo-', label='Evenly Resampled TAC w/ Max', zorder=0)
+        ax.text(s='Resampled TACS are \\nshifted for visual clarity',
+                x=0.9, y=0.9, ha='right', va='bottom', transform=ax.transAxes, fontsize=16)
         plt.xlabel('Time (s)', fontsize=16)
         plt.ylabel('TAC Value', fontsize=16)
         plt.legend(bbox_to_anchor=(1.0, 0.5), loc='center left')
