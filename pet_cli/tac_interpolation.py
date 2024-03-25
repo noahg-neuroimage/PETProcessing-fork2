@@ -40,8 +40,8 @@ plot the resampled TACs shifted in the y-direction.
         plt.plot(tac_times, tac_values, 'ko--', label='Raw TAC', zorder=2)
         plt.plot(*resampled_tac, 'ro-', label='Evenly Resampled TAC', zorder=1)
         plt.plot(*resampled_tac_max, 'bo-', label='Evenly Resampled TAC w/ Max', zorder=0)
-        ax.text(s='Resampled TACS are \\nshifted for visual clarity',
-                x=0.9, y=0.9, ha='right', va='bottom', transform=ax.transAxes, fontsize=16)
+        ax.text(s='resampled TACS are \\nshifted for visual clarity',
+                x=0.95, y=0.95, ha='right', va='top', transform=ax.transAxes, fontsize=16)
         plt.xlabel('Time (s)', fontsize=16)
         plt.ylabel('TAC Value', fontsize=16)
         plt.legend(bbox_to_anchor=(1.0, 0.5), loc='center left')
