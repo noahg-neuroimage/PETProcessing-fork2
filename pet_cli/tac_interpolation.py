@@ -22,8 +22,8 @@ Example:
         import matplotlib.pyplot as plt
         
         # define some dummy TAC times and values
-        tac_times = np.array([0., 1., 2.5, 4.1, 7.])
-        tac_values = np.array([0., 0.8, 2., 1.5, 0.])
+        tac_times = np.array([0., 1., 2.5, 4.1, 7., 15.0])
+        tac_values = np.array([0., 0.8, 2., 1.5, 0.6, 0.0])
     
         # instantiate EvenlyInterpolate object and resample TAC (and add shift for better visualization)
         even_interp = EvenlyInterpolate(tac_times=tac_times, tac_values=tac_values+0.25, delta_time=1.0)
