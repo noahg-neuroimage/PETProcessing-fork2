@@ -3,6 +3,7 @@ Modules
 
 .. toctree::
    :maxdepth: 2
+   :numbered:
 
    pet_cli.image_io
    pet_cli.tac_interpolation

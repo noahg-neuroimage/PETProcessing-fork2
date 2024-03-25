@@ -1,6 +1,51 @@
 """
-Module for interpolating Time Activity Curves (TACs). Used for evenly interpolating PET TACs which tend to be
-sampled unevenly with respect to time.
+This module provides classes for time-activity curve (TAC) interpolation for Positron Emission Tomography (PET)
+data. It enables the resampling of data evenly with respect to time, which is particularly useful when performing
+convolutions with respect to time. We use :py:class:`scipy.interpolate.interp1d` for the interpolation.
+
+The module comprises two classes: :class:`EvenlyInterpolate` and :class:`EvenlyInterpolateWithMax`.
+
+The :class:`EvenlyInterpolate` class takes in TAC times and values and a specified delta time, :math:`\\Delta t`, to
+resample data by interpolating TACs evenly with respect to time.
+
+The :class:`EvenlyInterpolateWithMax` class extends the functionality of `EvenlyInterpolate` by modifying the
+calculation of delta time, :math:`\\Delta t`, to explicitly sample the maximum value of the TAC.
+
+Example:
+
+    
+    .. plot::
+        :include-source:
+        
+        import numpy as np
+        from pet_cli.tac_interpolation import EvenlyInterpolate, EvenlyInterpolateWithMax
+        import matplotlib.pyplot as plt
+        
+        # define some dummy TAC times and values
+        tac_times = np.array([0., 1., 2.5, 4.1, 7.])
+        tac_values = np.array([0., 0.8, 2., 1.5, 0.])
+    
+        # instantiate EvenlyInterpolate object and resample TAC (and add shift for better visualization)
+        even_interp = EvenlyInterpolate(tac_times=tac_times, tac_values=tac_values+0.25, delta_time=1.0)
+        resampled_tac = even_interp.get_resampled_tac()
+    
+        # instantiate EvenlyInterpolateWithMax object and resample TAC (and add shift for better visualization)
+        even_interp_max = EvenlyInterpolateWithMax(tac_times=tac_times, tac_values=tac_values+0.5, samples_before_max=3)
+        resampled_tac_max = even_interp_max.get_resampled_tac()
+        
+        fig, ax = plt.subplots(1,1, constrained_layout=True, figsize=(8,4))
+        plt.plot(tac_times, tac_values, 'ko--', label='Raw TAC', zorder=2)
+        plt.plot(*resampled_tac, 'ro-', label='Evenly Resampled TAC', zorder=1)
+        plt.plot(*resampled_tac_max, 'bo-', label='Evenly Resampled TAC w/ Max', zorder=0)
+        plt.xlabel('Time (s)', fontsize=16)
+        plt.ylabel('TAC Value', fontsize=16)
+        plt.legend(bbox_to_anchor=(1.0, 0.5), loc='center left')
+        plt.show()
+        
+
+Note:
+    This module utilises :py:class:`scipy.interpolate.interp1d` for linear interpolation. Ensure Scipy is installed for
+    this package to function.
 
 """
 
@@ -16,7 +61,7 @@ class EvenlyInterpolate:
     samples. One way to circumvent this problem is to resample data evenly with respect to the independent variable,
     or time.
 
-    Uses `scipy.interpolate.interp1d` to perform linear interpolation.
+    Uses :py:class:`scipy.interpolate.interp1d` to perform linear interpolation.
 
     Attributes:
         interp_func (scipy.interpolate.interp1d): Interpolation function given the provided TAC.
@@ -54,8 +99,8 @@ class EvenlyInterpolate:
     
     
 class EvenlyInterpolateWithMax(EvenlyInterpolate):
-    r"""A class, extends ``EvenlyInterpolate``, and modifies the :math:`\Delta t` calculation such that the maximum value
-    of the TAC is explicitly sampled.
+    r"""A class, extends :class:`EvenlyInterpolate`, and modifies the :math:`\Delta t` calculation such that the
+    maximum value of the TAC is explicitly sampled.
     
     Attributes:
         interp_func (scipy.interpolate.interp1d): Interpolation function given the provided TAC.
@@ -84,8 +129,7 @@ class EvenlyInterpolateWithMax(EvenlyInterpolate):
                                                        samples_before_max: float) -> float:
         r"""Calculate :math:`\Delta t` such that TAC is evenly sampled while still sampling the maximum TAC value.
 
-        .. math::
-            \Delta t = \frac{t_{\mathrm{max} - t_{0}}{N}
+        .. math:: \Delta t = \frac{t_{\mathrm{max} - t_{0}}{N}
         
 
         Args:

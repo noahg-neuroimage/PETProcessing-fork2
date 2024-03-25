@@ -39,7 +39,6 @@ from . import tac_interpolation as tac_intp
 import os
 
 
-# TODO: Use the safe loading of TACs function from an IO module when it is implemented
 def _safe_load_tac(filename: str) -> np.ndarray:
     """
     Loads time-activity curves (TAC) from a file.
@@ -64,7 +63,6 @@ def _safe_load_tac(filename: str) -> np.ndarray:
         raise e
 
 
-# TODO: Use the safe writing of TACs function from an IO module when it is implemented
 def _safe_write_tac(tac_times: np.ndarray, tac_values: np.ndarray, filename: str) -> None:
     """
     Writes time-activity curves (TAC) to a file.
