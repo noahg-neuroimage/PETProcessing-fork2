@@ -331,7 +331,7 @@ class ImageOps4D():
         verbose (bool): Set to `True` to output processing information.
     
     See Also:
-        :class:`ImageIO`
+        :class: `ImageIO`
     """
     def __init__(self,
         sub_id: str,
