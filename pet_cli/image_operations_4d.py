@@ -133,7 +133,7 @@ def motion_correction(
     pet_moco_np = pet_moco_ants.numpy()
     pet_moco_nibabel = ants.to_nibabel(pet_moco_ants)
     copy_meta_path = re.sub('.nii.gz|.nii','.json',out_image_path)
-    image_io.copy_meta(image_io.ImageIO.load_meta(input_image_4d_path),copy_meta_path)
+    image_io.save_meta(image_io.ImageIO.load_meta(input_image_4d_path),copy_meta_path)
     nibabel.save(pet_moco_nibabel,out_image_path)
     if verbose:
         print(f"(ImageOps4d): motion corrected image saved to {out_image_path}")
