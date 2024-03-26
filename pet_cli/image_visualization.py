@@ -26,6 +26,7 @@ class NiftiGifCreator:
         self.vmax = max(np.max(self.image), np.abs(np.min(self.image)))
         
         self.fig, self.ax = plt.subplots(1, 1, constrained_layout=True)
+        self.cbar = None
         
         self.imKW = {'origin': 'lower',
                      'cmap': 'bwr',
@@ -48,13 +49,17 @@ class NiftiGifCreator:
             img = self.image[:, :, 0].T
         out_im = self.ax.imshow(img, **self.imKW)
         
-        cbar = self.fig.colorbar(out_im, ax=self.ax, shrink=1.0)
-        cbar.set_label('$K_i$ (Infusion Rate)', rotation=270)
-        self.fig.suptitle("Patlak-$K_i$ Parametric Image")
-        out_im.axes.get_xaxis().set_visible(False)
-        out_im.axes.get_yaxis().set_visible(False)
-        
         return out_im
+    
+    def set_figure_title_and_labels(self,
+                                    title: str = "Patlak-$K_i$ Parametric Image",
+                                    cbar_label: str = "$K_i$ (Infusion Rate)"):
+        self.cbar = self.fig.colorbar(self.ani_image, ax=self.ax, shrink=1.0)
+        self.cbar.set_label(cbar_label, rotation=270)
+        self.fig.suptitle(title)
+        self.ani_image.axes.get_xaxis().set_visible(False)
+        self.ani_image.axes.get_yaxis().set_visible(False)
+        
         
         
     def update_frame(self, i, axis):
