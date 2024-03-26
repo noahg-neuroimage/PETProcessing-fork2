@@ -1,4 +1,4 @@
-# PETProcessing
+# PET Processing Module
 
 Test-bed for Brier Lab PET Processing.
 
@@ -11,9 +11,7 @@ python setup.py sdist #Generates a tarball that we can use pip to install
 pip install dist/pet_cli-0.0.1.tar.gz #Installs the package
 ```
 
-## Documentation
-
-### On Windows
+## Generating Documentation
 
 To generate the documentation in HTML using sphinx, assuming we are in the `docs/` directory and that sphinx is
 installed:
