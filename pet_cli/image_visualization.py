@@ -47,7 +47,7 @@ class NiftiGifCreator:
     def make_first_frame(self):
         if self.view in ['x', 'sagittal']:
             img = self.image[0, :, :].T
-        elif self.view == ['y', 'axial']:
+        elif self.view in ['y', 'axial']:
             img = self.image[:, 0, :].T
         else:
             img = self.image[:, :, 0].T
@@ -65,7 +65,7 @@ class NiftiGifCreator:
     def update_frame(self, i):
         if self.view in ['x', 'sagittal']:
             img = self.image[i, :, :].T
-        elif self.view == ['y', 'axial']:
+        elif self.view in ['y', 'axial']:
             img = self.image[:, i, :].T
         else:
             img = self.image[:, :, i].T
@@ -80,7 +80,7 @@ class NiftiGifCreator:
             tot_dims = self.image.shape
             if self.view in ['x', 'sagittal']:
                 num_frames = tot_dims[0]
-            elif self.view == ['y', 'axial']:
+            elif self.view in ['y', 'axial']:
                 num_frames = tot_dims[1]
             else:
                 num_frames = tot_dims[2]
