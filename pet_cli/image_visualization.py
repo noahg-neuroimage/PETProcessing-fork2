@@ -2,8 +2,9 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
-import nibabel
+from . import parametric_images as pet_pim
 
+nifty_loader = pet_pim._safe_load_4dpet_nifty
 
 class NiftiGifCreator:
     def __init__(self,
@@ -19,13 +20,14 @@ class NiftiGifCreator:
         self.output_directory = os.path.abspath(output_directory)
         self.prefix = output_filename_prefix
         
-        self.image = nibabel.load(self.path_to_image).get_fdata()
+        self.image_obj = nifty_loader(self.path_to_image)
+        self.image = self.image_obj.get_fdata()
         
         self.vmax = max(np.max(self.image), np.abs(np.min(self.image)))
         
         self.ani_image = None
         
-        self.fig, self.ax = plt.subplots(1,1, constrained_layout=True)
+        self.fig, self.ax = plt.subplots(1, 1, constrained_layout=True)
         
         self.imKW = {'origin': 'lower',
                      'cmap': 'bwr',
@@ -33,7 +35,7 @@ class NiftiGifCreator:
                      'vmax': self.vmax / 3.,
                      'interpolation': 'none'}
     
-    
     def _validate_view(self):
         if self.view not in ['coronal', 'sagittal', 'axial', 'x', 'y', 'z']:
             raise ValueError("Invalid view. Please choose from 'coronal', 'sagittal', 'axial', 'x', 'y', 'z'.")
+        
