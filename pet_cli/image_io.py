@@ -84,7 +84,7 @@ class ImageIO():
         """
         if not os.path.exists(image_path):
             raise FileNotFoundError(f"Image file {image_path} not found")
-        if not re.search('.nii$ | .nii.gz$',image_path):
+        if not re.search(r'\.nii\.gz$|\.nii$',image_path):
             raise OSError(f"{image_path} does not have the extension .nii or .nii.gz")
         image = nibabel.load(image_path)
 
@@ -237,7 +237,7 @@ class ImageIO():
         """
         if not os.path.exists(image_path):
             raise FileNotFoundError(f"Image file {image_path} not found")
-        meta_path = re.sub('.nii.gz|.nii','.json',image_path)
+        meta_path = re.sub(r'\.nii\.gz$|\.nii$','.json',image_path)
         if not os.path.exists(meta_path):
             raise FileNotFoundError(f"Metadata file {meta_path} not found")
         with open(meta_path,'r',encoding='utf-8') as meta_file:
