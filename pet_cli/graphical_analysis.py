@@ -11,6 +11,8 @@ providing an organized storage of result of an analysis task.
 
 TODO:
     * Check if it makes more sense to lift out the more mathy methods out into a separate module.
+    * Add references for the TCMs and Patlak. Could maybe rely on Turku PET Center.
+    * Handle cases when tac_vals = 0.0. Might be able to use t_thresh so that we are past the 0-values.
     
 """
 
@@ -86,16 +88,16 @@ def fit_line_to_data_using_lls_with_rsquared(xdata: np.ndarray, ydata: np.ndarra
 def cumulative_trapezoidal_integral(xdata: np.ndarray, ydata: np.ndarray, initial: float = 0.0) -> np.ndarray:
     """Calculates the cumulative integral of `ydata` over `xdata` using the trapezoidal rule.
     
-    This function is based `heavily` on the ``scipy.integrate.cumtrapz`` implementation.
-    `source <https://github.com/scipy/scipy/blob/v0.18.1/scipy/integrate/quadrature.py#L206>`_.
-    This implementation only works for 1D arrays and was implemented to work with ``numba``.
+    This function is based `heavily` on the :py:func:`scipy.integrate.cumulative_trapezoid` implementation
+    (`source <https://github.com/scipy/scipy/blob/v1.12.0/scipy/integrate/_quadrature.py#L432-L536>`_).
+    This implementation only works for 1D arrays and was implemented to work with :mod:`numba`.
     
     Args:
         xdata (np.ndarray): Array for the integration coordinate.
         ydata (np.ndarray): Array for the values to integrate
 
     Returns:
-        np.ndarray: Cumulative integral of ``ydata`` over ``xdata``
+        (np.ndarray): Cumulative integral of ``ydata`` over ``xdata`` using the trapezoidal rule.
     """
     dx = np.diff(xdata)
     cum_int = np.zeros(len(xdata))
@@ -105,11 +107,9 @@ def cumulative_trapezoidal_integral(xdata: np.ndarray, ydata: np.ndarray, initia
     return cum_int
 
 
-# TODO: Add references for the TCMs and Patlak. Could maybe rely on Turku PET Center.
-# TODO: Handle cases when tac_vals = 0.0. Might be able to use t_thresh so that we are past the 0-values.
 @numba.njit()
 def calculate_patlak_x(tac_times: np.ndarray, tac_vals: np.ndarray) -> np.ndarray:
-    r"""Calculates the x-variable in Patlak analysis (:math:`\frac{\int_{0}^{T}f(t)\mathrm{d}t}{f(T)}`).
+    r"""Calculates the x-variable in Patlak analysis :math:`\left(\frac{\int_{0}^{T}f(t)\mathrm{d}t}{f(T)}\right)`.
     
     Patlak-Gjedde analysis is a linearization of the 2-TCM with irreversible uptake in the second compartment.
     Therefore, we essentially have to fit a line to some data :math:`y = mx+b`. This function calculates the :math:`x`
@@ -117,7 +117,7 @@ def calculate_patlak_x(tac_times: np.ndarray, tac_vals: np.ndarray) -> np.ndarra
     
     .. math::
     
-        x = \frac{\int_{0}_{T} C_\mathrm{P}(t) \mathrm{d}t}{C_\mathrm{P}(t)},
+        x = \frac{\int_{0}^{T} C_\mathrm{P}(t) \mathrm{d}t}{C_\mathrm{P}(t)},
     
     where further :math:`C_\mathrm{P}` is usually the plasma TAC.
     
@@ -126,7 +126,8 @@ def calculate_patlak_x(tac_times: np.ndarray, tac_vals: np.ndarray) -> np.ndarra
         tac_vals (np.ndarray): Array for activity values at the sampled times.
 
     Returns:
-        np.ndarray: Patlak x-variable. Cumulative integral of activity divided by activity.
+        (np.ndarray): Patlak x-variable. Cumulative integral of activity divided by activity.
+        
     """
     cumulative_integral = cumulative_trapezoidal_integral(xdata=tac_times, ydata=tac_vals, initial=0.0)
     
@@ -146,6 +147,7 @@ def get_index_from_threshold(times_in_minutes: np.ndarray, t_thresh_in_minutes: 
         
     Notes:
         If the threshold value is larger than the array, we return -1.
+        
     """
     if t_thresh_in_minutes > np.max(times_in_minutes):
         return -1
@@ -159,7 +161,8 @@ def patlak_analysis(input_tac_values: np.ndarray,
                     region_tac_values: np.ndarray,
                     tac_times_in_minutes: np.ndarray,
                     t_thresh_in_minutes: float) -> np.ndarray:
-    """Performs Patlak-Gjedde analysis given the input TAC, region TAC, times and threshold.
+    """
+    Performs Patlak analysis given the input TAC, region TAC, times and threshold.
     
     Args:
         input_tac_values (np.ndarray): Array of input TAC values
@@ -168,9 +171,9 @@ def patlak_analysis(input_tac_values: np.ndarray,
         t_thresh_in_minutes (np.ndarray): Threshold time in minutes. Line is fit for all values after the threshold.
 
     Returns:
-        np.ndarray: Array containing :math:`(K_{1}, V_{0})` values.
+        (np.ndarray): Array containing :math:`(K_{i}, V_{0})` values.
     
-    Notes:
+    .. important::
         * We assume that the input TAC and ROI TAC values are sampled at the same times.
     
     """
@@ -189,7 +192,8 @@ def logan_analysis(input_tac_values: np.ndarray,
                    region_tac_values: np.ndarray,
                    tac_times_in_minutes: np.ndarray,
                    t_thresh_in_minutes: float) -> np.ndarray:
-    """Performs Logan analysis on given input TAC, regional TAC, times and threshold.
+    """
+    Performs Logan analysis on given input TAC, regional TAC, times and threshold.
     
     Args:
         input_tac_values (np.ndarray): Array of input TAC values
@@ -198,11 +202,12 @@ def logan_analysis(input_tac_values: np.ndarray,
         t_thresh_in_minutes (np.ndarray): Threshold time in minutes. Line is fit for all values after the threshold.
 
     Returns:
-        np.ndarray: :math:`(V_{d}, \mathrm{Int})`.
+        np.ndarray: :math:`(V_{T}, \mathrm{Int})`.
         
-    Notes:
+    .. important::
         * The interpretation of the values depends on the underlying kinetic model.
         * We assume that the input TAC and ROI TAC values are sampled at the same times.
+        
     """
     
     t_thresh = get_index_from_threshold(times_in_minutes=tac_times_in_minutes, t_thresh_in_minutes=t_thresh_in_minutes)
@@ -229,11 +234,12 @@ def alternative_logan_analysis(input_tac_values: np.ndarray,
         t_thresh_in_minutes (np.ndarray): Threshold time in minutes. Line is fit for all values after the threshold.
 
     Returns:
-        np.ndarray: :math:`(V_{d}, \mathrm{Int})`.
+        np.ndarray: :math:`(V_{T}, \mathrm{Int})`.
 
-    Notes:
+    .. important::
         * The interpretation of the values depends on the underlying kinetic model.
         * We assume that the input TAC and ROI TAC values are sampled at the same times.
+        
     """
     
     t_thresh = get_index_from_threshold(times_in_minutes=tac_times_in_minutes,
@@ -252,7 +258,7 @@ def patlak_analysis_with_rsquared(input_tac_values: np.ndarray,
                     region_tac_values: np.ndarray,
                     tac_times_in_minutes: np.ndarray,
                     t_thresh_in_minutes: float) -> Tuple[float, float, float]:
-    """Performs Patlak-Gjedde analysis given the input TAC, region TAC, times and threshold.
+    """Performs Patlak analysis given the input TAC, region TAC, times and threshold.
 
     Args:
         input_tac_values (np.ndarray): Array of input TAC values
@@ -263,7 +269,7 @@ def patlak_analysis_with_rsquared(input_tac_values: np.ndarray,
     Returns:
         tuple: (slope, intercept, :math:`R^2`)
 
-    Notes:
+    .. important::
         * We assume that the input TAC and ROI TAC values are sampled at the same times.
 
     """
@@ -282,7 +288,8 @@ def logan_analysis_with_rsquared(input_tac_values: np.ndarray,
                    region_tac_values: np.ndarray,
                    tac_times_in_minutes: np.ndarray,
                    t_thresh_in_minutes: float) -> Tuple[float, float, float]:
-    """Performs Logan analysis on given input TAC, regional TAC, times and threshold.
+    """
+    Performs Logan analysis on given input TAC, regional TAC, times and threshold.
 
     Args:
         input_tac_values (np.ndarray): Array of input TAC values
@@ -293,9 +300,10 @@ def logan_analysis_with_rsquared(input_tac_values: np.ndarray,
     Returns:
         tuple: (slope, intercept, :math:`R^2`)
 
-    Notes:
+    .. important::
         * The interpretation of the values depends on the underlying kinetic model.
         * We assume that the input TAC and ROI TAC values are sampled at the same times.
+        
     """
     
     t_thresh = get_index_from_threshold(times_in_minutes=tac_times_in_minutes, t_thresh_in_minutes=t_thresh_in_minutes)
@@ -324,9 +332,10 @@ def alternative_logan_analysis_with_rsquared(input_tac_values: np.ndarray,
     Returns:
         tuple: (slope, intercept, :math:`R^2`)
 
-    Notes:
+    .. important::
         * The interpretation of the values depends on the underlying kinetic model.
         * We assume that the input TAC and ROI TAC values are sampled at the same times.
+        
     """
     
     t_thresh = get_index_from_threshold(times_in_minutes=tac_times_in_minutes, t_thresh_in_minutes=t_thresh_in_minutes)
@@ -363,11 +372,10 @@ def smart_logan_analysis(input_tac_values: np.ndarray,
     Returns:
         np.ndarray: Array of two elements - (slope, intercept) of the best-fit line to the given data.
 
-    Notes:
-        * The interpretation of the returned values depends on
-            the underlying kinetic model.
-        * We assume that the input TAC and ROI TAC values are
-            sampled at the same times.
+    .. important::
+        * The interpretation of the returned values depends on the underlying kinetic model.
+        * We assume that the input TAC and ROI TAC values are sampled at the same times.
+          
     """
     non_zero_indices = np.argwhere(region_tac_values != 0.).T[0]
     
@@ -395,8 +403,9 @@ def smart_alternative_logan_analysis(input_tac_values: np.ndarray,
                                      region_tac_values: np.ndarray,
                                      tac_times_in_minutes: np.ndarray,
                                      t_thresh_in_minutes: float) -> np.ndarray:
-    """Performs Alternative Logan analysis on given input TAC, regional TAC, times and threshold,
-    considering non-zero values for regional TAC.
+    """
+    Performs Alternative Logan analysis on given input TAC, regional TAC, times and threshold, considering non-zero
+    values for regional TAC.
 
     This function is similar to :func:`alternative_logan_analysis_with_rsquared`, but avoids the issue of division by
     zero by only considering non-zero TAC values for the region TAC since it is in the denominator. If the number of
@@ -412,12 +421,10 @@ def smart_alternative_logan_analysis(input_tac_values: np.ndarray,
     Returns:
         np.ndarray: Array of two elements - (slope, intercept) of the best-fit line to the given data.
 
-    Notes:
-        * This function assumes that the input TAC does not have any 0 values.
-        * The interpretation of the returned values depends on
-            the underlying kinetic model.
-        * We assume that the input TAC and ROI TAC values are
-            sampled at the same times.
+    .. important::
+        * The interpretation of the returned values depends on the underlying kinetic model.
+        * We assume that the input TAC and ROI TAC values are sampled at the same times.
+            
     """
     non_zero_indices = np.argwhere(input_tac_values != 0.).T[0]
     
@@ -449,7 +456,7 @@ def get_graphical_analysis_method(method_name: str) -> Callable:
 
     Args:
         method_name (str): The name of the graphical method. This should be one of the following strings: 'patlak',
-        'logan', or 'alt_logan'.
+                           'logan', or 'alt_logan'.
 
     Returns:
         function: A reference to the function that performs the corresponding graphical TAC analysis. The returned
@@ -458,13 +465,24 @@ def get_graphical_analysis_method(method_name: str) -> Callable:
     
     Raises:
         ValueError: If `method_name` is not one of the supported graphical analysis methods, i.e., 'patlak', 'logan', or
-         'alt_logan'.
+                    'alt_logan'.
     
     Example:
-        
-        selected_func = get_graphical_analysis_method('logan')
-        results = selected_func(input_tac_values, tissue_tac_values,
-        tac_times_in_minutes, t_thresh_in_minutes)
+        .. code-block:: python
+            
+            from pet_cli.graphical_analysis import get_graphical_analysis_method as get_method
+            from pet_cli.graphical_analysis import _safe_load_tac as load_tac
+            
+            selected_func = get_method('logan')
+            input_tac_values, tac_times_in_minutes = load_tac("PATH/TO/PLASMA/TAC.tsv")
+            tissue_tac_values, _ = load_tac("PATH/TO/ROI/TAC.tsv")
+            
+            results = selected_func(input_tac_values,
+                                    tissue_tac_values,
+                                    tac_times_in_minutes,
+                                    t_thresh_in_minutes)
+            print(results)
+                                    
     """
     if method_name == "patlak":
         return patlak_analysis
@@ -485,7 +503,7 @@ def get_graphical_analysis_method_with_rsquared(method_name: str) -> Callable:
 
     Args:
         method_name (str): The name of the graphical method. This should be one of the following strings: 'patlak',
-        'logan', or 'alt_logan'.
+                           'logan', or 'alt_logan'.
 
     Returns:
         function: A reference to the function that performs the corresponding graphical TAC analysis. The returned
@@ -494,13 +512,24 @@ def get_graphical_analysis_method_with_rsquared(method_name: str) -> Callable:
 
     Raises:
         ValueError: If `method_name` is not one of the supported graphical analysis methods, i.e., 'patlak', 'logan', or
-         'alt_logan'.
+                    'alt_logan'.
 
     Example:
-
-        selected_func = get_graphical_analysis_method_with_rsquared('logan')
-        results = selected_func(input_tac_values, tissue_tac_values,
-        tac_times_in_minutes, t_thresh_in_minutes)
+        .. code-block:: python
+            
+            from pet_cli.graphical_analysis import get_graphical_analysis_method_with_rsquared as get_method
+            from pet_cli.graphical_analysis import _safe_load_tac as load_tac
+            
+            selected_func = get_method('logan')
+            input_tac_values, tac_times_in_minutes = load_tac("PATH/TO/PLASMA/TAC.tsv")
+            tissue_tac_values, _ = load_tac("PATH/TO/ROI/TAC.tsv")
+            
+            results = selected_func(input_tac_values,
+                                    tissue_tac_values,
+                                    tac_times_in_minutes,
+                                    t_thresh_in_minutes)
+            print(results)
+            
     """
     if method_name == "patlak":
         return patlak_analysis_with_rsquared
