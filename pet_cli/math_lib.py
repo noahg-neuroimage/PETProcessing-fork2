@@ -12,8 +12,7 @@ def weighted_sum_computation(
         image_decay_correction: np.ndarray
         ):
     """
-    Sum a 4D image series weighted based on time and re-corrected for decay correction.
-    Credit to Avi Snyder who wrote the original version of this code in C.
+    Weighted sum of a PET image based on time and re-corrected for decay correction.
 
     Args:
         image_frame_duration (np.ndarray): Duration of each frame in pet series
@@ -28,12 +27,15 @@ def weighted_sum_computation(
         image_weighted_sum (np.ndarray): 3D PET image computed by reversing decay correction
             on the PET image series, scaling each frame by the frame duration, then re-applying
             decay correction and scaling the image to the full duration.
+
+    See also:
+        * :func:`image_operations_4d.weighted_series_sum`: Function where this is implemented.
     """
     decay_constant = np.log(2) / half_life
     image_total_duration = np.sum(image_frame_duration)
     total_decay    = decay_constant * image_total_duration / \
         (1-np.exp(-1*decay_constant*image_total_duration)) / \
-            np.exp(-1*decay_constant*image_frame_start[0])
+        np.exp(-1*decay_constant*image_frame_start[0])
 
     pet_series_scaled = pet_series[:,:,:] \
         * image_frame_duration \

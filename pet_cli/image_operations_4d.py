@@ -1,5 +1,11 @@
 """"
-4D pet tools.
+The 'image_operations_4d' module provides several functions used to do preprocessing
+on 4D PET imaging series. These functions typically take one or more paths to imaging
+data in NIfTI format, and save modified data to a NIfTI file, and may return the
+modified imaging array as output.
+
+Class :class:`ImageOps4D` is also included in this module, and provides specific
+implementations of the functions presented herein.
 """
 import os
 import json
@@ -18,21 +24,41 @@ def weighted_series_sum(
     half_life: float,
     verbose: bool
 ) -> np.ndarray:
-    """
+    r"""
     Sum a 4D image series weighted based on time and re-corrected for decay correction.
 
+    First, a scaled image is produced by multiplying each frame by its length in seconds,
+    and dividing by the decay correction applied:
+    .. math::
+        frame_i'=frame_i*t_i/d_i
+
+    This scaled image is summed over the time axis. Then, to get the output, we multiply
+    by a factor called `total decay` and divide by the full length of the image:
+    .. math::
+        d_{total} = \frac{dc*t_{total}}{(1-\exp(-dc*t_{total}))(\exp(dc*t_{start}))}
+        S = \sum(frame_i') * d_{total} / t_{total}
+
+    where :math:`dc=\log(2)/T_{1/2}` is the decay constant of the radio isotope. 
+    
     Args:
-        pet_series (np.ndarray): Input pet image to be summed.
-        image_meta (dict): Metadata json file following BIDS standard, from which
-                            we collect frame timing and decay correction info.
+        input_image_4d_path (str): Path to a .nii or .nii.gz file containing a 4D
+            PET image on which the weighted sum is calculated. Assume a metadata
+            file exists with the same path and file name, but with extension .json,
+            and follows BIDS standard.
+        out_image_path (str): Path to a .nii or .nii.gz file to which the weighted
+            sum is written.
         half_life (float): Half life of the PET radioisotope in seconds.
+        verbose (bool): Set to `True` to output processing information.
 
     Returns:
-        summed_image (np.ndarray): Summed image 
+        summed_image (np.ndarray): 3D image array, in the same space as the input,
+            with the weighted sum calculation applied.
+
+    Raises:
+        ValueError: If `half_life` is zero or negative.
     """
-    if half_life is None:
-        raise ValueError('(ImageOps4d): Radioisotope half life not set, cannot \
-            run weighted_series_sum.')
+    if half_life <= 0:
+        raise ValueError('(ImageOps4d): Radioisotope half life is zero or negative.')
     pet_meta = image_io.ImageIO.load_meta(input_image_4d_path)
     pet_image = nibabel.load(input_image_4d_path)
     pet_series = pet_image.get_fdata()
@@ -72,7 +98,19 @@ def motion_correction(
     verbose: bool
 ) -> tuple[np.ndarray, list[str], list[float]]:
     """
-    Motion correct PET image series.
+    Correct PET image series for inter-frame motion. Runs rigid motion correction module
+    from Advanced Normalisation Tools (ANTs) with default inputs. 
+
+    Args:
+        input_image_4d_path (str): Path to a .nii or .nii.gz file containing a 4D
+            PET image to be motion corrected.
+        reference_image_path (str): Path to a .nii or .nii.gz file containing a 3D reference
+            image in the same space as the input PET image. Can be a weighted series sum,
+            first or last frame, an average over a subset of frames, or another option depending
+            on the needs of the data.
+        out_image_path (str): Path to a .nii or .nii.gz file to which the motion corrected PET
+            series is written.
+        verbose (bool): Set to `True` to output processing information.
 
     Returns:
         pet_moco_np (np.ndarray): Motion corrected PET image series as a numpy array.
@@ -110,8 +148,23 @@ def register_pet(
     verbose: bool
 ):
     """
-    Register PET image series to anatomical data. Computes transform based on weighted average,
-    which is then applied to the 4D PET image series.
+    Computes and runs rigid registration of 4D PET image series to 3D anatomical image, typically
+    a T1 MRI. Runs rigid registration module from Advanced Normalisation Tools (ANTs) with  default
+    inputs. Will upsample PET image to the resolution of anatomical imaging.
+
+    Args:
+        input_calc_image_path (str): Path to a .nii or .nii.gz file containing a 3D reference
+            image in the same space as the input PET image, to be used to compute the rigid 
+            registration to anatomical space. Can be a weighted series sum, first or last frame,
+            an average over a subset of frames, or another option depending on the needs of the 
+            data.
+        input_reg_image_path (str): Path to a .nii or .nii.gz file containing a 4D
+            PET image to be registered to anatomical space.
+        reference_image_path (str): Path to a .nii or .nii.gz file containing a 3D
+            anatomical image to which PET image is registered.
+        out_image_path (str): Path to a .nii or .nii.gz file to which the registered PET series
+            is written.
+        verbose (bool): Set to `True` to output processing information.
     """
     pet_sum_image = ants.image_read(input_calc_image_path)
     mri_image = ants.image_read(reference_image_path)
@@ -146,8 +199,13 @@ def resample_segmentation(
     Resamples a segmentation to 4D PET series affine
 
     Args:
-
-    Returns:
+        input_image_4d_path (str): Path to a .nii or .nii.gz file containing a 4D
+            PET image, registered to anatomical space, to which the segmentation file is resampled.
+        segmentation_image_path (str): Path to a .nii or .nii.gz file containing a 3D segmentation
+            image, where integer indices label specific regions.
+        out_seg_path (str): Path to a .nii or .nii.gz file to which the resampled segmentation
+            image is written.
+        verbose (bool): Set to `True` to output processing information.
     """
     pet_image = nibabel.load(input_image_4d_path)
     seg_image = nibabel.load(segmentation_image_path)
@@ -169,18 +227,31 @@ def mask_image_to_vals(
     verbose: bool,
 ) -> np.ndarray:
     """
-    Masks an input image based on a value or list of values, and returns an array
-    with original image values in the regions based on values specified for the mask.
+    Creates a time-activity curve (TAC) by computing the average value within a region, for each 
+    frame in a 4D PET image series. Takes as input a PET image, which has been registered to
+    anatomical space, a segmentation image, with the same sampling as the PET, and a list of values
+    corresponding to regions in the segmentation image that are used to compute the average
+    regional values. Currently, only the mean over a single region value is implemented.
 
     Args:
-        values (list[int]): List of values corresponding to regions to be masked.
-        resample_seg (bool): Determines whether or not to resample the segmentation.
-            Set to True when the PET input (registered to MPR) and segmentation are 
-            different resolutions.
+        input_image_4d_path (str): Path to a .nii or .nii.gz file containing a 4D
+            PET image, registered to anatomical space.
+        segmentation_image_path (str): Path to a .nii or .nii.gz file containing a 3D segmentation
+            image, where integer indices label specific regions. Must have same sampling as PET
+            input.
+        values (list[int]): List of values in the segmentation image, which correspond to regions
+            for which the TAC is to be computed on. Only one region at a time is implemented.
+        verbose (bool): Set to `True` to output processing information.
 
     Returns:
-        tac_out (np.ndarray): Mean of values within mask for each frame in 4D PET series.
+        tac_out (np.ndarray): Mean of PET image within regions for each frame in 4D PET series.
+
+    Raises:
+        NotImplementedError: If `values` has more than two regions, as this is future functionality
     """
+    if len(values) > 1:
+        raise NotImplementedError('mask_image_to_vals can only average over one region at the \
+            moment. Use a list with only one value.')
     pet_image_4d = nibabel.load(input_image_4d_path).get_fdata()
     seg_image = nibabel.load(segmentation_image_path).get_fdata()
     num_frames = pet_image_4d.shape[3]
@@ -227,13 +298,10 @@ def write_tacs(
 
 class ImageOps4D():
     """
-    A class, supplies tools to modify values of 4D images.
+    A class with methods to run specific implementations of the functions in this module.
     
     Attributes:
-        images (list[ImageIO]): Enforced order: PET, MRI, segmentation.
-        image_meta (dict): Image metadata pulled from BIDS-compliant json file.
-        half_life (float): Half life of radioisotope to be used for computations.
-                           Default value 0.
+        
     
     See Also:
         :class: `ImageIO`
@@ -265,7 +333,6 @@ class ImageOps4D():
         if image_paths is None:
             image_paths = {}
         self.image_paths = image_paths
-        # NB protected keywords: {'pet': pet_path,'mri': mri_path,'seg': seg_path}
         self.half_life = half_life
         self.out_path = out_path
         self.color_table_path = color_table_path
