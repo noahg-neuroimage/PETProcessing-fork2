@@ -53,11 +53,13 @@ Note:
     This module utilises :py:class:`scipy.interpolate.interp1d` for linear interpolation. Ensure Scipy is installed for
     this package to function.
 
+TODO:
+    * Test if the classes work correctly if the max value of the TAC is at the first or last time-point.
+
 """
 
 import numpy as np
 from scipy.interpolate import interp1d as sp_interpolation
-from typing import Tuple
 
 
 class EvenlyInterpolate:
