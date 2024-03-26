@@ -1,5 +1,27 @@
 """
-Preprocessing command line interface
+CLI - Preprocessing
+------------------------
+
+The `cli_preproc` module provides a Command-line interface (CLI) for preprocessing imaging data to
+produce regional PET Time-Activity Curves (TACs) and prepare data for parametric imaging analysis.
+
+The user must provide:
+    * Path to PET input data in NIfTI format. This can be source data, or with some preprocessing
+        such as registration or motion correction, depending on the chosen operation.
+    * Directory to which the output is written.
+    * The name of the subject being processed, for the purpose of naming output files.
+    * 3D imaging data, such as anatomical, segmentation, or PET sum, depending on the desired
+        preprocessing operation.
+    * Additional information needed for preprocessing, such as color table or half-life.
+    * The operation to be performed on input data. Options: `weighted_sum`, `motion_correct`,
+        `register`, or `write_tacs`.
+
+Example:
+    .. code-block:: bash
+        pet-cli-preproc --pet /path/to/pet.nii --anatomical /path/to/mri.nii --pet_reference /path/to/pet_sum.nii --out_dir /path/to/output --operation register
+
+See also:
+    * :mod:`pet_cli.image_operations_4d` - module used to preprocess PET imaging data.
 """
 import os
 import argparse
@@ -7,13 +29,15 @@ from pet_cli import image_operations_4d
 
 
 def generate_args():
-    """
-    Generates command line arguments for method :main:
-    """
     parser = argparse.ArgumentParser(
         prog='PET Preprocessing',
         description='Command line interface for running PET preprocessing steps.',
-        epilog=''
+        epilog='Example: pet-cli-preproc '
+            '--pet /path/to/pet.nii '
+            '--anatomical /path/to/mri.nii '
+            '--pet_reference /path/to/pet_sum.nii '
+            '--out_dir /path/to/output '
+            '--operation register'
     )
     io_grp = parser.add_argument_group('I/O')
     io_grp.add_argument('--pet',required=True,help='Path to PET series')
@@ -42,9 +66,6 @@ def generate_args():
 
 
 def create_dirs(main_dir,ops_dir,sub_id,ops_ext):
-    """
-    Make intermediate directories
-    """
     inter_dir = os.path.join(main_dir,ops_dir)
     os.makedirs(inter_dir,exist_ok=True)
     image_write = os.path.join(main_dir,ops_dir,f'{sub_id}_{ops_ext}.nii.gz')
@@ -52,9 +73,6 @@ def create_dirs(main_dir,ops_dir,sub_id,ops_ext):
 
 
 def check_ref(args):
-    """
-    Check if pet_reference is being used and set variable
-    """
     if args.pet_reference is not None:
         ref_image = args.pet_reference
     else:
@@ -63,9 +81,6 @@ def check_ref(args):
 
 
 def main():
-    """
-    Preprocessing command line interface
-    """
     args = generate_args()
 
     if args.operation == 'weighted_sum':

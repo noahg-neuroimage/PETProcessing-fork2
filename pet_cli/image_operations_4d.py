@@ -298,13 +298,40 @@ def write_tacs(
 
 class ImageOps4D():
     """
-    A class with methods to run specific implementations of the functions in this module.
+    :class:`ImageOps4D` to provide basic implementations of the preprocessing functions in module
+    `image_operations_4d`.
+
+    Preprocessing can be run on individual subjects by specifying information such as the subject
+    id, output path, paths to PET, anatomical, and segmentation images, etc. Then individual
+    methods can be run in succession.
+
+    Key methods include:
+    - :func:`run_weighted_series_sum`: Runs :func:`weighted_series_sum` on input data.
+    - :func:`run_motion_correction`: Runs :func:`motion_correction` on input data, with the output
+        of weighted_series_sum as reference.
+    - :func:`run_register_pet`: Runs :func:`register_pet` on motion corrected PET with the output
+        of weighted_series_sum used to compute registration.
+    - :func:`run_mask_image_to_vals`: Runs :func:`mask_image_to_vals`, to be used with
+        :func:`run_write_tacs`.
+    - :func:`run_write_tacs`: Runs :func:`write_tacs` on preprocessed PET data to produce regional
+        TACs.
     
     Attributes:
-        
+        sub_id (str): The subject ID, used for naming output files.
+        out_path (str): Path to an output directory, to which processed files are saved.
+        image_paths (dict): A dictionary with designated keys for different types of images.
+            Designated keys include 'pet' for input PET data, 'mri' for anatomical data, 'seg' for
+            segmentation in anatomical space, 'pet_sum_image' for the output to
+            :func:`weighted_series_sum`, 'pet_moco' for motion corrected PET image, pet_moco_reg
+            for motion corrected and registered PET image, and 'seg_resampled' for a segmentation
+            resampled onto PET resolution.
+        half_life (float): Half-life of the radioisotope used in PET study in seconds.
+        color_table_path (str): Path to a color table .json file used to match region names to
+            region indices.
+        verbose (bool): Set to `True` to output processing information.
     
     See Also:
-        :class: `ImageIO`
+        :class:`ImageIO`
     """
     def __init__(self,
         sub_id: str,
@@ -315,19 +342,21 @@ class ImageOps4D():
         verbose: bool=True
     ):
         """
-        Constructor for ImageOps4d
+        Constructor for ImageOps4d, initializing class attributes.
 
         Args:
-            sub_id (str):
-            image_paths (dict): Dictionary containing paths to files used in relevant
-                preprocessing steps. This variable has protected 
-            out_path (str): Path to output directory to which preprocessing files are written.
-            half_life (float): Half life of tracer radioisotope used for the study in seconds.
-                Default value 0.
-            color_table_path (str): Path to location of color table, matching region names to
-                region values in a segmentation file. See:
-                https://surfer.nmr.mgh.harvard.edu/fswiki/LabelsClutsAnnotationFiles.
-            verbose (bool): Control output of debugging information. Default value True.
+            sub_id (str): The subject ID, used for naming output files.
+            out_path (str): Path to an output directory, to which processed files are saved.
+            image_paths (dict): A dictionary with designated keys for different types of images.
+                Designated keys include 'pet' for input PET data, 'mri' for anatomical data, 'seg' for
+                segmentation in anatomical space, 'pet_sum_image' for the output to
+                :func:`weighted_series_sum`, 'pet_moco' for motion corrected PET image, pet_moco_reg
+                for motion corrected and registered PET image, and 'seg_resampled' for a segmentation
+                resampled onto PET resolution.
+            half_life (float): Half-life of the radioisotope used in PET study in seconds.
+            color_table_path (str): Path to a color table .json file used to match region names to
+                region indices.
+            verbose (bool): Set to `True` to output processing information.
         """
         self.sub_id = sub_id
         if image_paths is None:
@@ -341,16 +370,8 @@ class ImageOps4D():
 
     def run_weighted_series_sum(self) -> np.ndarray:
         """
-        Sum a 4D image series weighted based on time and re-corrected for decay correction.
-
-        Args:
-            pet_series (np.ndarray): Input pet image to be summed.
-            image_meta (dict): Metadata json file following BIDS standard, from which
-                               we collect frame timing and decay correction info.
-            half_life (float): Half life of the PET radioisotope in seconds.
-
-        Returns:
-            summed_image (np.ndarray): Summed image 
+        Computes weighted sum image by running :func:`weighted_series_sum` on input data. Write
+        output as 'pet_sum_image'.
         """
         sum_image_path = os.path.join(self.out_path,'sum_image')
         os.makedirs(sum_image_path,exist_ok=True)
@@ -367,13 +388,8 @@ class ImageOps4D():
 
     def run_motion_correction(self) -> tuple[np.ndarray, list[str], list[float]]:
         """
-        Motion correct PET image series.
-
-        Returns:
-            pet_moco_np (np.ndarray): Motion corrected PET image series as a numpy array.
-            pet_moco_pars (list[str]): List of ANTS registration files applied to each frame.
-            pet_moco_fd (list[float]): List of framewise displacement measure corresponding 
-                to each frame transform.
+        Motion correct PET image series by running :func:`motion_correction` on input data, with the 
+        output of weighted_series_sum as reference. Write output as 'pet_moco'.
         """
         moco_path = os.path.join(self.out_path,'motion-correction')
         os.makedirs(moco_path,exist_ok=True)
@@ -388,8 +404,8 @@ class ImageOps4D():
 
     def run_register_pet(self):
         """
-        Register PET image series to anatomical data. Computes transform based on weighted average,
-        which is then applied to the 4D PET image series.
+        Registers PET to anatomical by running :func:`register_pet` on motion corrected PET with the 
+        output of weighted_series_sum used to compute registration. Write output as 'pet_moco_reg'.
         """
         reg_path = os.path.join(self.out_path,'registration')
         os.makedirs(reg_path,exist_ok=True)
@@ -407,8 +423,12 @@ class ImageOps4D():
                          values: list[int],
                          resample_seg: bool=False) -> np.ndarray:
         """
-        Masks an input image based on a value or list of values, and returns an array
-        with original image values in the regions based on values specified for the mask.
+        Creates a time-activity curve (TAC) by computing the average value within a region, for 
+        each frame in a 4D PET image series. Takes as input a PET image, which has been registered
+        to anatomical space, a segmentation image, with the same sampling as the PET, and a list of
+        values corresponding to regions in the segmentation image that are used to compute the 
+        average regional values. Currently, only the mean over a single region value is
+        implemented.
 
         Args:
             values (list[int]): List of values corresponding to regions to be masked.
@@ -442,10 +462,9 @@ class ImageOps4D():
 
     def run_write_tacs(self):
         """
-        Function to write Tissue Activity Curves for each region, given a segmentation,
-        4D PET image, and color table. Computes the average of the PET image within each
-        region. Writes a JSON for each region with region name, frame start time, and mean 
-        value within region.
+        Function to write Tissue Activity Curves for each region by running :func:`write_tacs` on
+        preprocessed PET data. Requires registration to anatomical and segmentation resampled to
+        PET resolution.
         """
         tac_path = os.path.join(f'{self.out_path}','tacs')
         os.makedirs(tac_path,exist_ok=True)

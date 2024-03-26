@@ -10,32 +10,63 @@ from nibabel.filebasedimages import FileBasedHeader, FileBasedImage
 import numpy as np
 
 
-def make_path(args):
+def make_path(paths: list[str]):
     """
-    Join paths and create any necessary directories, if necessary.
+    Creates a new path in local system by joining paths, and making any new directories, if
+    necessary.
+
+    Args:
+        paths (list[str]): A list containing strings to be joined as a path in the system
+            directory.
+    
+    Returns:
+        out_path (str): The full path resulting from joining input paths.
+
+    Note:
+        Using a file name as the final path will result in creating a folder with the name of that
+        file, including the extension. This can cause issues when later attempting to write to a
+        file of the same name.
     """
-    out_path = os.path.join(args)
+    out_path = os.path.join(paths)
     os.makedirs(out_path,exist_ok=True)
     return out_path
 
 
-def copy_meta(meta_file,copy_path):
+def save_meta(meta_file: dict,out_path: str):
     """
-    Copy a metadata file in python to another directory.
+    Save a metadata file in python to a directory.
+
+    Args:
+        meta_file (dict): A dictionary with imaging metadata, to be saved to file.
+        out_path (str): Directory to which `meta_file` is to be saved.
     """
-    with open(copy_path,'w',encoding='utf-8') as copy_file:
+    with open(out_path,'w',encoding='utf-8') as copy_file:
         json.dump(meta_file,copy_file,indent=4)
 
 
 class ImageIO():
     """
-    Class handling 3D and 4D image file utilities.
+    :class:`ImageIO` to handle reading and writing imaging data and metadata.
+
+    Provides several tools designed for reading and writing data within the Python environment.
+
+    Key methods include:
+        - :func:`load_nii`: Loads a NIfTI file from a file path.
+        - :func:`save_nii`: Saves a loaded NIfTI file to a file path.
+        - :func:`extract_image_from_nii_as_numpy`: Extracts imaging data from a NIfTI file as a
+            numpy array.
+        - :func:`extract_header_from_nii`: Extracts header information from a NIfTI file as a
+            dictionary.
+        - :func:`extract_np_to_nibabel`: Wraps imaging information in numpy into an Nibabel image.
+
+    Attributes:
+        verbose (bool): Set to `True` to output processing information.
     """
     def __init__(self,
             verbose: bool=True,
             ):
         """
-        Constructor for class ImageIO.
+        Initializes :class:`ImageIO` and sets verbose.
 
         Args:
             verbose (bool): Set to True to print debugging info to shell. Defaults to True.
