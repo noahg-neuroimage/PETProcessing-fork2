@@ -14,7 +14,7 @@ An optional filename prefix for the output files can also be supplied.
 
 This script uses the 'Plot' class from the 'graphical_plots' module to generate and save the plots.
 
-Example usage:
+Example:
     .. code-block:: bash
     
         pet-cli-graph-plot --input-tac-path /path/to/input.tac --roi-tac-path /path/to/roi.tac --threshold-in-mins 30.0 --method-name patlak --output-directory ./plots --output-filename-prefix plot

@@ -19,7 +19,8 @@ import numpy as np
 
 
 def calc_convolution_with_check(f: np.ndarray, g: np.ndarray, dt: float) -> np.ndarray:
-    """Performs a discrete convolution of two arrays, assumed to represent time-series data.
+    r"""Performs a discrete convolution of two arrays, assumed to represent time-series data. Checks if the arrays are
+    of the same shape.
     
     Let ``f``:math:`=f(t)` and ``g``:math:`=g(t)` where both functions are 0 for :math:`t\leq0`. Then,
     the output, :math:`h(t)`, is
@@ -36,8 +37,9 @@ def calc_convolution_with_check(f: np.ndarray, g: np.ndarray, dt: float) -> np.n
     Returns:
         (np.ndarray): Convolution of the two arrays scaled by ``dt``.
         
-    Notes:
-        This function does not use `numba.njit()`.
+    .. important::
+        This function does not use :func:`numba.jit`. Therefore, it cannot be used directly inside JIT'ed functions.
+        
     """
     assert len(f) == len(g), f"The provided arrays must have the same lengths! f:{len(f):<6} and g:{len(g):<6}."
     vals = np.convolve(f, g, mode='full')
@@ -110,11 +112,9 @@ def response_function_serial_2tcm_c1(t: np.ndarray, k1: float, k2: float, k3: fl
     
     .. math::
     
-        \begin{align*}
         a&= k_{2}+k_{3}+k_{4}\\
         \alpha_{1}&=\frac{a-\sqrt{a^{2}-4k_{2}k_{4}}}{2}\\
-        \alpha_{1}&=\frac{a+\sqrt{a^{2}-4k_{2}k_{4}}}{2}\\
-        \end{align*}
+        \alpha_{1}&=\frac{a+\sqrt{a^{2}-4k_{2}k_{4}}}{2}
     
     Args:
         t (np.ndarray): Array containing time-points where :math:`t\geq0`.
@@ -150,11 +150,9 @@ def response_function_serial_2tcm_c2(t: np.ndarray, k1: float, k2: float, k3: fl
 
     .. math::
     
-        \begin{align*}
         a&= k_{2}+k_{3}+k_{4}\\
         \alpha_{1}&=\frac{a-\sqrt{a^{2}-4k_{2}k_{4}}}{2}\\
-        \alpha_{1}&=\frac{a+\sqrt{a^{2}-4k_{2}k_{4}}}{2}\\
-        \end{align*}
+        \alpha_{1}&=\frac{a+\sqrt{a^{2}-4k_{2}k_{4}}}{2}
 
     Args:
         t (np.ndarray): Array containing time-points where :math:`t\geq0`.
@@ -181,7 +179,7 @@ def response_function_serial_2tcm_c2(t: np.ndarray, k1: float, k2: float, k3: fl
 def generate_tac_1tcm_c1_from_tac(tac_times: np.ndarray,
                                   tac_vals: np.ndarray,
                                   k1: float,
-                                  k2: float) -> np.ndarray[float, float]:
+                                  k2: float) -> np.ndarray:
     r"""Calculate the TTAC, given the input TAC, for a 1TCM as an explicit convolution.
     
     Args:
@@ -207,8 +205,10 @@ def generate_tac_2tcm_with_k4zero_c1_from_tac(tac_times: np.ndarray,
                                               tac_vals: np.ndarray,
                                               k1: float,
                                               k2: float,
-                                              k3: float) -> np.ndarray[float, float]:
-    """Calculate the TTAC of the first comparment, given the input TAC, for a 2TCM (with :math:`k_{4}=0`) as an explicit convolution.
+                                              k3: float) -> np.ndarray:
+    r"""
+    Calculate the TTAC of the first comparment, given the input TAC, for a 2TCM (with :math:`k_{4}=0`) as an explicit
+    convolution.
     
     Args:
         tac_times (np.ndarray): Array containing time-points where :math:`t\geq0` and equal time-steps.
@@ -221,7 +221,8 @@ def generate_tac_2tcm_with_k4zero_c1_from_tac(tac_times: np.ndarray,
         ((np.ndarray, np.ndarray)): Arrays containing the times and TTAC given the input TAC and parameters.
         
     See Also:
-        :func:`response_function_2tcm_with_k4zero_c1` for more details about the 2TCM response function, of the first compartment, used for the convolution.
+        :func:`response_function_2tcm_with_k4zero_c1` for more details about the 2TCM response function, of the first
+        compartment, used for the convolution.
         
     """
     _resp_vals = response_function_2tcm_with_k4zero_c1(t=tac_times, k1=k1, k2=k2, k3=k3)
@@ -234,7 +235,7 @@ def generate_tac_2tcm_with_k4zero_c2_from_tac(tac_times: np.ndarray,
                                               tac_vals: np.ndarray,
                                               k1: float,
                                               k2: float,
-                                              k3: float) -> np.ndarray[float, float]:
+                                              k3: float) -> np.ndarray:
     """Calculate the TTAC of the second comparment, given the input TAC, for a 2TCM (with :math:`k_{4}=0`) as an explicit convolution.
     
     Args:
@@ -261,7 +262,7 @@ def generate_tac_2tcm_with_k4zero_cpet_from_tac(tac_times: np.ndarray,
                                                 tac_vals: np.ndarray,
                                                 k1: float,
                                                 k2: float,
-                                                k3: float) -> np.ndarray[float, float]:
+                                                k3: float) -> np.ndarray:
     """Calculate the PET-TTAC (sum of both compartments), given the input TAC, for a 2TCM (with :math:`k_{4}=0`) as an explicit convolution.
     
     Args:
@@ -291,7 +292,7 @@ def generate_tac_serial_2tcm_c1_from_tac(tac_times: np.ndarray,
                                          k1: float,
                                          k2: float,
                                          k3: float,
-                                         k4: float) -> np.ndarray[float, float]:
+                                         k4: float) -> np.ndarray:
     """
     Calculate the TTAC of the first comparment, given the input TAC, for a serial 2TCM as an explicit convolution.
     
@@ -322,7 +323,7 @@ def generate_tac_serial_2tcm_c2_from_tac(tac_times: np.ndarray,
                                          k1: float,
                                          k2: float,
                                          k3: float,
-                                         k4: float) -> np.ndarray[float, float]:
+                                         k4: float) -> np.ndarray:
     """
     Calculate the TTAC of the second comparment, given the input TAC, for a serial 2TCM as an explicit convolution.
 

@@ -16,16 +16,18 @@ file.
 An option to print the interpolated TAC to screen is also provided for visual inspection of the results.
 
 Example usage:
-    .. code-block:: bash
-    
-        pet-cli-tac-interpolation --input-tac-path /path/to/input.tac --output-tac-path /path/to/output.tac --delta-time 0.1
+    Using :class:`pet_cli.cli_tac_interpolation.EvenlyInterpolate`:
+        .. code-block:: bash
         
-    .. code-block:: bash
-        
-        pet-cli-tac-interpolation --input-tac-path /path/to/input.tac --output-tac-path /path/to/output.tac --samples-before-max 4
+            pet-cli-tac-interpolation --input-tac-path /path/to/input.tac --output-tac-path /path/to/output.tac --delta-time 0.1
     
-See also:
-    * :mod:`tac_interpolation <pet_cli.tac_interpolation>` - module for performing interpolation on PET Time-Activity Curves (TACs).
+    Using :class:`pet_cli.cli_tac_interpolation.EvenlyInterpolateWithMax`:
+        .. code-block:: bash
+            
+            pet-cli-tac-interpolation --input-tac-path /path/to/input.tac --output-tac-path /path/to/output.tac --samples-before-max 4
+    
+See Also:
+    :mod:`tac_interpolation <pet_cli.tac_interpolation>` - module for performing interpolation on PET TACs.
 
 TODO:
     * Refactor the reading and writing of TACs when IO module is mature.

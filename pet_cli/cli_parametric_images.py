@@ -15,7 +15,7 @@ An optional filename prefix for the output files can also be supplied.
 This script uses the :class:'pet_cli.parametric_images.GraphicalAnalysisParametricImage' class to calculate and save
 the images.
 
-Example usage:
+Example:
     .. code-block:: bash
     
          pet-cli-parametric-image --input-tac-path /path/to/input.tac --pet4D-img-path /path/to/pet4D.img --threshold-in-mins 30.0 --method-name patlak --output-directory ./images --output-filename-prefix image

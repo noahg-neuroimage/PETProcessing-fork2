@@ -11,9 +11,7 @@ providing an organized storage of result of an analysis task.
 
 TODO:
     * Check if it makes more sense to lift out the more mathy methods out into a separate module.
-    * Might have to change the division of the TACS cumulative integral by the TACS to be from ``[t_thresh:]`` to
-      avoid division by zero.
-      
+    
 """
 
 __version__ = '0.2'
@@ -677,13 +675,13 @@ class GraphicalAnalysis:
             t_thresh_in_mins (float): The threshold time (in minutes) used in the fitting process.
 
         Note:
-            This method relies on the `_safe_load_tac` function to load time-activity curve (TAC) data from the file at
-            `self.input_tac_path`, and the `graphical_analysis.get_index_from_threshold` function to get the index from
-            the threshold time. Please ensure these dependencies are correctly implemented and accessible.
+            This method relies on the :func:`_safe_load_tac` function to load time-activity curve (TAC) data from the
+            file at ``input_tac_path``, and the :func:`get_index <get_index_from_threshold>`
+            function to get the index from the threshold time.
 
         See also:
             * :func:`_safe_load_tac`: Function to safely load TAC data from a file.
-            * :func:`graphical_analysis.get_index_from_threshold`: Function to get the index from the threshold time.
+            * :func:`get_index_from_threshold`: Function to get the index from the threshold time.
 
         Returns:
             None. The results are stored within the instance's `analysis_props` variable.
