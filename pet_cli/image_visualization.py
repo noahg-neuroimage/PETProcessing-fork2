@@ -1,3 +1,18 @@
+"""
+Provides a class for creating a GIF from a NIfTI image which iterates through its slices based
+on a specified view ('coronal', 'sagittal', or 'axial').
+
+Classes:
+    * :class:NiftiGifCreator:
+      This class creates a GIF from a NIfTI image by iterating through its slices based on
+      a specified view ('coronal', 'sagittal', or 'axial'). The GIF is then written to the
+      specified output directory with a filename prefix specified by the user.
+
+TODO:
+    * Add functionality to quickly generate slices of images.
+
+"""
+
 import os
 import numpy as np
 import matplotlib.pyplot as plt
