@@ -1,3 +1,0 @@
-[console_scripts]
-pet-cli = pet_cli.bids_cli:main
-preproc-cli = pet_cli.cli_preproc:main
