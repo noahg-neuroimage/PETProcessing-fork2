@@ -53,10 +53,8 @@ class ImageIO():
     Key methods include:
         - :func:`load_nii`: Loads a NIfTI file from a file path.
         - :func:`save_nii`: Saves a loaded NIfTI file to a file path.
-        - :func:`extract_image_from_nii_as_numpy`: Extracts imaging data from a NIfTI file as a
-            numpy array.
-        - :func:`extract_header_from_nii`: Extracts header information from a NIfTI file as a
-            dictionary.
+        - :func:`extract_image_from_nii_as_numpy`: Extracts imaging data from a NIfTI file as a numpy array.
+        - :func:`extract_header_from_nii`: Extracts header information from a NIfTI file as a dictionary.
         - :func:`extract_np_to_nibabel`: Wraps imaging information in numpy into an Nibabel image.
 
     Attributes:

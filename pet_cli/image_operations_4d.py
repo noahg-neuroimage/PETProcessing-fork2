@@ -1,4 +1,4 @@
-""""
+"""
 The 'image_operations_4d' module provides several functions used to do preprocessing
 on 4D PET imaging series. These functions typically take one or more paths to imaging
 data in NIfTI format, and save modified data to a NIfTI file, and may return the
@@ -29,13 +29,20 @@ def weighted_series_sum(
 
     First, a scaled image is produced by multiplying each frame by its length in seconds,
     and dividing by the decay correction applied:
+
     .. math::
+    
         frame_i'=frame_i*t_i/d_i
 
     This scaled image is summed over the time axis. Then, to get the output, we multiply
     by a factor called `total decay` and divide by the full length of the image:
+
     .. math::
+
         d_{total} = \frac{dc*t_{total}}{(1-\exp(-dc*t_{total}))(\exp(dc*t_{start}))}
+
+    .. math::
+    
         S = \sum(frame_i') * d_{total} / t_{total}
 
     where :math:`dc=\log(2)/T_{1/2}` is the decay constant of the radio isotope. 
@@ -116,7 +123,7 @@ def motion_correction(
         pet_moco_np (np.ndarray): Motion corrected PET image series as a numpy array.
         pet_moco_pars (list[str]): List of ANTS registration files applied to each frame.
         pet_moco_fd (list[float]): List of framewise displacement measure corresponding 
-            to each frame transform.
+        to each frame transform.
     """
     pet_nibabel = nibabel.load(input_image_4d_path)
     pet_sum_image = nibabel.load(reference_image_path)
@@ -307,14 +314,10 @@ class ImageOps4D():
 
     Key methods include:
     - :func:`run_weighted_series_sum`: Runs :func:`weighted_series_sum` on input data.
-    - :func:`run_motion_correction`: Runs :func:`motion_correction` on input data, with the output
-        of weighted_series_sum as reference.
-    - :func:`run_register_pet`: Runs :func:`register_pet` on motion corrected PET with the output
-        of weighted_series_sum used to compute registration.
-    - :func:`run_mask_image_to_vals`: Runs :func:`mask_image_to_vals`, to be used with
-        :func:`run_write_tacs`.
-    - :func:`run_write_tacs`: Runs :func:`write_tacs` on preprocessed PET data to produce regional
-        TACs.
+    - :func:`run_motion_correction`: Runs :func:`motion_correction` on input data, with the output of weighted_series_sum as reference.
+    - :func:`run_register_pet`: Runs :func:`register_pet` on motion corrected PET with the output of weighted_series_sum used to compute registration.
+    - :func:`run_mask_image_to_vals`: Runs :func:`mask_image_to_vals`, to be used with :func:`run_write_tacs`.
+    - :func:`run_write_tacs`: Runs :func:`write_tacs` on preprocessed PET data to produce regional TACs.
     
     Attributes:
         sub_id (str): The subject ID, used for naming output files.
@@ -331,7 +334,7 @@ class ImageOps4D():
         verbose (bool): Set to `True` to output processing information.
     
     See Also:
-        :class: `ImageIO`
+    - :class:`ImageIO`
     """
     def __init__(self,
         sub_id: str,
