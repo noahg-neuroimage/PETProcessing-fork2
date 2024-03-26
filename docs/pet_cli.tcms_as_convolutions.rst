@@ -1,5 +1,5 @@
-TCMS As Convolutions Of TACs
-============================
+TCMs As Convolutions
+====================
 
 .. automodule:: pet_cli.tcms_as_convolutions
    :members:

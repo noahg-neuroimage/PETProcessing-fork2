@@ -21,7 +21,8 @@ class ImageOps4D():
                            Default value 0.
     
     See Also:
-        :class: `ImageIO`
+        :class:`ImageIO`
+
     """
     def __init__(self,
         sub_id: str,
@@ -115,6 +116,7 @@ class ImageOps4D():
             pet_moco_pars (list[str]): List of ANTS registration files applied to each frame.
             pet_moco_fd (list[float]): List of framewise displacement measure corresponding 
                 to each frame transform.
+                
         """
         pet_nibabel = nibabel.load(self.image_paths['pet'])
         pet_sum_image = nibabel.load(self.image_paths['pet_sum_image'])

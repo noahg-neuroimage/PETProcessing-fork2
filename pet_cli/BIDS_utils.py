@@ -27,12 +27,12 @@ class BidsInstance:
         file_parts_names (tuple): Names of components used in file naming.
 
     Methods:
-        create_filepath: Constructs a file path based on BIDS naming conventions and updates class attributes.
-        manual_filepath: Manually sets the file path and updates class attributes based on the provided path.
-        cache_filepath: Caches the current file path with a given name for later retrieval.
-        change_session: Updates the session part of the file path and optionally recompile the path.
-        delete_file: Deletes a specified file within the project.
-        delete_directory: Deletes a specified directory within the project.
+        :meth:`create_filepath`: Constructs a file path based on BIDS naming conventions and updates class attributes.
+        :meth:`manual_filepath`: Manually sets the file path and updates class attributes based on the provided path.
+        :meth:`cache_filepath`: Caches the current file path with a given name for later retrieval.
+        :meth:`change_session`: Updates the session part of the file path and optionally recompile the path.
+        :meth:`delete_file`: Deletes a specified file within the project.
+        :meth:`delete_directory`: Deletes a specified directory within the project.
     """
 
     def __init__(self,

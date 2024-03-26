@@ -1,9 +1,7 @@
 """
-This is the 'parametric_images' module.
-
 This module provides functions and a key class, :class:`GraphicalAnalysisParametricImage`, for graphical analysis and
-creation of parametric images in PET scan data. It heavily utilizes Numpy for data manipulation and assumes the input as
-4D PET images along with other required inputs.
+creation of parametric images of 4D-PET scan data. It heavily utilizes :mod:`numpy` for data manipulation and assumes
+the input as 4D PET images along with other required inputs.
 
 The :class:`GraphicalAnalysisParametricImage` class encapsulates the main functionality of the module, and encompasses
 methods for initializing data, running and saving analysis, calculating various properties, and handling parametric
@@ -172,10 +170,8 @@ def _safe_load_4dpet_nifty(filename: str) -> Nifti1Image:
 
 class GraphicalAnalysisParametricImage:
     """
-    Class for graphical analysis of PET parametric images.
-
-    It provides methods to run graphical analysis, calculate properties of the resulting images, and save the results to
-     files.
+    Class for generating parametric images of 4D-PET images using graphical analyses. It provides methods to run
+    graphical analysis, calculate properties of the resulting images, and save the results using file paths.
 
     Attributes:
         input_tac_path (str): Absolute path to the input Time-Activity Curve (TAC) file.
@@ -186,18 +182,6 @@ class GraphicalAnalysisParametricImage:
         slope_image (np.ndarray): The slope image resulting from the graphical analysis, initialized to None.
         intercept_image (np.ndarray): The intercept image resulting from the graphical analysis, initialized to None.
 
-    Methods:
-        init_analysis_props: Initializes the analysis properties dictionary.
-        run_analysis: Runs the graphical analysis using a provided method and threshold, updating the slope image and intercept image.
-        save_analysis: Saves the resulting images and analysis properties to files in the output directory.
-        calculate_analysis_properties: Calculates the properties of the resulting images and the analysis.
-        calculate_fit_properties: Updates the analysis properties related to the fit.
-        calculate_parametric_images_properties: Updates the analysis properties related to the parametric images.
-        calculate_slope_image_properties: Calculates and updates the analysis properties related to the slope image.
-        calculate_intercept_image_properties: Calculates and updates the analysis properties related to the intercept image.
-        calculate_parametric_images: Updates the slope and intercept images performing the graphical analysis.
-        save_parametric_images: Saves the slope and intercept images in '.nii.gz' format to the output directory.
-        save_analysis_properties: Saves the analysis properties to a '.json' file in the output directory.
     """
     
     def __init__(self,
@@ -238,22 +222,22 @@ class GraphicalAnalysisParametricImage:
         to None and filled in later as the analysis is performed.
 
         Properties include:
-            FilePathPTAC (str): The path to the input Time-Activity Curve (TAC) file.
-            FilePathTTAC (str): The path to the 4D PET image file.
-            MethodName (str): The name of the graphical analysis method used, to be filled in later.
-            ImageDimensions (tuple): The dimensions of the images resulting from the analysis, to be filled in later.
-            StartFrameTime (float): The start time of the frame used in the analysis, filled in after the analysis.
-            EndFrameTime (float): The end time of the frame used in the analysis, filled in after the analysis.
-            ThresholdTime (float): The time threshold used in the analysis, filled in after the analysis.
-            NumberOfPointsFit (int): The number of points fitted in the analysis, filled in after the analysis.
-            SlopeMaximum (float): The maximum slope found in the analysis, filled in after the analysis.
-            SlopeMinimum (float): The minimum slope found in the analysis, filled in after the analysis.
-            SlopeMean (float): The mean of the slopes found in the analysis, filled in after the analysis.
-            SlopeVariance (float): The variance of the slopes found in the analysis, filled in after the analysis.
-            InterceptMaximum (float): The maximum intercept found in the analysis, filled in after the analysis.
-            InterceptMinimum (float): The minimum intercept found in the analysis, filled in after the analysis.
-            InterceptMean (float): The mean of the intercepts found in the analysis, filled in after the analysis.
-            InterceptVariance (float): The variance of the intercepts found in the analysis, filled in after the analysis.
+            * ``FilePathPTAC`` (str): The path to the input Time-Activity Curve (TAC) file.
+            * ``FilePathTTAC`` (str): The path to the 4D PET image file.
+            * ``MethodName`` (str): The name of the graphical analysis method used, to be filled in later.
+            * ``ImageDimensions`` (tuple): The dimensions of the images resulting from the analysis, to be filled in later.
+            * ``StartFrameTime`` (float): The start time of the frame used in the analysis, filled in after the analysis.
+            * ``EndFrameTime`` (float): The end time of the frame used in the analysis, filled in after the analysis.
+            * ``ThresholdTime`` (float): The time threshold used in the analysis, filled in after the analysis.
+            * ``NumberOfPointsFit`` (int): The number of points fitted in the analysis, filled in after the analysis.
+            * ``SlopeMaximum`` (float): The maximum slope found in the analysis, filled in after the analysis.
+            * ``SlopeMinimum`` (float): The minimum slope found in the analysis, filled in after the analysis.
+            * ``SlopeMean`` (float): The mean of the slopes found in the analysis, filled in after the analysis.
+            * ``SlopeVariance`` (float): The variance of the slopes found in the analysis, filled in after the analysis.
+            * ``InterceptMaximum`` (float): The maximum intercept found in the analysis, filled in after the analysis.
+            * ``InterceptMinimum`` (float): The minimum intercept found in the analysis, filled in after the analysis.
+            * ``InterceptMean`` (float): The mean of the intercepts found in the analysis, filled in after the analysis.
+            * ``InterceptVariance`` (float): The variance of the intercepts found in the analysis, filled in after the analysis.
 
         Returns:
             props (dict): The initialized properties dictionary.
@@ -317,23 +301,20 @@ class GraphicalAnalysisParametricImage:
         """
         Performs a set of calculations to collate various analysis properties.
 
-        This method orchestrates the calculation of properties related to both the parametric images and the fitting process.
-        It does this by calling `calculate_parametric_images_properties` and `calculate_fit_properties` respectively.
+        This method orchestrates the calculation of properties related to both the parametric images and the fitting
+        process. It does this by calling :meth:`calculate_parametric_images_properties` and
+        :meth:`calculate_fit_properties` respectively.
 
         Parameters:
             method_name (str): The name of the method used for the fitting process.
             t_thresh_in_mins (float): The threshold time (in minutes) used for the fitting process.
 
-        Note:
-            Calls to `calculate_parametric_images_properties` and `calculate_fit_properties` update the instance's
-            `analysis_props` variable.
-
         See Also:
-            * :func:`calculate_parametric_images_properties`
-            * :func:`calculate_fit_properties`
+            * :meth:`calculate_parametric_images_properties`
+            * :meth:`calculate_fit_properties`
 
         Returns:
-            None. The results are stored within the instance's `analysis_props` variable.
+            None. The results are stored within the instance's ``analysis_props`` variable.
         """
         self.calculate_parametric_images_properties()
         self.calculate_fit_properties(method_name=method_name, t_thresh_in_mins=t_thresh_in_mins)
@@ -351,16 +332,16 @@ class GraphicalAnalysisParametricImage:
             t_thresh_in_mins (float): The threshold time (in minutes) used in the fitting process.
 
         Note:
-            This method relies on the `_safe_load_tac` function to load time-activity curve (TAC) data from the file at
-            `self.input_tac_path`, and the `graphical_analysis.get_index_from_threshold` function to get the index from
-            the threshold time. Please ensure these dependencies are correctly implemented and accessible.
+            This method relies on the :func:`_safe_load_tac` function to load time-activity curve (TAC) data from the
+            file at ``self.input_tac_path``, and the :func:`pet_cli.graphical_analysis.get_index_from_threshold`
+            function to get the index from the threshold time.
 
         See also:
             * :func:`_safe_load_tac`: Function to safely load TAC data from a file.
-            * :func:`graphical_analysis.get_index_from_threshold`: Function to get the index from the threshold time.
+            * :func:`pet_cli.graphical_analysis.get_index_from_threshold`: Function to get the index from the threshold time.
 
         Returns:
-            None. The results are stored within the instance's `analysis_props` variable.
+            None. The results are stored within the instance's ``analysis_props`` variable.
         """
         self.analysis_props['ThresholdTime'] = t_thresh_in_mins
         self.analysis_props['MethodName'] = method_name

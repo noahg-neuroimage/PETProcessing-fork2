@@ -1,5 +1,5 @@
-Blood Input Utilites
-====================
+Interpolation Blood Data
+========================
 
 .. automodule:: pet_cli.blood_input
    :members:

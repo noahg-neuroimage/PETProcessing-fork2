@@ -1,7 +1,4 @@
 """
-CLI - Graphical Analysis Plots
-------------------------------
-
 Command-line interface (CLI) for generating graphical analysis plots of PET Time-Activity Curves (TACs).
 
 This module provides a CLI to work with the graphical_plots module. It uses argparse to handle command-line arguments.
@@ -17,12 +14,13 @@ An optional filename prefix for the output files can also be supplied.
 
 This script uses the 'Plot' class from the 'graphical_plots' module to generate and save the plots.
 
-Example usage:
-    pet-cli-graph-plot --input-tac-path /path/to/input.tac --roi-tac-path /path/to/roi.tac
-        --threshold-in-mins 30.0 --method-name patlak --output-directory ./plots --output-filename-prefix plot
+Example:
+    .. code-block:: bash
+    
+        pet-cli-graph-plot --input-tac-path /path/to/input.tac --roi-tac-path /path/to/roi.tac --threshold-in-mins 30.0 --method-name patlak --output-directory ./plots --output-filename-prefix plot
 
-See also:
-    * :mod:`pet_cli.graphical_plots` - module for creating and saving graphical analysis plots of PET TACs.
+See Also:
+    :mod:`pet_cli.graphical_plots` - module for creating and saving graphical analysis plots of PET TACs.
     
 """
 

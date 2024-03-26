@@ -1,11 +1,8 @@
 """
-CLI - TAC Interpolation
-------------------------
-
 Command-line interface (CLI) for interpolating Time-Activity Curves (TACs).
 
 This module provides a CLI to interpolate TACs, enabling the conversion of these curves to a desired time scale. It uses
- argparse to handle command-line arguments.
+argparse to handle command-line arguments.
 
 The user must provide:
     * Input TAC file path
@@ -19,11 +16,18 @@ file.
 An option to print the interpolated TAC to screen is also provided for visual inspection of the results.
 
 Example usage:
-    * `pet-cli-tac-interpolation --input-tac-path /path/to/input.tac --output-tac-path /path/to/output.tac --delta-time 0.1`
-    * `pet-cli-tac-interpolation --input-tac-path /path/to/input.tac --output-tac-path /path/to/output.tac --samples-before-max 4`
+    Using :class:`pet_cli.cli_tac_interpolation.EvenlyInterpolate`:
+        .. code-block:: bash
+        
+            pet-cli-tac-interpolation --input-tac-path /path/to/input.tac --output-tac-path /path/to/output.tac --delta-time 0.1
     
-See also:
-    * :mod:`pet_cli.tac_interpolation` - module for performing interpolation on PET Time-Activity Curves (TACs).
+    Using :class:`pet_cli.cli_tac_interpolation.EvenlyInterpolateWithMax`:
+        .. code-block:: bash
+            
+            pet-cli-tac-interpolation --input-tac-path /path/to/input.tac --output-tac-path /path/to/output.tac --samples-before-max 4
+    
+See Also:
+    :mod:`tac_interpolation <pet_cli.tac_interpolation>` - module for performing interpolation on PET TACs.
 
 TODO:
     * Refactor the reading and writing of TACs when IO module is mature.
@@ -37,7 +41,6 @@ from . import tac_interpolation as tac_intp
 import os
 
 
-# TODO: Use the safe loading of TACs function from an IO module when it is implemented
 def _safe_load_tac(filename: str) -> np.ndarray:
     """
     Loads time-activity curves (TAC) from a file.
@@ -62,7 +65,6 @@ def _safe_load_tac(filename: str) -> np.ndarray:
         raise e
 
 
-# TODO: Use the safe writing of TACs function from an IO module when it is implemented
 def _safe_write_tac(tac_times: np.ndarray, tac_values: np.ndarray, filename: str) -> None:
     """
     Writes time-activity curves (TAC) to a file.
