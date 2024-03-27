@@ -9,6 +9,8 @@ Classes defined in the module:
 
 TODO:
     * Add functionality to quickly generate slices of images.
+    * Add flexibility in :class:`NiftiGifCreator` to accept a NumPy array or a file-path. This could also be added
+      to the image slice class.
 
 """
 
@@ -183,7 +185,7 @@ class NiftiGifCreator:
 
         Args:
             frames (Iterable, optional): Iterable of frame indices to be included in the GIF. If not provided, all
-            frames will be used.
+                frames will be used.
             
         Side Effects:
             Modifies ``ani`` by creating a new :class:`matplotlib.animation.FuncAnimation` object
