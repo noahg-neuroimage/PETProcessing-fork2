@@ -32,7 +32,7 @@ def make_path(paths: list[str]):
     return out_path
 
 
-def save_meta(meta_file: dict,out_path: str):
+def write_dict_to_json(meta_file: dict,out_path: str):
     """
     Save a metadata file in python to a directory.
 
@@ -51,11 +51,11 @@ class ImageIO():
     Provides several tools designed for reading and writing data within the Python environment.
 
     Key methods include:
-        - :func:`load_nii`: Loads a NIfTI file from a file path.
-        - :func:`save_nii`: Saves a loaded NIfTI file to a file path.
-        - :func:`extract_image_from_nii_as_numpy`: Extracts imaging data from a NIfTI file as a numpy array.
-        - :func:`extract_header_from_nii`: Extracts header information from a NIfTI file as a dictionary.
-        - :func:`extract_np_to_nibabel`: Wraps imaging information in numpy into an Nibabel image.
+        - :meth:`load_nii`: Loads a NIfTI file from a file path.
+        - :meth:`save_nii`: Saves a loaded NIfTI file to a file path.
+        - :meth:`extract_image_from_nii_as_numpy`: Extracts imaging data from a NIfTI file as a numpy array.
+        - :meth:`extract_header_from_nii`: Extracts header information from a NIfTI file as a dictionary.
+        - :meth:`extract_np_to_nibabel`: Wraps imaging information in numpy into an Nibabel image.
 
     Attributes:
         verbose (bool): Set to `True` to output processing information.
@@ -81,6 +81,10 @@ class ImageIO():
         
         Returns:
             The nifti FileBasedImage.
+
+        Raises:
+            FileNotFoundError: If the provided image path cannot be found in the directory.
+            OSError: If the provided image path does not have a NIfTI extension.
         """
         if not os.path.exists(image_path):
             raise FileNotFoundError(f"Image file {image_path} not found")
@@ -216,6 +220,9 @@ class ImageIO():
 
         Returns:
             ctab_json (dict): Dictionary where keys are region names and values are region indices.
+        
+        Raises:
+            FileNotFoundError: If the provided ctab file cannot be found in the directory.
         """
         if not os.path.exists(ctab_file):
             raise FileNotFoundError(f"Image file {ctab_file} not found")
@@ -234,6 +241,10 @@ class ImageIO():
         Returns:
             image_meta (dict): Dictionary where keys are fields in the image
                 metadata file and values correspond to values in those fields.
+        
+        Raises:
+            FileNotFoundError: If the provided image path cannot be found in the directory. 
+            Additionally, occurs if the metadata .json file cannot be found.
         """
         if not os.path.exists(image_path):
             raise FileNotFoundError(f"Image file {image_path} not found")

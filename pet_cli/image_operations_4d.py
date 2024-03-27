@@ -32,20 +32,25 @@ def weighted_series_sum(
 
     .. math::
     
-        frame_i'=frame_i*t_i/d_i
+        f_i'=f_i\times \frac{t_i}{d_i}
 
-    This scaled image is summed over the time axis. Then, to get the output, we multiply
-    by a factor called `total decay` and divide by the full length of the image:
+    Where :math:`f_i,t_i,d_i` are the i-th frame, frame duration, and decay correction factor of
+    the PET series. This scaled image is summed over the time axis. Then, to get the output, we
+    multiply by a factor called `total decay` and divide by the full length of the image:
 
     .. math::
 
-        d_{total} = \frac{dc*t_{total}}{(1-\exp(-dc*t_{total}))(\exp(dc*t_{start}))}
+        d_{S} = \frac{\lambda*t_{S}}{(1-\exp(-\lambda*t_{S}))(\exp(\lambda*t_{0}))}
 
     .. math::
     
-        S = \sum(frame_i') * d_{total} / t_{total}
+        S(f) = \sum(f_i') * d_{S} / t_{S}
 
-    where :math:`dc=\log(2)/T_{1/2}` is the decay constant of the radio isotope. 
+    where :math:`\lambda=\log(2)/T_{1/2}` is the decay constant of the radio isotope,
+    :math:`t_0` is the start time of the first frame in the PET series, the subscript :math:`S`
+    indicates the total quantity computed over all frames, and :math:`S(f)` is the final weighted
+    sum image.
+
     
     Args:
         input_image_4d_path (str): Path to a .nii or .nii.gz file containing a 4D
@@ -140,7 +145,7 @@ def motion_correction(
     pet_moco_np = pet_moco_ants.numpy()
     pet_moco_nibabel = ants.to_nibabel(pet_moco_ants)
     copy_meta_path = re.sub('.nii.gz|.nii','.json',out_image_path)
-    image_io.save_meta(image_io.ImageIO.load_meta(input_image_4d_path),copy_meta_path)
+    image_io.write_dict_to_json(image_io.ImageIO.load_meta(input_image_4d_path),copy_meta_path)
     nibabel.save(pet_moco_nibabel,out_image_path)
     if verbose:
         print(f"(ImageOps4d): motion corrected image saved to {out_image_path}")
@@ -203,7 +208,11 @@ def resample_segmentation(
     verbose: bool
 ):
     """
-    Resamples a segmentation to 4D PET series affine
+    Resamples a segmentation image to the resolution of a 4D PET series image. Takes the affine 
+    information stored in the PET image, and the shape of the image frame data, as well as the 
+    segmentation image, and applies NiBabel's `resample_from_to` to resample the segmentation to
+    the resolution of the PET image. This is used for extracting TACs from PET imaging where the 
+    PET and ROI data are registered to the same space, but have different resolutions.
 
     Args:
         input_image_4d_path (str): Path to a .nii or .nii.gz file containing a 4D
@@ -313,11 +322,11 @@ class ImageOps4D():
     methods can be run in succession.
 
     Key methods include:
-    - :func:`run_weighted_series_sum`: Runs :func:`weighted_series_sum` on input data.
-    - :func:`run_motion_correction`: Runs :func:`motion_correction` on input data, with the output of weighted_series_sum as reference.
-    - :func:`run_register_pet`: Runs :func:`register_pet` on motion corrected PET with the output of weighted_series_sum used to compute registration.
-    - :func:`run_mask_image_to_vals`: Runs :func:`mask_image_to_vals`, to be used with :func:`run_write_tacs`.
-    - :func:`run_write_tacs`: Runs :func:`write_tacs` on preprocessed PET data to produce regional TACs.
+    - :meth:`run_weighted_series_sum`: Runs :meth:`weighted_series_sum` on input data.
+    - :meth:`run_motion_correction`: Runs :meth:`motion_correction` on input data, with the output of weighted_series_sum as reference.
+    - :meth:`run_register_pet`: Runs :meth:`register_pet` on motion corrected PET with the output of weighted_series_sum used to compute registration.
+    - :meth:`run_mask_image_to_vals`: Runs :meth:`mask_image_to_vals`, to be used with :meth:`run_write_tacs`.
+    - :meth:`run_write_tacs`: Runs :meth:`write_tacs` on preprocessed PET data to produce regional TACs.
     
     Attributes:
         sub_id (str): The subject ID, used for naming output files.
@@ -325,7 +334,7 @@ class ImageOps4D():
         image_paths (dict): A dictionary with designated keys for different types of images.
             Designated keys include 'pet' for input PET data, 'mri' for anatomical data, 'seg' for
             segmentation in anatomical space, 'pet_sum_image' for the output to
-            :func:`weighted_series_sum`, 'pet_moco' for motion corrected PET image, pet_moco_reg
+            :meth:`weighted_series_sum`, 'pet_moco' for motion corrected PET image, pet_moco_reg
             for motion corrected and registered PET image, and 'seg_resampled' for a segmentation
             resampled onto PET resolution.
         half_life (float): Half-life of the radioisotope used in PET study in seconds.
@@ -353,7 +362,7 @@ class ImageOps4D():
             image_paths (dict): A dictionary with designated keys for different types of images.
                 Designated keys include 'pet' for input PET data, 'mri' for anatomical data, 'seg' for
                 segmentation in anatomical space, 'pet_sum_image' for the output to
-                :func:`weighted_series_sum`, 'pet_moco' for motion corrected PET image, pet_moco_reg
+                :meth:`weighted_series_sum`, 'pet_moco' for motion corrected PET image, pet_moco_reg
                 for motion corrected and registered PET image, and 'seg_resampled' for a segmentation
                 resampled onto PET resolution.
             half_life (float): Half-life of the radioisotope used in PET study in seconds.
@@ -373,7 +382,7 @@ class ImageOps4D():
 
     def run_weighted_series_sum(self) -> np.ndarray:
         """
-        Computes weighted sum image by running :func:`weighted_series_sum` on input data. Write
+        Computes weighted sum image by running :meth:`weighted_series_sum` on input data. Write
         output as 'pet_sum_image'.
         """
         sum_image_path = os.path.join(self.out_path,'sum_image')
@@ -391,7 +400,7 @@ class ImageOps4D():
 
     def run_motion_correction(self) -> tuple[np.ndarray, list[str], list[float]]:
         """
-        Motion correct PET image series by running :func:`motion_correction` on input data, with the 
+        Motion correct PET image series by running :meth:`motion_correction` on input data, with the 
         output of weighted_series_sum as reference. Write output as 'pet_moco'.
         """
         moco_path = os.path.join(self.out_path,'motion-correction')
@@ -407,7 +416,7 @@ class ImageOps4D():
 
     def run_register_pet(self):
         """
-        Registers PET to anatomical by running :func:`register_pet` on motion corrected PET with the 
+        Registers PET to anatomical by running :meth:`register_pet` on motion corrected PET with the 
         output of weighted_series_sum used to compute registration. Write output as 'pet_moco_reg'.
         """
         reg_path = os.path.join(self.out_path,'registration')
@@ -465,7 +474,7 @@ class ImageOps4D():
 
     def run_write_tacs(self):
         """
-        Function to write Tissue Activity Curves for each region by running :func:`write_tacs` on
+        Function to write Tissue Activity Curves for each region by running :meth:`write_tacs` on
         preprocessed PET data. Requires registration to anatomical and segmentation resampled to
         PET resolution.
         """

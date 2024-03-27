@@ -18,14 +18,16 @@ The user must provide:
 
 Example:
     .. code-block:: bash
+
         pet-cli-preproc --pet /path/to/pet.nii --anatomical /path/to/mri.nii --pet_reference /path/to/pet_sum.nii --out_dir /path/to/output --operation register
 
-See also:
+See Also:
     * :mod:`pet_cli.image_operations_4d` - module used to preprocess PET imaging data.
+
 """
 import os
 import argparse
-from pet_cli import image_operations_4d
+from . import image_operations_4d
 
 
 def generate_args():
