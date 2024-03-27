@@ -105,7 +105,7 @@ class NiftiGifCreator:
     
     def _validate_view(self):
         """
-        Validate the value of self.view. It must be one of ['coronal', 'sagittal', 'axial', 'x', 'y', 'z'].
+        Validate the value of ``view``. It must be one of ['coronal', 'sagittal', 'axial', 'x', 'y', 'z'].
 
         Raises:
             ValueError: If ``view`` is not 'coronal', 'sagittal', 'axial', 'x', 'y', 'z'
