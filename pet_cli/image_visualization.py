@@ -2,9 +2,8 @@
 Provides a class for creating a GIF from a NIfTI image which iterates through its slices based
 on a specified view ('coronal', 'sagittal', or 'axial').
 
-Classes:
-    * :class:NiftiGifCreator:
-      This class creates a GIF from a NIfTI image by iterating through its slices based on
+Classes defined in the module:
+    * :class:`NiftiGifCreator`: This class creates a GIF from a NIfTI image by iterating through its slices based on
       a specified view ('coronal', 'sagittal', or 'axial'). The GIF is then written to the
       specified output directory with a filename prefix specified by the user.
 
@@ -36,7 +35,7 @@ class NiftiGifCreator:
         prefix (str): Filename prefix for the GIF.
         fig (matplotlib.figure.Figure): Matplotlib figure object for the GIF.
         ax (matplotlib.axes.Axes): Matplotlib axes object for the GIF.
-        imKW (dict): Dictionary of arguments passed to Axes.imshow for the GIF.
+        im_kw (dict): Dictionary of arguments passed to Axes.imshow for the GIF.
         image (numpy.ndarray): 3D numpy array representing the NIfTI image.
         vmax (float): Maximum value for the plot's color limit.
         ani_image (matplotlib.image.AxesImage): An animated image rendered in the figure.
@@ -64,7 +63,7 @@ class NiftiGifCreator:
                  fig_title: str = "Patlak-$K_i$ Parametric Image",
                  cbar_label: str = "$K_i$ (Infusion Rate)"):
         """
-        Initialize the `NiftiGifCreator`. Assigns instance variables and sets up figure for animation.
+        Initialize the :class:`NiftiGifCreator`. Assigns instance variables and sets up figure for animation.
 
         Args:
             path_to_image (str): absolute path to the image file.
@@ -93,10 +92,10 @@ class NiftiGifCreator:
         self.ani = None
         self.cbar = None
         
-        self.imKW = {'origin': 'lower',
-                     'cmap': 'bwr',
-                     'vmin': -self.vmax / 3.,
-                     'vmax': self.vmax / 3.,
+        self.im_kw = {'origin'      : 'lower',
+                     'cmap'         : 'bwr',
+                     'vmin'         : -self.vmax / 3.,
+                     'vmax'         : self.vmax / 3.,
                      'interpolation': 'none'}
         
         self.ani_image = self.make_first_frame()
@@ -107,7 +106,7 @@ class NiftiGifCreator:
         Validate the value of self.view. It must be one of ['coronal', 'sagittal', 'axial', 'x', 'y', 'z'].
 
         Raises:
-            ValueError: If `self.view` is not 'coronal', 'sagittal', 'axial', 'x', 'y', 'z'
+            ValueError: If ``view`` is not 'coronal', 'sagittal', 'axial', 'x', 'y', 'z'
         """
         if self.view not in ['coronal', 'sagittal', 'axial', 'x', 'y', 'z']:
             raise ValueError("Invalid view. Please choose from 'coronal', 'sagittal', 'axial', 'x', 'y', or 'z'.")
@@ -128,7 +127,7 @@ class NiftiGifCreator:
             img = self.image[:, 0, :].T
         else:
             img = self.image[:, :, 0].T
-        out_im = self.ax.imshow(img, **self.imKW)
+        out_im = self.ax.imshow(img, **self.im_kw)
         
         return out_im
     
@@ -164,7 +163,7 @@ class NiftiGifCreator:
             ``view``.
             
         Side Effects:
-            Modifies `self.ani_image` by updating its frame data
+            Modifies ``ani_image`` by updating its frame data
             
         """
         if self.view in ['x', 'sagittal']:
