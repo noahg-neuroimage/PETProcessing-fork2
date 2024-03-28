@@ -1,8 +1,5 @@
 """
-CLI - Preprocessing
-------------------------
-
-The `cli_preproc` module provides a Command-line interface (CLI) for preprocessing imaging data to
+This module provides a Command-line interface (CLI) for preprocessing imaging data to
 produce regional PET Time-Activity Curves (TACs) and prepare data for parametric imaging analysis.
 
 The user must provide:
@@ -39,11 +36,10 @@ def _generate_image_path(main_dir, ops_dir, sub_id, ops_ext):
 
 def _generate_args() -> argparse.Namespace:
     """
-    Generates command line arguments for method :meth:`main`.  
+    Generates command line arguments for method :func:`main`.
 
     Returns:
-        args (argparse.Namespace): Arguments used in the command line and their corresponding 
-            values.
+        args (argparse.Namespace): Arguments used in the command line and their corresponding values.
     """
     parser = argparse.ArgumentParser(prog='PET Preprocessing',
             description='Command line interface for running PET preprocessing steps.',
