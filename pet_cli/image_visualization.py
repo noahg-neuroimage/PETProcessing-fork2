@@ -27,8 +27,12 @@ nifty_loader = pet_pim._safe_load_4dpet_nifty
 class NiftiGifCreator:
     """
     This class is designed to create a GIF from a NIfTI image by iterating through its slices based on a specified view
-    ('coronal', 'sagittal', or 'axial').
-    The GIF is then written to the specified output directory with a filename prefix specified by the user.
+    ('coronal', 'sagittal', or 'axial' (or 'transverse'). The GIF is then written to the specified output directory
+    with a filename prefix specified by the user.
+    
+    .. important::
+        
+        Makes a GIF of the image in the space defined by the nifty file.
 
     Attributes:
         path_to_image (str): Path to the NIfTI image file.
