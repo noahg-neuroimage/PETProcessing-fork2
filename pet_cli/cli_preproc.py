@@ -4,14 +4,14 @@ produce regional PET Time-Activity Curves (TACs) and prepare data for parametric
 
 The user must provide:
     * Path to PET input data in NIfTI format. This can be source data, or with some preprocessing
-        such as registration or motion correction, depending on the chosen operation.
+      such as registration or motion correction, depending on the chosen operation.
     * Directory to which the output is written.
     * The name of the subject being processed, for the purpose of naming output files.
     * 3D imaging data, such as anatomical, segmentation, or PET sum, depending on the desired
-        preprocessing operation.
+      preprocessing operation.
     * Additional information needed for preprocessing, such as color table or half-life.
-    * The operation to be performed on input data. Options: `weighted_sum`, `motion_correct`,
-        `register`, or `write_tacs`.
+    * The operation to be performed on input data. Options: 'weighted_sum', 'motion_correct',
+      'register', or 'write_tacs'.
 
 Example:
     .. code-block:: bash
@@ -42,13 +42,13 @@ def _generate_args() -> argparse.Namespace:
         args (argparse.Namespace): Arguments used in the command line and their corresponding values.
     """
     parser = argparse.ArgumentParser(prog='PET Preprocessing',
-            description='Command line interface for running PET preprocessing steps.',
-            epilog='Example: pet-cli-preproc '
-                   '--pet /path/to/pet.nii '
-                   '--anatomical /path/to/mri.nii '
-                   '--pet_reference /path/to/pet_sum.nii '
-                   '--out_dir /path/to/output '
-                   '--operation register')
+                                     description='Command line interface for running PET preprocessing steps.',
+                                     epilog='Example: pet-cli-preproc '
+                                            '--pet /path/to/pet.nii '
+                                            '--anatomical /path/to/mri.nii '
+                                            '--pet_reference /path/to/pet_sum.nii '
+                                            '--out_dir /path/to/output '
+                                            '--operation register')
     io_grp = parser.add_argument_group('I/O')
     io_grp.add_argument('--pet', required=True, help='Path to PET series')
     io_grp.add_argument('--anatomical', required=False, help='Path to 3D anatomical image')
