@@ -110,8 +110,9 @@ class NiftiGifCreator:
         Raises:
             ValueError: If ``view`` is not 'coronal', 'sagittal', 'axial', 'x', 'y', 'z'
         """
-        if self.view not in ['coronal', 'sagittal', 'axial', 'x', 'y', 'z']:
-            raise ValueError("Invalid view. Please choose from 'coronal', 'sagittal', 'axial', 'x', 'y', or 'z'.")
+        if self.view not in ['coronal', 'sagittal', 'axial', 'x', 'y', 'z', 'transverse']:
+            raise ValueError("Invalid view. Please choose from 'coronal', 'sagittal', 'axial' (or 'transverse'), "
+                             "'x', 'y', or 'z'.")
     
     def make_first_frame(self):
         """
