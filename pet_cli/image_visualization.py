@@ -205,8 +205,8 @@ class NiftiGifCreator:
                                                func=self.update_frame,
                                                frames=frames,
                                                blit=True)
-        
-    def write_gif(self):
+    
+    def write_gif(self, fps: int = 15):
         """
         Writes the GIF to the output directory with filename ``{prefix}_view-{view}.gif``.
         
@@ -216,6 +216,6 @@ class NiftiGifCreator:
             
         """
         out_path = os.path.join(self.output_directory, f'{self.prefix}_view-{self.view}.gif')
-        self.ani.save(f"{out_path}", fps=45, writer='pillow', dpi=100)
+        self.ani.save(f"{out_path}", fps=fps, writer='pillow', dpi=100)
         plt.close(self.fig)
         
