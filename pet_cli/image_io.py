@@ -10,28 +10,6 @@ from nibabel.filebasedimages import FileBasedHeader, FileBasedImage
 import numpy as np
 
 
-def make_path(paths: list[str]):
-    """
-    Creates a new path in local system by joining paths, and making any new directories, if
-    necessary.
-
-    Args:
-        paths (list[str]): A list containing strings to be joined as a path in the system
-            directory.
-    
-    Returns:
-        out_path (str): The full path resulting from joining input paths.
-
-    Note:
-        Using a file name as the final path will result in creating a folder with the name of that
-        file, including the extension. This can cause issues when later attempting to write to a
-        file of the same name.
-    """
-    out_path = os.path.join(paths)
-    os.makedirs(out_path,exist_ok=True)
-    return out_path
-
-
 def write_dict_to_json(meta_file: dict,out_path: str):
     """
     Save a metadata file in python to a directory.

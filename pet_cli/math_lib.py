@@ -29,7 +29,8 @@ def weighted_sum_computation(
             decay correction and scaling the image to the full duration.
 
     See also:
-        * :func:`image_operations_4d.weighted_series_sum`: Function where this is implemented.
+        * :meth:`image_operations_4d.weighted_series_sum`: Function where this is implemented.
+
     """
     decay_constant = np.log(2) / half_life
     image_total_duration = np.sum(image_frame_duration)

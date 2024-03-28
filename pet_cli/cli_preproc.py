@@ -28,9 +28,19 @@ See Also:
 import os
 import argparse
 from . import image_operations_4d
+from . import useful_functions
 
 
-def generate_args():
+def _generate_image_path(main_dir,ops_dir,sub_id,ops_ext):
+    image_write = os.path.join(main_dir,ops_dir,f'{sub_id}_{ops_ext}.nii.gz')
+    useful_functions.make_path(image_write)
+    return image_write
+
+
+def _generate_args():
+    """
+    Generates command line arguments for method :main:
+    """
     parser = argparse.ArgumentParser(
         prog='PET Preprocessing',
         description='Command line interface for running PET preprocessing steps.',
@@ -67,26 +77,28 @@ def generate_args():
     return args
 
 
-def create_dirs(main_dir,ops_dir,sub_id,ops_ext):
-    inter_dir = os.path.join(main_dir,ops_dir)
-    os.makedirs(inter_dir,exist_ok=True)
-    image_write = os.path.join(main_dir,ops_dir,f'{sub_id}_{ops_ext}.nii.gz')
-    return image_write
 
 
-def check_ref(args):
+
+def _check_ref(args):
+    """
+    Check if pet_reference is being used and set variable
+    """
     if args.pet_reference is not None:
         ref_image = args.pet_reference
     else:
-        ref_image = create_dirs(args.out_dir,'sum_image',args.subject_id,'sum')
+        ref_image = _generate_image_path(args.out_dir,'sum_image',args.subject_id,'sum')
     return ref_image
 
 
 def main():
-    args = generate_args()
+    """
+    Preprocessing command line interface
+    """
+    args = _generate_args()
 
     if args.operation == 'weighted_sum':
-        image_write = create_dirs(args.out_dir,'sum_image',args.subject_id,'sum')
+        image_write = _generate_image_path(args.out_dir,'sum_image',args.subject_id,'sum')
         image_operations_4d.weighted_series_sum(
             input_image_4d_path=args.pet,
             out_image_path=image_write,
@@ -96,8 +108,8 @@ def main():
 
 
     if args.operation == 'motion_correct':
-        image_write = create_dirs(args.out_dir,'motion-correction',args.subject_id,'moco')
-        ref_image = check_ref(args)
+        image_write = _generate_image_path(args.out_dir,'motion-correction',args.subject_id,'moco')
+        ref_image = _check_ref(args)
         image_operations_4d.motion_correction(
             input_image_4d_path=args.pet,
             reference_image_path=ref_image,
@@ -107,8 +119,8 @@ def main():
 
 
     if args.operation == 'register':
-        image_write = create_dirs(args.out_dir,'registration',args.subject_id,'reg')
-        ref_image = check_ref(args)
+        image_write = _generate_image_path(args.out_dir,'registration',args.subject_id,'reg')
+        ref_image = _check_ref(args)
         image_operations_4d.register_pet(
             input_calc_image_path=ref_image,
             input_reg_image_path=args.pet,
@@ -121,7 +133,7 @@ def main():
     if args.operation == 'write_tacs':
         tac_write = os.path.join(args.out_dir,'tacs')
         os.makedirs(tac_write,exist_ok=True)
-        image_write = create_dirs(args.out_dir,'segmentation',args.subject_id,'seg')
+        image_write = _generate_image_path(args.out_dir,'segmentation',args.subject_id,'seg')
         image_operations_4d.resample_segmentation(
             input_image_4d_path=args.pet,
             segmentation_image_path=args.segmentation,
