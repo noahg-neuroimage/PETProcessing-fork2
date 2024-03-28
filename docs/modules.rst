@@ -11,6 +11,7 @@ Modules
    pet_cli.graphical_analysis
    pet_cli.parametric_images
    pet_cli.graphical_plots
+   pet_cli.image_visualization
    pet_cli.blood_input
    pet_cli.image_operations_4d
    pet_cli.math_lib
