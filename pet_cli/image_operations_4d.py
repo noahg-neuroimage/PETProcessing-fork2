@@ -269,19 +269,18 @@ def write_tacs(input_image_4d_path: str,
     if time_frame_keyword not in ['FrameReferenceTime', 'FrameTimesStart']:
         raise ValueError(f"'time_frame_keyword' must be one of 'FrameReferenceTime' or 'FrameTimesStart'")
     
-    
     pet_meta = image_io.ImageIO.load_metadata_for_nifty_with_same_filename(input_image_4d_path)
     color_table = image_io.ImageIO.read_color_table_json(ctab_file=color_table_path)
     regions_list = color_table['data']
     for region_pair in regions_list:
         region_index, region_name = region_pair
-        region_json = {'region_name': region_name}
-        region_json['time'] = pet_meta[time_frame_keyword]
-        region_json['activity'] = mask_image_to_vals(input_image_4d_path=input_image_4d_path,
+        region_json = {'region_name': region_name, 'tac': {'time': None, 'activity': None}}
+        region_json['tac']['time'] = pet_meta[time_frame_keyword]
+        region_json['tac']['activity'] = mask_image_to_vals(input_image_4d_path=input_image_4d_path,
                                                      segmentation_image_path=segmentation_image_path,
                                                      values=[region_index],
                                                      verbose=verbose).tolist()
-        
+        # TODO: Shift this into a np.savetxt with the region name as the header comment
         out_tac_path = os.path.join(out_tac_path, f'tac-{region_name}.json')
         image_io.write_dict_to_json(meta_data_dict=region_json, out_path=out_tac_path)
         
