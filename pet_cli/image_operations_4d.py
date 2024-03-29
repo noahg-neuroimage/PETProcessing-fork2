@@ -265,8 +265,7 @@ def write_tacs(input_image_4d_path: str,
     value within region.
     """
     pet_meta = image_io.ImageIO.load_metadata_for_nifty_with_same_filename(input_image_4d_path)
-    with open(color_table_path, 'r', encoding='utf-8') as color_table_file:
-        color_table = json.load(color_table_file)
+    color_table = image_io.ImageIO.read_color_table_json(ctab_file=color_table_path)
     regions_list = color_table['data']
     for region_pair in regions_list:
         region_index, region_name = region_pair
