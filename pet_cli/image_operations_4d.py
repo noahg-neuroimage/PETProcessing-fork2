@@ -211,10 +211,10 @@ def resample_segmentation(input_image_4d_path: str, segmentation_image_path: str
         print(f'Resampled segmentation saved to {out_seg_path}')
 
 
-def mask_image_to_vals(input_image_4d_path: str,
-                       segmentation_image_path: str,
-                       values: list[int],
-                       verbose: bool, ) -> np.ndarray:
+def extract_tac_from_4dnifty_using_mask(input_image_4d_path: str,
+                                        segmentation_image_path: str,
+                                        values: list[int],
+                                        verbose: bool, ) -> np.ndarray:
     """
     Creates a time-activity curve (TAC) by computing the average value within a region, for each 
     frame in a 4D PET image series. Takes as input a PET image, which has been registered to
@@ -239,11 +239,14 @@ def mask_image_to_vals(input_image_4d_path: str,
         NotImplementedError: If `values` has more than two regions, as this is future functionality
     """
     if len(values) > 1:
-        raise NotImplementedError('mask_image_to_vals can only average over one region at the \
-            moment. Use a list with only one value.')
+        raise NotImplementedError('extract_tac_from_4dnifty_using_mask can only average over one region at the moment. '
+                                  'Use a list with only one value.')
+    
     pet_image_4d = nibabel.load(input_image_4d_path).get_fdata()
-    seg_image = nibabel.load(segmentation_image_path).get_fdata()
     num_frames = pet_image_4d.shape[3]
+    seg_image = nibabel.load(segmentation_image_path).get_fdata()
+    
+    tac_out = np.zeros(num_frames, float)
     for region in values:
         if verbose:
             print(f'Running TAC for region index {region}')
@@ -272,14 +275,17 @@ def write_tacs(input_image_4d_path: str,
     pet_meta = image_io.ImageIO.load_metadata_for_nifty_with_same_filename(input_image_4d_path)
     color_table = image_io.ImageIO.read_color_table_json(ctab_file=color_table_path)
     regions_list = color_table['data']
+    
+    tac_extraction_func = extract_tac_from_4dnifty_using_mask
+    
     for region_pair in regions_list:
         region_index, region_name = region_pair
         region_json = {'region_name': region_name, 'tac': {'time': None, 'activity': None}}
         region_json['tac']['time'] = pet_meta[time_frame_keyword]
-        region_json['tac']['activity'] = mask_image_to_vals(input_image_4d_path=input_image_4d_path,
-                                                     segmentation_image_path=segmentation_image_path,
-                                                     values=[region_index],
-                                                     verbose=verbose).tolist()
+        region_json['tac']['activity'] = tac_extraction_func(input_image_4d_path=input_image_4d_path,
+                                                             segmentation_image_path=segmentation_image_path,
+                                                             values=[region_index],
+                                                             verbose=verbose).tolist()
         # TODO: Shift this into a np.savetxt with the region name as the header comment
         out_tac_path = os.path.join(out_tac_path, f'tac-{region_name}.json')
         image_io.write_dict_to_json(meta_data_dict=region_json, out_path=out_tac_path)
@@ -301,7 +307,7 @@ class ImageOps4D():
           :func:`weighted_series_sum` as reference.
         - :meth:`run_register_pet`: Runs :meth:`register_pet` on motion corrected PET with the output of
           :func:`weighted_series_sum` used to compute registration.
-        - :meth:`run_mask_image_to_vals`: Runs :meth:`mask_image_to_vals`, to be used with :meth:`run_write_tacs`.
+        - :meth:`run_mask_image_to_vals`: Runs :meth:`extract_tac_from_4dnifty_using_mask`, to be used with :meth:`run_write_tacs`.
         - :meth:`run_write_tacs`: Runs :meth:`write_tacs` on preprocessed PET data to produce regional TACs.
     
     Attributes:
@@ -423,10 +429,10 @@ class ImageOps4D():
                                   segmentation_image_path=self.image_paths['seg'],
                                   out_seg_path=self.image_paths['seg_resampled'],
                                   verbose=self.verbose)
-        tac_out = mask_image_to_vals(input_image_4d_path=self.image_paths['pet_moco_reg'],
-                                     segmentation_image_path=self.image_paths['seg_resampled'],
-                                     values=values,
-                                     verbose=self.verbose)
+        tac_out = extract_tac_from_4dnifty_using_mask(input_image_4d_path=self.image_paths['pet_moco_reg'],
+                                                      segmentation_image_path=self.image_paths['seg_resampled'],
+                                                      values=values,
+                                                      verbose=self.verbose)
         return tac_out
     
     def run_write_tacs(self):
