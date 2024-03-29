@@ -256,6 +256,7 @@ def extract_tac_from_4dnifty_using_mask(input_image_4d_path: str,
     return tac_out
 
 
+# TODO: Shift to accepting color-key dictionaries rather than a file path.
 def write_tacs(input_image_4d_path: str,
                color_table_path: str,
                segmentation_image_path: str,
