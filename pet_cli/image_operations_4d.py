@@ -182,12 +182,14 @@ def register_pet(input_calc_image_path: str,
                                    write_composite_transform=True)
     if verbose:
         print(f'Registration computed transforming image {input_calc_image_path} to', f'{reference_image_path} space')
+        
     xfm_apply = ants.apply_transforms(moving=pet_moco,
                                       fixed=mri_image,
                                       transformlist=xfm_output['fwdtransforms'],
                                       imagetype=3)
     if verbose:
         print(f'Registration applied to {input_reg_image_path}')
+        
     ants.image_write(xfm_apply, out_image_path)
     if verbose:
         print(f'Transformed image saved to {out_image_path}')
