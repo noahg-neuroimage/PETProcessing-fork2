@@ -10,16 +10,16 @@ from nibabel.filebasedimages import FileBasedHeader, FileBasedImage
 import numpy as np
 
 
-def write_dict_to_json(meta_file: dict,out_path: str):
+def write_dict_to_json(meta_data_dict: dict, out_path: str):
     """
     Save a metadata file in python to a directory.
 
     Args:
-        meta_file (dict): A dictionary with imaging metadata, to be saved to file.
+        meta_data_dict (dict): A dictionary with imaging metadata, to be saved to file.
         out_path (str): Directory to which `meta_file` is to be saved.
     """
-    with open(out_path,'w',encoding='utf-8') as copy_file:
-        json.dump(meta_file,copy_file,indent=4)
+    with open(out_path, 'w', encoding='utf-8') as copy_file:
+        json.dump(meta_data_dict, copy_file, indent=4)
 
 
 class ImageIO():
@@ -38,9 +38,8 @@ class ImageIO():
     Attributes:
         verbose (bool): Set to `True` to output processing information.
     """
-    def __init__(self,
-            verbose: bool=True,
-            ):
+    
+    def __init__(self, verbose: bool = True, ):
         """
         Initializes :class:`ImageIO` and sets verbose.
 
@@ -48,9 +47,8 @@ class ImageIO():
             verbose (bool): Set to True to print debugging info to shell. Defaults to True.
         """
         self.verbose = verbose
-
-
-    def load_nii(self,image_path: str) -> FileBasedImage:
+    
+    def load_nii(self, image_path: str) -> FileBasedImage:
         """
         Wrapper to load nifti from image_path.
 
@@ -66,18 +64,18 @@ class ImageIO():
         """
         if not os.path.exists(image_path):
             raise FileNotFoundError(f"Image file {image_path} not found")
-        if not re.search(r'\.nii\.gz$|\.nii$',image_path):
+        
+        if not re.search(r'\.nii\.gz$|\.nii$', image_path):
             raise OSError(f"{image_path} does not have the extension .nii or .nii.gz")
+        
         image = nibabel.load(image_path)
-
+        
         if self.verbose:
             print(f"(ImageIO): {image_path} loaded")
-
+        
         return image
-
-
-    def save_nii(self,
-            image: nibabel.nifti1.Nifti1Image,out_file: str) -> int:
+    
+    def save_nii(self, image: nibabel.nifti1.Nifti1Image, out_file: str):
         """
         Wrapper to save nifti to file.
 
@@ -85,11 +83,10 @@ class ImageIO():
             image (nibabel.nifti1.Nifti1Image): Nibabel-type image to write to file.
             out_file (str): File path to which image will be written.
         """
-        nibabel.save(image,out_file)
+        nibabel.save(image, out_file)
         if self.verbose:
             print(f"(ImageIO): Image saved to {out_file}")
-
-
+    
     def extract_image_from_nii_as_numpy(self, image: nibabel.nifti1.Nifti1Image) -> np.ndarray:
         """
         Convenient wrapper to extract data from a .nii or .nii.gz file as a numpy array.
@@ -101,13 +98,12 @@ class ImageIO():
             The data contained in the .nii or .nii.gz file as a numpy array.
         """
         image_data = image.get_fdata()
-
+        
         if self.verbose:
             print(f"(ImageIO): Image has shape {image_data.shape}")
-
+        
         return image_data
-
-
+    
     def extract_header_from_nii(self, image: nibabel.nifti1.Nifti1Image) -> FileBasedHeader:
         """
         Convenient wrapper to extract header information from a .nii or .nii.gz 
@@ -120,13 +116,12 @@ class ImageIO():
             image_header (FileBasedHeader): The nifti header.
         """
         image_header = image.header
-
+        
         if self.verbose:
             print(f"(ImageIO): Image header is: {image_header}")
-
+        
         return image_header
-
-
+    
     def extract_np_to_nibabel(self,
                               image_array: np.ndarray,
                               header: FileBasedHeader,
@@ -142,9 +137,9 @@ class ImageIO():
         Returns:
             image_nibabel (nibabel.nifti1.Nifti1Image): Image stored in nifti-like nibabel format. 
         """
-        image_nibabel = nibabel.nifti1.Nifti1Image(image_array,affine,header)
+        image_nibabel = nibabel.nifti1.Nifti1Image(image_array, affine, header)
         return image_nibabel
-
+    
     @staticmethod
     def affine_parse(image_affine: np.ndarray) -> tuple:
         """
@@ -155,20 +150,17 @@ class ImageIO():
                 and direction of an image.
         """
         spacing = nibabel.affines.voxel_sizes(image_affine)
-        origin = image_affine[:,3]
-
-        quat = nibabel.quaternions.mat2quat(image_affine[:3,:3])
+        origin = image_affine[:, 3]
+        
+        quat = nibabel.quaternions.mat2quat(image_affine[:3, :3])
         dir_3x3 = nibabel.quaternions.quat2mat(quat)
-        direction = np.zeros((4,4))
-        direction[-1,-1] = 1
-        direction[:3,:3] = dir_3x3
-
+        direction = np.zeros((4, 4))
+        direction[-1, -1] = 1
+        direction[:3, :3] = dir_3x3
+        
         return spacing, origin, direction
-
-
-    def extract_np_to_ants(self,
-                           image_array: np.ndarray,
-                           affine: np.ndarray) -> ants.ANTsImage:
+    
+    def extract_np_to_ants(self, image_array: np.ndarray, affine: np.ndarray) -> ants.ANTsImage:
         """
         Wrapper to convert an image array into ants object.
         Note header info is lost as ANTs does not carry this metadata.
@@ -181,14 +173,11 @@ class ImageIO():
             image_ants (ants.ANTsImage): Image stored in nifti-like nibabel format. 
         """
         origin, spacing, direction = self.affine_parse(affine)
-        image_ants = ants.from_numpy(data=image_array,
-                                     spacing=spacing,
-                                     origin=origin,
-                                     direction=direction)
+        image_ants = ants.from_numpy(data=image_array, spacing=spacing, origin=origin, direction=direction)
         return image_ants
-
+    
     @staticmethod
-    def read_ctab(ctab_file: str) -> dict:
+    def read_color_table_json(ctab_file: str) -> dict:
         """
         Static method to read a color table, translating region indices to region names, 
         as a dictionary. Assumes json format.
@@ -204,11 +193,14 @@ class ImageIO():
         """
         if not os.path.exists(ctab_file):
             raise FileNotFoundError(f"Image file {ctab_file} not found")
-        ctab_json = json.load(ctab_file)
+        
+        with open(ctab_file, "r", encoding="utf-8") as c_file:
+            ctab_json = json.load(c_file)
+            
         return ctab_json
-
+    
     @staticmethod
-    def load_meta(image_path) -> dict:
+    def load_metadata_for_nifty_with_same_filename(image_path) -> dict:
         """
         Static method to load metadata. Assume same path as input image path.
 
@@ -226,9 +218,12 @@ class ImageIO():
         """
         if not os.path.exists(image_path):
             raise FileNotFoundError(f"Image file {image_path} not found")
-        meta_path = re.sub(r'\.nii\.gz$|\.nii$','.json',image_path)
+        
+        meta_path = re.sub(r'\.nii\.gz$|\.nii$', '.json', image_path)
+        
         if not os.path.exists(meta_path):
-            raise FileNotFoundError(f"Metadata file {meta_path} not found")
-        with open(meta_path,'r',encoding='utf-8') as meta_file:
+            raise FileNotFoundError(f"Metadata file {meta_path} not found. Does it have a different path?")
+        
+        with open(meta_path, 'r', encoding='utf-8') as meta_file:
             image_meta = json.load(meta_file)
         return image_meta

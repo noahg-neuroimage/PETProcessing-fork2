@@ -66,19 +66,25 @@ def weighted_series_sum(input_image_4d_path: str, out_image_path: str, half_life
     """
     if half_life <= 0:
         raise ValueError('(ImageOps4d): Radioisotope half life is zero or negative.')
-    pet_meta = image_io.ImageIO.load_meta(input_image_4d_path)
+    pet_meta = image_io.ImageIO.load_metadata_for_nifty_with_same_filename(input_image_4d_path)
     pet_image = nibabel.load(input_image_4d_path)
     pet_series = pet_image.get_fdata()
     image_frame_start = pet_meta['FrameTimesStart']
     image_frame_duration = pet_meta['FrameDuration']
+    # TODO: Shift this calculation into its own function
     if 'DecayCorrectionFactor' in pet_meta.keys():
         image_decay_correction = pet_meta['DecayCorrectionFactor']
     elif 'DecayFactor' in pet_meta.keys():
         image_decay_correction = pet_meta['DecayFactor']
+    else:
+        raise ValueError("Neither 'DecayCoorectionFactor' nor 'DecayFactor' exist in meta-data file")
+    
+    # TODO: Shift this out into the class since calculation has nothing to do with logging
     if 'TracerRadionuclide' in pet_meta.keys():
         tracer_isotope = pet_meta['TracerRadionuclide']
         if verbose:
-            print(f"(ImageOps4d): Radio isotope is {tracer_isotope}", "with half life {self.half_life} s")
+            print(f"(ImageOps4d): Radio isotope is {tracer_isotope}", f"with half life {half_life} s")
+            
     image_weighted_sum = math_lib.weighted_sum_computation(image_frame_duration=image_frame_duration,
                                                            half_life=half_life,
                                                            pet_series=pet_series,
@@ -114,28 +120,33 @@ def motion_correction(input_image_4d_path: str,
 
     Returns:
         pet_moco_np (np.ndarray): Motion corrected PET image series as a numpy array.
-        pet_moco_pars (list[str]): List of ANTS registration files applied to each frame.
+        pet_moco_params (list[str]): List of ANTS registration files applied to each frame.
         pet_moco_fd (list[float]): List of framewise displacement measure corresponding 
         to each frame transform.
     """
     pet_nibabel = nibabel.load(input_image_4d_path)
-    pet_sum_image = nibabel.load(reference_image_path)
+    pet_ref_image = nibabel.load(reference_image_path)
     pet_ants = ants.from_nibabel(pet_nibabel)
-    pet_sum_image_ants = ants.from_nibabel(pet_sum_image)
+    pet_sum_image_ants = ants.from_nibabel(pet_ref_image)
+    
     pet_moco_ants_dict = ants.motion_correction(pet_ants, pet_sum_image_ants, type_of_transform='Rigid')
     if verbose:
         print('(ImageOps4D): motion correction finished.')
+    
     pet_moco_ants = pet_moco_ants_dict['motion_corrected']
-    pet_moco_pars = pet_moco_ants_dict['motion_parameters']
+    pet_moco_params = pet_moco_ants_dict['motion_parameters']
     pet_moco_fd = pet_moco_ants_dict['FD']
     pet_moco_np = pet_moco_ants.numpy()
     pet_moco_nibabel = ants.to_nibabel(pet_moco_ants)
+    
     copy_meta_path = re.sub('.nii.gz|.nii', '.json', out_image_path)
-    image_io.write_dict_to_json(image_io.ImageIO.load_meta(input_image_4d_path), copy_meta_path)
+    meta_data_dict = image_io.ImageIO.load_metadata_for_nifty_with_same_filename(input_image_4d_path)
+    image_io.write_dict_to_json(meta_data_dict=meta_data_dict, out_path=copy_meta_path)
+    
     nibabel.save(pet_moco_nibabel, out_image_path)
     if verbose:
         print(f"(ImageOps4d): motion corrected image saved to {out_image_path}")
-    return pet_moco_np, pet_moco_pars, pet_moco_fd
+    return pet_moco_np, pet_moco_params, pet_moco_fd
 
 
 def register_pet(input_calc_image_path: str,
@@ -171,12 +182,14 @@ def register_pet(input_calc_image_path: str,
                                    write_composite_transform=True)
     if verbose:
         print(f'Registration computed transforming image {input_calc_image_path} to', f'{reference_image_path} space')
+        
     xfm_apply = ants.apply_transforms(moving=pet_moco,
                                       fixed=mri_image,
                                       transformlist=xfm_output['fwdtransforms'],
                                       imagetype=3)
     if verbose:
         print(f'Registration applied to {input_reg_image_path}')
+        
     ants.image_write(xfm_apply, out_image_path)
     if verbose:
         print(f'Transformed image saved to {out_image_path}')
@@ -211,10 +224,10 @@ def resample_segmentation(input_image_4d_path: str, segmentation_image_path: str
         print(f'Resampled segmentation saved to {out_seg_path}')
 
 
-def mask_image_to_vals(input_image_4d_path: str,
-                       segmentation_image_path: str,
-                       values: list[int],
-                       verbose: bool, ) -> np.ndarray:
+def extract_tac_from_4dnifty_using_mask(input_image_4d_path: str,
+                                        segmentation_image_path: str,
+                                        values: list[int],
+                                        verbose: bool, ) -> np.ndarray:
     """
     Creates a time-activity curve (TAC) by computing the average value within a region, for each 
     frame in a 4D PET image series. Takes as input a PET image, which has been registered to
@@ -239,11 +252,14 @@ def mask_image_to_vals(input_image_4d_path: str,
         NotImplementedError: If `values` has more than two regions, as this is future functionality
     """
     if len(values) > 1:
-        raise NotImplementedError('mask_image_to_vals can only average over one region at the \
-            moment. Use a list with only one value.')
+        raise NotImplementedError('extract_tac_from_4dnifty_using_mask can only average over one region at the moment. '
+                                  'Use a list with only one value.')
+    
     pet_image_4d = nibabel.load(input_image_4d_path).get_fdata()
-    seg_image = nibabel.load(segmentation_image_path).get_fdata()
     num_frames = pet_image_4d.shape[3]
+    seg_image = nibabel.load(segmentation_image_path).get_fdata()
+    
+    tac_out = np.zeros(num_frames, float)
     for region in values:
         if verbose:
             print(f'Running TAC for region index {region}')
@@ -253,31 +269,41 @@ def mask_image_to_vals(input_image_4d_path: str,
     return tac_out
 
 
+# TODO: Shift to accepting color-key dictionaries rather than a file path.
 def write_tacs(input_image_4d_path: str,
                color_table_path: str,
                segmentation_image_path: str,
                out_tac_path: str,
-               verbose: bool):
+               verbose: bool,
+               time_frame_keyword: str = 'FrameReferenceTime'):
     """
     Function to write Tissue Activity Curves for each region, given a segmentation,
     4D PET image, and color table. Computes the average of the PET image within each
     region. Writes a JSON for each region with region name, frame start time, and mean 
     value within region.
     """
-    pet_meta = image_io.ImageIO.load_meta(input_image_4d_path)
-    with open(color_table_path, 'r', encoding='utf-8') as color_table_file:
-        color_table = json.load(color_table_file)
+    
+    if time_frame_keyword not in ['FrameReferenceTime', 'FrameTimesStart']:
+        raise ValueError(f"'time_frame_keyword' must be one of 'FrameReferenceTime' or 'FrameTimesStart'")
+    
+    pet_meta = image_io.ImageIO.load_metadata_for_nifty_with_same_filename(input_image_4d_path)
+    color_table = image_io.ImageIO.read_color_table_json(ctab_file=color_table_path)
     regions_list = color_table['data']
+    
+    tac_extraction_func = extract_tac_from_4dnifty_using_mask
+    
     for region_pair in regions_list:
         region_index, region_name = region_pair
-        region_json = {'region_name': region_name}
-        region_json['frame_start_time'] = pet_meta['FrameTimesStart']
-        region_json['activity'] = mask_image_to_vals(input_image_4d_path=input_image_4d_path,
-                                                     segmentation_image_path=segmentation_image_path,
-                                                     values=[region_index],
-                                                     verbose=verbose).tolist()
-        with open(os.path.join(out_tac_path, f'tac-{region_name}.json'), 'w', encoding='ascii') as out_file:
-            json.dump(obj=region_json, fp=out_file, indent=4)
+        region_json = {'region_name': region_name, 'tac': {'time': None, 'activity': None}}
+        region_json['tac']['time'] = pet_meta[time_frame_keyword]
+        region_json['tac']['activity'] = tac_extraction_func(input_image_4d_path=input_image_4d_path,
+                                                             segmentation_image_path=segmentation_image_path,
+                                                             values=[region_index],
+                                                             verbose=verbose).tolist()
+        # TODO: Shift this into a np.savetxt with the region name as the header comment
+        out_tac_path = os.path.join(out_tac_path, f'tac-{region_name}.json')
+        image_io.write_dict_to_json(meta_data_dict=region_json, out_path=out_tac_path)
+        
 
 
 class ImageOps4D():
@@ -295,7 +321,7 @@ class ImageOps4D():
           :func:`weighted_series_sum` as reference.
         - :meth:`run_register_pet`: Runs :meth:`register_pet` on motion corrected PET with the output of
           :func:`weighted_series_sum` used to compute registration.
-        - :meth:`run_mask_image_to_vals`: Runs :meth:`mask_image_to_vals`, to be used with :meth:`run_write_tacs`.
+        - :meth:`run_mask_image_to_vals`: Runs :meth:`extract_tac_from_4dnifty_using_mask`, to be used with :meth:`run_write_tacs`.
         - :meth:`run_write_tacs`: Runs :meth:`write_tacs` on preprocessed PET data to produce regional TACs.
     
     Attributes:
@@ -417,10 +443,10 @@ class ImageOps4D():
                                   segmentation_image_path=self.image_paths['seg'],
                                   out_seg_path=self.image_paths['seg_resampled'],
                                   verbose=self.verbose)
-        tac_out = mask_image_to_vals(input_image_4d_path=self.image_paths['pet_moco_reg'],
-                                     segmentation_image_path=self.image_paths['seg_resampled'],
-                                     values=values,
-                                     verbose=self.verbose)
+        tac_out = extract_tac_from_4dnifty_using_mask(input_image_4d_path=self.image_paths['pet_moco_reg'],
+                                                      segmentation_image_path=self.image_paths['seg_resampled'],
+                                                      values=values,
+                                                      verbose=self.verbose)
         return tac_out
     
     def run_write_tacs(self):
