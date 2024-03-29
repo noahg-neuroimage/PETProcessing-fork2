@@ -120,7 +120,7 @@ def motion_correction(input_image_4d_path: str,
 
     Returns:
         pet_moco_np (np.ndarray): Motion corrected PET image series as a numpy array.
-        pet_moco_pars (list[str]): List of ANTS registration files applied to each frame.
+        pet_moco_params (list[str]): List of ANTS registration files applied to each frame.
         pet_moco_fd (list[float]): List of framewise displacement measure corresponding 
         to each frame transform.
     """
@@ -128,20 +128,25 @@ def motion_correction(input_image_4d_path: str,
     pet_ref_image = nibabel.load(reference_image_path)
     pet_ants = ants.from_nibabel(pet_nibabel)
     pet_sum_image_ants = ants.from_nibabel(pet_ref_image)
+    
     pet_moco_ants_dict = ants.motion_correction(pet_ants, pet_sum_image_ants, type_of_transform='Rigid')
     if verbose:
         print('(ImageOps4D): motion correction finished.')
+    
     pet_moco_ants = pet_moco_ants_dict['motion_corrected']
-    pet_moco_pars = pet_moco_ants_dict['motion_parameters']
+    pet_moco_params = pet_moco_ants_dict['motion_parameters']
     pet_moco_fd = pet_moco_ants_dict['FD']
     pet_moco_np = pet_moco_ants.numpy()
     pet_moco_nibabel = ants.to_nibabel(pet_moco_ants)
+    
     copy_meta_path = re.sub('.nii.gz|.nii', '.json', out_image_path)
-    image_io.write_dict_to_json(image_io.ImageIO.load_metadata_for_nifty_with_same_filename(input_image_4d_path), copy_meta_path)
+    meta_data_dict = image_io.ImageIO.load_metadata_for_nifty_with_same_filename(input_image_4d_path)
+    image_io.write_dict_to_json(meta_data_dict=meta_data_dict, out_path=copy_meta_path)
+    
     nibabel.save(pet_moco_nibabel, out_image_path)
     if verbose:
         print(f"(ImageOps4d): motion corrected image saved to {out_image_path}")
-    return pet_moco_np, pet_moco_pars, pet_moco_fd
+    return pet_moco_np, pet_moco_params, pet_moco_fd
 
 
 def register_pet(input_calc_image_path: str,
