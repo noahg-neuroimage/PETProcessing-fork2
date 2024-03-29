@@ -10,16 +10,16 @@ from nibabel.filebasedimages import FileBasedHeader, FileBasedImage
 import numpy as np
 
 
-def write_dict_to_json(meta_file: dict,out_path: str):
+def write_dict_to_json(meta_data_dict: dict, out_path: str):
     """
     Save a metadata file in python to a directory.
 
     Args:
-        meta_file (dict): A dictionary with imaging metadata, to be saved to file.
+        meta_data_dict (dict): A dictionary with imaging metadata, to be saved to file.
         out_path (str): Directory to which `meta_file` is to be saved.
     """
-    with open(out_path,'w',encoding='utf-8') as copy_file:
-        json.dump(meta_file,copy_file,indent=4)
+    with open(out_path, 'w', encoding='utf-8') as copy_file:
+        json.dump(meta_data_dict, copy_file, indent=4)
 
 
 class ImageIO():
@@ -38,9 +38,8 @@ class ImageIO():
     Attributes:
         verbose (bool): Set to `True` to output processing information.
     """
-    def __init__(self,
-            verbose: bool=True,
-            ):
+    
+    def __init__(self, verbose: bool = True, ):
         """
         Initializes :class:`ImageIO` and sets verbose.
 
@@ -48,9 +47,8 @@ class ImageIO():
             verbose (bool): Set to True to print debugging info to shell. Defaults to True.
         """
         self.verbose = verbose
-
-
-    def load_nii(self,image_path: str) -> FileBasedImage:
+    
+    def load_nii(self, image_path: str) -> FileBasedImage:
         """
         Wrapper to load nifti from image_path.
 
@@ -66,18 +64,18 @@ class ImageIO():
         """
         if not os.path.exists(image_path):
             raise FileNotFoundError(f"Image file {image_path} not found")
-        if not re.search(r'\.nii\.gz$|\.nii$',image_path):
+        
+        if not re.search(r'\.nii\.gz$|\.nii$', image_path):
             raise OSError(f"{image_path} does not have the extension .nii or .nii.gz")
+        
         image = nibabel.load(image_path)
 
         if self.verbose:
             print(f"(ImageIO): {image_path} loaded")
 
         return image
-
-
-    def save_nii(self,
-            image: nibabel.nifti1.Nifti1Image,out_file: str) -> int:
+    
+    def save_nii(self, image: nibabel.nifti1.Nifti1Image, out_file: str) -> int:
         """
         Wrapper to save nifti to file.
 
@@ -208,7 +206,7 @@ class ImageIO():
         return ctab_json
 
     @staticmethod
-    def load_meta(image_path) -> dict:
+    def load_metadata_for_nifty_with_same_filename(image_path) -> dict:
         """
         Static method to load metadata. Assume same path as input image path.
 
@@ -226,9 +224,12 @@ class ImageIO():
         """
         if not os.path.exists(image_path):
             raise FileNotFoundError(f"Image file {image_path} not found")
-        meta_path = re.sub(r'\.nii\.gz$|\.nii$','.json',image_path)
+        
+        meta_path = re.sub(r'\.nii\.gz$|\.nii$', '.json', image_path)
+        
         if not os.path.exists(meta_path):
-            raise FileNotFoundError(f"Metadata file {meta_path} not found")
-        with open(meta_path,'r',encoding='utf-8') as meta_file:
+            raise FileNotFoundError(f"Metadata file {meta_path} not found. Does it have a different path?")
+        
+        with open(meta_path, 'r', encoding='utf-8') as meta_file:
             image_meta = json.load(meta_file)
         return image_meta

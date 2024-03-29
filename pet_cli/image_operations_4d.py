@@ -66,7 +66,7 @@ def weighted_series_sum(input_image_4d_path: str, out_image_path: str, half_life
     """
     if half_life <= 0:
         raise ValueError('(ImageOps4d): Radioisotope half life is zero or negative.')
-    pet_meta = image_io.ImageIO.load_meta(input_image_4d_path)
+    pet_meta = image_io.ImageIO.load_metadata_for_nifty_with_same_filename(input_image_4d_path)
     pet_image = nibabel.load(input_image_4d_path)
     pet_series = pet_image.get_fdata()
     image_frame_start = pet_meta['FrameTimesStart']
@@ -131,7 +131,7 @@ def motion_correction(input_image_4d_path: str,
     pet_moco_np = pet_moco_ants.numpy()
     pet_moco_nibabel = ants.to_nibabel(pet_moco_ants)
     copy_meta_path = re.sub('.nii.gz|.nii', '.json', out_image_path)
-    image_io.write_dict_to_json(image_io.ImageIO.load_meta(input_image_4d_path), copy_meta_path)
+    image_io.write_dict_to_json(image_io.ImageIO.load_metadata_for_nifty_with_same_filename(input_image_4d_path), copy_meta_path)
     nibabel.save(pet_moco_nibabel, out_image_path)
     if verbose:
         print(f"(ImageOps4d): motion corrected image saved to {out_image_path}")
@@ -264,7 +264,7 @@ def write_tacs(input_image_4d_path: str,
     region. Writes a JSON for each region with region name, frame start time, and mean 
     value within region.
     """
-    pet_meta = image_io.ImageIO.load_meta(input_image_4d_path)
+    pet_meta = image_io.ImageIO.load_metadata_for_nifty_with_same_filename(input_image_4d_path)
     with open(color_table_path, 'r', encoding='utf-8') as color_table_file:
         color_table = json.load(color_table_file)
     regions_list = color_table['data']
