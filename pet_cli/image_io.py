@@ -193,8 +193,10 @@ class ImageIO():
         """
         if not os.path.exists(ctab_file):
             raise FileNotFoundError(f"Image file {ctab_file} not found")
+        
         with open(ctab_file, "r", encoding="utf-8") as c_file:
             ctab_json = json.load(c_file)
+            
         return ctab_json
     
     @staticmethod
