@@ -71,14 +71,20 @@ def weighted_series_sum(input_image_4d_path: str, out_image_path: str, half_life
     pet_series = pet_image.get_fdata()
     image_frame_start = pet_meta['FrameTimesStart']
     image_frame_duration = pet_meta['FrameDuration']
+    # TODO: Shift this calculation into its own function
     if 'DecayCorrectionFactor' in pet_meta.keys():
         image_decay_correction = pet_meta['DecayCorrectionFactor']
     elif 'DecayFactor' in pet_meta.keys():
         image_decay_correction = pet_meta['DecayFactor']
+    else:
+        raise ValueError("Neither 'DecayCoorectionFactor' nor 'DecayFactor' exist in meta-data file")
+    
+    # TODO: Shift this out into the class since calculation has nothing to do with logging
     if 'TracerRadionuclide' in pet_meta.keys():
         tracer_isotope = pet_meta['TracerRadionuclide']
         if verbose:
-            print(f"(ImageOps4d): Radio isotope is {tracer_isotope}", "with half life {self.half_life} s")
+            print(f"(ImageOps4d): Radio isotope is {tracer_isotope}", f"with half life {half_life} s")
+            
     image_weighted_sum = math_lib.weighted_sum_computation(image_frame_duration=image_frame_duration,
                                                            half_life=half_life,
                                                            pet_series=pet_series,
@@ -119,9 +125,9 @@ def motion_correction(input_image_4d_path: str,
         to each frame transform.
     """
     pet_nibabel = nibabel.load(input_image_4d_path)
-    pet_sum_image = nibabel.load(reference_image_path)
+    pet_ref_image = nibabel.load(reference_image_path)
     pet_ants = ants.from_nibabel(pet_nibabel)
-    pet_sum_image_ants = ants.from_nibabel(pet_sum_image)
+    pet_sum_image_ants = ants.from_nibabel(pet_ref_image)
     pet_moco_ants_dict = ants.motion_correction(pet_ants, pet_sum_image_ants, type_of_transform='Rigid')
     if verbose:
         print('(ImageOps4D): motion correction finished.')
