@@ -412,7 +412,7 @@ class ImageOps4D():
             seg_res_path = os.path.join(self.out_path, 'segmentation')
             os.makedirs(seg_res_path, exist_ok=True)
             self.image_paths['seg_resampled'] = os.path.join(seg_res_path,
-                    f'{self.sub_id}-segmentation-resampled.nii.gz')
+                                                             f'{self.sub_id}-segmentation-resampled.nii.gz')
             resample_segmentation(input_image_4d_path=self.image_paths['pet_moco_reg'],
                                   segmentation_image_path=self.image_paths['seg'],
                                   out_seg_path=self.image_paths['seg_resampled'],
