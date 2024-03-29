@@ -257,26 +257,34 @@ def write_tacs(input_image_4d_path: str,
                color_table_path: str,
                segmentation_image_path: str,
                out_tac_path: str,
-               verbose: bool):
+               verbose: bool,
+               time_frame_keyword: str = 'FrameReferenceTime'):
     """
     Function to write Tissue Activity Curves for each region, given a segmentation,
     4D PET image, and color table. Computes the average of the PET image within each
     region. Writes a JSON for each region with region name, frame start time, and mean 
     value within region.
     """
+    
+    if time_frame_keyword not in ['FrameReferenceTime', 'FrameTimesStart']:
+        raise ValueError(f"'time_frame_keyword' must be one of 'FrameReferenceTime' or 'FrameTimesStart'")
+    
+    
     pet_meta = image_io.ImageIO.load_metadata_for_nifty_with_same_filename(input_image_4d_path)
     color_table = image_io.ImageIO.read_color_table_json(ctab_file=color_table_path)
     regions_list = color_table['data']
     for region_pair in regions_list:
         region_index, region_name = region_pair
         region_json = {'region_name': region_name}
-        region_json['frame_start_time'] = pet_meta['FrameTimesStart']
+        region_json['time'] = pet_meta[time_frame_keyword]
         region_json['activity'] = mask_image_to_vals(input_image_4d_path=input_image_4d_path,
                                                      segmentation_image_path=segmentation_image_path,
                                                      values=[region_index],
                                                      verbose=verbose).tolist()
-        with open(os.path.join(out_tac_path, f'tac-{region_name}.json'), 'w', encoding='ascii') as out_file:
-            json.dump(obj=region_json, fp=out_file, indent=4)
+        
+        out_tac_path = os.path.join(out_tac_path, f'tac-{region_name}.json')
+        image_io.write_dict_to_json(meta_data_dict=region_json, out_path=out_tac_path)
+        
 
 
 class ImageOps4D():
