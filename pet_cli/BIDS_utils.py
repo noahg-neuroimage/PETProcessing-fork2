@@ -85,7 +85,8 @@ class BidsInstance:
         """
         Creates the necessary directories and files for a BIDS project scaffold.
 
-        Example:
+        Example below
+
         .. code-block:: text
 
             project/
@@ -264,6 +265,9 @@ class BidsInstance:
 
         Args:
             name (str): The name under which to cache the current file path.
+
+        Note:
+            The filepath cache can be accessed using the names provided as keys in a dictionary: self.path_cache["name"].
         """
         self.path_cache[name] = self.filepath
 
@@ -277,6 +281,9 @@ class BidsInstance:
         Args:
             value (str): The new session value to set.
             compile_filepath (bool, optional): Whether to recompile the file path after updating. Defaults to True.
+
+        Note:
+            This is the only "change_<element>" function that is not dynamically generated because session information needs to be stored in the participants.tsv file, thus needing special handling.
         """
         self._update_participants(session=value)
         self.parts['session'] = value
@@ -299,6 +306,9 @@ class BidsInstance:
     def _setup_dynamic_methods(self):
         """
         Dynamically creates and assigns methods for changing individual parts of the BIDS file path.
+
+        Note:
+            This creates callable functions to change individual elements of a filepath dynamically such that for every option (E.g. "modality") there is a function "change_<option>" (E.g. "change_modality").
         """
 
         for key in self.parts.keys():
@@ -335,6 +345,8 @@ class BidsInstance:
                      extension: str = None, ) -> None:
         """
         Updates multiple parts of the BIDS file path at once based on provided arguments.
+
+        This function calls all the individual "change_<element>" functions that comprise the inputs and compiles them into a path at the end.
 
         Args:
             session (str): Session identifier.
