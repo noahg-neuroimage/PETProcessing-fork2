@@ -15,7 +15,7 @@ Modules
    pet_cli.blood_input
    pet_cli.image_operations_4d
    pet_cli.math_lib
-   pet_cli.BIDS_utils
+   pet_cli.bids_utils
 
 
 
