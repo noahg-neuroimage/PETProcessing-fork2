@@ -22,7 +22,7 @@ The user can optionally provide:
     * File path for 3D T2-weighted MR sidecar file (JSON containing image metadata)
     * T2w image label (E.g. 'T2w', 'FLAIR')
 
-This script uses the :class:`pet_cli.BIDS_utils.BidsInstance` class to set up the internal BIDS architecture.
+This script uses the :class:`pet_cli.bids_utils.BidsInstance` class to set up the internal BIDS architecture.
 
 Example:
     .. code-block:: bash
@@ -30,11 +30,11 @@ Example:
          pet-cli-bids --project-path /path/to/output/ --subject "SUBJECT-ID" --session "SESSION-ID" --PET-image /path/to/PET.nii --PET-sidecar /path/to/PET.json --PET-label "FDG"
 
 See Also:
-    :mod:`pet_cli.BIDS_utils` - module for initiating, saving, and dynamically managing BIDS elements.
+    :mod:`pet_cli.bids_utils` - module for initiating, saving, and dynamically managing BIDS elements.
 
 """
 import argparse
-from . import BIDS_utils
+from . import bids_utils
 
 
 def main():
@@ -89,7 +89,7 @@ def main():
     if args.T2w_image and not args.T2w_label:
         parser.error("--T2w-label is required when --T2w-image is used.")
 
-    bids_instance = BIDS_utils.BidsInstance(project_path=args.project_path, subject=args.subject)
+    bids_instance = bids_utils.BidsInstance(project_path=args.project_path, subject=args.subject)
     bids_instance.create_filepath(session=args.session,
                                   modality="pet",
                                   image_type=args.PET_label)
