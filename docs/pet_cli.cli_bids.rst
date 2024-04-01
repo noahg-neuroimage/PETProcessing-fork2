@@ -1,5 +1,5 @@
 BIDS Data Setup
-========================
+===============
 
 .. automodule:: pet_cli.cli_bids
    :members:

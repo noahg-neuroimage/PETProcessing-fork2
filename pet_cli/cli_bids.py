@@ -90,6 +90,7 @@ def main():
         parser.error("--T2w-label is required when --T2w-image is used.")
 
     bids_instance = bids_utils.BidsInstance(project_path=args.project_path, subject=args.subject)
+
     bids_instance.create_filepath(session=args.session,
                                   modality="pet",
                                   image_type=args.PET_label)
