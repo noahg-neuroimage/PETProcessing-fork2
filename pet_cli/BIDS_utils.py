@@ -1,7 +1,8 @@
 """
-This module provides utilities for working with Brain Imaging Data Structure (BIDS) datasets. It includes
-functionality for creating a BIDS project scaffold, managing file paths, and reading/writing various file types
-commonly used in neuroimaging research.
+This module contains utilities for handling `Brain Imaging Data Structure (BIDS) <https://bids.neuroimaging.io/>`_ datasets. It simplifies the
+creation and management of BIDS projects, offering functions for building project scaffolds, handling file paths,
+and managing neuroimaging data files. Key features include scaffolding BIDS projects, caching file paths for efficient
+retrieval, and supporting various neuroimaging file types through integration with `nibabel`.
 """
 import os
 import json
@@ -15,7 +16,10 @@ from nibabel.filebasedimages import FileBasedImage
 
 class BidsInstance:
     """
-    A class to manage BIDS dataset file paths and to create a BIDS project scaffold.
+    Manages BIDS dataset paths and facilitates the creation and organization of a BIDS project scaffold.
+
+    Provides methods for constructing compliant file paths, caching for quick access, and operations on BIDS datasets,
+    including file and directory management.
 
     Attributes:
         project_path (str): The root path of the BIDS project.
@@ -26,13 +30,8 @@ class BidsInstance:
         directory_parts_names (tuple): Names of components used in directory paths.
         file_parts_names (tuple): Names of components used in file naming.
 
-    Methods:
-        :meth:`create_filepath`: Constructs a file path based on BIDS naming conventions and updates class attributes.
-        :meth:`manual_filepath`: Manually sets the file path and updates class attributes based on the provided path.
-        :meth:`cache_filepath`: Caches the current file path with a given name for later retrieval.
-        :meth:`change_session`: Updates the session part of the file path and optionally recompile the path.
-        :meth:`delete_file`: Deletes a specified file within the project.
-        :meth:`delete_directory`: Deletes a specified directory within the project.
+    Usage:
+        Initialize with a project path and subject identifier to manage dataset paths and create BIDS scaffolds.
     """
 
     def __init__(self,
@@ -40,6 +39,8 @@ class BidsInstance:
                  subject: str):
         """
         Initializes a BidsInstance object with project path and subject.
+
+        Calls :func:`_setup_dynamic_methods` and :func:`_create_bids_scaffold`.
 
         Args:
             project_path (str): The root directory of the BIDS project.
@@ -83,6 +84,29 @@ class BidsInstance:
     def _create_bids_scaffold(self):
         """
         Creates the necessary directories and files for a BIDS project scaffold.
+
+        Example:
+        .. code-block:: text
+
+            project/
+            \u251C\u2500\u2500 CHANGES
+            \u251C\u2500\u2500 README
+            \u251C\u2500\u2500 participants.json
+            \u251C\u2500\u2500 participants.tsv
+            \u251C\u2500\u2500 code/
+            \u2502   \u2514\u2500\u2500 example.code
+            \u251C\u2500\u2500 derivatives/
+            \u2502   \u2514\u2500\u2500 example.file
+            \u251C\u2500\u2500 sourcedata/
+            \u2502   \u2514\u2500\u2500 example.file
+            \u2514\u2500\u2500 sub-001/
+                \u2514\u2500\u2500 ses-01/
+                    \u2514\u2500\u2500 anat/
+                        \u251C\u2500\u2500 example.nii
+                        \u2514\u2500\u2500 example.json
+
+
+        This structure helps visualize the organization of a simple project.
         """
         dirs_to_create = [
             "code",
