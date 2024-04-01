@@ -8,5 +8,5 @@ CLI Reference
    pet_cli.cli_graphical_analysis
    pet_cli.cli_graphical_plots
    pet_cli.cli_parametric_images
-   pet_cli.bids_cli
+   pet_cli.cli_bids
 
