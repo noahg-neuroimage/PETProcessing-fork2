@@ -22,7 +22,7 @@ The user can optionally provide:
     * File path for 3D T2-weighted MR sidecar file (JSON containing image metadata)
     * T2w image label (E.g. 'T2w', 'FLAIR')
 
-This script uses the :class:'pet_cli.BIDS_utils.BidsInstance' class to set up the internal BIDS architecture.
+This script uses the :class:`pet_cli.BIDS_utils.BidsInstance` class to set up the internal BIDS architecture.
 
 Example:
     .. code-block:: bash
