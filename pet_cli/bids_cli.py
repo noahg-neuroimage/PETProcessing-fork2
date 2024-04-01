@@ -7,7 +7,7 @@ It allows users to perform tasks such as creating a BIDS scaffold, manipulating 
 and processing imaging data using command-line arguments.
 
 The user must provide:
-    * Project directory path
+    * Output directory path (project-path)
     * Subject ID
     * Session ID
     * File path for 4D PET image (only supporting Nifti)
