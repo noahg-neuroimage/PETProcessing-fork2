@@ -104,7 +104,7 @@ def _generate_args() -> argparse.Namespace:
     Returns:
         args (argparse.Namespace): Arguments used in the command line and their corresponding values.
     """
-    parser = argparse.ArgumentParser(prog='PET Preprocessing',
+    parser = argparse.ArgumentParser(prog='pet-cli-preproc',
                                      description='Command line interface for running PET pre-processing steps.',
                                      epilog=_PREPROC_EXAMPLES_, formatter_class=argparse.RawTextHelpFormatter)
     
@@ -135,7 +135,7 @@ def _generate_args() -> argparse.Namespace:
     parser_tac.add_argument('-s', '--segmentation', required=True,
                             help='Path to segmentation image in anatomical space.')
     parser_tac.add_argument('-c', '--color_table_path', required=True, help='Path to color table in JSON format')
-    parser_tac.add_argument('-r', '--resample_segmentation', default=True, action='store_true',
+    parser_tac.add_argument('-r', '--resample_segmentation', default=False, action='store_true',
                             help='Resample segmentation.')
     
     verb_group = parser.add_argument_group('Additional information')
@@ -208,10 +208,11 @@ def main():
                                                          ops_dir_name='segmentation',
                                                          file_prefix=args.subject_id,
                                                          ops_desc='seg')
-        image_operations_4d.resample_segmentation(input_image_4d_path=args.pet,
-                                                  segmentation_image_path=args.segmentation,
-                                                  out_seg_path=image_write,
-                                                  verbose=args.verbose)
+        if args.resample_segmenation:
+            image_operations_4d.resample_segmentation(input_image_4d_path=args.pet,
+                                                      segmentation_image_path=args.segmentation,
+                                                      out_seg_path=image_write,
+                                                      verbose=args.verbose)
         
         image_operations_4d.write_tacs(input_image_4d_path=args.pet,
                                        color_table_path=args.color_table_path,
