@@ -158,6 +158,8 @@ def _generate_args() -> argparse.Namespace:
     _add_common_args(parser_reg)
     parser_reg.add_argument('-a', '--anatomical', required=True, help='Path to 3D anatomical image (T1w or T2w).',
                             type=str)
+    parser_reg.add_argument('-r', '--pet-reference', default=None,
+                            help='Path to reference image for motion correction, if not weighted_sum.')
     
     # create parser for the "motion_correct" command
     parser_moco = subparsers.add_parser('motion_correct')
@@ -245,7 +247,7 @@ def main():
                                                          ops_dir_name='segmentation',
                                                          file_prefix=args.prefix,
                                                          ops_desc='seg')
-        if args.resample_segmenation:
+        if args.resample_segmentation:
             image_operations_4d.resample_segmentation(input_image_4d_path=args.pet,
                                                       segmentation_image_path=args.segmentation,
                                                       out_seg_path=image_write,
