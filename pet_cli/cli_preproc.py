@@ -13,10 +13,30 @@ The user must provide:
     * The operation to be performed on input data. Options: 'weighted_sum', 'motion_correct',
       'register', or 'write_tacs'.
 
-Example:
-    .. code-block:: bash
-
-        pet-cli-preproc --pet /path/to/pet.nii --anatomical /path/to/mri.nii --pet_reference /path/to/pet_sum.nii --out_dir /path/to/output --operation register
+Examples:
+    * Half-life Weighted Sum:
+    
+        .. code-block:: bash
+    
+            pet-cli-preproc --operation weighted_sum --pet /path/to/pet.nii --out_dir /path/to/output
+    
+    * Image Registration:
+    
+        .. code-block:: bash
+    
+            pet-cli-preproc --operation register --pet /path/to/pet.nii --anatomical /path/to/mri.nii --pet_reference /path/to/pet_sum.nii --out_dir /path/to/output
+            
+    * Motion Correction:
+    
+        .. code-block:: bash
+            
+            pet-cli-preproc --operation motion_correct --pet /path/to/pet.nii --pet-reference /path/to/sum.nii --out_dir /path/to/output
+            
+    * Extracting TACs Using A Mask And Color-Table:
+    
+        .. code-block:: bash
+            
+            pet-cli-preproc --operation write_tacs --pet /path/to/pet.nii --segmentation /path/to/seg_masks.nii --color_table_path /path/to/color_table.json --out_dir /path/to/output
 
 See Also:
     * :mod:`pet_cli.image_operations_4d` - module used to preprocess PET imaging data.
