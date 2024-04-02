@@ -76,7 +76,7 @@ def _generate_image_path_and_directory(main_dir, ops_dir_name, file_prefix, ops_
             # Directories '/home/images/ops' are created if they do not exist.
             
     """
-    image_dir = os.path.join(os.path.abspath(main_dir), ops_dir_name)
+    image_dir = os.path.join(main_dir, ops_dir_name)
     os.makedirs(image_dir, exist_ok=True)
     image_path = os.path.join(f'{image_dir}', f'{file_prefix}_desc-{ops_desc}.nii.gz')
     return str(image_path)
@@ -151,6 +151,8 @@ def main():
     """
     args = _generate_args()
     
+    args.out_dir = os.path.abspath(args.out_dir)
+    
     if args.operation == 'weighted_sum':
         image_write = _generate_image_path_and_directory(main_dir=args.out_dir,
                                                          ops_dir_name='sum_image',
@@ -185,8 +187,8 @@ def main():
                                          verbose=args.verbose)
     
     if args.operation == 'write_tacs':
-        tac_write = os.path.join(args.out_dir, 'tacs')
-        os.makedirs(tac_write, exist_ok=True)
+        tac_write_path = os.path.join(args.out_dir, 'tacs')
+        os.makedirs(tac_write_path, exist_ok=True)
         image_write = _generate_image_path_and_directory(main_dir=args.out_dir,
                                                          ops_dir_name='segmentation',
                                                          file_prefix=args.subject_id,
@@ -199,7 +201,7 @@ def main():
         image_operations_4d.write_tacs(input_image_4d_path=args.pet,
                                        color_table_path=args.color_table_path,
                                        segmentation_image_path=image_write,
-                                       out_tac_path=tac_write,
+                                       out_tac_path=tac_write_path,
                                        verbose=args.verbose)
 
 
