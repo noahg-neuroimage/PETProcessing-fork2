@@ -27,10 +27,38 @@ import argparse
 from . import image_operations_4d
 
 
-def _generate_image_path_and_directory(main_dir, ops_dir, sub_id, ops_ext) -> str:
-    image_dir = os.path.join(main_dir, ops_dir)
+def _generate_image_path_and_directory(main_dir, ops_dir_name, file_prefix, ops_desc) -> str:
+    """
+    Generates the full path of an image file based on given parameters and creates the necessary directories.
+
+    This function takes in four arguments: the main directory (main_dir), the operations directory (ops_dir),
+    the subject ID (sub_id), and the operations extension (ops_ext). It joins these to generate the full path
+    for an image file. The generated directories are created if they do not already exist.
+
+    Args:
+        main_dir (str): The main directory path.
+        ops_dir_name (str): The operations (ops) directory. This is a directory inside `main_dir`.
+        file_prefix (str): The prefix for the file name. Usually sub-XXXX if following BIDS.
+        ops_desc (str): The operations (ops) extension to append to the filename.
+
+    Returns:
+        str: The full path of the image file with '.nii.gz' extension.
+
+    Side Effects:
+        Creates directories denoted by `main_dir`/`ops_dir_name` if they do not exist.
+
+    Example:
+        
+        .. code-block:: python
+        
+            _generate_image_path_and_directory('/home/images', 'ops', '123', 'preprocessed')
+            # '/home/images/ops/123_desc-preprocessed.nii.gz'
+            # Directories '/home/images/ops' are created if they do not exist.
+            
+    """
+    image_dir = os.path.join(os.path.abspath(main_dir), ops_dir_name)
     os.makedirs(image_dir, exist_ok=True)
-    image_path = os.path.join(f'{image_dir}', f'{sub_id}_desc-{ops_ext}.nii.gz')
+    image_path = os.path.join(f'{image_dir}', f'{file_prefix}_desc-{ops_desc}.nii.gz')
     return str(image_path)
 
 
@@ -81,9 +109,9 @@ def _check_ref(args) -> str:
         ref_image = args.pet_reference
     else:
         ref_image = _generate_image_path_and_directory(main_dir=args.out_dir,
-                                                       ops_dir='sum_image',
-                                                       sub_id=args.subject_id,
-                                                       ops_ext='sum')
+                                                       ops_dir_name='sum_image',
+                                                       file_prefix=args.subject_id,
+                                                       ops_desc='sum')
     return ref_image
 
 
@@ -95,9 +123,9 @@ def main():
     
     if args.operation == 'weighted_sum':
         image_write = _generate_image_path_and_directory(main_dir=args.out_dir,
-                                                         ops_dir='sum_image',
-                                                         sub_id=args.subject_id,
-                                                         ops_ext='sum')
+                                                         ops_dir_name='sum_image',
+                                                         file_prefix=args.subject_id,
+                                                         ops_desc='sum')
         image_operations_4d.weighted_series_sum(input_image_4d_path=args.pet,
                                                 out_image_path=image_write,
                                                 half_life=args.half_life,
@@ -105,9 +133,9 @@ def main():
     
     if args.operation == 'motion_correct':
         image_write = _generate_image_path_and_directory(main_dir=args.out_dir,
-                                                         ops_dir='motion-correction',
-                                                         sub_id=args.subject_id,
-                                                         ops_ext='moco')
+                                                         ops_dir_name='motion-correction',
+                                                         file_prefix=args.subject_id,
+                                                         ops_desc='moco')
         ref_image = _check_ref(args=args)
         image_operations_4d.motion_correction(input_image_4d_path=args.pet,
                                               reference_image_path=ref_image,
@@ -116,9 +144,9 @@ def main():
     
     if args.operation == 'register':
         image_write = _generate_image_path_and_directory(main_dir=args.out_dir,
-                                                         ops_dir='registration',
-                                                         sub_id=args.subject_id,
-                                                         ops_ext='reg')
+                                                         ops_dir_name='registration',
+                                                         file_prefix=args.subject_id,
+                                                         ops_desc='reg')
         ref_image = _check_ref(args=args)
         image_operations_4d.register_pet(input_calc_image_path=ref_image,
                                          input_reg_image_path=args.pet,
@@ -130,9 +158,9 @@ def main():
         tac_write = os.path.join(args.out_dir, 'tacs')
         os.makedirs(tac_write, exist_ok=True)
         image_write = _generate_image_path_and_directory(main_dir=args.out_dir,
-                                                         ops_dir='segmentation',
-                                                         sub_id=args.subject_id,
-                                                         ops_ext='seg')
+                                                         ops_dir_name='segmentation',
+                                                         file_prefix=args.subject_id,
+                                                         ops_desc='seg')
         image_operations_4d.resample_segmentation(input_image_4d_path=args.pet,
                                                   segmentation_image_path=args.segmentation,
                                                   out_seg_path=image_write,
