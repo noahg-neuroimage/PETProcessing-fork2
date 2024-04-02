@@ -97,6 +97,42 @@ Examples:
 """)
 
 
+def _add_common_args(parser: argparse.ArgumentParser) -> None:
+    """
+    Adds common arguments ('--pet', '--out_dir', and '--prefix') to a provided ArgumentParser object.
+
+    This function modifies the passed ArgumentParser object by adding three arguments commonly used in the script.
+    It uses the add_argument method of the ArgumentParser class. After running this function, the parser will
+    be able to accept and parse these additional arguments from the command line when run.
+
+    .. note::
+        This function modifies the passed `parser` object in-place and does not return anything.
+
+    Args:
+        parser (argparse.ArgumentParser): The argument parser object to which the arguments are added.
+
+    Raises:
+        argparse.ArgumentError: If a duplicate argument tries to be added.
+
+    Side Effects:
+        Modifies the ArgumentParser object by adding new arguments.
+
+    Example:
+        .. code-block:: python
+
+            parser = argparse.ArgumentParser()
+            _add_common_args(parser)
+            args = parser.parse_args(['--pet', 'pet_file', '--out_dir', './', '--prefix', 'prefix'])
+            print(args.pet)
+            print(args.out_dir)
+            print(args.prefix)
+            
+    """
+    parser.add_argument('-p', '--pet', required=True, help='Path to PET file')
+    parser.add_argument('-o', '--out_dir', default='./', help='Output directory')
+    parser.add_argument('-f', '--prefix', help='Output file prefix')
+
+
 def _generate_args() -> argparse.Namespace:
     """
     Generates command line arguments for method :func:`main`.
@@ -108,30 +144,30 @@ def _generate_args() -> argparse.Namespace:
                                      description='Command line interface for running PET pre-processing steps.',
                                      epilog=_PREPROC_EXAMPLES_, formatter_class=argparse.RawTextHelpFormatter)
     
-    parser.add_argument('-p', '--pet', required=True, help='Path to PET series.', type=str)
-    parser.add_argument('-o', '--out_dir', default="./", help='Output directory path.', type=str)
-    parser.add_argument('-f', '--prefix', default="sub-XXXX", help='Filename prefix for output files.', type=str)
-    
     # create subparsers
     subparsers = parser.add_subparsers(dest="command")
     
     # create parser for "weighted_sum" command
     parser_sum = subparsers.add_parser('weighted_sum')
+    _add_common_args(parser_sum)
     parser_sum.add_argument('-l', '--half-life', required=True, help='Half life of radioisotope in seconds.',
                             type=float)
     
     # create parser for "register" command
     parser_reg = subparsers.add_parser('register')
+    _add_common_args(parser_reg)
     parser_reg.add_argument('-a', '--anatomical', required=True, help='Path to 3D anatomical image (T1w or T2w).',
                             type=str)
     
     # create parser for the "motion_correct" command
     parser_moco = subparsers.add_parser('motion_correct')
+    _add_common_args(parser_moco)
     parser_moco.add_argument('-r', '--pet-reference', default=None,
                              help='Path to reference image for motion correction, if not weighted_sum.')
     
     # create parser for the "write_tacs" command
     parser_tac = subparsers.add_parser('write_tacs')
+    _add_common_args(parser_tac)
     parser_tac.add_argument('-s', '--segmentation', required=True,
                             help='Path to segmentation image in anatomical space.')
     parser_tac.add_argument('-c', '--color_table_path', required=True, help='Path to color table in JSON format')
