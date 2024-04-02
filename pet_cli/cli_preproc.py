@@ -117,7 +117,7 @@ def _generate_args() -> argparse.Namespace:
     
     # create parser for "weighted_sum" command
     parser_sum = subparsers.add_parser('weighted_sum')
-    parser_sum.add_argument('-h', '--half-life', required=True, help='Half life of radioisotope in seconds.',
+    parser_sum.add_argument('-l', '--half-life', required=True, help='Half life of radioisotope in seconds.',
                             type=float)
     
     # create parser for "register" command
