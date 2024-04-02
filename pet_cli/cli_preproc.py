@@ -155,7 +155,7 @@ def _check_ref(args) -> str:
     else:
         ref_image = _generate_image_path_and_directory(main_dir=args.out_dir,
                                                        ops_dir_name='sum_image',
-                                                       file_prefix=args.subject_id,
+                                                       file_prefix=args.prefix,
                                                        ops_desc='sum')
     return ref_image
 
@@ -167,21 +167,22 @@ def main():
     args = _generate_args()
     
     args.out_dir = os.path.abspath(args.out_dir)
+    args.pet = os.path.abspath(args.pet)
     
-    if args.operation == 'weighted_sum':
+    if args.command == 'weighted_sum':
         image_write = _generate_image_path_and_directory(main_dir=args.out_dir,
                                                          ops_dir_name='sum_image',
-                                                         file_prefix=args.subject_id,
+                                                         file_prefix=args.prefix,
                                                          ops_desc='sum')
         image_operations_4d.weighted_series_sum(input_image_4d_path=args.pet,
                                                 out_image_path=image_write,
                                                 half_life=args.half_life,
                                                 verbose=args.verbose)
     
-    if args.operation == 'motion_correct':
+    if args.command == 'motion_correct':
         image_write = _generate_image_path_and_directory(main_dir=args.out_dir,
                                                          ops_dir_name='motion-correction',
-                                                         file_prefix=args.subject_id,
+                                                         file_prefix=args.prefix,
                                                          ops_desc='moco')
         ref_image = _check_ref(args=args)
         image_operations_4d.motion_correction(input_image_4d_path=args.pet,
@@ -189,10 +190,10 @@ def main():
                                               out_image_path=image_write,
                                               verbose=args.verbose)
     
-    if args.operation == 'register':
+    if args.command == 'register':
         image_write = _generate_image_path_and_directory(main_dir=args.out_dir,
                                                          ops_dir_name='registration',
-                                                         file_prefix=args.subject_id,
+                                                         file_prefix=args.prefix,
                                                          ops_desc='reg')
         ref_image = _check_ref(args=args)
         image_operations_4d.register_pet(input_calc_image_path=ref_image,
@@ -201,12 +202,12 @@ def main():
                                          out_image_path=image_write,
                                          verbose=args.verbose)
     
-    if args.operation == 'write_tacs':
+    if args.command == 'write_tacs':
         tac_write_path = os.path.join(args.out_dir, 'tacs')
         os.makedirs(tac_write_path, exist_ok=True)
         image_write = _generate_image_path_and_directory(main_dir=args.out_dir,
                                                          ops_dir_name='segmentation',
-                                                         file_prefix=args.subject_id,
+                                                         file_prefix=args.prefix,
                                                          ops_desc='seg')
         if args.resample_segmenation:
             image_operations_4d.resample_segmentation(input_image_4d_path=args.pet,
