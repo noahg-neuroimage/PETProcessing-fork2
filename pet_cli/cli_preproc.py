@@ -82,6 +82,21 @@ def _generate_image_path_and_directory(main_dir, ops_dir_name, file_prefix, ops_
     return str(image_path)
 
 
+
+
+_PREPROC_EXAMPLES_ = (r"""
+Examples:
+  - Weighted Sum:
+    pet-cli-preproc --operation weighted_sum --pet /path/to/pet.nii --out_dir /path/to/output
+  - Registration:
+    pet-cli-preproc --operation register --pet /path/to/pet.nii --anatomical /path/to/mri.nii --pet_reference /path/to/pet_sum.nii --out_dir /path/to/output
+  - Motion Correction:
+    pet-cli-preproc --operation motion_correct --pet /path/to/pet.nii --pet-reference /path/to/sum.nii --out_dir /path/to/output
+  - Writing TACs From Segmentation Masks:
+    pet-cli-preproc --operation write_tacs --pet /path/to/pet.nii --segmentation /path/to/seg_masks.nii --color_table_path /path/to/color_table.json --out_dir /path/to/output
+""")
+
+
 def _generate_args() -> argparse.Namespace:
     """
     Generates command line arguments for method :func:`main`.
@@ -91,12 +106,7 @@ def _generate_args() -> argparse.Namespace:
     """
     parser = argparse.ArgumentParser(prog='PET Preprocessing',
                                      description='Command line interface for running PET preprocessing steps.',
-                                     epilog='Example: pet-cli-preproc '
-                                            '--pet /path/to/pet.nii '
-                                            '--anatomical /path/to/mri.nii '
-                                            '--pet_reference /path/to/pet_sum.nii '
-                                            '--out_dir /path/to/output '
-                                            '--operation register')
+                                     epilog=_PREPROC_EXAMPLES_, formatter_class=argparse.RawTextHelpFormatter)
     io_grp = parser.add_argument_group('I/O')
     io_grp.add_argument('--pet', required=True, help='Path to PET series')
     io_grp.add_argument('--anatomical', required=False, help='Path to 3D anatomical image')
