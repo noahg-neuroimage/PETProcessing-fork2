@@ -1,5 +1,5 @@
 BIDS File Management Utilities
-========================
+==============================
 
 .. automodule:: pet_cli.bids_utils
    :members:
