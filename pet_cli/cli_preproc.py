@@ -18,7 +18,7 @@ Examples:
     
         .. code-block:: bash
     
-            pet-cli-preproc weighted-sum --pet /path/to/pet.nii --out-dir /path/to/output
+            pet-cli-preproc weighted-sum --pet /path/to/pet.nii --out-dir /path/to/output --half-life 6600.0
     
     * Image Registration:
     
@@ -87,7 +87,7 @@ def _generate_image_path_and_directory(main_dir, ops_dir_name, file_prefix, ops_
 _PREPROC_EXAMPLES_ = (r"""
 Examples:
   - Weighted Sum:
-    pet-cli-preproc weighted-sum --pet /path/to/pet.nii --out-dir /path/to/output
+    pet-cli-preproc weighted-sum --pet /path/to/pet.nii --out-dir /path/to/output --half-life 6600.0
   - Registration:
     pet-cli-preproc register --pet /path/to/pet.nii --anatomical /path/to/mri.nii --pet-reference /path/to/pet_sum.nii --out-dir /path/to/output
   - Motion Correction:
@@ -132,7 +132,7 @@ def _add_common_args(parser: argparse.ArgumentParser) -> None:
     """
     parser.add_argument('-p', '--pet', required=True, help='Path to PET file')
     parser.add_argument('-o', '--out-dir', default='./', help='Output directory')
-    parser.add_argument('-f', '--prefix', help='Output file prefix')
+    parser.add_argument('-f', '--prefix', default="sub_XXXX", help='Output file prefix')
 
 
 def _generate_args() -> argparse.Namespace:
@@ -209,7 +209,7 @@ def main():
     args.out_dir = os.path.abspath(args.out_dir)
     args.pet = os.path.abspath(args.pet)
     
-    if args.command == 'weighted_sum':
+    if args.command == 'weighted-sum':
         image_write = _generate_image_path_and_directory(main_dir=args.out_dir,
                                                          ops_dir_name='sum_image',
                                                          file_prefix=args.prefix,
@@ -219,7 +219,7 @@ def main():
                                                 half_life=args.half_life,
                                                 verbose=args.verbose)
     
-    if args.command == 'motion_correct':
+    if args.command == 'motion-correct':
         image_write = _generate_image_path_and_directory(main_dir=args.out_dir,
                                                          ops_dir_name='motion-correction',
                                                          file_prefix=args.prefix,
@@ -242,7 +242,7 @@ def main():
                                          out_image_path=image_write,
                                          verbose=args.verbose)
     
-    if args.command == 'write_tacs':
+    if args.command == 'write-tacs':
         tac_write_path = os.path.join(args.out_dir, 'tacs')
         os.makedirs(tac_write_path, exist_ok=True)
         image_write = _generate_image_path_and_directory(main_dir=args.out_dir,
