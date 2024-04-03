@@ -258,7 +258,7 @@ def main():
         image_operations_4d.write_tacs(input_image_4d_path=args.pet,
                                        color_table_path=args.color_table_path,
                                        segmentation_image_path=image_write,
-                                       out_tac_path=tac_write_path,
+                                       out_tac_dir=tac_write_path,
                                        verbose=args.verbose)
 
 

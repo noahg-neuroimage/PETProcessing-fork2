@@ -273,7 +273,7 @@ def extract_tac_from_4dnifty_using_mask(input_image_4d_path: str,
 def write_tacs(input_image_4d_path: str,
                color_table_path: str,
                segmentation_image_path: str,
-               out_tac_path: str,
+               out_tac_dir: str,
                verbose: bool,
                time_frame_keyword: str = 'FrameReferenceTime'):
     """
@@ -300,7 +300,7 @@ def write_tacs(input_image_4d_path: str,
                                                              values=[int(region_index)],
                                                              verbose=verbose).tolist()
         # TODO: Shift this into a np.savetxt with the region name as the header comment
-        out_tac_path = os.path.join(out_tac_path, f'tac-{region_name}.json')
+        out_tac_path = os.path.join(out_tac_dir, f'tac-{region_name}.json')
         image_io.write_dict_to_json(meta_data_dict=region_json, out_path=out_tac_path)
         
 
@@ -459,5 +459,5 @@ class ImageOps4D():
         write_tacs(input_image_4d_path=self.image_paths['pet_moco_reg'],
                    color_table_path=self.color_table_path,
                    segmentation_image_path=self.image_paths['seg_resampled'],
-                   out_tac_path=tac_path,
+                   out_tac_dir=tac_path,
                    verbose=self.verbose)
