@@ -94,6 +94,8 @@ Examples:
     pet-cli-preproc motion_correct --pet /path/to/pet.nii --pet-reference /path/to/sum.nii --out_dir /path/to/output
   - Writing TACs From Segmentation Masks:
     pet-cli-preproc write_tacs --pet /path/to/pet.nii --segmentation /path/to/seg_masks.nii --color_table_path /path/to/color_table.json --out_dir /path/to/output
+  - Verbose:
+    pet-cli-preproc -v [sub-command] [arguments]
 """)
 
 
@@ -145,16 +147,16 @@ def _generate_args() -> argparse.Namespace:
                                      epilog=_PREPROC_EXAMPLES_, formatter_class=argparse.RawTextHelpFormatter)
     
     # create subparsers
-    subparsers = parser.add_subparsers(dest="command")
+    subparsers = parser.add_subparsers(dest="command", help="Sub-command help.")
     
     # create parser for "weighted_sum" command
-    parser_sum = subparsers.add_parser('weighted_sum')
+    parser_sum = subparsers.add_parser('weighted_sum', help='Half-life weighted sum of 4D PET series.')
     _add_common_args(parser_sum)
     parser_sum.add_argument('-l', '--half-life', required=True, help='Half life of radioisotope in seconds.',
                             type=float)
     
     # create parser for "register" command
-    parser_reg = subparsers.add_parser('register')
+    parser_reg = subparsers.add_parser('register', help='Register 4D PET to MRI anatomical space.')
     _add_common_args(parser_reg)
     parser_reg.add_argument('-a', '--anatomical', required=True, help='Path to 3D anatomical image (T1w or T2w).',
                             type=str)
@@ -162,13 +164,13 @@ def _generate_args() -> argparse.Namespace:
                             help='Path to reference image for motion correction, if not weighted_sum.')
     
     # create parser for the "motion_correct" command
-    parser_moco = subparsers.add_parser('motion_correct')
+    parser_moco = subparsers.add_parser('motion_correct', help='Motion correction for 4D PET using ANTS')
     _add_common_args(parser_moco)
     parser_moco.add_argument('-r', '--pet-reference', default=None,
                              help='Path to reference image for motion correction, if not weighted_sum.')
     
     # create parser for the "write_tacs" command
-    parser_tac = subparsers.add_parser('write_tacs')
+    parser_tac = subparsers.add_parser('write_tacs', help='Write ROI TACs from 4D PET using segmentation masks.')
     _add_common_args(parser_tac)
     parser_tac.add_argument('-s', '--segmentation', required=True,
                             help='Path to segmentation image in anatomical space.')
