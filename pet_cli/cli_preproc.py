@@ -18,25 +18,25 @@ Examples:
     
         .. code-block:: bash
     
-            pet-cli-preproc weighted_sum --pet /path/to/pet.nii --out_dir /path/to/output
+            pet-cli-preproc weighted-sum --pet /path/to/pet.nii --out-dir /path/to/output
     
     * Image Registration:
     
         .. code-block:: bash
     
-            pet-cli-preproc register --pet /path/to/pet.nii --anatomical /path/to/mri.nii --pet_reference /path/to/pet_sum.nii --out_dir /path/to/output
+            pet-cli-preproc register --pet /path/to/pet.nii --anatomical /path/to/mri.nii --pet-reference /path/to/pet_sum.nii --out-dir /path/to/output
             
     * Motion Correction:
     
         .. code-block:: bash
             
-            pet-cli-preproc motion_correct --pet /path/to/pet.nii --pet-reference /path/to/sum.nii --out_dir /path/to/output
+            pet-cli-preproc motion-correct --pet /path/to/pet.nii --pet-reference /path/to/sum.nii --out-dir /path/to/output
             
     * Extracting TACs Using A Mask And Color-Table:
     
         .. code-block:: bash
             
-            pet-cli-preproc write_tacs --pet /path/to/pet.nii --segmentation /path/to/seg_masks.nii --color_table_path /path/to/color_table.json --out_dir /path/to/output
+            pet-cli-preproc write-tacs --pet /path/to/pet.nii --segmentation /path/to/seg_masks.nii --color-table-path /path/to/color_table.json --out-dir /path/to/output
 
 See Also:
     * :mod:`pet_cli.image_operations_4d` - module used to preprocess PET imaging data.
@@ -87,13 +87,13 @@ def _generate_image_path_and_directory(main_dir, ops_dir_name, file_prefix, ops_
 _PREPROC_EXAMPLES_ = (r"""
 Examples:
   - Weighted Sum:
-    pet-cli-preproc weighted_sum --pet /path/to/pet.nii --out_dir /path/to/output
+    pet-cli-preproc weighted-sum --pet /path/to/pet.nii --out-dir /path/to/output
   - Registration:
-    pet-cli-preproc register --pet /path/to/pet.nii --anatomical /path/to/mri.nii --pet_reference /path/to/pet_sum.nii --out_dir /path/to/output
+    pet-cli-preproc register --pet /path/to/pet.nii --anatomical /path/to/mri.nii --pet-reference /path/to/pet_sum.nii --out-dir /path/to/output
   - Motion Correction:
-    pet-cli-preproc motion_correct --pet /path/to/pet.nii --pet-reference /path/to/sum.nii --out_dir /path/to/output
+    pet-cli-preproc motion-correct --pet /path/to/pet.nii --pet-reference /path/to/sum.nii --out-dir /path/to/output
   - Writing TACs From Segmentation Masks:
-    pet-cli-preproc write_tacs --pet /path/to/pet.nii --segmentation /path/to/seg_masks.nii --color_table_path /path/to/color_table.json --out_dir /path/to/output
+    pet-cli-preproc write-tacs --pet /path/to/pet.nii --segmentation /path/to/seg_masks.nii --color-table-path /path/to/color_table.json --out-dir /path/to/output
   - Verbose:
     pet-cli-preproc -v [sub-command] [arguments]
 """)
@@ -101,7 +101,7 @@ Examples:
 
 def _add_common_args(parser: argparse.ArgumentParser) -> None:
     """
-    Adds common arguments ('--pet', '--out_dir', and '--prefix') to a provided ArgumentParser object.
+    Adds common arguments ('--pet', '--out-dir', and '--prefix') to a provided ArgumentParser object.
 
     This function modifies the passed ArgumentParser object by adding three arguments commonly used in the script.
     It uses the add_argument method of the ArgumentParser class. After running this function, the parser will
@@ -124,7 +124,7 @@ def _add_common_args(parser: argparse.ArgumentParser) -> None:
 
             parser = argparse.ArgumentParser()
             _add_common_args(parser)
-            args = parser.parse_args(['--pet', 'pet_file', '--out_dir', './', '--prefix', 'prefix'])
+            args = parser.parse_args(['--pet', 'pet_file', '--out-dir', './', '--prefix', 'prefix'])
             print(args.pet)
             print(args.out_dir)
             print(args.prefix)
@@ -150,7 +150,7 @@ def _generate_args() -> argparse.Namespace:
     subparsers = parser.add_subparsers(dest="command", help="Sub-command help.")
     
     # create parser for "weighted-sum" command
-    parser_sum = subparsers.add_parser('weighted_sum', help='Half-life weighted sum of 4D PET series.')
+    parser_sum = subparsers.add_parser('weighted-sum', help='Half-life weighted sum of 4D PET series.')
     _add_common_args(parser_sum)
     parser_sum.add_argument('-l', '--half-life', required=True, help='Half life of radioisotope in seconds.',
                             type=float)
