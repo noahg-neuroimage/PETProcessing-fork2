@@ -131,7 +131,7 @@ def _add_common_args(parser: argparse.ArgumentParser) -> None:
             
     """
     parser.add_argument('-p', '--pet', required=True, help='Path to PET file')
-    parser.add_argument('-o', '--out_dir', default='./', help='Output directory')
+    parser.add_argument('-o', '--out-dir', default='./', help='Output directory')
     parser.add_argument('-f', '--prefix', help='Output file prefix')
 
 
