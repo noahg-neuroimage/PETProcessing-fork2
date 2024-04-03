@@ -292,13 +292,12 @@ def write_tacs(input_image_4d_path: str,
     
     tac_extraction_func = extract_tac_from_4dnifty_using_mask
     
-    for region_pair in regions_list:
-        region_index, region_name = region_pair
+    for region_index, region_name in regions_list.items():
         region_json = {'region_name': region_name, 'tac': {'time': None, 'activity': None}}
         region_json['tac']['time'] = pet_meta[time_frame_keyword]
         region_json['tac']['activity'] = tac_extraction_func(input_image_4d_path=input_image_4d_path,
                                                              segmentation_image_path=segmentation_image_path,
-                                                             values=[region_index],
+                                                             values=[int(region_index)],
                                                              verbose=verbose).tolist()
         # TODO: Shift this into a np.savetxt with the region name as the header comment
         out_tac_path = os.path.join(out_tac_path, f'tac-{region_name}.json')
