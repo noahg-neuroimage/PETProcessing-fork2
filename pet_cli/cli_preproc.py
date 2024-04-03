@@ -149,7 +149,7 @@ def _generate_args() -> argparse.Namespace:
     # create subparsers
     subparsers = parser.add_subparsers(dest="command", help="Sub-command help.")
     
-    # create parser for "weighted_sum" command
+    # create parser for "weighted-sum" command
     parser_sum = subparsers.add_parser('weighted_sum', help='Half-life weighted sum of 4D PET series.')
     _add_common_args(parser_sum)
     parser_sum.add_argument('-l', '--half-life', required=True, help='Half life of radioisotope in seconds.',
@@ -163,19 +163,19 @@ def _generate_args() -> argparse.Namespace:
     parser_reg.add_argument('-r', '--pet-reference', default=None,
                             help='Path to reference image for motion correction, if not weighted_sum.')
     
-    # create parser for the "motion_correct" command
-    parser_moco = subparsers.add_parser('motion_correct', help='Motion correction for 4D PET using ANTS')
+    # create parser for the "motion-correct" command
+    parser_moco = subparsers.add_parser('motion-correct', help='Motion correction for 4D PET using ANTS')
     _add_common_args(parser_moco)
     parser_moco.add_argument('-r', '--pet-reference', default=None,
                              help='Path to reference image for motion correction, if not weighted_sum.')
     
-    # create parser for the "write_tacs" command
-    parser_tac = subparsers.add_parser('write_tacs', help='Write ROI TACs from 4D PET using segmentation masks.')
+    # create parser for the "write-tacs" command
+    parser_tac = subparsers.add_parser('write-tacs', help='Write ROI TACs from 4D PET using segmentation masks.')
     _add_common_args(parser_tac)
     parser_tac.add_argument('-s', '--segmentation', required=True,
                             help='Path to segmentation image in anatomical space.')
-    parser_tac.add_argument('-c', '--color_table_path', required=True, help='Path to color table in JSON format')
-    parser_tac.add_argument('-r', '--resample_segmentation', default=False, action='store_true',
+    parser_tac.add_argument('-c', '--color-table-path', required=True, help='Path to color table in JSON format')
+    parser_tac.add_argument('-r', '--resample-segmentation', default=False, action='store_true',
                             help='Resample segmentation.')
     
     verb_group = parser.add_argument_group('Additional information')
