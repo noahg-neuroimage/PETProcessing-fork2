@@ -3,7 +3,7 @@ This module provides a Command-line interface (CLI) for preprocessing imaging da
 produce regional PET Time-Activity Curves (TACs) and prepare data for parametric imaging analysis.
 
 The user must provide:
-    * The sub-command. Options: 'weighted_sum', 'motion_correct', 'register', or 'write_tacs'.
+    * The sub-command. Options: 'weighted-sum', 'motion-correct', 'register', or 'write-tacs'.
     * Path to PET input data in NIfTI format. This can be source data, or with some preprocessing
       such as registration or motion correction, depending on the chosen operation.
     * Directory to which the output is written.
@@ -188,7 +188,22 @@ def _generate_args() -> argparse.Namespace:
 
 def _check_ref(args) -> str:
     """
-    Check if pet_reference is being used and set variable
+    Checks if the 'pet-reference' command-line argument was provided. If it was, this function
+    will return its value. If 'pet-reference' argument was not provided, the function will
+    generate an image path and directory using :func:`_generate_image_path_and_directory` and return this path.
+
+    This function is used to determine the reference image for PET processing. If a reference
+    image has been explicitly provided using `--pet-reference`, it's utilized. Otherwise, the
+    function assumes the reference image file will be found in path produced by
+    :func:`_generate_image_path_and_directory` with 'sum_image' as operations directory name and
+    'sum' as operations description.
+
+    Args:
+        args: a namespace contains all command-line arguments. It's the result of ArgumentParser.parse_args().
+
+    Returns:
+        str: The path of the reference image.
+
     """
     if args.pet_reference is not None:
         ref_image = args.pet_reference
