@@ -82,8 +82,6 @@ def _generate_image_path_and_directory(main_dir, ops_dir_name, file_prefix, ops_
     return str(image_path)
 
 
-
-
 _PREPROC_EXAMPLES_ = (r"""
 Examples:
   - Weighted Sum:
