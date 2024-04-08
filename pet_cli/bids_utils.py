@@ -9,6 +9,7 @@ import json
 import numpy
 import shutil
 # import warnings
+from pathlib import Path
 from bids_validator import BIDSValidator
 from nibabel.nifti1 import Nifti1Image
 from nibabel.filebasedimages import FileBasedImage
@@ -618,3 +619,25 @@ def validate_filepath_as_bids(filepath: str) -> bool:
     validator = BIDSValidator()
     return validator.is_bids(filepath)
 
+
+def validate_directory_as_bids(project_path: str) -> bool:
+    excluded_dirs = {'code', 'derivatives', 'sourcedata', '.git', 'stimuli'}
+    all_passed = True
+    failed_file_paths = []
+
+    for root, dirs, files in os.walk(project_path, topdown=True):
+        dirs[:] = [d for d in dirs if d not in excluded_dirs and not d.startswith('sub-')]
+        for file in files:
+            filepath = os.path.join(root, file)
+            if not validate_filepath_as_bids(filepath):
+                failed_file_paths.append(filepath)
+                all_passed = False
+
+    if failed_file_paths:
+        print("Failed file paths:")
+        for path in failed_file_paths:
+            print(path)
+    else:
+        print("All files passed validation.")
+
+    return all_passed
