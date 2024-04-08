@@ -9,8 +9,11 @@ import json
 import numpy
 import shutil
 # import warnings
+from bids_validator import BIDSValidator
 from nibabel.nifti1 import Nifti1Image
 from nibabel.filebasedimages import FileBasedImage
+
+
 # from .registration_tools import ImageIO
 
 
@@ -609,3 +612,9 @@ def load_tsv_simple(filepath: str) -> list:
     with open(filepath, 'r', encoding='utf-8') as file:
         data = [line.strip().split('\t') for line in file]
     return data
+
+
+def validate_filepath_as_bids(filepath: str) -> bool:
+    validator = BIDSValidator()
+    return validator.is_bids(filepath)
+
