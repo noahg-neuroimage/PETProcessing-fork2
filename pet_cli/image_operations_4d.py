@@ -6,9 +6,19 @@ modified imaging array as output.
 
 Class :class:`ImageOps4D` is also included in this module, and provides specific
 implementations of the functions presented herein.
+
+TODOs:
+    * (weighted_series_sum) Refactor the DecayFactor key extraction into its own function
+    * (weighted_series_sum) Refactor verbose reporting into the class as it is unrelated to
+      computation
+    * (write_tacs) Shift save into a np.savetxt with the region name as the header comment
+    * (write_tacs) Shift to accepting color-key dictionaries rather than a file path.
+    * (extract_tac_from_4dnifty_using_mask) Write the number of voxels in the mask, or the
+      volume of the mask. This is necessary for certain analyses with the resulting tacs,
+      such as finding the average uptake encompassing two regions.
+
 """
 import os
-import json
 import re
 import ants
 import nibabel
@@ -18,7 +28,10 @@ from . import image_io
 from . import math_lib
 
 
-def weighted_series_sum(input_image_4d_path: str, out_image_path: str, half_life: float, verbose: bool) -> np.ndarray:
+def weighted_series_sum(input_image_4d_path: str,
+                        out_image_path: str,
+                        half_life: float,
+                        verbose: bool) -> np.ndarray:
     r"""
     Sum a 4D image series weighted based on time and re-corrected for decay correction.
 
@@ -71,25 +84,26 @@ def weighted_series_sum(input_image_4d_path: str, out_image_path: str, half_life
     pet_series = pet_image.get_fdata()
     image_frame_start = pet_meta['FrameTimesStart']
     image_frame_duration = pet_meta['FrameDuration']
-    # TODO: Shift this calculation into its own function
+
     if 'DecayCorrectionFactor' in pet_meta.keys():
         image_decay_correction = pet_meta['DecayCorrectionFactor']
     elif 'DecayFactor' in pet_meta.keys():
         image_decay_correction = pet_meta['DecayFactor']
     else:
         raise ValueError("Neither 'DecayCoorectionFactor' nor 'DecayFactor' exist in meta-data file")
-    
-    # TODO: Shift this out into the class since calculation has nothing to do with logging
+
     if 'TracerRadionuclide' in pet_meta.keys():
         tracer_isotope = pet_meta['TracerRadionuclide']
         if verbose:
-            print(f"(ImageOps4d): Radio isotope is {tracer_isotope}", f"with half life {half_life} s")
-            
+            print(f"(ImageOps4d): Radio isotope is {tracer_isotope} "
+                f"with half life {half_life} s")
+
     image_weighted_sum = math_lib.weighted_sum_computation(image_frame_duration=image_frame_duration,
                                                            half_life=half_life,
                                                            pet_series=pet_series,
                                                            image_frame_start=image_frame_start,
                                                            image_decay_correction=image_decay_correction)
+
     pet_sum_image = nibabel.nifti1.Nifti1Image(dataobj=image_weighted_sum,
                                                affine=pet_image.affine,
                                                header=pet_image.header)
@@ -102,7 +116,9 @@ def weighted_series_sum(input_image_4d_path: str, out_image_path: str, half_life
 def motion_correction(input_image_4d_path: str,
                       reference_image_path: str,
                       out_image_path: str,
-                      verbose: bool) -> tuple[np.ndarray, list[str], list[float]]:
+                      type_of_transform: str='DenseRigid',
+                      verbose: bool,
+                      **kwargs) -> tuple[np.ndarray, list[str], list[float]]:
     """
     Correct PET image series for inter-frame motion. Runs rigid motion correction module
     from Advanced Normalisation Tools (ANTs) with default inputs. 
@@ -116,7 +132,11 @@ def motion_correction(input_image_4d_path: str,
             on the needs of the data.
         out_image_path (str): Path to a .nii or .nii.gz file to which the motion corrected PET
             series is written.
+        type_of_transform (str): Type of transform to perform on the PET image, must be one of antspy's
+            transformation types, i.e. 'DenseRigid' or 'Translation'. Any transformation type that uses
+            >6 degrees of freedom is not recommended, use with caution. See :py:func:`ants.registration`.
         verbose (bool): Set to `True` to output processing information.
+        kwargs (keyword arguments): Additional arguments passed to `ants.motion_correction`.
 
     Returns:
         pet_moco_np (np.ndarray): Motion corrected PET image series as a numpy array.
@@ -128,21 +148,25 @@ def motion_correction(input_image_4d_path: str,
     pet_ref_image = nibabel.load(reference_image_path)
     pet_ants = ants.from_nibabel(pet_nibabel)
     pet_sum_image_ants = ants.from_nibabel(pet_ref_image)
-    
-    pet_moco_ants_dict = ants.motion_correction(pet_ants, pet_sum_image_ants, type_of_transform='Rigid')
+
+    pet_moco_ants_dict = ants.motion_correction(pet_ants,
+                                                pet_sum_image_ants,
+                                                type_of_transform=type_of_transform,
+                                                **kwargs)
     if verbose:
         print('(ImageOps4D): motion correction finished.')
-    
+
     pet_moco_ants = pet_moco_ants_dict['motion_corrected']
     pet_moco_params = pet_moco_ants_dict['motion_parameters']
     pet_moco_fd = pet_moco_ants_dict['FD']
     pet_moco_np = pet_moco_ants.numpy()
     pet_moco_nibabel = ants.to_nibabel(pet_moco_ants)
-    
+
     copy_meta_path = re.sub('.nii.gz|.nii', '.json', out_image_path)
-    meta_data_dict = image_io.ImageIO.load_metadata_for_nifty_with_same_filename(input_image_4d_path)
+    meta_data_dict = image_io.ImageIO.load_metadata_for_nifty_with_same_filename(
+        input_image_4d_path)
     image_io.write_dict_to_json(meta_data_dict=meta_data_dict, out_path=copy_meta_path)
-    
+
     nibabel.save(pet_moco_nibabel, out_image_path)
     if verbose:
         print(f"(ImageOps4d): motion corrected image saved to {out_image_path}")
@@ -152,8 +176,10 @@ def motion_correction(input_image_4d_path: str,
 def register_pet(input_calc_image_path: str,
                  input_reg_image_path: str,
                  reference_image_path: str,
+                 type_of_transform: str='DenseRigid',
                  out_image_path: str,
-                 verbose: bool):
+                 verbose: bool,
+                 **kwargs):
     """
     Computes and runs rigid registration of 4D PET image series to 3D anatomical image, typically
     a T1 MRI. Runs rigid registration module from Advanced Normalisation Tools (ANTs) with  default
@@ -169,33 +195,42 @@ def register_pet(input_calc_image_path: str,
             PET image to be registered to anatomical space.
         reference_image_path (str): Path to a .nii or .nii.gz file containing a 3D
             anatomical image to which PET image is registered.
+        type_of_transform (str): Type of transform to perform on the PET image, must be one of antspy's
+            transformation types, i.e. 'DenseRigid' or 'Translation'. Any transformation type that uses
+            >6 degrees of freedom is not recommended, use with caution. See :py:func:`ants.registration`.
         out_image_path (str): Path to a .nii or .nii.gz file to which the registered PET series
             is written.
         verbose (bool): Set to `True` to output processing information.
+        kwargs (keyword arguments): Additional arguments passed to :py:func:`ants.registration`.
     """
     pet_sum_image = ants.image_read(input_calc_image_path)
     mri_image = ants.image_read(reference_image_path)
     pet_moco = ants.image_read(input_reg_image_path)
     xfm_output = ants.registration(moving=pet_sum_image,
                                    fixed=mri_image,
-                                   type_of_transform='DenseRigid',
-                                   write_composite_transform=True)
+                                   type_of_transform=type_of_transform,
+                                   write_composite_transform=True,
+                                   **kwargs)
     if verbose:
-        print(f'Registration computed transforming image {input_calc_image_path} to', f'{reference_image_path} space')
-        
+        print(f'Registration computed transforming image {input_calc_image_path} to'
+              f'{reference_image_path} space')
+
     xfm_apply = ants.apply_transforms(moving=pet_moco,
                                       fixed=mri_image,
                                       transformlist=xfm_output['fwdtransforms'],
                                       imagetype=3)
     if verbose:
         print(f'Registration applied to {input_reg_image_path}')
-        
+
     ants.image_write(xfm_apply, out_image_path)
     if verbose:
         print(f'Transformed image saved to {out_image_path}')
 
 
-def resample_segmentation(input_image_4d_path: str, segmentation_image_path: str, out_seg_path: str, verbose: bool):
+def resample_segmentation(input_image_4d_path: str,
+                          segmentation_image_path: str,
+                          out_seg_path: str,
+                          verbose: bool):
     """
     Resamples a segmentation image to the resolution of a 4D PET series image. Takes the affine 
     information stored in the PET image, and the shape of the image frame data, as well as the 
@@ -226,8 +261,7 @@ def resample_segmentation(input_image_4d_path: str, segmentation_image_path: str
 
 def extract_tac_from_4dnifty_using_mask(input_image_4d_path: str,
                                         segmentation_image_path: str,
-                                        values: list[int],
-                                        verbose: bool, ) -> np.ndarray:
+                                        verbose: bool) -> np.ndarray:
     """
     Creates a time-activity curve (TAC) by computing the average value within a region, for each 
     frame in a 4D PET image series. Takes as input a PET image, which has been registered to
@@ -241,8 +275,8 @@ def extract_tac_from_4dnifty_using_mask(input_image_4d_path: str,
         segmentation_image_path (str): Path to a .nii or .nii.gz file containing a 3D segmentation
             image, where integer indices label specific regions. Must have same sampling as PET
             input.
-        values (list[int]): List of values in the segmentation image, which correspond to regions
-            for which the TAC is to be computed on. Only one region at a time is implemented.
+        region (int): Value in the segmentation image corresponding to a region
+            over which the TAC is computed.
         verbose (bool): Set to `True` to output processing information.
 
     Returns:
@@ -251,25 +285,20 @@ def extract_tac_from_4dnifty_using_mask(input_image_4d_path: str,
     Raises:
         NotImplementedError: If `values` has more than two regions, as this is future functionality
     """
-    if len(values) > 1:
-        raise NotImplementedError('extract_tac_from_4dnifty_using_mask can only average over one region at the moment. '
-                                  'Use a list with only one value.')
-    
+
     pet_image_4d = nibabel.load(input_image_4d_path).get_fdata()
     num_frames = pet_image_4d.shape[3]
     seg_image = nibabel.load(segmentation_image_path).get_fdata()
-    
+
     tac_out = np.zeros(num_frames, float)
-    for region in values:
-        if verbose:
-            print(f'Running TAC for region index {region}')
-        masked_voxels = seg_image == region
-        masked_image = pet_image_4d[masked_voxels].reshape((-1, num_frames))
-        tac_out = np.mean(masked_image, axis=0)
+    if verbose:
+        print(f'Running TAC for region index {region}')
+    masked_voxels = seg_image == region
+    masked_image = pet_image_4d[masked_voxels].reshape((-1, num_frames))
+    tac_out = np.mean(masked_image, axis=0)
     return tac_out
 
 
-# TODO: Shift to accepting color-key dictionaries rather than a file path.
 def write_tacs(input_image_4d_path: str,
                color_table_path: str,
                segmentation_image_path: str,
@@ -282,27 +311,27 @@ def write_tacs(input_image_4d_path: str,
     region. Writes a JSON for each region with region name, frame start time, and mean 
     value within region.
     """
-    
+
     if time_frame_keyword not in ['FrameReferenceTime', 'FrameTimesStart']:
-        raise ValueError(f"'time_frame_keyword' must be one of 'FrameReferenceTime' or 'FrameTimesStart'")
-    
+        raise ValueError("'time_frame_keyword' must be one of "
+                         "'FrameReferenceTime' or 'FrameTimesStart'")
+
     pet_meta = image_io.ImageIO.load_metadata_for_nifty_with_same_filename(input_image_4d_path)
     color_table = image_io.ImageIO.read_color_table_json(ctab_file=color_table_path)
     regions_list = color_table['data']
-    
+
     tac_extraction_func = extract_tac_from_4dnifty_using_mask
-    
+
     for region_index, region_name in regions_list.items():
         region_json = {'region_name': region_name, 'tac': {'time': None, 'activity': None}}
         region_json['tac']['time'] = pet_meta[time_frame_keyword]
-        region_json['tac']['activity'] = tac_extraction_func(input_image_4d_path=input_image_4d_path,
-                                                             segmentation_image_path=segmentation_image_path,
-                                                             values=[int(region_index)],
-                                                             verbose=verbose).tolist()
-        # TODO: Shift this into a np.savetxt with the region name as the header comment
+        extracted_tac = tac_extraction_func(input_image_4d_path=input_image_4d_path,
+                                            segmentation_image_path=segmentation_image_path,
+                                            values=[int(region_index)],
+                                            verbose=verbose)
+        region_json['tac']['activity'] = extracted_tac.tolist()
         out_tac_path = os.path.join(out_tac_dir, f'tac-{region_name}.json')
         image_io.write_dict_to_json(meta_data_dict=region_json, out_path=out_tac_path)
-        
 
 
 class ImageOps4D():
@@ -316,12 +345,14 @@ class ImageOps4D():
 
     Key methods include:
         - :meth:`run_weighted_series_sum`: Runs :meth:`weighted_series_sum` on input data.
-        - :meth:`run_motion_correction`: Runs :meth:`motion_correction` on input data, with the output of
-          :func:`weighted_series_sum` as reference.
-        - :meth:`run_register_pet`: Runs :meth:`register_pet` on motion corrected PET with the output of
-          :func:`weighted_series_sum` used to compute registration.
-        - :meth:`run_mask_image_to_vals`: Runs :meth:`extract_tac_from_4dnifty_using_mask`, to be used with :meth:`run_write_tacs`.
-        - :meth:`run_write_tacs`: Runs :meth:`write_tacs` on preprocessed PET data to produce regional TACs.
+        - :meth:`run_motion_correction`: Runs :meth:`motion_correction` on input data, with the
+          output of :func:`weighted_series_sum` as reference.
+        - :meth:`run_register_pet`: Runs :meth:`register_pet` on motion corrected PET with the
+          output of :func:`weighted_series_sum` used to compute registration.
+        - :meth:`run_mask_image_to_vals`: Runs :meth:`extract_tac_from_4dnifty_using_mask`, to be
+          used with :meth:`run_write_tacs`.
+        - :meth:`run_write_tacs`: Runs :meth:`write_tacs` on preprocessed PET data to produce
+          regional TACs.
     
     Attributes:
         sub_id (str): The subject ID, used for naming output files.
@@ -341,7 +372,7 @@ class ImageOps4D():
         :class:`ImageIO`
     
     """
-    
+
     def __init__(self,
                  sub_id: str,
                  out_path: str,
@@ -356,11 +387,11 @@ class ImageOps4D():
             sub_id (str): The subject ID, used for naming output files.
             out_path (str): Path to an output directory, to which processed files are saved.
             image_paths (dict): A dictionary with designated keys for different types of images.
-                Designated keys include 'pet' for input PET data, 'mri' for anatomical data, 'seg' for
-                segmentation in anatomical space, 'pet_sum_image' for the output to
+                Designated keys include 'pet' for input PET data, 'mri' for anatomical data, 'seg'
+                for segmentation in anatomical space, 'pet_sum_image' for the output to
                 :meth:`weighted_series_sum`, 'pet_moco' for motion corrected PET image, pet_moco_reg
-                for motion corrected and registered PET image, and 'seg_resampled' for a segmentation
-                resampled onto PET resolution.
+                for motion corrected and registered PET image, and 'seg_resampled' for a 
+                segmentation resampled onto PET resolution.
             half_life (float): Half-life of the radioisotope used in PET study in seconds.
             color_table_path (str): Path to a color table .json file used to match region names to
                 region indices.
@@ -374,7 +405,7 @@ class ImageOps4D():
         self.out_path = out_path
         self.color_table_path = color_table_path
         self.verbose = verbose
-    
+
     def run_weighted_series_sum(self) -> np.ndarray:
         """
         Computes weighted sum image by running :meth:`weighted_series_sum` on input data. Write
@@ -382,12 +413,12 @@ class ImageOps4D():
         """
         sum_image_path = os.path.join(self.out_path, 'sum_image')
         os.makedirs(sum_image_path, exist_ok=True)
-        self.image_paths['pet_sum_image'] = os.path.join(sum_image_path, f'{self.sub_id}-sum.nii.gz')
+        self.image_paths['pet_sum_image'] = os.path.join(sum_image_path,f'{self.sub_id}-sum.nii.gz')
         weighted_series_sum(input_image_4d_path=self.image_paths['pet'],
                             out_image_path=self.image_paths['pet_sum_image'],
                             half_life=self.half_life,
                             verbose=self.verbose)
-    
+
     def run_motion_correction(self) -> tuple[np.ndarray, list[str], list[float]]:
         """
         Motion correct PET image series by running :meth:`motion_correction` on input data, with the 
@@ -400,7 +431,7 @@ class ImageOps4D():
                           reference_image_path=self.image_paths['pet_sum_image'],
                           out_image_path=self.image_paths['pet_moco'],
                           verbose=self.verbose)
-    
+
     def run_register_pet(self):
         """
         Registers PET to anatomical by running :meth:`register_pet` on motion corrected PET with the 
@@ -414,7 +445,7 @@ class ImageOps4D():
                      reference_image_path=self.image_paths['mri'],
                      out_image_path=self.image_paths['pet_moco_reg'],
                      verbose=self.verbose)
-    
+
     def run_mask_image_to_vals(self, values: list[int], resample_seg: bool = False) -> np.ndarray:
         """
         Creates a time-activity curve (TAC) by computing the average value within a region, for 
@@ -436,8 +467,10 @@ class ImageOps4D():
         if resample_seg:
             seg_res_path = os.path.join(self.out_path, 'segmentation')
             os.makedirs(seg_res_path, exist_ok=True)
-            self.image_paths['seg_resampled'] = os.path.join(seg_res_path,
-                                                             f'{self.sub_id}-segmentation-resampled.nii.gz')
+            self.image_paths['seg_resampled'] = os.path.join(
+                seg_res_path,
+                f'{self.sub_id}-segmentation-resampled.nii.gz'
+                )
             resample_segmentation(input_image_4d_path=self.image_paths['pet_moco_reg'],
                                   segmentation_image_path=self.image_paths['seg'],
                                   out_seg_path=self.image_paths['seg_resampled'],
@@ -447,7 +480,7 @@ class ImageOps4D():
                                                       values=values,
                                                       verbose=self.verbose)
         return tac_out
-    
+
     def run_write_tacs(self):
         """
         Function to write Tissue Activity Curves for each region by running :meth:`write_tacs` on
