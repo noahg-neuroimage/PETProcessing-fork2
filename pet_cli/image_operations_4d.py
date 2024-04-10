@@ -110,12 +110,11 @@ def weighted_series_sum(input_image_4d_path: str,
     return pet_sum_image
 
 
-def motion_correction(
-        input_image_4d_path: str,
-        reference_image_path: str,
-        out_image_path: str,
-        verbose: bool,
-        **kwargs) -> tuple[np.ndarray, list[str], list[float]]:
+def motion_correction(input_image_4d_path: str,
+                      reference_image_path: str,
+                      out_image_path: str,
+                      verbose: bool,
+                      **kwargs) -> tuple[np.ndarray, list[str], list[float]]:
     """
     Correct PET image series for inter-frame motion. Runs rigid motion correction module
     from Advanced Normalisation Tools (ANTs) with default inputs. 
@@ -368,15 +367,13 @@ class ImageOps4D():
     
     """
 
-    def __init__(
-        self,
-        sub_id: str,
-        out_path: str,
-        image_paths: dict = None,
-        half_life: float = None,
-        color_table_path: str = None,
-        verbose: bool = True
-        ):
+    def __init__(self,
+                 sub_id: str,
+                 out_path: str,
+                 image_paths: dict = None,
+                 half_life: float = None,
+                 color_table_path: str = None,
+                 verbose: bool = True):
         """
         Constructor for ImageOps4d, initializing class attributes.
 
@@ -411,12 +408,10 @@ class ImageOps4D():
         sum_image_path = os.path.join(self.out_path, 'sum_image')
         os.makedirs(sum_image_path, exist_ok=True)
         self.image_paths['pet_sum_image'] = os.path.join(sum_image_path,f'{self.sub_id}-sum.nii.gz')
-        weighted_series_sum(
-            input_image_4d_path=self.image_paths['pet'],
-            out_image_path=self.image_paths['pet_sum_image'],
-            half_life=self.half_life,
-            verbose=self.verbose
-            )
+        weighted_series_sum(input_image_4d_path=self.image_paths['pet'],
+                            out_image_path=self.image_paths['pet_sum_image'],
+                            half_life=self.half_life,
+                            verbose=self.verbose)
 
     def run_motion_correction(self) -> tuple[np.ndarray, list[str], list[float]]:
         """
@@ -426,12 +421,10 @@ class ImageOps4D():
         moco_path = os.path.join(self.out_path, 'motion-correction')
         os.makedirs(moco_path, exist_ok=True)
         self.image_paths['pet_moco'] = os.path.join(moco_path, f'{self.sub_id}-moco.nii.gz')
-        motion_correction(
-            input_image_4d_path=self.image_paths['pet'],
-            reference_image_path=self.image_paths['pet_sum_image'],
-            out_image_path=self.image_paths['pet_moco'],
-            verbose=self.verbose
-            )
+        motion_correction(input_image_4d_path=self.image_paths['pet'],
+                          reference_image_path=self.image_paths['pet_sum_image'],
+                          out_image_path=self.image_paths['pet_moco'],
+                          verbose=self.verbose)
 
     def run_register_pet(self):
         """
@@ -441,13 +434,11 @@ class ImageOps4D():
         reg_path = os.path.join(self.out_path, 'registration')
         os.makedirs(reg_path, exist_ok=True)
         self.image_paths['pet_moco_reg'] = os.path.join(reg_path, f'{self.sub_id}-reg.nii.gz')
-        register_pet(
-            input_calc_image_path=self.image_paths['pet_sum_image'],
-            input_reg_image_path=self.image_paths['pet_moco'],
-            reference_image_path=self.image_paths['mri'],
-            out_image_path=self.image_paths['pet_moco_reg'],
-            verbose=self.verbose
-            )
+        register_pet(input_calc_image_path=self.image_paths['pet_sum_image'],
+                     input_reg_image_path=self.image_paths['pet_moco'],
+                     reference_image_path=self.image_paths['mri'],
+                     out_image_path=self.image_paths['pet_moco_reg'],
+                     verbose=self.verbose)
 
     def run_mask_image_to_vals(self, values: list[int], resample_seg: bool = False) -> np.ndarray:
         """
@@ -474,18 +465,14 @@ class ImageOps4D():
                 seg_res_path,
                 f'{self.sub_id}-segmentation-resampled.nii.gz'
                 )
-            resample_segmentation(
-                input_image_4d_path=self.image_paths['pet_moco_reg'],
-                segmentation_image_path=self.image_paths['seg'],
-                out_seg_path=self.image_paths['seg_resampled'],
-                verbose=self.verbose
-                )
-        tac_out = extract_tac_from_4dnifty_using_mask(
-            input_image_4d_path=self.image_paths['pet_moco_reg'],
-            segmentation_image_path=self.image_paths['seg_resampled'],
-            values=values,
-            verbose=self.verbose
-            )
+            resample_segmentation(input_image_4d_path=self.image_paths['pet_moco_reg'],
+                                  segmentation_image_path=self.image_paths['seg'],
+                                  out_seg_path=self.image_paths['seg_resampled'],
+                                  verbose=self.verbose)
+        tac_out = extract_tac_from_4dnifty_using_mask(input_image_4d_path=self.image_paths['pet_moco_reg'],
+                                                      segmentation_image_path=self.image_paths['seg_resampled'],
+                                                      values=values,
+                                                      verbose=self.verbose)
         return tac_out
 
     def run_write_tacs(self):
@@ -496,10 +483,8 @@ class ImageOps4D():
         """
         tac_path = os.path.join(f'{self.out_path}', 'tacs')
         os.makedirs(tac_path, exist_ok=True)
-        write_tacs(
-            input_image_4d_path=self.image_paths['pet_moco_reg'],
-            color_table_path=self.color_table_path,
-            segmentation_image_path=self.image_paths['seg_resampled'],
-            out_tac_dir=tac_path,
-            verbose=self.verbose
-            )
+        write_tacs(input_image_4d_path=self.image_paths['pet_moco_reg'],
+                   color_table_path=self.color_table_path,
+                   segmentation_image_path=self.image_paths['seg_resampled'],
+                   out_tac_dir=tac_path,
+                   verbose=self.verbose)
