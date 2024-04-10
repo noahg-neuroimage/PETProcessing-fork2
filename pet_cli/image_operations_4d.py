@@ -13,6 +13,9 @@ TODOs:
       computation
     * (write_tacs) Shift save into a np.savetxt with the region name as the header comment
     * (write_tacs) Shift to accepting color-key dictionaries rather than a file path.
+    * (extract_tac_from_4dnifty_using_mask) Write the number of voxels in the mask, or the
+      volume of the mask. This is necessary for certain analyses with the resulting tacs,
+      such as finding the average uptake encompassing two regions.
 
 """
 import os
@@ -113,6 +116,7 @@ def weighted_series_sum(input_image_4d_path: str,
 def motion_correction(input_image_4d_path: str,
                       reference_image_path: str,
                       out_image_path: str,
+                      type_of_transform: str='DenseRigid',
                       verbose: bool,
                       **kwargs) -> tuple[np.ndarray, list[str], list[float]]:
     """
@@ -144,7 +148,7 @@ def motion_correction(input_image_4d_path: str,
 
     pet_moco_ants_dict = ants.motion_correction(pet_ants,
                                                 pet_sum_image_ants,
-                                                type_of_transform='Rigid',
+                                                type_of_transform=type_of_transform,
                                                 **kwargs)
     if verbose:
         print('(ImageOps4D): motion correction finished.')
@@ -169,8 +173,10 @@ def motion_correction(input_image_4d_path: str,
 def register_pet(input_calc_image_path: str,
                  input_reg_image_path: str,
                  reference_image_path: str,
+                 type_of_transform: str='DenseRigid',
                  out_image_path: str,
-                 verbose: bool):
+                 verbose: bool,
+                 **kwargs):
     """
     Computes and runs rigid registration of 4D PET image series to 3D anatomical image, typically
     a T1 MRI. Runs rigid registration module from Advanced Normalisation Tools (ANTs) with  default
@@ -195,14 +201,12 @@ def register_pet(input_calc_image_path: str,
     pet_moco = ants.image_read(input_reg_image_path)
     xfm_output = ants.registration(moving=pet_sum_image,
                                    fixed=mri_image,
-                                   type_of_transform='DenseRigid',
-                                   write_composite_transform=True
-        )
+                                   type_of_transform=type_of_transform,
+                                   write_composite_transform=True,
+                                   **kwargs)
     if verbose:
-        print(
-            f'Registration computed transforming image {input_calc_image_path} to'
-            f'{reference_image_path} space'
-            )
+        print(f'Registration computed transforming image {input_calc_image_path} to'
+              f'{reference_image_path} space')
 
     xfm_apply = ants.apply_transforms(moving=pet_moco,
                                       fixed=mri_image,
@@ -250,7 +254,6 @@ def resample_segmentation(input_image_4d_path: str,
 
 def extract_tac_from_4dnifty_using_mask(input_image_4d_path: str,
                                         segmentation_image_path: str,
-                                        values: list[int],
                                         verbose: bool) -> np.ndarray:
     """
     Creates a time-activity curve (TAC) by computing the average value within a region, for each 
@@ -265,8 +268,8 @@ def extract_tac_from_4dnifty_using_mask(input_image_4d_path: str,
         segmentation_image_path (str): Path to a .nii or .nii.gz file containing a 3D segmentation
             image, where integer indices label specific regions. Must have same sampling as PET
             input.
-        values (list[int]): List of values in the segmentation image, which correspond to regions
-            for which the TAC is to be computed on. Only one region at a time is implemented.
+        region (int): Value in the segmentation image corresponding to a region
+            over which the TAC is computed.
         verbose (bool): Set to `True` to output processing information.
 
     Returns:
@@ -275,21 +278,17 @@ def extract_tac_from_4dnifty_using_mask(input_image_4d_path: str,
     Raises:
         NotImplementedError: If `values` has more than two regions, as this is future functionality
     """
-    if len(values) > 1:
-        raise NotImplementedError('extract_tac_from_4dnifty_using_mask can only average over one region at the moment.'
-            ' Use a list with only one value.')
 
     pet_image_4d = nibabel.load(input_image_4d_path).get_fdata()
     num_frames = pet_image_4d.shape[3]
     seg_image = nibabel.load(segmentation_image_path).get_fdata()
 
     tac_out = np.zeros(num_frames, float)
-    for region in values:
-        if verbose:
-            print(f'Running TAC for region index {region}')
-        masked_voxels = seg_image == region
-        masked_image = pet_image_4d[masked_voxels].reshape((-1, num_frames))
-        tac_out = np.mean(masked_image, axis=0)
+    if verbose:
+        print(f'Running TAC for region index {region}')
+    masked_voxels = seg_image == region
+    masked_image = pet_image_4d[masked_voxels].reshape((-1, num_frames))
+    tac_out = np.mean(masked_image, axis=0)
     return tac_out
 
 
