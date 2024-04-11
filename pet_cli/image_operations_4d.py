@@ -116,8 +116,8 @@ def weighted_series_sum(input_image_4d_path: str,
 def motion_correction(input_image_4d_path: str,
                       reference_image_path: str,
                       out_image_path: str,
-                      type_of_transform: str='DenseRigid',
                       verbose: bool,
+                      type_of_transform: str='DenseRigid',
                       **kwargs) -> tuple[np.ndarray, list[str], list[float]]:
     """
     Correct PET image series for inter-frame motion. Runs rigid motion correction module
@@ -149,8 +149,8 @@ def motion_correction(input_image_4d_path: str,
     pet_ants = ants.from_nibabel(pet_nibabel)
     pet_sum_image_ants = ants.from_nibabel(pet_ref_image)
 
-    pet_moco_ants_dict = ants.motion_correction(pet_ants,
-                                                pet_sum_image_ants,
+    pet_moco_ants_dict = ants.motion_correction(image=pet_ants,
+                                                fixed=pet_sum_image_ants,
                                                 type_of_transform=type_of_transform,
                                                 **kwargs)
     if verbose:
@@ -176,9 +176,9 @@ def motion_correction(input_image_4d_path: str,
 def register_pet(input_calc_image_path: str,
                  input_reg_image_path: str,
                  reference_image_path: str,
-                 type_of_transform: str='DenseRigid',
                  out_image_path: str,
                  verbose: bool,
+                 type_of_transform: str='DenseRigid',
                  **kwargs):
     """
     Computes and runs rigid registration of 4D PET image series to 3D anatomical image, typically
@@ -261,6 +261,7 @@ def resample_segmentation(input_image_4d_path: str,
 
 def extract_tac_from_4dnifty_using_mask(input_image_4d_path: str,
                                         segmentation_image_path: str,
+                                        region: int,
                                         verbose: bool) -> np.ndarray:
     """
     Creates a time-activity curve (TAC) by computing the average value within a region, for each 
