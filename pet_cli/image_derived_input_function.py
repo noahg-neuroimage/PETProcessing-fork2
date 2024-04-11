@@ -112,10 +112,10 @@ def get_frame_time_midpoints(frame_start_times: np.ndarray,
 
     """
     frame_midpoint_times = frame_start_times + (frame_duration_times / 2)
-    return frame_midpoint_times
+    return frame_midpoint_times.astype(int)
 
 
-def load_fslmeants_to_numpy(fslmeants_filepath: str) -> np.ndarray:
+def load_fslmeants_textfile_to_numpy(fslmeants_filepath: str) -> np.ndarray:
     """
     Load the fslmeants output file from a CSV and convert it to a NumPy array, removing the first three rows
     which are assumed to be coordinate data.
@@ -127,11 +127,11 @@ def load_fslmeants_to_numpy(fslmeants_filepath: str) -> np.ndarray:
         np.ndarray: A 2D NumPy array where each row corresponds to a time point and each column to a different ROI.
 
     """
-    data = pd.read_csv(fslmeants_filepath, header=None)
+    data = pd.read_csv(fslmeants_filepath, delim_whitespace=True, header=None)
     if data.shape[1] > data.shape[0]:
         data = data.iloc[3:]
 
-    return data.values
+    return data.to_numpy()
 
 
 def get_idif_from_fslmeants_file_of_4d_pet_necktangle(fslmeants_vals: np.ndarray,
@@ -159,7 +159,7 @@ def get_idif_from_fslmeants_file_of_4d_pet_necktangle(fslmeants_vals: np.ndarray
     bolus_window_vals = fslmeants_vals[bolus_frame - 1:bolus_frame + 2, :]
     carotid_cut = 90
     carotid_inds = \
-    np.where(np.mean(bolus_window_vals, axis=0) > np.percentile(np.mean(bolus_window_vals, axis=0), carotid_cut))[0]
+        np.where(np.mean(bolus_window_vals, axis=0) > np.percentile(np.mean(bolus_window_vals, axis=0), carotid_cut))[0]
     percentile_vals_z = np.percentile(fslmeants_vals[:, carotid_inds], percentile, axis=1)
 
     if len(frame_midpoint_times) < len(percentile_vals_z):
