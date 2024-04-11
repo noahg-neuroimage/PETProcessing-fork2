@@ -94,8 +94,9 @@ def average_masked_4d_pet_into_tac(masked_4d_pet_data: np.ndarray) -> np.ndarray
     frame_averages = np.mean(masked_4d_pet_data, axis=(1, 2, 3))
     return frame_averages
 
+
 # Below is longer methods
-#-----------------------------------------------------------------
+# -----------------------------------------------------------------
 
 def get_frame_time_midpoints(frame_start_times: np.ndarray,
                              frame_duration_times: np.ndarray) -> np.ndarray:
@@ -134,8 +135,8 @@ def load_fslmeants_to_numpy(fslmeants_filepath: str) -> np.ndarray:
 
 
 def get_idif_from_fslmeants_file_of_4d_pet_necktangle(fslmeants_vals: np.ndarray,
-                 percentile: float,
-                 frame_midpoint_times: np.ndarray) -> np.ndarray:
+                                                      percentile: float,
+                                                      frame_midpoint_times: np.ndarray) -> np.ndarray:
     """
     Process the fslmeants data to identify the bolus frame based on the highest mean value within the first ten frames,
     determine 'carotid' voxels based on a percentile cut-off around the bolus frame, and calculate a specified percentile
@@ -157,7 +158,8 @@ def get_idif_from_fslmeants_file_of_4d_pet_necktangle(fslmeants_vals: np.ndarray
     bolus_frame = np.argmax(frame_averages[:10])
     bolus_window_vals = fslmeants_vals[bolus_frame - 1:bolus_frame + 2, :]
     carotid_cut = 90
-    carotid_inds = np.where(np.mean(bolus_window_vals, axis=0) > np.percentile(np.mean(bolus_window_vals, axis=0), carotid_cut))[0]
+    carotid_inds = \
+    np.where(np.mean(bolus_window_vals, axis=0) > np.percentile(np.mean(bolus_window_vals, axis=0), carotid_cut))[0]
     percentile_vals_z = np.percentile(fslmeants_vals[:, carotid_inds], percentile, axis=1)
 
     if len(frame_midpoint_times) < len(percentile_vals_z):
