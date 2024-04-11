@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 
 
 def make_early_mean_image_from_4d_pet(pet_4d_data: np.ndarray,
@@ -92,3 +93,76 @@ def average_masked_4d_pet_into_tac(masked_4d_pet_data: np.ndarray) -> np.ndarray
     """
     frame_averages = np.mean(masked_4d_pet_data, axis=(1, 2, 3))
     return frame_averages
+
+# Below is longer methods
+#-----------------------------------------------------------------
+
+def get_frame_time_midpoints(frame_start_times: np.ndarray,
+                             frame_duration_times: np.ndarray) -> np.ndarray:
+    """
+    Calculate the midpoints of frame times given the start times and durations.
+
+    Args:
+        frame_start_times (np.ndarray): An array of frame start times.
+        frame_duration_times (np.ndarray): An array of durations corresponding to each start time.
+
+    Returns:
+        np.ndarray: An array of midpoint times calculated as the start time plus half of the duration for each frame.
+
+    """
+    frame_midpoint_times = frame_start_times + (frame_duration_times / 2)
+    return frame_midpoint_times
+
+
+def load_fslmeants_to_numpy(fslmeants_filepath: str) -> np.ndarray:
+    """
+    Load the fslmeants output file from a CSV and convert it to a NumPy array, removing the first three rows
+    which are assumed to be coordinate data.
+
+    Args:
+        fslmeants_filepath (str): The file path to the CSV containing the fslmeants output.
+
+    Returns:
+        np.ndarray: A 2D NumPy array where each row corresponds to a time point and each column to a different ROI.
+
+    """
+    data = pd.read_csv(fslmeants_filepath, header=None)
+    if data.shape[1] > data.shape[0]:
+        data = data.iloc[3:]
+
+    return data.values
+
+
+def get_idif_from_fslmeants_file_of_4d_pet_necktangle(fslmeants_vals: np.ndarray,
+                 percentile: float,
+                 frame_midpoint_times: np.ndarray) -> np.ndarray:
+    """
+    Process the fslmeants data to identify the bolus frame based on the highest mean value within the first ten frames,
+    determine 'carotid' voxels based on a percentile cut-off around the bolus frame, and calculate a specified percentile
+    for these voxels across all frames.
+
+    Args:
+        fslmeants_vals (np.ndarray): The NumPy array of fslmeants values, where each row is a time point and each column is an ROI.
+        percentile (float): The percentile threshold used to identify 'carotid' voxels.
+        frame_midpoint_times (np.ndarray): An array of frame times to be associated with each percentile value calculated.
+
+    Returns:
+        np.ndarray: A 2D array with each row containing a frame time and the corresponding percentile value for the 'carotid' voxels.
+
+    Raises:
+        ValueError: If the length of frame_midpoint_times is less than the number of percentile values calculated.
+
+    """
+    frame_averages = np.mean(fslmeants_vals, axis=1)
+    bolus_frame = np.argmax(frame_averages[:10])
+    bolus_window_vals = fslmeants_vals[bolus_frame - 1:bolus_frame + 2, :]
+    carotid_cut = 90
+    carotid_inds = np.where(np.mean(bolus_window_vals, axis=0) > np.percentile(np.mean(bolus_window_vals, axis=0), carotid_cut))[0]
+    percentile_vals_z = np.percentile(fslmeants_vals[:, carotid_inds], percentile, axis=1)
+
+    if len(frame_midpoint_times) < len(percentile_vals_z):
+        raise ValueError("Frame times array is shorter than the number of percentile values calculated.")
+
+    output_data = np.column_stack((frame_midpoint_times[:len(percentile_vals_z)], percentile_vals_z))
+
+    return output_data
