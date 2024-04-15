@@ -38,3 +38,17 @@ def calc_frtm_params_from_kinetic_params(r1: float,
     a1 = (k3 + k4 - alpha_2) / chi * (k2 / r1 - alpha_2)
     a2 = (alpha_1 - k3 - k4) / chi * (k2 / r1 - alpha_1)
     return r1, a1, a2, alpha_1, alpha_2
+
+
+def fit_srtm_model_to_tac(target_tac_vals: np.ndarray,
+                          reference_tac_times: np.ndarray,
+                          reference_tac_vals: np.ndarray,
+                          r1_start: np.ndarray = 0.5,
+                          k2_start: np.ndarray = 0.5,
+                          bp_start: np.ndarray = 0.5):
+    def _gen_fitting_srtm(tac_times, r1, k2, bp):
+        return calc_srtm_tac(tac_times=tac_times, r1=r1, k2=k2, bp=bp, ref_tac_vals=reference_tac_vals)
+    
+    starting_values = [r1_start, k2_start, bp_start]
+    
+    return sp_fit(f=_gen_fitting_srtm, xdata=reference_tac_times, ydata=target_tac_vals, p0=starting_values)
