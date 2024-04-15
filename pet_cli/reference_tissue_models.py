@@ -40,30 +40,32 @@ def calc_frtm_params_from_kinetic_params(r1: float,
     return r1, a1, a2, alpha_1, alpha_2
 
 
-def fit_srtm_model_to_tac(target_tac_vals: np.ndarray,
-                          reference_tac_times: np.ndarray,
-                          reference_tac_vals: np.ndarray,
+def fit_srtm_model_to_tac(tgt_tac_vals: np.ndarray,
+                          ref_tac_times: np.ndarray,
+                          ref_tac_vals: np.ndarray,
                           r1_start: np.ndarray = 0.5,
                           k2_start: np.ndarray = 0.5,
-                          bp_start: np.ndarray = 0.5):
+                          bp_start: np.ndarray = 0.5) -> tuple:
     def _gen_fitting_srtm(tac_times, r1, k2, bp):
-        return calc_srtm_tac(tac_times=tac_times, r1=r1, k2=k2, bp=bp, ref_tac_vals=reference_tac_vals)
+        return calc_srtm_tac(tac_times=tac_times, r1=r1, k2=k2, bp=bp, ref_tac_vals=ref_tac_vals)
     
     starting_values = [r1_start, k2_start, bp_start]
     
-    return sp_fit(f=_gen_fitting_srtm, xdata=reference_tac_times, ydata=target_tac_vals, p0=starting_values)
+    return sp_fit(f=_gen_fitting_srtm, xdata=ref_tac_times, ydata=tgt_tac_vals, p0=starting_values)
 
 
-def fit_frtm_model_to_tac(target_tac_vals: np.ndarray,
-                          reference_tac_times: np.ndarray,
-                          reference_tac_vals: np.ndarray,
+def fit_frtm_model_to_tac(tgt_tac_vals: np.ndarray,
+                          ref_tac_times: np.ndarray,
+                          ref_tac_vals: np.ndarray,
                           r1_start: float = 0.5,
                           k2_start: float = 0.5,
                           k3_start: float = 0.5,
-                          k4_start: float = 0.5) -> np.ndarray:
+                          k4_start: float = 0.5) -> tuple:
     def _fitting_frtm(tac_times, r1_n, k2, k3, k4):
-        frtm_params = calc_frtm_params_from_kinetic_params(r1=r1_n, k2=k2, k3=k3, k4=k4)
-        return calc_frtm_tac(tac_times, *frtm_params, reference_tac_vals)
+        r1, a1, a2, alpha_1, alpha_2 = calc_frtm_params_from_kinetic_params(r1=r1_n, k2=k2, k3=k3, k4=k4)
+        return calc_frtm_tac(tac_times=tac_times,
+                             r1=r1, a1=a1, a2=a2, alpha_1=alpha_1, alpha_2=alpha_2,
+                             ref_tac_vals=ref_tac_vals)
 
     starting_values = (r1_start, k2_start, k3_start, k4_start)
-    return sp_fit(f=_fitting_frtm, xdata=reference_tac_times, ydata=target_tac_vals, p0=starting_values)
+    return sp_fit(f=_fitting_frtm, xdata=ref_tac_times, ydata=tgt_tac_vals, p0=starting_values)
