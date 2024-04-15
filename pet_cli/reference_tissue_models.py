@@ -52,3 +52,18 @@ def fit_srtm_model_to_tac(target_tac_vals: np.ndarray,
     starting_values = [r1_start, k2_start, bp_start]
     
     return sp_fit(f=_gen_fitting_srtm, xdata=reference_tac_times, ydata=target_tac_vals, p0=starting_values)
+
+
+def fit_frtm_model_to_tac(target_tac_vals: np.ndarray,
+                          reference_tac_times: np.ndarray,
+                          reference_tac_vals: np.ndarray,
+                          r1_start: float = 0.5,
+                          k2_start: float = 0.5,
+                          k3_start: float = 0.5,
+                          k4_start: float = 0.5) -> np.ndarray:
+    def _fitting_frtm(tac_times, r1_n, k2, k3, k4):
+        frtm_params = calc_frtm_params_from_kinetic_params(r1=r1_n, k2=k2, k3=k3, k4=k4)
+        return calc_frtm_tac(tac_times, *frtm_params, reference_tac_vals)
+
+    starting_values = (r1_start, k2_start, k3_start, k4_start)
+    return sp_fit(f=_fitting_frtm, xdata=reference_tac_times, ydata=target_tac_vals, p0=starting_values)
