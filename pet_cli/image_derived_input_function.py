@@ -115,7 +115,7 @@ def get_frame_time_midpoints(frame_start_times: np.ndarray,
     return frame_midpoint_times.astype(int)
 
 
-def load_fslmeants_textfile_to_numpy(fslmeants_filepath: str) -> np.ndarray:
+def load_fslmeants_to_numpy(fslmeants_filepath: str) -> np.ndarray:
     """
     Load the fslmeants output file from a CSV and convert it to a NumPy array, removing the first three rows
     which are assumed to be coordinate data.
@@ -127,16 +127,28 @@ def load_fslmeants_textfile_to_numpy(fslmeants_filepath: str) -> np.ndarray:
         np.ndarray: A 2D NumPy array where each row corresponds to a time point and each column to a different ROI.
 
     """
-    data = pd.read_csv(fslmeants_filepath, delim_whitespace=True, header=None)
-    if data.shape[1] > data.shape[0]:
-        data = data.iloc[3:]
+    # data = pd.read_csv(fslmeants_filepath, delim_whitespace=True, header=None)
+    data = np.loadtxt(fslmeants_filepath)
+    x_coord_min = min(data[0].astype(int))
+    y_coord_min = min(data[1].astype(int))
+    z_coord_min = min(data[2].astype(int))
+    x_dim = (max(data[0].astype(int)) - x_coord_min) + 1
+    y_dim = (max(data[1].astype(int)) - y_coord_min) + 1
+    z_dim = (max(data[2].astype(int)) - z_coord_min) + 1
+    t_dim = data.shape[0] - 3
+    necktangled_matrix = np.zeros((x_dim, y_dim, z_dim, t_dim), dtype=float)
+    for location in range(data.shape[1]):
+        x_coord = data[0, location].astype(int) - x_coord_min
+        y_coord = data[1, location].astype(int) - y_coord_min
+        z_coord = data[2, location].astype(int) - z_coord_min
+        necktangled_matrix[x_coord, y_coord, z_coord, :] = data[3:, location]
 
-    return data.to_numpy()
+    return necktangled_matrix
 
 
-def get_idif_from_fslmeants_file_of_4d_pet_necktangle(fslmeants_vals: np.ndarray,
-                                                      percentile: float,
-                                                      frame_midpoint_times: np.ndarray) -> np.ndarray:
+def get_idif_from_4d_pet_necktangle(necktangle_matrix: np.ndarray,
+                                    percentile: float,
+                                    frame_midpoint_times: np.ndarray) -> np.ndarray:
     """
     Process the fslmeants data to identify the bolus frame based on the highest mean value within the first ten frames,
     determine 'carotid' voxels based on a percentile cut-off around the bolus frame, and calculate a specified percentile
@@ -154,17 +166,19 @@ def get_idif_from_fslmeants_file_of_4d_pet_necktangle(fslmeants_vals: np.ndarray
         ValueError: If the length of frame_midpoint_times is less than the number of percentile values calculated.
 
     """
-    frame_averages = np.mean(fslmeants_vals, axis=1)
-    bolus_frame = np.argmax(frame_averages[:10])
-    bolus_window_vals = fslmeants_vals[bolus_frame - 1:bolus_frame + 2, :]
-    carotid_cut = 90
-    carotid_inds = \
-        np.where(np.mean(bolus_window_vals, axis=0) > np.percentile(np.mean(bolus_window_vals, axis=0), carotid_cut))[0]
-    percentile_vals_z = np.percentile(fslmeants_vals[:, carotid_inds], percentile, axis=1)
+    first_ten_frames = necktangle_matrix[:, :, :, :10]
+    frame_averages = np.nanmean(first_ten_frames, axis=(0, 1, 2))
+    bolus_index = np.argmax(frame_averages)
+    bolus_window_4d = necktangle_matrix[:, :, :, bolus_index - 1:bolus_index + 2]
+    bolus_window_average_3d = np.nanmean(bolus_window_4d, axis=3)
+    automatic_threshold_value = np.nanpercentile(bolus_window_average_3d, 90)
+    automatic_threshold_mask_3d = np.where(bolus_window_average_3d > automatic_threshold_value, 1, np.nan)
+    tac = np.zeros((2, necktangle_matrix.shape[3]))
+    tac[0, :] = frame_midpoint_times
+    for frame in range(tac.shape[1]):
+        current_frame = necktangle_matrix[:, :, :, frame]
+        automatic_masked_frame = np.where(automatic_threshold_mask_3d == 1, current_frame, np.nan)
+        manual_threshold_value = np.nanpercentile(automatic_masked_frame, percentile)
+        tac[1, frame] = manual_threshold_value
 
-    if len(frame_midpoint_times) < len(percentile_vals_z):
-        raise ValueError("Frame times array is shorter than the number of percentile values calculated.")
-
-    output_data = np.column_stack((frame_midpoint_times[:len(percentile_vals_z)], percentile_vals_z))
-
-    return output_data
+    return tac
