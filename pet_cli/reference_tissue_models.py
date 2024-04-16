@@ -46,12 +46,12 @@ def fit_srtm_model_to_tac(tgt_tac_vals: np.ndarray,
                           r1_start: float = 0.5,
                           k2_start: float = 0.5,
                           bp_start: float = 0.5) -> tuple:
-    def _gen_fitting_srtm(tac_times, r1, k2, bp):
+    def _fitting_srtm(tac_times, r1, k2, bp):
         return calc_srtm_tac(tac_times=tac_times, r1=r1, k2=k2, bp=bp, ref_tac_vals=ref_tac_vals)
     
     starting_values = [r1_start, k2_start, bp_start]
     
-    return sp_fit(f=_gen_fitting_srtm, xdata=ref_tac_times, ydata=tgt_tac_vals, p0=starting_values)
+    return sp_fit(f=_fitting_srtm, xdata=ref_tac_times, ydata=tgt_tac_vals, p0=starting_values)
 
 
 def fit_srtm_model_to_tac_with_bounds(tgt_tac_vals: np.ndarray,
@@ -60,15 +60,15 @@ def fit_srtm_model_to_tac_with_bounds(tgt_tac_vals: np.ndarray,
                                       r1_bounds: np.ndarray = np.asarray([0.5, 0.0, 10.0]),
                                       k2_bounds: np.ndarray = np.asarray([0.5, 0.0, 10.0]),
                                       bp_bounds: np.ndarray = np.asarray([0.5, 0.0, 10.0])) -> tuple:
-    def _gen_fitting_srtm(tac_times, r1, k2, bp):
+    def _fitting_srtm(tac_times, r1, k2, bp):
         return calc_srtm_tac(tac_times=tac_times, r1=r1, k2=k2, bp=bp, ref_tac_vals=ref_tac_vals)
     
-    starting_values = (r1_bounds[0], k2_bounds[0], bp_bounds[0])
+    st_values = (r1_bounds[0], k2_bounds[0], bp_bounds[0])
     lo_values = (r1_bounds[1], k2_bounds[1], bp_bounds[1])
     hi_values = (r1_bounds[2], k2_bounds[2], bp_bounds[2])
     
-    return sp_fit(f=_gen_fitting_srtm, xdata=ref_tac_times, ydata=tgt_tac_vals,
-                  p0=starting_values, bounds=[lo_values, hi_values])
+    return sp_fit(f=_fitting_srtm, xdata=ref_tac_times, ydata=tgt_tac_vals,
+                  p0=st_values, bounds=[lo_values, hi_values])
 
 
 def fit_frtm_model_to_tac(tgt_tac_vals: np.ndarray,
@@ -86,3 +86,24 @@ def fit_frtm_model_to_tac(tgt_tac_vals: np.ndarray,
 
     starting_values = (r1_start, k2_start, k3_start, k4_start)
     return sp_fit(f=_fitting_frtm, xdata=ref_tac_times, ydata=tgt_tac_vals, p0=starting_values)
+
+
+def fit_frtm_model_to_tac_with_bounds(tgt_tac_vals: np.ndarray,
+                                      ref_tac_times: np.ndarray,
+                                      ref_tac_vals: np.ndarray,
+                                      r1_bounds: np.ndarray = np.asarray([0.5, 0.0, 10.0]),
+                                      k2_bounds: np.ndarray = np.asarray([0.5, 0.0, 10.0]),
+                                      k3_bounds: np.ndarray = np.asarray([0.5, 0.0, 10.0]),
+                                      k4_bounds: np.ndarray = np.asarray([0.5, 0.0, 10.0])) -> tuple:
+    def _fitting_frtm(tac_times, r1_n, k2, k3, k4):
+        r1, a1, a2, alpha_1, alpha_2 = calc_frtm_params_from_kinetic_params(r1=r1_n, k2=k2, k3=k3, k4=k4)
+        return calc_frtm_tac(tac_times=tac_times,
+                             r1=r1, a1=a1, a2=a2, alpha_1=alpha_1, alpha_2=alpha_2,
+                             ref_tac_vals=ref_tac_vals)
+    
+    st_values = (r1_bounds[0], k2_bounds[0], k3_bounds[0], k4_bounds[0])
+    lo_values = (r1_bounds[1], k2_bounds[1], k3_bounds[1], k4_bounds[1])
+    hi_values = (r1_bounds[2], k2_bounds[2], k3_bounds[2], k4_bounds[2])
+    
+    return sp_fit(f=_fitting_frtm, xdata=ref_tac_times, ydata=tgt_tac_vals,
+                  p0=st_values, bounds=[lo_values, hi_values])
