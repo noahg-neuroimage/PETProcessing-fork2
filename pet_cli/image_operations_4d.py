@@ -314,7 +314,7 @@ def write_tacs(input_image_4d_path: str,
                time_frame_keyword: str = 'FrameReferenceTime'):
     """
     Function to write Tissue Activity Curves for each region, given a segmentation,
-    4D PET image, and color table. Computes the average of the PET image within each
+    4D PET image, and label map. Computes the average of the PET image within each
     region. Writes a JSON for each region with region name, frame start time, and mean 
     value within region.
     """
@@ -324,8 +324,8 @@ def write_tacs(input_image_4d_path: str,
                          "'FrameReferenceTime' or 'FrameTimesStart'")
 
     pet_meta = image_io.ImageIO.load_metadata_for_nifty_with_same_filename(input_image_4d_path)
-    color_table = image_io.ImageIO.read_color_table_json(label_map_file=label_map_path)
-    regions_list = color_table['data']
+    label_map = image_io.ImageIO.read_label_map_json(label_map_file=label_map_path)
+    regions_list = label_map['data']
 
     tac_extraction_func = extract_tac_from_4dnifty_using_mask
 
@@ -370,7 +370,7 @@ class ImageOps4d():
             for motion corrected and registered PET image, and 'seg_resampled' for a segmentation
             resampled onto PET resolution.
         half_life (float): Half-life of the radioisotope used in PET study in seconds.
-        label_map_path (str): Path to a color table .json file used to match region names to
+        label_map_path (str): Path to a label map .json file used to match region names to
             region indices.
         verbose (bool): Set to `True` to output processing information.
     
@@ -388,11 +388,13 @@ class ImageOps4d():
         self.output_filename_prefix = output_filename_prefix
         self.preproc_props = self._init_preproc_props()
 
-    def _init_preproc_props(self) -> dict:
+
+    @staticmethod
+    def _init_preproc_props() -> dict:
         """
         Initializes preproc properties dictionary.
         """
-        props = {'FilePathPET': None,
+        preproc_props = {'FilePathPET': None,
                  'FilePathMocoInp': None,
                  'FilePathRegInp': None,
                  'FilePathAnat': None,
@@ -408,21 +410,29 @@ class ImageOps4d():
                  'RegionExtract': None,
                  'TimeFrameKeyword': None,
                  'Verbose': False}
-        return props
+        return preproc_props
     
 
-    def update_props(self,new_props: dict) -> dict:
+    def update_props(self,new_preproc_props: dict) -> dict:
         """
         Update the processing properties with items from a new dictionary.
 
         Returns the updated `props` dictionary.
         """
-        props = self.props
-        updated_props = props.copy()
-        keys_to_update = [*new_props]
+        preproc_props = self.preproc_props
+        valid_keys = [*preproc_props]
+        updated_props = preproc_props.copy()
+        keys_to_update = [*new_preproc_props]
+
         for key in keys_to_update:
-            updated_props[key] = new_props[key]
-        self.props = updated_props
+
+            if key not in valid_keys:
+                raise ValueError("Invalid preproc property! Expected one of "
+                                 f"{valid_keys}, got {key}.")
+
+            updated_props[key] = new_preproc_props[key]
+
+        self.preproc_props = updated_props
         return updated_props
 
 
@@ -432,11 +442,11 @@ class ImageOps4d():
         Check if all necessary properties exist in the `props` dictionary to
         run the given method.
         """
-        props = self.props
-        existing_keys = [*props]
+        preproc_props = self.preproc_props
+        existing_keys = [*preproc_props]
 
         if method_name=='weighted_series_sum':
-            required_keys = ['FilePathPet','HalfLife','Verbose']
+            required_keys = ['FilePathPET','HalfLife','Verbose']
         elif method_name=='motion_correction':
             required_keys = ['FilePathMocoInp','FilePathPETRef','Verbose']
         elif method_name=='register_pet':
@@ -467,57 +477,57 @@ class ImageOps4d():
         """
         Run a specific preprocessing step
         """
-        props = self.props
+        preproc_props = self.preproc_props
         self._check_method_props_exist(method_name=method_name)
         if method_name=='weighted_series_sum':
             output_file_name = f'{self.output_filename_prefix}_wss.nii.gz'
             outfile = os.path.join(self.output_directory,
                                    output_file_name)
-            weighted_series_sum(input_image_4d_path=props.FilePathPET,
+            weighted_series_sum(input_image_4d_path=preproc_props['FilePathPET'],
                                 out_image_path=outfile,
-                                half_life=props.HalfLife,
-                                verbose=props.Verbose)
+                                half_life=preproc_props['HalfLife'],
+                                verbose=preproc_props['Verbose'])
         elif method_name=='motion_correction':
             output_file_name = f'{self.output_filename_prefix}_moco.nii.gz'
             outfile = os.path.join(self.output_directory,
                                    output_file_name)
-            motion_correction(input_image_4d_path=props.FilePathMocoInp,
-                              reference_image_path=props.FilePathPETRef,
+            motion_correction(input_image_4d_path=preproc_props['FilePathMocoInp'],
+                              reference_image_path=preproc_props['FilePathPETRef'],
                               out_image_path=outfile,
-                              verbose=props.Verbose,
-                              kwargs=props.MocoPars)
+                              verbose=preproc_props['Verbose'],
+                              kwargs=preproc_props['MocoPars'])
         elif method_name=='register_pet':
             output_file_name = f'{self.output_filename_prefix}_reg.nii.gz'
             outfile = os.path.join(self.output_directory,
                                    output_file_name)
-            register_pet(input_calc_image_path=props.FilePathPETRef,
-                         input_reg_image_path=props.FilePathRegInp,
-                         reference_image_path=props.FilePathAnat,
+            register_pet(input_calc_image_path=preproc_props['FilePathPETRef'],
+                         input_reg_image_path=preproc_props['FilePathRegInp'],
+                         reference_image_path=preproc_props['FilePathAnat'],
                          out_image_path=outfile,
-                         verbose=props.Verbose,
-                         kwargs=props.RegPars)
+                         verbose=preproc_props['Verbose'],
+                         kwargs=preproc_props['RegPars'])
         elif method_name=='resample_segmentation':
             output_file_name = f'{self.output_filename_prefix}_seg-res.nii.gz'
             outfile = os.path.join(self.output_directory,
                                    output_file_name)
-            resample_segmentation(input_image_4d_path=props.FilePathTACInput,
-                                  segmentation_image_path=props.FilePathSeg,
+            resample_segmentation(input_image_4d_path=preproc_props['FilePathTACInput'],
+                                  segmentation_image_path=preproc_props['FilePathSeg'],
                                   out_seg_path=outfile,
-                                  verbose=props.Verbose)
+                                  verbose=preproc_props['Verbose'])
             self.update_props({'FilePathSeg': outfile})
         elif method_name=='extract_tac_from_4dnifty_using_mask':
-            return extract_tac_from_4dnifty_using_mask(input_image_4d_path=props.FilePathTACInput,
-                                                segmentation_image_path=props.FilePathSeg,
-                                                region=props.RegionExtract,
-                                                verbose=props.Verbose)
+            return extract_tac_from_4dnifty_using_mask(input_image_4d_path=preproc_props['FilePathTACInput'],
+                                                segmentation_image_path=preproc_props['FilePathSeg'],
+                                                region=preproc_props['RegionExtract'],
+                                                verbose=preproc_props['Verbose'])
         elif method_name=='write_tacs':
             outdir = os.path.join(self.output_directory,'tacs')
-            write_tacs(input_image_4d_path=props.FilePathTACInput,
-                       label_map_path=props.FilePathLabelMap,
-                       segmentation_image_path=props.FilePathSeg,
+            write_tacs(input_image_4d_path=preproc_props['FilePathTACInput'],
+                       label_map_path=preproc_props['FilePathLabelMap'],
+                       segmentation_image_path=preproc_props['FilePathSeg'],
                        out_tac_dir=outdir,
-                       verbose=props.Verbose,
-                       time_frame_keyword=props.TimeFrameKeyword)
+                       verbose=preproc_props['Verbose'],
+                       time_frame_keyword=preproc_props['TimeFrameKeyword'])
         else:
             raise ValueError("Invalid method_name! Must be either"
                              "'weighted_series_sum', 'motion_correction', "
