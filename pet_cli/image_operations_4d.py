@@ -212,7 +212,7 @@ def register_pet(input_calc_image_path: str,
                                    write_composite_transform=True,
                                    **kwargs)
     if verbose:
-        print(f'Registration computed transforming image {input_calc_image_path} to'
+        print(f'Registration computed transforming image {input_calc_image_path} to '
               f'{reference_image_path} space')
 
     xfm_apply = ants.apply_transforms(moving=pet_moco,
@@ -388,9 +388,9 @@ class ImageOps4d():
         """
         self.output_directory = os.path.abspath(output_directory)
         self.output_filename_prefix = output_filename_prefix
-        self.preproc_props = self.init_preproc_props()
+        self.preproc_props = self._init_preproc_props()
 
-    def init_preproc_props(self) -> dict:
+    def _init_preproc_props(self) -> dict:
         """
         Initializes preproc properties dictionary.
         """
@@ -402,19 +402,75 @@ class ImageOps4d():
                  'FilePathTACInput': None,
                  'FileWeightedPET': None,
                  'FilePathSeg': None,
+                 'FilePathLabelMap': None,
                  'MethodName': None,
                  'MocoPars': None,
+                 'RegPars': None,
                  'HalfLife': None,
-                 'Verbose': None
-                 }
+                 'RegionExtract': None,
+                 'TimeFrameKeyword': None,
+                 'Verbose': False}
         return props
     
+
+    def update_props(self,new_props: dict) -> dict:
+        """
+        Update the processing properties with items from a new dictionary.
+
+        Returns the updated `props` dictionary.
+        """
+        props = self.props
+        updated_props = props.copy()
+        keys_to_update = [*new_props]
+        for key in keys_to_update:
+            updated_props[key] = new_props[key]
+        self.props = updated_props
+        return updated_props
+
+
+    def _check_method_props_exist(self,
+                                 method_name: str) -> None:
+        """
+        Check if all necessary properties exist in the `props` dictionary to
+        run the given method.
+        """
+        props = self.props
+        existing_keys = [*props]
+
+        if method_name=='weighted_series_sum':
+            required_keys = ['FilePathPet','HalfLife','Verbose']
+        elif method_name=='motion_correction':
+            required_keys = ['FilePathMocoInp','FilePathPETRef','Verbose']
+        elif method_name=='register_pet':
+            required_keys = ['FilePathPETRef','FilePathRegInp','FilePathAnat','Verbose']
+        elif method_name=='resample_segmentation':
+            required_keys = ['FilePathTACInput','FilePathSeg','Verbose']
+        elif method_name=='extract_tac_from_4dnifty_using_mask':
+            required_keys = ['FilePathTACInput','FilePathSeg','RegionExtract','Verbose']
+        elif method_name=='write_tacs':
+            required_keys = ['FilePathTACInput','FilePathLabelMap','FilePathSeg','Verbose','TimeFrameKeyword']
+        else:
+            raise ValueError("Invalid method_name! Must be either"
+                             "'weighted_series_sum', 'motion_correction', "
+                             "'register_pet', 'resample_segmentation', "
+                             "'extract_tac_from_4dnifty_using_mask', or "
+                             f"'write_tacs'. Got {method_name}")
+        for key in required_keys:
+            if key not in existing_keys:
+                raise ValueError(f"Preprocessing method requires property"
+                                 f" {key}, however {key} was not found in "
+                                 "processing properties. Existing properties "
+                                 f"are: {existing_keys}, while needed keys to "
+                                 f"run {method_name} are: {required_keys}.")
+    
+
     def run_preproc(self,
                     method_name: str):
-        props = self.props
         """
         Run a specific preprocessing step
         """
+        props = self.props
+        self._check_method_props_exist(method_name=method_name)
         if method_name=='weighted_series_sum':
             output_file_name = f'{self.output_filename_prefix}_wss.nii.gz'
             outfile = os.path.join(self.output_directory,
@@ -437,10 +493,11 @@ class ImageOps4d():
             outfile = os.path.join(self.output_directory,
                                    output_file_name)
             register_pet(input_calc_image_path=props.FilePathPETRef,
-                         input_reg_image_path=props.FilePathReegInp,
+                         input_reg_image_path=props.FilePathRegInp,
                          reference_image_path=props.FilePathAnat,
                          out_image_path=outfile,
-                         verbose=props.Verbose)
+                         verbose=props.Verbose,
+                         kwargs=props.RegPars)
         elif method_name=='resample_segmentation':
             output_file_name = f'{self.output_filename_prefix}_seg-res.nii.gz'
             outfile = os.path.join(self.output_directory,
@@ -449,35 +506,24 @@ class ImageOps4d():
                                   segmentation_image_path=props.FilePathSeg,
                                   out_seg_path=outfile,
                                   verbose=props.Verbose)
+            self.update_props({'FilePathSeg': outfile})
         elif method_name=='extract_tac_from_4dnifty_using_mask':
-            return extract_tac_from_4dnifty_using_mask
+            return extract_tac_from_4dnifty_using_mask(input_image_4d_path=props.FilePathTACInput,
+                                                segmentation_image_path=props.FilePathSeg,
+                                                region=props.RegionExtract,
+                                                verbose=props.Verbose)
         elif method_name=='write_tacs':
-            return write_tacs
+            outdir = os.path.join(self.output_directory,'tacs')
+            write_tacs(input_image_4d_path=props.FilePathTACInput,
+                       color_table_path=props.FilePathLabelMap,
+                       segmentation_image_path=props.FilePathSeg,
+                       out_tac_dir=outdir,
+                       verbose=props.Verbose,
+                       time_frame_keyword=props.TimeFrameKeyword)
         else:
             raise ValueError("Invalid method_name! Must be either"
-                             "'weighted_series_sum', 'logan', or 'alt_logan'"
-                             f". Got {method_name}")
-        preproc_func = self.get_preproc_method(method_name=method_name)
-
-
-    @staticmethod
-    def get_preproc_method(method_name: str):
-        """
-        Returns the relevant image_operations_4d method
-        """
-        if method_name=='weighted_series_sum':
-            return weighted_series_sum
-        elif method_name=='motion_correction':
-            return motion_correction
-        elif method_name=='register_pet':
-            return register_pet
-        elif method_name=='resample_segmentation':
-            return resample_segmentation
-        elif method_name=='extract_tac_from_4dnifty_using_mask':
-            return extract_tac_from_4dnifty_using_mask
-        elif method_name=='write_tacs':
-            return write_tacs
-        else:
-            raise ValueError("Invalid method_name! Must be either"
-                             "'weighted_series_sum', 'logan', or 'alt_logan'"
-                             f". Got {method_name}")
+                             "'weighted_series_sum', 'motion_correction', "
+                             "'register_pet', 'resample_segmentation', "
+                             "'extract_tac_from_4dnifty_using_mask', or "
+                             f"'write_tacs'. Got {method_name}")
+        return None
