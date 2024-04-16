@@ -11,7 +11,6 @@ TODOs:
     * (weighted_series_sum) Refactor the DecayFactor key extraction into its own function
     * (weighted_series_sum) Refactor verbose reporting into the class as it is unrelated to
       computation
-    * (write_tacs) Shift save into a np.savetxt with the region name as the header comment
     * (write_tacs) Shift to accepting color-key dictionaries rather than a file path.
     * (extract_tac_from_4dnifty_using_mask) Write the number of voxels in the mask, or the
       volume of the mask. This is necessary for certain analyses with the resulting tacs,
@@ -308,7 +307,7 @@ def extract_tac_from_4dnifty_using_mask(input_image_4d_path: str,
 
 
 def write_tacs(input_image_4d_path: str,
-               color_table_path: str,
+               label_map_path: str,
                segmentation_image_path: str,
                out_tac_dir: str,
                verbose: bool,
@@ -325,7 +324,7 @@ def write_tacs(input_image_4d_path: str,
                          "'FrameReferenceTime' or 'FrameTimesStart'")
 
     pet_meta = image_io.ImageIO.load_metadata_for_nifty_with_same_filename(input_image_4d_path)
-    color_table = image_io.ImageIO.read_color_table_json(ctab_file=color_table_path)
+    color_table = image_io.ImageIO.read_color_table_json(label_map_file=label_map_path)
     regions_list = color_table['data']
 
     tac_extraction_func = extract_tac_from_4dnifty_using_mask
@@ -339,7 +338,6 @@ def write_tacs(input_image_4d_path: str,
         header_text = f'{time_frame_keyword}\t{region_name}_mean_activity'
         out_tac_path = os.path.join(out_tac_dir, f'tac-{region_name}.tsv')
         np.savetxt(out_tac_path,region_tac_file,delimiter='\t',header=header_text,comments='')
-        #image_io.write_dict_to_json(meta_data_dict=region_tac_file, out_path=out_tac_path)
 
 
 class ImageOps4d():
@@ -372,7 +370,7 @@ class ImageOps4d():
             for motion corrected and registered PET image, and 'seg_resampled' for a segmentation
             resampled onto PET resolution.
         half_life (float): Half-life of the radioisotope used in PET study in seconds.
-        color_table_path (str): Path to a color table .json file used to match region names to
+        label_map_path (str): Path to a color table .json file used to match region names to
             region indices.
         verbose (bool): Set to `True` to output processing information.
     
@@ -515,7 +513,7 @@ class ImageOps4d():
         elif method_name=='write_tacs':
             outdir = os.path.join(self.output_directory,'tacs')
             write_tacs(input_image_4d_path=props.FilePathTACInput,
-                       color_table_path=props.FilePathLabelMap,
+                       label_map_path=props.FilePathLabelMap,
                        segmentation_image_path=props.FilePathSeg,
                        out_tac_dir=outdir,
                        verbose=props.Verbose,
