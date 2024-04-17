@@ -1,5 +1,4 @@
 import numpy as np
-import pandas as pd
 
 
 def make_early_mean_image_from_4d_pet(pet_4d_data: np.ndarray,
