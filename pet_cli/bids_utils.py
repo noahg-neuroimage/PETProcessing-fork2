@@ -84,10 +84,10 @@ class BidsInstance:
                                  "description",
                                  "image_type")
         self.required_metadata = ("FrameReferenceTime",
-                                 "FrameTimesStart",
-                                 "FrameDuration",
-                                  ("DecayCorrectionFactor", "DecayFactor"),
-                                  ("TracerRadionuclide", "Radiopharmaceutical"))
+                                  "FrameTimesStart",
+                                  "FrameDuration",
+                                  ["DecayCorrectionFactor", "DecayFactor"],
+                                  ["TracerRadionuclide", "Radiopharmaceutical"])
         self._setup_dynamic_methods()
         self._create_bids_scaffold()
 
@@ -310,13 +310,13 @@ class BidsInstance:
         json_keys = self.metadata_cache.keys()
         for keys in self.required_metadata:
             if isinstance(keys, list):
-                if not any(key in json_keys for key in keys):
-                    warnings.warn(f"{keys} is not found in {pet_sidecar_filepath}")
-                else:
+                if any(key in json_keys for key in keys):
                     for json_key in json_keys:
                         if json_key in keys:
                             self.metadata_cache[keys[0]] = self.metadata_cache[json_key]
                             break
+                else:
+                    warnings.warn(f"{keys} is not found in {pet_sidecar_filepath}")
             else:
                 if not keys in json_keys:
                     warnings.warn(f"{keys} is not found in {pet_sidecar_filepath}")
