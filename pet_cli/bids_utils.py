@@ -52,7 +52,6 @@ class BidsInstance:
         """
         self.project_path = project_path
         self.path_cache = {}
-        self.metadata_cache = {}
         self.parts = {"derivative_directory": "main",
                       "subject": subject,
                       "session": None,
@@ -86,7 +85,7 @@ class BidsInstance:
         self.required_metadata = ("FrameReferenceTime",
                                   "FrameTimesStart",
                                   "FrameDuration",
-                                  ["DecayCorrectionFactor", "DecayFactor"],
+                                  ["DecayFactor", "DecayCorrectionFactor"],
                                   ["TracerRadionuclide", "Radiopharmaceutical"])
         self._setup_dynamic_methods()
         self._create_bids_scaffold()
@@ -286,18 +285,21 @@ class BidsInstance:
 
     def cache_sidecar_metadata(self, pet_sidecar_filepath: str) -> None:
         """
-        Loads metadata from a JSON file and caches it. Issues a warning for each
-        required metadata key that is missing in the JSON file.
+        Loads metadata from a JSON file specified by `pet_sidecar_filepath`, updates the instance
+        with dynamic attributes based on the `required_metadata`, and issues warnings for any
+        required metadata keys that are missing.
 
-        This method updates the `metadata_cache` attribute of the object by loading
-        the JSON content from the specified file path. It then checks each key in
-        the `required_metadata` list to ensure it is present in the JSON data. If
-        any required keys are missing, it raises a warning indicating which keys
-        are missing and from which file.
+        This method dynamically sets attributes on the instance for each key in `required_metadata`
+        that is found in the JSON file's keys. If `required_metadata` contains lists of keys,
+        it checks for any of those keys in the JSON file and uses the first matching key to set
+        an attribute named after the first key in the list. If a key from `required_metadata` (whether
+        a single key or any key from a list) is not found in the JSON keys, a warning is issued indicating
+        its absence.
 
         Args:
-            pet_sidecar_filepath (str): The file path to the JSON file containing
-                the metadata to be loaded and cached.
+            pet_sidecar_filepath (str): The file path to the JSON file from which to load metadata. This
+                file should contain a dictionary where each key-value pair corresponds to metadata that
+                might be required.
 
         Returns:
             None
@@ -305,20 +307,24 @@ class BidsInstance:
         Raises:
             JSONDecodeError: If the JSON file is malformed and cannot be decoded.
             FileNotFoundError: If the specified file does not exist.
+            Warning: Issues a runtime warning through the `warnings` module if required keys are missing
+                from the JSON data.
         """
-        self.metadata_cache = load_json(filepath=pet_sidecar_filepath)
-        json_keys = self.metadata_cache.keys()
+        metadata_cache = load_json(filepath=pet_sidecar_filepath)
+        json_keys = metadata_cache.keys()
         for keys in self.required_metadata:
             if isinstance(keys, list):
                 if any(key in json_keys for key in keys):
                     for json_key in json_keys:
                         if json_key in keys:
-                            self.metadata_cache[keys[0]] = self.metadata_cache[json_key]
+                            setattr(self, keys[0], metadata_cache[json_key])
                             break
                 else:
                     warnings.warn(f"{keys} is not found in {pet_sidecar_filepath}")
             else:
-                if not keys in json_keys:
+                if keys in json_keys:
+                    setattr(self, keys, metadata_cache[keys])
+                else:
                     warnings.warn(f"{keys} is not found in {pet_sidecar_filepath}")
 
     def change_session(self, value: str, compile_filepath: bool = True):
