@@ -309,13 +309,17 @@ class BidsInstance:
         self.metadata_cache = load_json(filepath=pet_sidecar_filepath)
         json_keys = self.metadata_cache.keys()
         for keys in self.required_metadata:
-            if not any(key in json_keys for key in keys):
-                warnings.warn(f"{keys} is not found in {pet_sidecar_filepath}")
+            if isinstance(keys, list):
+                if not any(key in json_keys for key in keys):
+                    warnings.warn(f"{keys} is not found in {pet_sidecar_filepath}")
+                else:
+                    for json_key in json_keys:
+                        if json_key in keys:
+                            self.metadata_cache[keys[0]] = self.metadata_cache[json_key]
+                            break
             else:
-                for json_key in json_keys:
-                    if json_key in keys:
-                        self.metadata_cache[keys[0]] = self.metadata_cache[json_key]
-                        break
+                if not keys in json_keys:
+                    warnings.warn(f"{keys} is not found in {pet_sidecar_filepath}")
 
     def change_session(self, value: str, compile_filepath: bool = True):
         """
