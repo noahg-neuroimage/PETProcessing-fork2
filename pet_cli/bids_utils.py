@@ -84,11 +84,10 @@ class BidsInstance:
                                  "description",
                                  "image_type")
         self.required_metadata = ("FrameReferenceTime",
-                                 "FrameTimeStart",
+                                 "FrameTimesStart",
                                  "FrameDuration",
-                                 "DecayCorrectionFactor",
-                                 "DecayFactor",
-                                 "TracerRadionuclide")
+                                  ("DecayCorrectionFactor", "DecayFactor"),
+                                  ("TracerRadionuclide", "Radiopharmaceutical"))
         self._setup_dynamic_methods()
         self._create_bids_scaffold()
 
@@ -308,9 +307,15 @@ class BidsInstance:
             FileNotFoundError: If the specified file does not exist.
         """
         self.metadata_cache = load_json(filepath=pet_sidecar_filepath)
-        for key in self.required_metadata:
-            if key not in self.metadata_cache.keys():
-                warnings.warn(f"{key} is not found in {pet_sidecar_filepath}")
+        json_keys = self.metadata_cache.keys()
+        for keys in self.required_metadata:
+            if not any(key in json_keys for key in keys):
+                warnings.warn(f"{keys} is not found in {pet_sidecar_filepath}")
+            else:
+                for json_key in json_keys:
+                    if json_key in keys:
+                        self.metadata_cache[keys[0]] = self.metadata_cache[json_key]
+                        break
 
     def change_session(self, value: str, compile_filepath: bool = True):
         """
