@@ -19,6 +19,7 @@ TODOs:
 """
 import os
 import re
+from scipy.interpolate import interp1d
 import ants
 import nibabel
 from nibabel import processing
@@ -30,7 +31,9 @@ from . import math_lib
 def weighted_series_sum(input_image_4d_path: str,
                         out_image_path: str,
                         half_life: float,
-                        verbose: bool) -> np.ndarray:
+                        verbose: bool,
+                        start_time: float=0,
+                        end_time: float=-1) -> np.ndarray:
     r"""
     Sum a 4D image series weighted based on time and re-corrected for decay correction.
 
@@ -68,6 +71,11 @@ def weighted_series_sum(input_image_4d_path: str,
             sum is written.
         half_life (float): Half life of the PET radioisotope in seconds.
         verbose (bool): Set to `True` to output processing information.
+        start_time (float): Time, relative to scan start in seconds, at which
+            calculation begins. Must be used with `end_time`. Default value 0.
+        end_time (float): Time, relative to scan start in seconds, at which
+            calculation ends. Use value `-1` to use all frames in image series.
+            If equal to `start_time`, one frame at start_time is used. Default value -1.
 
     Returns:
         summed_image (np.ndarray): 3D image array, in the same space as the input,
@@ -83,6 +91,20 @@ def weighted_series_sum(input_image_4d_path: str,
     pet_series = pet_image.get_fdata()
     image_frame_start = pet_meta['FrameTimesStart']
     image_frame_duration = pet_meta['FrameDuration']
+    if end_time==-1:
+        pet_series_adjusted = pet_series
+    else:
+        scan_start = image_frame_start[0]
+        nearest_frame = interp1d(x=image_frame_start,
+                                 y=range(len(image_frame_start)),
+                                 kind='nearest',
+                                 bounds_error=False,
+                                 fill_value='extrapolate')
+        calc_first_frame = int(nearest_frame(start_time+scan_start))
+        calc_last_frame = int(nearest_frame(end_time+scan_start))
+        if calc_first_frame==calc_last_frame:
+            calc_last_frame += 1
+        pet_series_adjusted = pet_series[:,:,:,calc_first_frame:calc_last_frame]
 
     if 'DecayCorrectionFactor' in pet_meta.keys():
         image_decay_correction = pet_meta['DecayCorrectionFactor']
@@ -99,7 +121,7 @@ def weighted_series_sum(input_image_4d_path: str,
 
     image_weighted_sum = math_lib.weighted_sum_computation(image_frame_duration=image_frame_duration,
                                                            half_life=half_life,
-                                                           pet_series=pet_series,
+                                                           pet_series=pet_series_adjusted,
                                                            image_frame_start=image_frame_start,
                                                            image_decay_correction=image_decay_correction)
 
@@ -110,6 +132,19 @@ def weighted_series_sum(input_image_4d_path: str,
     if verbose:
         print(f"(ImageOps4d): weighted sum image saved to {out_image_path}")
     return pet_sum_image
+
+
+def determine_motion_target(motion_target_option: str | tuple):
+    if type(motion_target_option)==str:
+        if os.path.exists(motion_target_option):
+            return motion_target_option
+        elif motion_target_option=='weighted_series_sum':
+            weighted_series_sum(motion_target_option)
+    elif type(motion_target_option)==tuple:
+        start_time = motion_target_option[0]
+        end_time = motion_target_option[1]
+
+    return 0
 
 
 def motion_correction(input_image_4d_path: str,
@@ -144,12 +179,11 @@ def motion_correction(input_image_4d_path: str,
         to each frame transform.
     """
     pet_nibabel = nibabel.load(input_image_4d_path)
-    pet_ref_image = nibabel.load(reference_image_path)
+    motion_target_image = nibabel.load(reference_image_path)
     pet_ants = ants.from_nibabel(pet_nibabel)
-    pet_sum_image_ants = ants.from_nibabel(pet_ref_image)
-
+    motion_target_image_ants = ants.from_nibabel(motion_target_image)
     pet_moco_ants_dict = ants.motion_correction(image=pet_ants,
-                                                fixed=pet_sum_image_ants,
+                                                fixed=motion_target_image_ants,
                                                 type_of_transform=type_of_transform,
                                                 **kwargs)
     if verbose:
@@ -172,9 +206,9 @@ def motion_correction(input_image_4d_path: str,
     return pet_moco_np, pet_moco_params, pet_moco_fd
 
 
-def register_pet(input_calc_image_path: str,
-                 input_reg_image_path: str,
+def register_pet(input_reg_image_path: str,
                  reference_image_path: str,
+                 motion_target: str | tuple,
                  out_image_path: str,
                  verbose: bool,
                  type_of_transform: str='DenseRigid',
@@ -202,16 +236,16 @@ def register_pet(input_calc_image_path: str,
         verbose (bool): Set to `True` to output processing information.
         kwargs (keyword arguments): Additional arguments passed to :py:func:`ants.registration`.
     """
-    pet_sum_image = ants.image_read(input_calc_image_path)
+    motion_target_image = ants.image_read(motion_target)
     mri_image = ants.image_read(reference_image_path)
     pet_moco = ants.image_read(input_reg_image_path)
-    xfm_output = ants.registration(moving=pet_sum_image,
+    xfm_output = ants.registration(moving=motion_target_image,
                                    fixed=mri_image,
                                    type_of_transform=type_of_transform,
                                    write_composite_transform=True,
                                    **kwargs)
     if verbose:
-        print(f'Registration computed transforming image {input_calc_image_path} to '
+        print(f'Registration computed transforming image {motion_target} to '
               f'{reference_image_path} space')
 
     xfm_apply = ants.apply_transforms(moving=pet_moco,
@@ -343,36 +377,47 @@ def write_tacs(input_image_4d_path: str,
 class ImageOps4d():
     """
     :class:`ImageOps4D` to provide basic implementations of the preprocessing functions in module
-    `image_operations_4d`.
-
-    Preprocessing can be run on individual subjects by specifying information such as the subject
-    id, output path, paths to PET, anatomical, and segmentation images, etc. Then individual
-    methods can be run in succession.
+    `image_operations_4d`. Uses a properties dictionary `preproc_props` to
+    determine the inputs and outputs of preprocessing methods.
 
     Key methods include:
-        - :meth:`run_weighted_series_sum`: Runs :meth:`weighted_series_sum` on input data.
-        - :meth:`run_motion_correction`: Runs :meth:`motion_correction` on input data, with the
-          output of :func:`weighted_series_sum` as reference.
-        - :meth:`run_register_pet`: Runs :meth:`register_pet` on motion corrected PET with the
-          output of :func:`weighted_series_sum` used to compute registration.
-        - :meth:`run_mask_image_to_vals`: Runs :meth:`extract_tac_from_4dnifty_using_mask`, to be
-          used with :meth:`run_write_tacs`.
-        - :meth:`run_write_tacs`: Runs :meth:`write_tacs` on preprocessed PET data to produce
-          regional TACs.
-    
+        - :meth:`update_props`: Update properties dictionary `preproc_props`
+          with new properties.
+        - :meth:`run_preproc`: Given a method in `image_operations_4d`, run the
+          provided method with inputs and outputs determined by properties
+          dictionary `preproc_props`.
+
     Attributes:
-        sub_id (str): The subject ID, used for naming output files.
-        out_path (str): Path to an output directory, to which processed files are saved.
-        image_paths (dict): A dictionary with designated keys for different types of images.
-            Designated keys include 'pet' for input PET data, 'mri' for anatomical data, 'seg' for
-            segmentation in anatomical space, 'pet_sum_image' for the output to
-            :meth:`weighted_series_sum`, 'pet_moco' for motion corrected PET image, pet_moco_reg
-            for motion corrected and registered PET image, and 'seg_resampled' for a segmentation
-            resampled onto PET resolution.
-        half_life (float): Half-life of the radioisotope used in PET study in seconds.
-        label_map_path (str): Path to a label map .json file used to match region names to
-            region indices.
-        verbose (bool): Set to `True` to output processing information.
+        -`output_directory`: Directory in which files are written to.
+        -`output_filename_prefix`: Prefix appended to beginning of written
+         files.
+        -`preproc_props`: Properties dictionary used to set parameters for PET
+         preprocessing.
+
+    Example:
+    ```python
+    output_directory = '/path/to/processing'
+    output_filename_prefix = 'sub-01'
+    sub_01 = pet_cli.image_operations_4d.ImageOps4d(output_directory,output_filename_prefix)
+    params = {
+        'FilePathPET': '/path/to/pet.nii.gz',
+        'FilePathAnat': '/path/to/mri.nii.gz',
+        'HalfLife': 1220.04,  # C11 half-life in seconds
+        'FilePathRegInp': '/path/to/image/to/be/registered.nii.gz',
+        'FilePathMocoInp': '/path/to/image/to/be/motion/corrected.nii.gz',
+        'FilePathPETRef': '/path/to/pet/reference/target.nii.gz',
+        'FilePathTACInput': '/path/to/registered/pet.nii.gz',
+        'FilePathLabelMap': '/path/to/label/map.tsv',
+        'FilePathSeg': '/path/to/segmentation.nii.gz',
+        'TimeFrameKeyword': 'FrameTimesStart'  # using start time or midpoint reference time
+        'Verbose': True,
+    }
+    sub_01.update_props(params)
+    sub_01.run_preproc('weighted_series_sum')
+    sub_01.run_preproc('motion_correction')
+    sub_01.run_preproc('register_pet')
+    sub_01.run_preproc('write_tacs')
+    ```
     
     See Also:
         :class:`ImageIO`
@@ -427,8 +472,8 @@ class ImageOps4d():
         for key in keys_to_update:
 
             if key not in valid_keys:
-                raise ValueError("Invalid preproc property! Expected one of "
-                                 f"{valid_keys}, got {key}.")
+                raise ValueError("Invalid preproc property! Expected one of:\n"
+                                 f"{valid_keys}.\n Got {key}.")
 
             updated_props[key] = new_preproc_props[key]
 
