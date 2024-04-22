@@ -19,6 +19,7 @@ TODOs:
 """
 import os
 import re
+import tempfile
 from scipy.interpolate import interp1d
 import ants
 import nibabel
@@ -111,7 +112,7 @@ def weighted_series_sum(input_image_4d_path: str,
     elif 'DecayFactor' in pet_meta.keys():
         image_decay_correction = pet_meta['DecayFactor']
     else:
-        raise ValueError("Neither 'DecayCoorectionFactor' nor 'DecayFactor' exist in meta-data file")
+        raise ValueError("Neither 'DecayCorrectionFactor' nor 'DecayFactor' exist in meta-data file")
 
     if 'TracerRadionuclide' in pet_meta.keys():
         tracer_isotope = pet_meta['TracerRadionuclide']
@@ -134,24 +135,38 @@ def weighted_series_sum(input_image_4d_path: str,
     return pet_sum_image
 
 
-def determine_motion_target(motion_target_option: str | tuple):
+def determine_motion_target(motion_target_option: str | tuple,
+                            input_image_4d_path: str=None,
+                            half_life: float=None):
     if type(motion_target_option)==str:
         if os.path.exists(motion_target_option):
             return motion_target_option
         elif motion_target_option=='weighted_series_sum':
-            weighted_series_sum(motion_target_option)
+            out_image_file = tempfile.mkstemp(suffix='_wss.nii.gz')[1]
+            weighted_series_sum(input_image_4d_path=input_image_4d_path,
+                                out_image_path=out_image_file,
+                                half_life=half_life,
+                                verbose=False)
+            return out_image_file
     elif type(motion_target_option)==tuple:
         start_time = motion_target_option[0]
         end_time = motion_target_option[1]
-
-    return 0
+        out_image_file = tempfile.mkstemp(suffix='_wss.nii.gz')[1]
+        weighted_series_sum(input_image_4d_path=input_image_4d_path,
+                            out_image_path=out_image_file,
+                            half_life=half_life,
+                            verbose=False,
+                            start_time=start_time,
+                            end_time=end_time)
+        return out_image_file
 
 
 def motion_correction(input_image_4d_path: str,
-                      reference_image_path: str,
+                      motion_target_option: str,
                       out_image_path: str,
                       verbose: bool,
                       type_of_transform: str='DenseRigid',
+                      half_life: float=None,
                       **kwargs) -> tuple[np.ndarray, list[str], list[float]]:
     """
     Correct PET image series for inter-frame motion. Runs rigid motion correction module
@@ -166,10 +181,11 @@ def motion_correction(input_image_4d_path: str,
             on the needs of the data.
         out_image_path (str): Path to a .nii or .nii.gz file to which the motion corrected PET
             series is written.
+        verbose (bool): Set to `True` to output processing information.
         type_of_transform (str): Type of transform to perform on the PET image, must be one of antspy's
             transformation types, i.e. 'DenseRigid' or 'Translation'. Any transformation type that uses
             >6 degrees of freedom is not recommended, use with caution. See :py:func:`ants.registration`.
-        verbose (bool): Set to `True` to output processing information.
+        half_life (float): Half life of the PET radioisotope in seconds.
         kwargs (keyword arguments): Additional arguments passed to `ants.motion_correction`.
 
     Returns:
@@ -179,6 +195,11 @@ def motion_correction(input_image_4d_path: str,
         to each frame transform.
     """
     pet_nibabel = nibabel.load(input_image_4d_path)
+
+    reference_image_path = determine_motion_target(motion_target_option=motion_target_option,
+                                                  input_image_4d_path=input_image_4d_path,
+                                                  half_life=half_life)
+
     motion_target_image = nibabel.load(reference_image_path)
     pet_ants = ants.from_nibabel(pet_nibabel)
     motion_target_image_ants = ants.from_nibabel(motion_target_image)
