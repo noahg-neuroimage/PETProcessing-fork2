@@ -8,7 +8,7 @@ import os
 import json
 import numpy
 import shutil
-# import warnings
+import warnings
 from pathlib import Path
 from bids_validator import BIDSValidator
 from nibabel.nifti1 import Nifti1Image
@@ -52,6 +52,7 @@ class BidsInstance:
         """
         self.project_path = project_path
         self.path_cache = {}
+        self.metadata_cache = {}
         self.parts = {"derivative_directory": "main",
                       "subject": subject,
                       "session": None,
@@ -82,6 +83,12 @@ class BidsInstance:
                                  "space",
                                  "description",
                                  "image_type")
+        self.required_metadata = ("FrameReferenceTime",
+                                 "FrameTimeStart",
+                                 "FrameDuration",
+                                 "DecayCorrectionFactor",
+                                 "DecayFactor",
+                                 "TracerRadionuclide")
         self._setup_dynamic_methods()
         self._create_bids_scaffold()
 
@@ -277,6 +284,33 @@ class BidsInstance:
 
     #    def load_from_cache(self, name: str) -> None: # get, if none -> warning
     #        return self.path_cache[name]
+
+    def cache_sidecar_metadata(self, pet_sidecar_filepath: str) -> None:
+        """
+        Loads metadata from a JSON file and caches it. Issues a warning for each
+        required metadata key that is missing in the JSON file.
+
+        This method updates the `metadata_cache` attribute of the object by loading
+        the JSON content from the specified file path. It then checks each key in
+        the `required_metadata` list to ensure it is present in the JSON data. If
+        any required keys are missing, it raises a warning indicating which keys
+        are missing and from which file.
+
+        Args:
+            pet_sidecar_filepath (str): The file path to the JSON file containing
+                the metadata to be loaded and cached.
+
+        Returns:
+            None
+
+        Raises:
+            JSONDecodeError: If the JSON file is malformed and cannot be decoded.
+            FileNotFoundError: If the specified file does not exist.
+        """
+        self.metadata_cache = load_json(filepath=pet_sidecar_filepath)
+        for key in self.required_metadata:
+            if key not in self.metadata_cache.keys():
+                warnings.warn(f"{key} is not found in {pet_sidecar_filepath}")
 
     def change_session(self, value: str, compile_filepath: bool = True):
         """
