@@ -15,6 +15,7 @@ class PetPvc:
         client (docker.DockerClient): A Docker client connected to the local system.
         image_name (str): The Docker image name to use for PETPVC processes.
     """
+
     def __init__(self):
         """
         Initializes the PetPvc instance and ensures the required Docker image is available.
@@ -64,7 +65,8 @@ class PetPvc:
             command = command + f" -x {psf_dimensions} -y {psf_dimensions} -z {psf_dimensions}"
         if debug:
             command = command + f" --debug"
-        container = self.client.containers.run(self.image_name, command, volumes=docker_volumes, detach=False, stream=True, auto_remove=True)
+        container = self.client.containers.run(self.image_name, command, volumes=docker_volumes, detach=False,
+                                               stream=True, auto_remove=True)
         if verbose:
             for line in container:
                 print(line.decode('utf-8').strip())
