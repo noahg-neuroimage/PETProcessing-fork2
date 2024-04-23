@@ -237,6 +237,53 @@ def patlak_analysis_with_rsquared(input_tac_values: np.ndarray,
     return patlak_values
 
 
+@numba.njit
+def logan_analysis(input_tac_values: np.ndarray,
+                   region_tac_values: np.ndarray,
+                   tac_times_in_minutes: np.ndarray,
+                   t_thresh_in_minutes: float) -> np.ndarray:
+    """Performs Logan analysis on given input TAC, regional TAC, times and threshold, considering non-zero values.
+
+    This function is similar to :func:`logan_analysis_with_rsquared`, but avoids the issue of division by zero by
+    only considering non-zero TAC values for the region TAC since it is in the denominator. If the number of non-zero
+    indices is less than or equal to 2, or if the number of time points after the threshold is less than or equal to 2,
+    the function returns an array of NaNs.
+
+    Args:
+        input_tac_values (np.ndarray): Array of input TAC values.
+        region_tac_values (np.ndarray): Array of ROI TAC values.
+        tac_times_in_minutes (np.ndarray): Array of times in minutes.
+        t_thresh_in_minutes (np.ndarray): Threshold time in minutes. Line is fit for all values after the threshold.
+
+    Returns:
+        np.ndarray: Array of two elements - (slope, intercept) of the best-fit line to the given data.
+
+    .. important::
+        * The interpretation of the returned values depends on the underlying kinetic model.
+        * We assume that the input TAC and ROI TAC values are sampled at the same times.
+        
+    """
+    non_zero_indices = np.argwhere(region_tac_values != 0.).T[0]
+    
+    if len(non_zero_indices) <= 2:
+        return np.asarray([np.nan, np.nan])
+    
+    t_thresh = get_index_from_threshold(times_in_minutes=tac_times_in_minutes[non_zero_indices],
+                                        t_thresh_in_minutes=t_thresh_in_minutes)
+    
+    if len(tac_times_in_minutes[non_zero_indices][t_thresh:]) <= 2:
+        return np.asarray([np.nan, np.nan])
+    
+    logan_x = cumulative_trapezoidal_integral(xdata=tac_times_in_minutes, ydata=input_tac_values)
+    logan_y = cumulative_trapezoidal_integral(xdata=tac_times_in_minutes, ydata=region_tac_values)
+    
+    logan_x = logan_x[non_zero_indices][t_thresh:] / region_tac_values[non_zero_indices][t_thresh:]
+    logan_y = logan_y[non_zero_indices][t_thresh:] / region_tac_values[non_zero_indices][t_thresh:]
+    
+    fit_ans = fit_line_to_data_using_lls(xdata=logan_x, ydata=logan_y)
+    return fit_ans
+
+
 @numba.njit()
 def logan_analysis_with_rsquared(input_tac_values: np.ndarray,
                                  region_tac_values: np.ndarray,
@@ -280,6 +327,55 @@ def logan_analysis_with_rsquared(input_tac_values: np.ndarray,
     logan_values = fit_line_to_data_using_lls_with_rsquared(xdata=logan_x, ydata=logan_y)
     
     return logan_values
+
+
+@numba.njit
+def alternative_logan_analysis(input_tac_values: np.ndarray,
+                               region_tac_values: np.ndarray,
+                               tac_times_in_minutes: np.ndarray,
+                               t_thresh_in_minutes: float) -> np.ndarray:
+    """
+    Performs Alternative Logan analysis on given input TAC, regional TAC, times and threshold, considering non-zero
+    values for regional TAC.
+
+    This function is similar to :func:`alternative_logan_analysis_with_rsquared`, but avoids the issue of division by
+    zero by only considering non-zero TAC values for the region TAC since it is in the denominator. If the number of
+    indices is less than or equal to 2, or if the number of time points after the threshold is less than or equal to 2,
+    the function returns an array of NaNs.
+
+    Args:
+        input_tac_values (np.ndarray): Array of input TAC values.
+        region_tac_values (np.ndarray): Array of ROI TAC values.
+        tac_times_in_minutes (np.ndarray): Array of times in minutes.
+        t_thresh_in_minutes (np.ndarray): Threshold time in minutes. Line is fit for all values after the threshold.
+
+    Returns:
+        np.ndarray: Array of two elements - (slope, intercept) of the best-fit line to the given data.
+
+    .. important::
+        * The interpretation of the returned values depends on the underlying kinetic model.
+        * We assume that the input TAC and ROI TAC values are sampled at the same times.
+        
+    """
+    non_zero_indices = np.argwhere(input_tac_values != 0.).T[0]
+    
+    if len(non_zero_indices) <= 2:
+        return np.asarray([np.nan, np.nan])
+    
+    t_thresh = get_index_from_threshold(times_in_minutes=tac_times_in_minutes[non_zero_indices],
+                                        t_thresh_in_minutes=t_thresh_in_minutes)
+    
+    if len(tac_times_in_minutes[non_zero_indices][t_thresh:]) <= 2:
+        return np.asarray([np.nan, np.nan])
+    
+    alt_logan_x = cumulative_trapezoidal_integral(xdata=tac_times_in_minutes, ydata=input_tac_values)
+    alt_logan_y = cumulative_trapezoidal_integral(xdata=tac_times_in_minutes, ydata=region_tac_values)
+    
+    alt_logan_x = alt_logan_x[non_zero_indices][t_thresh:] / input_tac_values[non_zero_indices][t_thresh:]
+    alt_logan_y = alt_logan_y[non_zero_indices][t_thresh:] / input_tac_values[non_zero_indices][t_thresh:]
+    
+    fit_ans = fit_line_to_data_using_lls(xdata=alt_logan_x, ydata=alt_logan_y)
+    return fit_ans
 
 
 @numba.njit()
@@ -327,102 +423,6 @@ def alternative_logan_analysis_with_rsquared(input_tac_values: np.ndarray,
     return alt_logan_values
 
 
-@numba.njit
-def smart_logan_analysis(input_tac_values: np.ndarray,
-                         region_tac_values: np.ndarray,
-                         tac_times_in_minutes: np.ndarray,
-                         t_thresh_in_minutes: float) -> np.ndarray:
-    """Performs Logan analysis on given input TAC, regional TAC, times and threshold, considering non-zero values.
-
-    This function is similar to :func:`logan_analysis_with_rsquared`, but avoids the issue of division by zero by
-    only considering non-zero TAC values for the region TAC since it is in the denominator. If the number of non-zero
-    indices is less than or equal to 2, or if the number of time points after the threshold is less than or equal to 2,
-    the function returns an array of NaNs.
-
-    Args:
-        input_tac_values (np.ndarray): Array of input TAC values.
-        region_tac_values (np.ndarray): Array of ROI TAC values.
-        tac_times_in_minutes (np.ndarray): Array of times in minutes.
-        t_thresh_in_minutes (np.ndarray): Threshold time in minutes. Line is fit for all values after the threshold.
-
-    Returns:
-        np.ndarray: Array of two elements - (slope, intercept) of the best-fit line to the given data.
-
-    .. important::
-        * The interpretation of the returned values depends on the underlying kinetic model.
-        * We assume that the input TAC and ROI TAC values are sampled at the same times.
-          
-    """
-    non_zero_indices = np.argwhere(region_tac_values != 0.).T[0]
-    
-    if len(non_zero_indices) <= 2:
-        return np.asarray([np.nan, np.nan])
-    
-    t_thresh = get_index_from_threshold(times_in_minutes=tac_times_in_minutes[non_zero_indices],
-                                        t_thresh_in_minutes=t_thresh_in_minutes)
-    
-    if len(tac_times_in_minutes[non_zero_indices][t_thresh:]) <= 2:
-        return np.asarray([np.nan, np.nan])
-    
-    logan_x = cumulative_trapezoidal_integral(xdata=tac_times_in_minutes, ydata=input_tac_values)
-    logan_y = cumulative_trapezoidal_integral(xdata=tac_times_in_minutes, ydata=region_tac_values)
-    
-    logan_x = logan_x[non_zero_indices][t_thresh:] / region_tac_values[non_zero_indices][t_thresh:]
-    logan_y = logan_y[non_zero_indices][t_thresh:] / region_tac_values[non_zero_indices][t_thresh:]
-    
-    fit_ans = fit_line_to_data_using_lls(xdata=logan_x, ydata=logan_y)
-    return fit_ans
-
-
-@numba.njit
-def smart_alternative_logan_analysis(input_tac_values: np.ndarray,
-                                     region_tac_values: np.ndarray,
-                                     tac_times_in_minutes: np.ndarray,
-                                     t_thresh_in_minutes: float) -> np.ndarray:
-    """
-    Performs Alternative Logan analysis on given input TAC, regional TAC, times and threshold, considering non-zero
-    values for regional TAC.
-
-    This function is similar to :func:`alternative_logan_analysis_with_rsquared`, but avoids the issue of division by
-    zero by only considering non-zero TAC values for the region TAC since it is in the denominator. If the number of
-    indices is less than or equal to 2, or if the number of time points after the threshold is less than or equal to 2,
-    the function returns an array of NaNs.
-
-    Args:
-        input_tac_values (np.ndarray): Array of input TAC values.
-        region_tac_values (np.ndarray): Array of ROI TAC values.
-        tac_times_in_minutes (np.ndarray): Array of times in minutes.
-        t_thresh_in_minutes (np.ndarray): Threshold time in minutes. Line is fit for all values after the threshold.
-
-    Returns:
-        np.ndarray: Array of two elements - (slope, intercept) of the best-fit line to the given data.
-
-    .. important::
-        * The interpretation of the returned values depends on the underlying kinetic model.
-        * We assume that the input TAC and ROI TAC values are sampled at the same times.
-            
-    """
-    non_zero_indices = np.argwhere(input_tac_values != 0.).T[0]
-    
-    if len(non_zero_indices) <= 2:
-        return np.asarray([np.nan, np.nan])
-    
-    t_thresh = get_index_from_threshold(times_in_minutes=tac_times_in_minutes[non_zero_indices],
-                                        t_thresh_in_minutes=t_thresh_in_minutes)
-    
-    if len(tac_times_in_minutes[non_zero_indices][t_thresh:]) <= 2:
-        return np.asarray([np.nan, np.nan])
-    
-    alt_logan_x = cumulative_trapezoidal_integral(xdata=tac_times_in_minutes, ydata=input_tac_values)
-    alt_logan_y = cumulative_trapezoidal_integral(xdata=tac_times_in_minutes, ydata=region_tac_values)
-    
-    alt_logan_x = alt_logan_x[non_zero_indices][t_thresh:] / input_tac_values[non_zero_indices][t_thresh:]
-    alt_logan_y = alt_logan_y[non_zero_indices][t_thresh:] / input_tac_values[non_zero_indices][t_thresh:]
-    
-    fit_ans = fit_line_to_data_using_lls(xdata=alt_logan_x, ydata=alt_logan_y)
-    return fit_ans
-
-
 def get_graphical_analysis_method(method_name: str) -> Callable:
     """
     Function for obtaining the appropriate graphical analysis method.
@@ -463,9 +463,9 @@ def get_graphical_analysis_method(method_name: str) -> Callable:
     if method_name == "patlak":
         return patlak_analysis
     elif method_name == "logan":
-        return smart_logan_analysis
+        return logan_analysis
     elif method_name == "alt_logan":
-        return smart_alternative_logan_analysis
+        return alternative_logan_analysis
     else:
         raise ValueError(f"Invalid method_name! Must be either 'patlak', 'logan', or 'alt_logan'. Got {method_name}")
 
