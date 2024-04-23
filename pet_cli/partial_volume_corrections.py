@@ -8,7 +8,7 @@ class PetPvc:
     """
     Handles operations for PET partial volume correction using a Docker container.
 
-    This class manages the setup and execution of PETPVC processes in Docker, handling
+    This class manages the setup and execution of the `PETPVC package on Github <https://github.com/UCL/PETPVC>`_ processes in Docker via a `docker image hosted on DockerHub <https://hub.docker.com/r/benthomas1984/petpvc>`_, handling
     image retrieval, input/output setup, and command execution.
 
     Attributes:
