@@ -12,14 +12,16 @@ class PetPvc:
 
     def run_petpvc(self,
                    pet_4d_filepath: str,
-                   mask_4d_filepath: str,
                    output_filepath: str,
                    pvc_method: str,
                    psf_dimensions: Union[Tuple[float, float, float], float],
+                   mask_4d_filepath: str = None,
                    docker_volumes: dict = None,
                    verbose: bool = False,
                    debug: bool = False) -> None:
-        command = f"petpvc -i {pet_4d_filepath} -m {mask_4d_filepath} -o {output_filepath} --pvc {pvc_method}"
+        command = f"petpvc -i {pet_4d_filepath} -o {output_filepath} --pvc {pvc_method}"
+        if mask_4d_filepath is not None:
+            command = command + f" -m {mask_4d_filepath}"
         if isinstance(psf_dimensions, tuple):
             command = command + f" -x {psf_dimensions[0]} -y {psf_dimensions[1]} -z {psf_dimensions[2]}"
         else:
