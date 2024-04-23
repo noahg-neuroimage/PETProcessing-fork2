@@ -265,9 +265,9 @@ def alternative_logan_analysis(input_tac_values: np.ndarray,
 
 @numba.njit()
 def patlak_analysis_with_rsquared(input_tac_values: np.ndarray,
-                    region_tac_values: np.ndarray,
-                    tac_times_in_minutes: np.ndarray,
-                    t_thresh_in_minutes: float) -> Tuple[float, float, float]:
+                                  region_tac_values: np.ndarray,
+                                  tac_times_in_minutes: np.ndarray,
+                                  t_thresh_in_minutes: float) -> Tuple[float, float, float]:
     """Performs Patlak analysis given the input TAC, region TAC, times and threshold.
 
     Args:
@@ -283,10 +283,20 @@ def patlak_analysis_with_rsquared(input_tac_values: np.ndarray,
         * We assume that the input TAC and ROI TAC values are sampled at the same times.
 
     """
-    t_thresh = get_index_from_threshold(times_in_minutes=tac_times_in_minutes, t_thresh_in_minutes=t_thresh_in_minutes)
+    non_zero_indices = np.argwhere(input_tac_values != 0.).T[0]
     
-    patlak_x = calculate_patlak_x(tac_times=tac_times_in_minutes, tac_vals=input_tac_values)
-    patlak_y = region_tac_values / input_tac_values
+    if len(non_zero_indices) <= 2:
+        return np.asarray([np.nan, np.nan])
+    
+    t_thresh = get_index_from_threshold(times_in_minutes=tac_times_in_minutes[non_zero_indices],
+                                        t_thresh_in_minutes=t_thresh_in_minutes)
+    
+    if len(tac_times_in_minutes[non_zero_indices][t_thresh:]) <= 2:
+        return np.asarray([np.nan, np.nan])
+    
+    patlak_x = calculate_patlak_x(tac_times=tac_times_in_minutes[non_zero_indices],
+                                  tac_vals=input_tac_values[non_zero_indices])
+    patlak_y = region_tac_values[non_zero_indices] / input_tac_values[non_zero_indices]
     
     patlak_values = fit_line_to_data_using_lls_with_rsquared(xdata=patlak_x[t_thresh:], ydata=patlak_y[t_thresh:])
     
@@ -295,9 +305,9 @@ def patlak_analysis_with_rsquared(input_tac_values: np.ndarray,
 
 @numba.njit()
 def logan_analysis_with_rsquared(input_tac_values: np.ndarray,
-                   region_tac_values: np.ndarray,
-                   tac_times_in_minutes: np.ndarray,
-                   t_thresh_in_minutes: float) -> Tuple[float, float, float]:
+                                 region_tac_values: np.ndarray,
+                                 tac_times_in_minutes: np.ndarray,
+                                 t_thresh_in_minutes: float) -> Tuple[float, float, float]:
     """
     Performs Logan analysis on given input TAC, regional TAC, times and threshold.
 
