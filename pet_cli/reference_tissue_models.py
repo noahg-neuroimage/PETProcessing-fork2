@@ -36,6 +36,11 @@ def calc_srtm_tac(tac_times: np.ndarray, r1: float, k2: float, bp: float, ref_ta
     Returns:
         np.ndarray: TAC values calculated using SRTM.
 
+
+    Raises:
+        AssertionError: If the reference TAC and times are different dimensions.
+        
+        
     """
     first_term = r1 * ref_tac_vals
     bp_coeff = k2 / (1.0 + bp)
@@ -85,6 +90,10 @@ def _calc_simplified_frtm_tac(tac_times: np.ndarray,
 
     Returns:
         np.ndarray: TAC values calculated using FRTM.
+
+    
+    Raises:
+        AssertionError: If the reference TAC and times are different dimensions.
 
     """
     first_term = r1 * ref_tac_vals
@@ -148,6 +157,53 @@ def calc_frtm_tac(tac_times: np.ndarray,
                   k3: float,
                   k4: float,
                   ref_tac_vals: np.ndarray) -> np.ndarray:
+    r"""
+    Calculate the Time Activity Curve (TAC) using the Full Reference Tissue Model (SRTM) with the given reference
+    TAC and kinetic parameters.
+    
+    .. important::
+        This function assumes that the reference TAC is uniformly sampled with respect to time since we perform
+        convolutions.
+        
+    The FRTM TAC can be calculated as:
+    
+    .. math::
+    
+        C(t) = R_{1}C_\mathrm{R}(t) + \left[ A_{1}e^{-\alpha_{1}t} + A_{2}e^{-\alpha_{2}t} \right] \otimes
+        C_\mathrm{R}(t),
+        
+    where additionally we have:
+    
+    .. math::
+    
+        \alpha_{1} &= \frac{k_{2} + k_{3} + k_{4} - \sqrt{\left( k_{2} + k_{3} + k_{4} \right)^2 - 4k_{2}k_{4}}}{2}\\
+        \alpha_{2} &= \frac{k_{2} + k_{3} + k_{4} + \sqrt{\left( k_{2} + k_{3} + k_{4} \right)^2 - 4k_{2}k_{4}}}{2}\\
+        A_{1} &= \left( \frac{k_{3} + k_{4} -\alpha_{2}}{\alpha_{1} - \alpha_{2}} \right)\left( \frac{k_{2}}{R_{1}}
+        - \alpha_{2} \right)\\
+        A_{2} &= \left(  \frac{\alpha_{1}-k_{3} - k_{4} }{\alpha_{1} - \alpha_{2}} \right)\left( \frac{k_{2}}{R_{1}}
+        - \alpha_{1} \right)
+        
+    
+    Args:
+        tac_times (np.ndarray): Times for the reference TAC.
+        r1 (float): The ratio of the clearance rate of tracer from plasma to the reference to the transfer rate of the
+            tracer from plasma to the tissue; :math:`R_{1}\equiv\frac{k_1^\prime}{k_1}`.
+        k2 (float): The rate of tracer transfer from the first tissue compartment to plasma.
+        k3 (float): The rate of tracer transfer from the first tissue compartment to the second tissue compartment.
+        k4 (float): The rate of tracer transfer from the second tissue compartment to the first tissue compartment.
+        ref_tac_vals (np.ndarray): The values of the reference TAC.
+
+    Returns:
+        np.ndarray: TAC values calculated using FRTM.
+        
+    Raises:
+        AssertionError: If the reference TAC and times are different dimensions.
+        
+    See Also:
+        * :func:`_calc_simplified_frtm`
+        * :func:`_calc_frtm_params_from_kinetic_params`
+
+    """
     r1_n, a1, a2, alpha_1, alpha_2 = _calc_frtm_params_from_kinetic_params(r1=r1, k2=k2, k3=k3, k4=k4)
     return _calc_simplified_frtm_tac(tac_times=tac_times, r1=r1_n, a1=a1, a2=a2, alpha_1=alpha_1, alpha_2=alpha_2,
                                      ref_tac_vals=ref_tac_vals)
