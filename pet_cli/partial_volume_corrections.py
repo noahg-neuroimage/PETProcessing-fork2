@@ -17,7 +17,6 @@ class PetPvc:
                    pvc_method: str,
                    psf_dimensions: Union[Tuple[float, float, float], float],
                    mask_4d_filepath: str = None,
-                   verbose: bool = False,
                    debug: bool = False) -> None:
         common_path = os.path.commonpath([pet_4d_filepath, output_filepath])
         docker_pet_input = "/data/" + pet_4d_filepath.replace(common_path, "").lstrip('/')
@@ -34,9 +33,6 @@ class PetPvc:
         if debug:
             command = command + f" --debug"
         container = self.client.containers.run(self.image_name, command, volumes=docker_volumes)
-        if verbose:
-            for line in container.logs(stream=True):
-                print(line.strip().decode('utf-8'))
 
     def _pull_image_if_not_exists(self) -> None:
         client = docker.from_env()
