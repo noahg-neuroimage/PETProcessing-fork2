@@ -171,6 +171,10 @@ def determine_motion_target(motion_target_option: Union[str,tuple],
         half_life (float): Half life of the radiotracer used in the image
             located at `input_image_4d_path`. Only used if a calculation is
             performed.
+    
+    Returns:
+        out_image_file (str): File to use as a target to compute
+            transformations on.
     """
     if type(motion_target_option)==str:
         if os.path.exists(motion_target_option):
@@ -497,17 +501,32 @@ class ImageOps4d():
     def _init_preproc_props() -> dict:
         """
         Initializes preproc properties dictionary.
+
+        The available fields in the preproc properties dictionary are described
+        as follows:
+            * FilePathPET (str): Path to PET file to be analysed.
+            * FilePathMocoInp (str): Path to PET file to be motion corrected.
+            * FilePathRegInp (str): Path to PET file to be registered to anatomical data.
+            * FilePathAnat (str): Path to anatomical image to which `FilePathRegInp` is registered.
+            * FilePathTACInput (str): Path to PET file with which TACs are computed.
+            * FilePathSeg (str): Path to a segmentation image in anatomical space.
+            * FilePathLabelMap (str): Path to a label map file, indexing segmentation values to ROIs.
+            * MotionTarget (str | tuple): Target for transformation methods. See :meth:`determine_motion_target`.
+            * MocoPars (keyword arguments): Keyword arguments fed into the method call :meth:`ants.motion_correction`.
+            * RegPars (keyword arguments): Keyword arguments fed into the method call :meth:`ants.registration`.
+            * HalfLife (float): Half life of radioisotope.
+            * RegionExtract (int): Region index in the segmentation image to extract TAC from, if running TAC on a single ROI.
+            * TimeFrameKeyword (str): Keyword in metadata file corresponding to frame timing array to be used in analysis.
+            * Verbose (bool): Set to `True` to output processing information.
         """
         preproc_props = {'FilePathPET': None,
                  'FilePathMocoInp': None,
                  'FilePathRegInp': None,
                  'FilePathAnat': None,
-                 'MotionTarget': None,
                  'FilePathTACInput': None,
-                 'FileWeightedPET': None,
                  'FilePathSeg': None,
                  'FilePathLabelMap': None,
-                 'MethodName': None,
+                 'MotionTarget': None,
                  'MocoPars': None,
                  'RegPars': None,
                  'HalfLife': None,
@@ -521,7 +540,15 @@ class ImageOps4d():
         """
         Update the processing properties with items from a new dictionary.
 
-        Returns the updated `props` dictionary.
+        Args:
+            new_preproc_props (dict): Dictionary with updated properties 
+                values. Can have any or all fields filled from the available
+                list of fields.
+
+        Returns:
+            updated_props (dict): The updated `preproc_props` dictionary.
+
+
         """
         preproc_props = self.preproc_props
         valid_keys = [*preproc_props]
@@ -545,6 +572,10 @@ class ImageOps4d():
         """
         Check if all necessary properties exist in the `props` dictionary to
         run the given method.
+
+        Args:
+            method_name (str): Name of method to be checked. Must be name of 
+                a method in this module.
         """
         preproc_props = self.preproc_props
         existing_keys = [*preproc_props]
@@ -580,6 +611,10 @@ class ImageOps4d():
                     method_name: str):
         """
         Run a specific preprocessing step
+
+        Args:
+            method_name (str): Name of method to be run. Must be name of a
+                method in this module.
         """
         preproc_props = self.preproc_props
         self._check_method_props_exist(method_name=method_name)
