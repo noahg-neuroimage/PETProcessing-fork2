@@ -200,7 +200,7 @@ def determine_motion_target(motion_target_option: Union[str,tuple],
 
 
 def motion_correction(input_image_4d_path: str,
-                      motion_target_option: str,
+                      motion_target_option: Union[str,tuple],
                       out_image_path: str,
                       verbose: bool,
                       type_of_transform: str='DenseRigid',
@@ -213,6 +213,8 @@ def motion_correction(input_image_4d_path: str,
     Args:
         input_image_4d_path (str): Path to a .nii or .nii.gz file containing a 4D
             PET image to be motion corrected.
+        motion_target_option (str | tuple): Target image for computing
+            transformation. See :meth:`determine_motion_target`.
         reference_image_path (str): Path to a .nii or .nii.gz file containing a 3D reference
             image in the same space as the input PET image. Can be a weighted series sum,
             first or last frame, an average over a subset of frames, or another option depending
@@ -267,7 +269,7 @@ def motion_correction(input_image_4d_path: str,
 
 def register_pet(input_reg_image_path: str,
                  reference_image_path: str,
-                 motion_target_option: str,
+                 motion_target_option: Union[str,tuple],
                  out_image_path: str,
                  verbose: bool,
                  type_of_transform: str='DenseRigid',
@@ -279,15 +281,12 @@ def register_pet(input_reg_image_path: str,
     inputs. Will upsample PET image to the resolution of anatomical imaging.
 
     Args:
-        input_calc_image_path (str): Path to a .nii or .nii.gz file containing a 3D reference
-            image in the same space as the input PET image, to be used to compute the rigid 
-            registration to anatomical space. Can be a weighted series sum, first or last frame,
-            an average over a subset of frames, or another option depending on the needs of the 
-            data.
         input_reg_image_path (str): Path to a .nii or .nii.gz file containing a 4D
             PET image to be registered to anatomical space.
         reference_image_path (str): Path to a .nii or .nii.gz file containing a 3D
             anatomical image to which PET image is registered.
+        motion_target_option (str | tuple): Target image for computing
+            transformation. See :meth:`determine_motion_target`.
         type_of_transform (str): Type of transform to perform on the PET image, must be one of antspy's
             transformation types, i.e. 'DenseRigid' or 'Translation'. Any transformation type that uses
             >6 degrees of freedom is not recommended, use with caution. See :py:func:`ants.registration`.
