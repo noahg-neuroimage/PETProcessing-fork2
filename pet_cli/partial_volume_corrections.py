@@ -16,7 +16,7 @@ class PetPvc:
                    output_filepath: str,
                    pvc_method: str,
                    psf_dimensions: Union[Tuple[float, float, float], float],
-                   mask_4d_filepath: str = None,
+                   mask_filepath: str = None,
                    verbose: bool = False,
                    debug: bool = False) -> None:
         common_path = os.path.commonpath([pet_4d_filepath, output_filepath])
@@ -24,8 +24,8 @@ class PetPvc:
         docker_output = "/data/" + output_filepath.replace(common_path, "").lstrip('/')
         docker_volumes = {common_path: {'bind': '/data', 'mode': 'rw'}}
         command = f"petpvc --input {docker_pet_input} --output {docker_output} --pvc {pvc_method}"
-        if mask_4d_filepath is not None:
-            docker_mask_input = "/data/" + mask_4d_filepath.replace(common_path, "").lstrip('/')
+        if mask_filepath is not None:
+            docker_mask_input = "/data/" + mask_filepath.replace(common_path, "").lstrip('/')
             command = command + f" --mask {docker_mask_input}"
         if isinstance(psf_dimensions, tuple):
             command = command + f" -x {psf_dimensions[0]} -y {psf_dimensions[1]} -z {psf_dimensions[2]}"
