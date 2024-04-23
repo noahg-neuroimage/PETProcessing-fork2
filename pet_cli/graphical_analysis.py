@@ -286,13 +286,13 @@ def patlak_analysis_with_rsquared(input_tac_values: np.ndarray,
     non_zero_indices = np.argwhere(input_tac_values != 0.).T[0]
     
     if len(non_zero_indices) <= 2:
-        return np.asarray([np.nan, np.nan])
+        return np.nan, np.nan, np.nan
     
     t_thresh = get_index_from_threshold(times_in_minutes=tac_times_in_minutes[non_zero_indices],
                                         t_thresh_in_minutes=t_thresh_in_minutes)
     
     if len(tac_times_in_minutes[non_zero_indices][t_thresh:]) <= 2:
-        return np.asarray([np.nan, np.nan])
+        return np.nan, np.nan, np.nan
     
     patlak_x = calculate_patlak_x(tac_times=tac_times_in_minutes[non_zero_indices],
                                   tac_vals=input_tac_values[non_zero_indices])
@@ -307,7 +307,7 @@ def patlak_analysis_with_rsquared(input_tac_values: np.ndarray,
 def logan_analysis_with_rsquared(input_tac_values: np.ndarray,
                                  region_tac_values: np.ndarray,
                                  tac_times_in_minutes: np.ndarray,
-                                 t_thresh_in_minutes: float) -> Tuple[float, float, float]:
+                                 t_thresh_in_minutes: float) -> tuple[float, float, float]:
     """
     Performs Logan analysis on given input TAC, regional TAC, times and threshold.
 
@@ -329,13 +329,13 @@ def logan_analysis_with_rsquared(input_tac_values: np.ndarray,
     non_zero_indices = np.argwhere(region_tac_values != 0.).T[0]
     
     if len(non_zero_indices) <= 2:
-        return np.asarray([np.nan, np.nan])
+        return np.nan, np.nan, np.nan
     
     t_thresh = get_index_from_threshold(times_in_minutes=tac_times_in_minutes[non_zero_indices],
                                         t_thresh_in_minutes=t_thresh_in_minutes)
     
     if len(tac_times_in_minutes[non_zero_indices][t_thresh:]) <= 2:
-        return np.asarray([np.nan, np.nan])
+        return np.nan, np.nan, np.nan
     
     logan_x = cumulative_trapezoidal_integral(xdata=tac_times_in_minutes, ydata=input_tac_values)
     logan_y = cumulative_trapezoidal_integral(xdata=tac_times_in_minutes, ydata=region_tac_values)
@@ -352,7 +352,7 @@ def logan_analysis_with_rsquared(input_tac_values: np.ndarray,
 def alternative_logan_analysis_with_rsquared(input_tac_values: np.ndarray,
                                              region_tac_values: np.ndarray,
                                              tac_times_in_minutes: np.ndarray,
-                                             t_thresh_in_minutes: float) -> Tuple[float, float, float]:
+                                             t_thresh_in_minutes: float) -> tuple[float, float, float]:
     """Performs alternative logan analysis on given input TAC, regional TAC, times and threshold.
 
     Args:
@@ -373,13 +373,13 @@ def alternative_logan_analysis_with_rsquared(input_tac_values: np.ndarray,
     non_zero_indices = np.argwhere(input_tac_values != 0.).T[0]
     
     if len(non_zero_indices) <= 2:
-        return np.asarray([np.nan, np.nan])
+        return np.nan, np.nan, np.nan
     
     t_thresh = get_index_from_threshold(times_in_minutes=tac_times_in_minutes[non_zero_indices],
                                         t_thresh_in_minutes=t_thresh_in_minutes)
     
     if len(tac_times_in_minutes[non_zero_indices][t_thresh:]) <= 2:
-        return np.asarray([np.nan, np.nan])
+        return np.nan, np.nan, np.nan
     
     alt_logan_x = cumulative_trapezoidal_integral(xdata=tac_times_in_minutes, ydata=input_tac_values)
     alt_logan_y = cumulative_trapezoidal_integral(xdata=tac_times_in_minutes, ydata=region_tac_values)
