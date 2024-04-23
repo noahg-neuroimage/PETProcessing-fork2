@@ -146,6 +146,32 @@ def weighted_series_sum(input_image_4d_path: str,
 def determine_motion_target(motion_target_option: Union[str,tuple],
                             input_image_4d_path: str=None,
                             half_life: float=None):
+    """
+    Produce a motion target given the `motion_target_option` from a method
+    running registrations on PET, i.e. :meth:`motion_correction` or
+    :meth:`register_pet`.
+
+    The motion target option can be a string or a tuple. If it is a string,
+    then if this string is a file, use the file as the motion target.
+
+    If it is the option `weighted_series_sum`, then run
+    :meth:`weighted_series_sum` and return the output path.
+
+    If it is a tuple, run a weighted sum on the PET series on frames between
+    the first and second elements of the tuple in seconds. If the two elements
+    are the same, returns the frame closest to the entered time.
+
+    Args:
+        motion_target_option (str | tuple): Determines how the method behaves,
+            according to the above description. Can be a file, a method
+            ('weighted_series_sum'), or a tuple range e.g. (0,300).
+        input_image_4d_path (str): Path to the PET image. This is intended to
+            be supplied by the parent method employing this function. Default
+            value None.
+        half_life (float): Half life of the radiotracer used in the image
+            located at `input_image_4d_path`. Only used if a calculation is
+            performed.
+    """
     if type(motion_target_option)==str:
         if os.path.exists(motion_target_option):
             return motion_target_option
