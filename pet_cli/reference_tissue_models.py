@@ -17,7 +17,7 @@ def calc_srtm_tac(tac_times: np.ndarray, r1: float, k2: float, bp: float, ref_ta
     
     .. math::
         
-        C_\mathrm{T}=R_{1}C_\mathrm{R}(t) + \left(k_{2} - \frac{R_{1}k_{2}}{1+\mathrm{BP}}\right)C_\mathrm{R}(t)\otimes
+        C(t)=R_{1}C_\mathrm{R}(t) + \left(k_{2} - \frac{R_{1}k_{2}}{1+\mathrm{BP}}\right)C_\mathrm{R}(t)\otimes
         \exp\left(- \frac{k_{2}t}{1+\mathrm{BP}}\right),
     
     
@@ -53,6 +53,40 @@ def _calc_simplified_frtm_tac(tac_times: np.ndarray,
                               alpha_1: float,
                               alpha_2: float,
                               ref_tac_vals: np.ndarray) -> np.ndarray:
+    r"""
+    Calculate the Time Activity Curve (TAC) for the Full Reference Tissue Model (FRTM) given the reference TAC and
+    simplified coefficients. The coefficients can be generated from kinetic constants using
+    :func:`_calc_frtm_params_from_kinetic_params`
+    
+    .. important::
+        This function assumes that the reference TAC is uniformly sampled with respect to time since we perform
+        convolutions.
+    
+    We use a more compact form for the FRTM:
+    
+    .. math::
+    
+        C(t) = R_{1}C_\mathrm{R}(t) + \left[ A_{1}e^{-\alpha_{1}t} + A_{2}e^{-\alpha_{2}t} \right] \otimes
+        C_\mathrm{R}(t),
+    
+    where :math:`R_{1}\equiv\frac{k_1^\prime}{k_1}`, and :math:`A_{1},\,A_{2},\,\alpha_1,\,\alpha_2` can be calculated
+    from the underlying kinetic constants. See :func:`_calc_frtm_params_from_kinetic_params` for more details about
+    the parameter calculation.
+    
+    Args:
+        tac_times (np.ndarray): Times for the reference TAC.
+        r1 (float): The ratio of the clearance rate of tracer from plasma to the reference to the transfer rate of the
+            tracer from plasma to the tissue; :math:`R_{1}\equiv\frac{k_1^\prime}{k_1}`.
+        a1 (float): Coefficient of the first exponential term.
+        a2 (float): Coefficient of the second exponential term.
+        alpha_1 (float): Coefficient inside the first exponential.
+        alpha_2 (float): Coefficient inside the second exponential.
+        ref_tac_vals (np.ndarray): The values of the reference TAC.
+
+    Returns:
+        np.ndarray: TAC values calculated using FRTM.
+
+    """
     first_term = r1 * ref_tac_vals
     exp_funcs = a1 * np.exp(-alpha_1 * tac_times) + a2 * np.exp(-alpha_2 * tac_times)
     dt = tac_times[1] - tac_times[0]
