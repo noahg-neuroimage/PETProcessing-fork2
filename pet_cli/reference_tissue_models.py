@@ -4,6 +4,39 @@ from . import tcms_as_convolutions as tcms_conv
 
 
 def calc_srtm_tac(tac_times: np.ndarray, r1: float, k2: float, bp: float, ref_tac_vals: np.ndarray) -> np.ndarray:
+    r"""
+    Calculate the Time Activity Curve (TAC) using the Simplified Reference Tissue Model (SRTM) with the given reference
+    TAC and kinetic parameters.
+    
+    .. important::
+        This function assumes that the reference TAC is uniformly sampled with respect to time since we perform
+        convolutions.
+    
+    
+    The SRTM TAC can be calculated as:
+    
+    .. math::
+        
+        C_\mathrm{T}=R_{1}C_\mathrm{R}(t) + \left(k_{2} - \frac{R_{1}k_{2}}{1+\mathrm{BP}}\right)C_\mathrm{R}(t)\otimes
+        \exp\left(- \frac{k_{2}t}{1+\mathrm{BP}}\right),
+    
+    
+    where :math:`C_\mathrm{R}(t)` is the reference TAC, :math:`R_{1}=\frac{k_1^\prime}{k_1}`, :math:`k_{2}` is the
+    rate-constant from the tissue compartment to plasma, and :math:`\mathrm{BP}` is the binding potential.
+    
+    
+    Args:
+        tac_times (np.ndarray): Times for the reference TAC.
+        r1 (float): The ratio of the clearance rate of tracer from plasma to the reference to the transfer rate of the
+            tracer from plasma to the tissue; :math:`R_{1}\equiv\frac{k_1^\prime}{k_1}`.
+        k2 (float): The rate constant for the transfer of the tracer from tissue compartment to plasma.
+        bp (float): The binding potential of the tracer in the tissue.
+        ref_tac_vals (np.ndarray): The values of the reference TAC.
+
+    Returns:
+        np.ndarray: TAC values calculated using SRTM.
+
+    """
     first_term = r1 * ref_tac_vals
     bp_coeff = k2 / (1.0 + bp)
     exp_term = np.exp(-bp_coeff * tac_times)
