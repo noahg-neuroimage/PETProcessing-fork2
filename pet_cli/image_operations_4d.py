@@ -20,6 +20,7 @@ TODOs:
 import os
 import re
 import tempfile
+from typing import Union
 from scipy.interpolate import interp1d
 import ants
 import nibabel
@@ -90,27 +91,13 @@ def weighted_series_sum(input_image_4d_path: str,
     pet_meta = image_io.ImageIO.load_metadata_for_nifty_with_same_filename(input_image_4d_path)
     pet_image = nibabel.load(input_image_4d_path)
     pet_series = pet_image.get_fdata()
-    image_frame_start = pet_meta['FrameTimesStart']
-    image_frame_duration = pet_meta['FrameDuration']
-    if end_time==-1:
-        pet_series_adjusted = pet_series
-    else:
-        scan_start = image_frame_start[0]
-        nearest_frame = interp1d(x=image_frame_start,
-                                 y=range(len(image_frame_start)),
-                                 kind='nearest',
-                                 bounds_error=False,
-                                 fill_value='extrapolate')
-        calc_first_frame = int(nearest_frame(start_time+scan_start))
-        calc_last_frame = int(nearest_frame(end_time+scan_start))
-        if calc_first_frame==calc_last_frame:
-            calc_last_frame += 1
-        pet_series_adjusted = pet_series[:,:,:,calc_first_frame:calc_last_frame]
+    frame_start = pet_meta['FrameTimesStart']
+    frame_duration = pet_meta['FrameDuration']
 
     if 'DecayCorrectionFactor' in pet_meta.keys():
-        image_decay_correction = pet_meta['DecayCorrectionFactor']
+        decay_correction = pet_meta['DecayCorrectionFactor']
     elif 'DecayFactor' in pet_meta.keys():
-        image_decay_correction = pet_meta['DecayFactor']
+        decay_correction = pet_meta['DecayFactor']
     else:
         raise ValueError("Neither 'DecayCorrectionFactor' nor 'DecayFactor' exist in meta-data file")
 
@@ -120,11 +107,32 @@ def weighted_series_sum(input_image_4d_path: str,
             print(f"(ImageOps4d): Radio isotope is {tracer_isotope} "
                 f"with half life {half_life} s")
 
-    image_weighted_sum = math_lib.weighted_sum_computation(image_frame_duration=image_frame_duration,
+    if end_time==-1:
+        pet_series_adjusted = pet_series
+        frame_start_adjusted = frame_start
+        frame_duration_adjusted = frame_duration
+        decay_correction_adjusted = decay_correction
+    else:
+        scan_start = frame_start[0]
+        nearest_frame = interp1d(x=frame_start,
+                                 y=range(len(frame_start)),
+                                 kind='nearest',
+                                 bounds_error=False,
+                                 fill_value='extrapolate')
+        calc_first_frame = int(nearest_frame(start_time+scan_start))
+        calc_last_frame = int(nearest_frame(end_time+scan_start))
+        if calc_first_frame==calc_last_frame:
+            calc_last_frame += 1
+        pet_series_adjusted = pet_series[:,:,:,calc_first_frame:calc_last_frame]
+        frame_start_adjusted = frame_start[calc_first_frame:calc_last_frame]
+        frame_duration_adjusted = frame_duration[calc_first_frame:calc_last_frame]
+        decay_correction_adjusted = decay_correction[calc_first_frame:calc_last_frame]
+
+    image_weighted_sum = math_lib.weighted_sum_computation(frame_duration=frame_duration_adjusted,
                                                            half_life=half_life,
                                                            pet_series=pet_series_adjusted,
-                                                           image_frame_start=image_frame_start,
-                                                           image_decay_correction=image_decay_correction)
+                                                           frame_start=frame_start_adjusted,
+                                                           decay_correction=decay_correction_adjusted)
 
     pet_sum_image = nibabel.nifti1.Nifti1Image(dataobj=image_weighted_sum,
                                                affine=pet_image.affine,
@@ -135,7 +143,7 @@ def weighted_series_sum(input_image_4d_path: str,
     return pet_sum_image
 
 
-def determine_motion_target(motion_target_option: str | tuple,
+def determine_motion_target(motion_target_option: Union[str,tuple],
                             input_image_4d_path: str=None,
                             half_life: float=None):
     if type(motion_target_option)==str:
@@ -196,11 +204,11 @@ def motion_correction(input_image_4d_path: str,
     """
     pet_nibabel = nibabel.load(input_image_4d_path)
 
-    reference_image_path = determine_motion_target(motion_target_option=motion_target_option,
+    motion_target_image_path = determine_motion_target(motion_target_option=motion_target_option,
                                                   input_image_4d_path=input_image_4d_path,
                                                   half_life=half_life)
 
-    motion_target_image = nibabel.load(reference_image_path)
+    motion_target_image = nibabel.load(motion_target_image_path)
     pet_ants = ants.from_nibabel(pet_nibabel)
     motion_target_image_ants = ants.from_nibabel(motion_target_image)
     pet_moco_ants_dict = ants.motion_correction(image=pet_ants,
@@ -229,10 +237,11 @@ def motion_correction(input_image_4d_path: str,
 
 def register_pet(input_reg_image_path: str,
                  reference_image_path: str,
-                 motion_target: str | tuple,
+                 motion_target_option: str,
                  out_image_path: str,
                  verbose: bool,
                  type_of_transform: str='DenseRigid',
+                 half_life: str=None,
                  **kwargs):
     """
     Computes and runs rigid registration of 4D PET image series to 3D anatomical image, typically
@@ -257,6 +266,9 @@ def register_pet(input_reg_image_path: str,
         verbose (bool): Set to `True` to output processing information.
         kwargs (keyword arguments): Additional arguments passed to :py:func:`ants.registration`.
     """
+    motion_target = determine_motion_target(motion_target_option=motion_target_option,
+                                                input_image_4d_path=input_reg_image_path,
+                                                half_life=half_life)
     motion_target_image = ants.image_read(motion_target)
     mri_image = ants.image_read(reference_image_path)
     pet_moco = ants.image_read(input_reg_image_path)
@@ -426,7 +438,7 @@ class ImageOps4d():
         'HalfLife': 1220.04,  # C11 half-life in seconds
         'FilePathRegInp': '/path/to/image/to/be/registered.nii.gz',
         'FilePathMocoInp': '/path/to/image/to/be/motion/corrected.nii.gz',
-        'FilePathPETRef': '/path/to/pet/reference/target.nii.gz',
+        'MotionTarget': '/path/to/pet/reference/target.nii.gz',
         'FilePathTACInput': '/path/to/registered/pet.nii.gz',
         'FilePathLabelMap': '/path/to/label/map.tsv',
         'FilePathSeg': '/path/to/segmentation.nii.gz',
@@ -464,7 +476,7 @@ class ImageOps4d():
                  'FilePathMocoInp': None,
                  'FilePathRegInp': None,
                  'FilePathAnat': None,
-                 'FilePathPETRef': None,
+                 'MotionTarget': None,
                  'FilePathTACInput': None,
                  'FileWeightedPET': None,
                  'FilePathSeg': None,
@@ -514,9 +526,9 @@ class ImageOps4d():
         if method_name=='weighted_series_sum':
             required_keys = ['FilePathPET','HalfLife','Verbose']
         elif method_name=='motion_correction':
-            required_keys = ['FilePathMocoInp','FilePathPETRef','Verbose']
+            required_keys = ['FilePathMocoInp','MotionTarget','Verbose']
         elif method_name=='register_pet':
-            required_keys = ['FilePathPETRef','FilePathRegInp','FilePathAnat','Verbose']
+            required_keys = ['MotionTarget','FilePathRegInp','FilePathAnat','Verbose']
         elif method_name=='resample_segmentation':
             required_keys = ['FilePathTACInput','FilePathSeg','Verbose']
         elif method_name=='extract_tac_from_4dnifty_using_mask':
@@ -558,19 +570,21 @@ class ImageOps4d():
             outfile = os.path.join(self.output_directory,
                                    output_file_name)
             motion_correction(input_image_4d_path=preproc_props['FilePathMocoInp'],
-                              reference_image_path=preproc_props['FilePathPETRef'],
+                              motion_target_option=preproc_props['MotionTarget'],
                               out_image_path=outfile,
                               verbose=preproc_props['Verbose'],
+                              half_life=preproc_props['HalfLife'],
                               kwargs=preproc_props['MocoPars'])
         elif method_name=='register_pet':
             output_file_name = f'{self.output_filename_prefix}_reg.nii.gz'
             outfile = os.path.join(self.output_directory,
                                    output_file_name)
-            register_pet(input_calc_image_path=preproc_props['FilePathPETRef'],
+            register_pet(motion_target_option=preproc_props['MotionTarget'],
                          input_reg_image_path=preproc_props['FilePathRegInp'],
                          reference_image_path=preproc_props['FilePathAnat'],
                          out_image_path=outfile,
                          verbose=preproc_props['Verbose'],
+                         half_life=preproc_props['HalfLife'],
                          kwargs=preproc_props['RegPars'])
         elif method_name=='resample_segmentation':
             output_file_name = f'{self.output_filename_prefix}_seg-res.nii.gz'
