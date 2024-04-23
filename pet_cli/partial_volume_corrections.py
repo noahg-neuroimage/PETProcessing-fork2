@@ -32,7 +32,7 @@ class PetPvc:
             command = command + f" -x {psf_dimensions} -y {psf_dimensions} -z {psf_dimensions}"
         if debug:
             command = command + f" --debug"
-        container = self.client.containers.run(self.image_name, command, volumes=docker_volumes, detach=True, auto_remove=True)
+        container = self.client.containers.run(self.image_name, command, volumes=docker_volumes, detach=False, auto_remove=True)
         print(container.logs().decode('utf-8'))
 
     def _pull_image_if_not_exists(self) -> None:
