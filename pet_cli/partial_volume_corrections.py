@@ -5,8 +5,20 @@ from typing import Union, Tuple
 
 
 class PetPvc:
+    """
+    Handles operations for PET partial volume correction using a Docker container.
 
+    This class manages the setup and execution of PETPVC processes in Docker, handling
+    image retrieval, input/output setup, and command execution.
+
+    Attributes:
+        client (docker.DockerClient): A Docker client connected to the local system.
+        image_name (str): The Docker image name to use for PETPVC processes.
+    """
     def __init__(self):
+        """
+        Initializes the PetPvc instance and ensures the required Docker image is available.
+        """
         self.client = docker.from_env()
         self.image_name = "benthomas1984/petpvc"
         self._pull_image_if_not_exists()
@@ -19,6 +31,25 @@ class PetPvc:
                    mask_filepath: str = None,
                    verbose: bool = False,
                    debug: bool = False) -> None:
+        """
+        Executes the PETPVC correction process within a Docker container.
+
+        Args:
+            pet_4d_filepath (str): The file path to the input 4D PET image.
+            output_filepath (str): The file path where the output image should be saved.
+            pvc_method (str): The partial volume correction method to apply.
+            psf_dimensions (Union[Tuple[float, float, float], float]): The full-width half-max (FWHM) in mm along x, y, z axes.
+            mask_filepath (str, optional): The file path to the mask image. Defaults to None.
+            verbose (bool, optional): If True, prints the output from the Docker container. Defaults to False.
+            debug (bool, optional): If True, adds the --debug flag to the command for detailed logs. Defaults to False.
+
+        Prints:
+            Outputs from the Docker container if verbose is True.
+
+        Raises:
+            docker.errors.ImageNotFound: If the Docker image is not available.
+            docker.errors.APIError: If the Docker client encounters an API error.
+        """
         common_path = os.path.commonpath([pet_4d_filepath, output_filepath])
         docker_pet_input = "/data/" + pet_4d_filepath.replace(common_path, "").lstrip('/')
         docker_output = "/data/" + output_filepath.replace(common_path, "").lstrip('/')
@@ -39,13 +70,15 @@ class PetPvc:
                 print(line.decode('utf-8').strip())
 
     def _pull_image_if_not_exists(self) -> None:
-        client = docker.from_env()
+        """
+        Checks if the Docker image is locally available and pulls it if not.
+        """
         try:
-            client.images.get(self.image_name)
+            self.client.images.get(self.image_name)
             print(f"Image {self.image_name} is already available locally.")
         except docker.errors.ImageNotFound:
             print(f"Image {self.image_name} not found locally. Pulling from Docker Hub...")
-            client.images.pull(self.image_name)
+            self.client.images.pull(self.image_name)
             print(f"Successfully pulled {self.image_name}.")
         except docker.errors.APIError as error:
             print(f"Failed to pull image due to API error: {error}")
