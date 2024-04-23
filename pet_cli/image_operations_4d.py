@@ -157,9 +157,11 @@ def determine_motion_target(motion_target_option: Union[str,tuple],
     If it is the option `weighted_series_sum`, then run
     :meth:`weighted_series_sum` and return the output path.
 
-    If it is a tuple, run a weighted sum on the PET series on frames between
-    the first and second elements of the tuple in seconds. If the two elements
-    are the same, returns the frame closest to the entered time.
+    If it is a tuple, run a weighted sum on the PET series on a range of 
+    frames. The elements of the tuple are treated as times in seconds, counted
+    from the time of the first frame, i.e. (0,300) would average all frames 
+    from the first to the frame 300 seconds later. If the two elements are the
+    same, returns the frame closest to the entered time.
 
     Args:
         motion_target_option (str | tuple): Determines how the method behaves,
