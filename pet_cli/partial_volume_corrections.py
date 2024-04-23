@@ -1,3 +1,4 @@
+import os
 import docker
 from docker.errors import ImageNotFound, APIError
 from typing import Union, Tuple
@@ -16,12 +17,16 @@ class PetPvc:
                    pvc_method: str,
                    psf_dimensions: Union[Tuple[float, float, float], float],
                    mask_4d_filepath: str = None,
-                   docker_volumes: dict = None,
                    verbose: bool = False,
                    debug: bool = False) -> None:
-        command = f"petpvc -i {pet_4d_filepath} -o {output_filepath} --pvc {pvc_method}"
+        common_path = os.path.commonpath([pet_4d_filepath, output_filepath])
+        docker_pet_input = "/data/" + pet_4d_filepath.replace(common_path, "").lstrip('/')
+        docker_output = "/data/" + output_filepath.replace(common_path, "").lstrip('/')
+        docker_volumes = {common_path: {'bind': '/data', 'mode': 'rw'}}
+        command = f"petpvc -i {docker_pet_input} -o {docker_output} --pvc {pvc_method}"
         if mask_4d_filepath is not None:
-            command = command + f" -m {mask_4d_filepath}"
+            docker_mask_input = "/data/" + mask_4d_filepath.replace(common_path, "").lstrip('/')
+            command = command + f" -m {docker_mask_input}"
         if isinstance(psf_dimensions, tuple):
             command = command + f" -x {psf_dimensions[0]} -y {psf_dimensions[1]} -z {psf_dimensions[2]}"
         else:
