@@ -209,12 +209,12 @@ def calc_frtm_tac(tac_times: np.ndarray,
                                      ref_tac_vals=ref_tac_vals)
 
 
-def fit_srtm_model_to_tac(tgt_tac_vals: np.ndarray,
-                          ref_tac_times: np.ndarray,
-                          ref_tac_vals: np.ndarray,
-                          r1_start: float = 0.5,
-                          k2_start: float = 0.5,
-                          bp_start: float = 0.5) -> tuple:
+def fit_srtm_to_tac(tgt_tac_vals: np.ndarray,
+                    ref_tac_times: np.ndarray,
+                    ref_tac_vals: np.ndarray,
+                    r1_start: float = 0.5,
+                    k2_start: float = 0.5,
+                    bp_start: float = 0.5) -> tuple:
     r"""
     Fit SRTM to the provided target Time Activity Curve (TAC), given the reference TAC, times, and starting guesses for
     the kinetic parameters.
@@ -252,12 +252,12 @@ def fit_srtm_model_to_tac(tgt_tac_vals: np.ndarray,
     return sp_fit(f=_fitting_srtm, xdata=ref_tac_times, ydata=tgt_tac_vals, p0=starting_values)
 
 
-def fit_srtm_model_to_tac_with_bounds(tgt_tac_vals: np.ndarray,
-                                      ref_tac_times: np.ndarray,
-                                      ref_tac_vals: np.ndarray,
-                                      r1_bounds: np.ndarray = np.asarray([0.5, 0.0, 10.0]),
-                                      k2_bounds: np.ndarray = np.asarray([0.5, 0.0, 10.0]),
-                                      bp_bounds: np.ndarray = np.asarray([0.5, 0.0, 10.0])) -> tuple:
+def fit_srtm_to_tac_with_bounds(tgt_tac_vals: np.ndarray,
+                                ref_tac_times: np.ndarray,
+                                ref_tac_vals: np.ndarray,
+                                r1_bounds: np.ndarray = np.asarray([0.5, 0.0, 10.0]),
+                                k2_bounds: np.ndarray = np.asarray([0.5, 0.0, 10.0]),
+                                bp_bounds: np.ndarray = np.asarray([0.5, 0.0, 10.0])) -> tuple:
     r"""
     Fit SRTM to the provided target Time Activity Curve (TAC), given the reference TAC, times, and bounds for
     the kinetic parameters.
@@ -299,13 +299,13 @@ def fit_srtm_model_to_tac_with_bounds(tgt_tac_vals: np.ndarray,
                   p0=st_values, bounds=[lo_values, hi_values])
 
 
-def fit_frtm_model_to_tac(tgt_tac_vals: np.ndarray,
-                          ref_tac_times: np.ndarray,
-                          ref_tac_vals: np.ndarray,
-                          r1_start: float = 0.5,
-                          k2_start: float = 0.5,
-                          k3_start: float = 0.5,
-                          k4_start: float = 0.5) -> tuple:
+def fit_frtm_to_tac(tgt_tac_vals: np.ndarray,
+                    ref_tac_times: np.ndarray,
+                    ref_tac_vals: np.ndarray,
+                    r1_start: float = 0.5,
+                    k2_start: float = 0.5,
+                    k3_start: float = 0.5,
+                    k4_start: float = 0.5) -> tuple:
     r"""
     Fit FRTM to the provided target Time Activity Curve (TAC), given the reference TAC, times, and starting guesses for
     the kinetic parameters.
@@ -343,13 +343,13 @@ def fit_frtm_model_to_tac(tgt_tac_vals: np.ndarray,
     return sp_fit(f=_fitting_frtm, xdata=ref_tac_times, ydata=tgt_tac_vals, p0=starting_values)
 
 
-def fit_frtm_model_to_tac_with_bounds(tgt_tac_vals: np.ndarray,
-                                      ref_tac_times: np.ndarray,
-                                      ref_tac_vals: np.ndarray,
-                                      r1_bounds: np.ndarray = np.asarray([0.5, 0.0, 10.0]),
-                                      k2_bounds: np.ndarray = np.asarray([0.5, 0.0, 10.0]),
-                                      k3_bounds: np.ndarray = np.asarray([0.5, 0.0, 10.0]),
-                                      k4_bounds: np.ndarray = np.asarray([0.5, 0.0, 10.0])) -> tuple:
+def fit_frtm_to_tac_with_bounds(tgt_tac_vals: np.ndarray,
+                                ref_tac_times: np.ndarray,
+                                ref_tac_vals: np.ndarray,
+                                r1_bounds: np.ndarray = np.asarray([0.5, 0.0, 10.0]),
+                                k2_bounds: np.ndarray = np.asarray([0.5, 0.0, 10.0]),
+                                k3_bounds: np.ndarray = np.asarray([0.5, 0.0, 10.0]),
+                                k4_bounds: np.ndarray = np.asarray([0.5, 0.0, 10.0])) -> tuple:
     r"""
     Fit FRTM to the provided target Time Activity Curve (TAC), given the reference TAC, times, and bounds for
     the kinetic parameters.
