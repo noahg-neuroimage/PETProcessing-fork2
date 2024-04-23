@@ -98,6 +98,41 @@ def _calc_frtm_params_from_kinetic_params(r1: float,
                                           k2: float,
                                           k3: float,
                                           k4: float) -> tuple[float, float, float, float, float]:
+    r"""
+    Calculates the parameters (coefficients) for the simplified FRTM function (:func:`_calc_simplified_frtm_tac`) given
+    the kinetic constants.
+    
+    The parameters are defined as:
+    
+    .. math::
+    
+        \alpha_{1} &= \frac{\beta - \chi}{2}\\
+        \alpha_{2} &= \frac{\beta + \chi}{2}\\
+        A_{1} &= \left(\frac{k_{3} + k_{4} -\alpha_{2}}{\chi} \right)\left( \frac{k_{2}}{R_{1}} - \alpha_{2} \right)\\
+        A_{2} &= \left(\frac{\alpha_{1}-k_{3} - k_{4} }{\chi} \right)\left( \frac{k_{2}}{R_{1}} - \alpha_{1} \right),
+    
+    where additionally we have:
+    
+    .. math::
+    
+        \alpha_{1} &= \frac{k_{2} + k_{3} + k_{4} - \sqrt{\left( k_{2} + k_{3} + k_{4} \right)^2 - 4k_{2}k_{4}}}{2}\\
+        \alpha_{2} &= \frac{k_{2} + k_{3} + k_{4} + \sqrt{\left( k_{2} + k_{3} + k_{4} \right)^2 - 4k_{2}k_{4}}}{2}\\
+        A_{1} &= \left( \frac{k_{3} + k_{4} -\alpha_{2}}{\alpha_{1} - \alpha_{2}} \right)\left( \frac{k_{2}}{R_{1}}
+        - \alpha_{2} \right)\\
+        A_{2} &= \left(  \frac{\alpha_{1}-k_{3} - k_{4} }{\alpha_{1} - \alpha_{2}} \right)\left( \frac{k_{2}}{R_{1}}
+        - \alpha_{1} \right)
+    
+    
+    Args:
+        r1 (float): The ratio of the clearance rate of tracer from plasma to the reference to the transfer rate of the
+            tracer from plasma to the tissue; :math:`R_{1}\equiv\frac{k_1^\prime}{k_1}`.
+        k2 (float): The rate of tracer transfer from the first tissue compartment to plasma.
+        k3 (float): The rate of tracer transfer from the first tissue compartment to the second tissue compartment.
+        k4 (float): The rate of tracer transfer from the second tissue compartment to the first tissue compartment.
+
+    Returns:
+        tuple: (``r1``, ``a1``, ``a2``, ``alpha_1``, ``alpha_2``) parameters for :func:`_calc_simplified_frtm_tac`.
+    """
     beta = k2 + k3 + k4
     chi = np.sqrt(beta ** 2. - 4.0 * k2 * k4)
     alpha_1 = (beta - chi) / 2.0
