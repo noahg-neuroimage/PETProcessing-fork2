@@ -177,13 +177,13 @@ class ImageIO():
         return image_ants
     
     @staticmethod
-    def read_color_table_json(ctab_file: str) -> dict:
+    def read_label_map_json(label_map_file: str) -> dict:
         """
-        Static method to read a color table, translating region indices to region names, 
+        Static method to read a label map, translating region indices to region names, 
         as a dictionary. Assumes json format.
 
         Args:
-            ctab_file (str): Path to a json-formatted color table file.
+            label_map_file (str): Path to a json-formatted label map file.
 
         Returns:
             ctab_json (dict): Dictionary where keys are region names and values are region indices.
@@ -191,10 +191,10 @@ class ImageIO():
         Raises:
             FileNotFoundError: If the provided ctab file cannot be found in the directory.
         """
-        if not os.path.exists(ctab_file):
-            raise FileNotFoundError(f"Image file {ctab_file} not found")
+        if not os.path.exists(label_map_file):
+            raise FileNotFoundError(f"Image file {label_map_file} not found")
         
-        with open(ctab_file, "r", encoding="utf-8") as c_file:
+        with open(label_map_file, "r", encoding="utf-8") as c_file:
             ctab_json = json.load(c_file)
             
         return ctab_json
