@@ -237,8 +237,8 @@ def motion_correction(input_image_4d_path: str,
     pet_nibabel = nibabel.load(input_image_4d_path)
 
     motion_target_image_path = determine_motion_target(motion_target_option=motion_target_option,
-                                                  input_image_4d_path=input_image_4d_path,
-                                                  half_life=half_life)
+                                                       input_image_4d_path=input_image_4d_path,
+                                                       half_life=half_life)
 
     motion_target_image = nibabel.load(motion_target_image_path)
     pet_ants = ants.from_nibabel(pet_nibabel)
