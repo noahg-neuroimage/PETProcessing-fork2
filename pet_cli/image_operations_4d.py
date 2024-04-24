@@ -178,7 +178,7 @@ def determine_motion_target(motion_target_option: Union[str,tuple],
         out_image_file (str): File to use as a target to compute
             transformations on.
     """
-    if type(motion_target_option)==str:
+    if isinstance(motion_target_option,str):
         if os.path.exists(motion_target_option):
             return motion_target_option
         elif motion_target_option=='weighted_series_sum':
@@ -188,9 +188,16 @@ def determine_motion_target(motion_target_option: Union[str,tuple],
                                 half_life=half_life,
                                 verbose=False)
             return out_image_file
-    elif type(motion_target_option)==tuple:
+    elif isinstance(motion_target_option,tuple):
         start_time = motion_target_option[0]
         end_time = motion_target_option[1]
+        try:
+            float(start_time)
+            float(end_time)
+        except:
+            raise TypeError('Start time and end time of calculation must be '
+                            'able to be cast into float! Provided values are '
+                            f"{start_time} and {end_time}.")
         out_image_file = tempfile.mkstemp(suffix='_wss.nii.gz')[1]
         weighted_series_sum(input_image_4d_path=input_image_4d_path,
                             out_image_path=out_image_file,
@@ -459,7 +466,9 @@ class ImageOps4d():
          preprocessing.
 
     Example:
-    ```python
+
+    `
+    .. code-block:: python
     output_directory = '/path/to/processing'
     output_filename_prefix = 'sub-01'
     sub_01 = pet_cli.image_operations_4d.ImageOps4d(output_directory,output_filename_prefix)
@@ -481,7 +490,8 @@ class ImageOps4d():
     sub_01.run_preproc('motion_correction')
     sub_01.run_preproc('register_pet')
     sub_01.run_preproc('write_tacs')
-    ```
+    
+    `
     
     See Also:
         :class:`ImageIO`
@@ -519,6 +529,7 @@ class ImageOps4d():
             * RegionExtract (int): Region index in the segmentation image to extract TAC from, if running TAC on a single ROI.
             * TimeFrameKeyword (str): Keyword in metadata file corresponding to frame timing array to be used in analysis.
             * Verbose (bool): Set to `True` to output processing information.
+
         """
         preproc_props = {'FilePathPET': None,
                  'FilePathMocoInp': None,
@@ -611,7 +622,7 @@ class ImageOps4d():
     def run_preproc(self,
                     method_name: str):
         """
-        Run a specific preprocessing step
+        Run a specific preprocessing step.
 
         Args:
             method_name (str): Name of method to be run. Must be name of a
