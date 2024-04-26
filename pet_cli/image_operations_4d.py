@@ -655,6 +655,11 @@ class ImageOps4d():
                                              verbose=preproc_props['Verbose'],
                                              half_life=preproc_props['HalfLife'],
                                              kwargs=preproc_props['MocoPars'])
+            motion = moco_outputs[2]
+            output_plot = os.path.join(self.output_directory,
+                                       f'{self.output_filename_prefix}_motion.png')
+            qc_plots.motion_plot(framewise_displacement=motion,
+                                 output_plot=output_plot)
             return moco_outputs
         elif method_name=='register_pet':
             output_file_name = f'{self.output_filename_prefix}_reg.nii.gz'
