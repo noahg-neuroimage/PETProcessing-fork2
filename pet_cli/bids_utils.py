@@ -665,11 +665,38 @@ def load_tsv_simple(filepath: str) -> list:
 
 
 def validate_filepath_as_bids(filepath: str) -> bool:
+    """
+    Validate whether a given filepath conforms to the Brain Imaging Data Structure (BIDS) standard.
+
+    Args:
+        filepath (str): The path to the file to be validated.
+
+    Returns:
+        bool: True if the file conforms to the BIDS standard, False otherwise.
+
+    """
     validator = BIDSValidator()
     return validator.is_bids(filepath)
 
 
 def validate_directory_as_bids(project_path: str) -> bool:
+    """
+    Validate whether all files in a given directory and its subdirectories (excluding specified ones)
+    conform to the Brain Imaging Data Structure (BIDS) standard.
+
+    Args:
+        project_path (str): The root directory of the project to validate.
+
+    Returns:
+        bool: True if all files in the directory conform to the BIDS standard, False if any do not.
+
+    Raises:
+        FileNotFoundError: If the provided project_path does not exist or is inaccessible.
+
+    Notes:
+        Excludes directories typically not needed for BIDS validation, such as 'code', 'derivatives',
+        'sourcedata', '.git', and 'stimuli'. Also skips directories starting with 'sub-' to focus on top-level structure.
+    """
     excluded_dirs = {'code', 'derivatives', 'sourcedata', '.git', 'stimuli'}
     all_passed = True
     failed_file_paths = []
