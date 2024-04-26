@@ -1,13 +1,23 @@
+"""
+This module contains a collection of functions to calculate an image-derived input function (IDIF) given a "necktangle".
+"Necktangles" are a 3D rectangular region of interest over the neck to help identify the carotid PET signal.
+This method was developed and provided for use in this software package by `Dr. Karl Friedrichsen <https://orcid.org/0000-0002-9233-1418>`_
+
+Requires:
+    The module relies on the :doc:`numpy <numpy:index>` module.
+
+"""
+
 import numpy as np
 
 
-def karl_simple_karl_idif_from_4d_pet_with_necktangle(pet_4d_data: np.ndarray,
+def single_threshold_idif_from_4d_pet_with_necktangle(pet_4d_data: np.ndarray,
                                                       carotid_necktangle_mask_3d_data: np.ndarray,
                                                       percentile: float,
                                                       bolus_start_frame: int = 3,
                                                       bolus_end_frame: int = 7) -> np.ndarray:
     """
-    Applies the Karl simple percentile IDIF method to calculate the time-activity curve (TAC) from PET data.
+    Applies the single bolus percentile IDIF method to calculate the time-activity curve (TAC) from PET data.
 
     Args:
         pet_4d_data (np.ndarray): 4-dimensional array representing the PET data.
@@ -22,17 +32,12 @@ def karl_simple_karl_idif_from_4d_pet_with_necktangle(pet_4d_data: np.ndarray,
     bolus_mean_3d = average_across_4d_frames(pet_4d_data=pet_4d_data,
                                              start_frame=bolus_start_frame,
                                              end_frame=bolus_end_frame)
-    print(np.nanmean(bolus_mean_3d))
-    print(np.nanmean(carotid_necktangle_mask_3d_data))
-
     if bolus_mean_3d.shape != carotid_necktangle_mask_3d_data.shape:
         raise ValueError("array1 and array2 must have the same shape.")
 
     carotid_masked_bolus_mean_3d = np.where(carotid_necktangle_mask_3d_data == 1, bolus_mean_3d, np.nan)
-    print(np.nanmean(carotid_masked_bolus_mean_3d))
 
     threshold_value = np.nanpercentile(carotid_masked_bolus_mean_3d, percentile)
-    print(threshold_value)
     bolus_mean_threshold_masked_3d = np.where(carotid_masked_bolus_mean_3d > threshold_value,
                                               carotid_masked_bolus_mean_3d, np.nan)
     bolus_mean_threshold_binary_mask_3d = np.where(bolus_mean_threshold_masked_3d >= 1000, 1, 0)
@@ -84,7 +89,7 @@ def get_frame_time_midpoints(frame_start_times: np.ndarray,
         Raises:
             None.
         """
-    frame_midpoint_times = (frame_start_times + (frame_duration_times / 2)).astype(int)
+    frame_midpoint_times = (frame_start_times + (frame_duration_times / 2)).astype(float)
     return frame_midpoint_times
 
 
@@ -119,9 +124,9 @@ def load_fslmeants_to_numpy_3d(fslmeants_filepath: str) -> np.ndarray:
     return numpy_3d_array
 
 
-def karl_complex_idif_from_4d_pet_necktangle(necktangle_matrix: np.ndarray,
-                                             percentile: float,
-                                             frame_midpoint_times: np.ndarray) -> np.ndarray:
+def double_threshold_idif_from_4d_pet_necktangle(necktangle_matrix: np.ndarray,
+                                                 percentile: float,
+                                                 frame_midpoint_times: np.ndarray) -> np.ndarray:
     """
     Computes the IDIF from a 4D PET necktangle matrix given a percentile for thresholding.
     This function finds the highest mean frame from the first 10 frames of the 4D PET, creates a mean 3D image of that frame, the one before it, and the one after it.
