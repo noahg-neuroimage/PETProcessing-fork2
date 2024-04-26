@@ -52,12 +52,12 @@ class PetPvc:
             docker.errors.APIError: If the Docker client encounters an API error.
         """
         common_path = os.path.commonpath([pet_4d_filepath, output_filepath])
-        docker_pet_input = "/data/" + pet_4d_filepath.replace(common_path, "").lstrip('/')
-        docker_output = "/data/" + output_filepath.replace(common_path, "").lstrip('/')
+        docker_pet_input = "/data/" + pet_4d_filepath.replace(common_path, "").lstrip(os.sep).replace(os.sep, '/')
+        docker_output = "/data/" + output_filepath.replace(common_path, "").lstrip(os.sep).replace(os.sep, '/')
         docker_volumes = {common_path: {'bind': '/data', 'mode': 'rw'}}
         command = f"petpvc --input {docker_pet_input} --output {docker_output} --pvc {pvc_method}"
         if mask_filepath is not None:
-            docker_mask_input = "/data/" + mask_filepath.replace(common_path, "").lstrip('/')
+            docker_mask_input = "/data/" + mask_filepath.replace(common_path, "").lstrip(os.sep).replace(os.sep, '/')
             command = command + f" --mask {docker_mask_input}"
         if isinstance(psf_dimensions, tuple):
             command = command + f" -x {psf_dimensions[0]} -y {psf_dimensions[1]} -z {psf_dimensions[2]}"
