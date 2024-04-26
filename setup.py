@@ -1,7 +1,8 @@
 from setuptools import setup, find_packages
 
 setup(name='pet_cli', version='0.0.1', packages=find_packages(),
-      install_requires=['numpy',
+      install_requires=['docker',
+                        'numpy',
                         'scipy',
                         'numba',
                         'pandas',

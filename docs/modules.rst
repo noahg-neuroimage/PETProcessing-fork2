@@ -9,6 +9,7 @@ Modules
    pet_cli.tac_interpolation
    pet_cli.tcms_as_convolutions
    pet_cli.graphical_analysis
+   pet_cli.reference_tissue_models
    pet_cli.parametric_images
    pet_cli.graphical_plots
    pet_cli.image_visualization
