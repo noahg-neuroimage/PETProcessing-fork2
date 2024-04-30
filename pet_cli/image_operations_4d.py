@@ -338,6 +338,47 @@ def register_pet(input_reg_image_path: str,
     image_io.write_dict_to_json(meta_data_dict=meta_data_dict, out_path=copy_meta_path)
 
 
+def atlas_warp(input_image_4d_path: str,
+               reference_image_path: str,
+               atlas_image_path: str,
+               out_image_path: str,
+               verbose: bool,
+               ref_atlas_xfm: None,
+               type_of_transform: str='SyN',
+               **kwargs):
+    """
+    Warps PET image to atlas space. Input PET must be registered to anatomical
+    reference space. If transformation is not provided, use `ants.registration`
+    to compute transformation from anatomical to atlas space. If transformation
+    is provided, use it to run transformation.
+    """
+    pet_ants = ants.image_read(input_image_4d_path)
+    anat_ants = ants.image_read(reference_image_path)
+    atlas_ants = ants.image_read(atlas_image_path)
+
+
+    if ref_atlas_xfm is None:
+        compute_xfm = ants.registration(fixed=atlas_ants,
+                                        moving=anat_ants,
+                                        type_of_transform=type_of_transform,
+                                        write_composite_transform=True,
+                                        **kwargs)
+        ref_atlas_xfm = compute_xfm['fwdtransforms']
+
+
+    xfm_apply = ants.apply_transforms(fixed=atlas_ants,
+                                      moving=pet_ants,
+                                      transformlist=[ref_atlas_xfm],
+                                      imagetype=3)
+    ants.image_write(xfm_apply, out_image_path)
+    if verbose:
+        print(f'Transformed image saved to {out_image_path}')
+
+    copy_meta_path = re.sub('.nii.gz|.nii', '.json', out_image_path)
+    meta_data_dict = image_io.ImageIO.load_metadata_for_nifty_with_same_filename(input_image_4d_path)
+    image_io.write_dict_to_json(meta_data_dict=meta_data_dict, out_path=copy_meta_path)
+
+
 def resample_segmentation(input_image_4d_path: str,
                           segmentation_image_path: str,
                           out_seg_path: str,
