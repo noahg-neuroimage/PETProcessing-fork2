@@ -428,17 +428,18 @@ def fit_mrtm_original_to_tac(tgt_tac_vals: np.ndarray,
     return fit_ans
 
 
-def fit_mrtm_2003_to_tac(target_tac_vals, ref_tac_times, ref_tac_vals, t_thresh_in_mins):
+@numba.njit(fastmath=True)
+def fit_mrtm_2003_to_tac(tgt_tac_vals, ref_tac_times, ref_tac_vals, t_thresh_in_mins):
     
     t_thresh = get_index_from_threshold(times_in_minutes=ref_tac_times, t_thresh_in_minutes=t_thresh_in_mins)
     
     if t_thresh == -1:
         return np.asarray([np.nan, np.nan, np.nan])
     
-    y = target_tac_vals
+    y = tgt_tac_vals
     x_matrix = np.ones((len(y), 3), float)
     x_matrix[:, 0] = cum_trapz(xdata=ref_tac_times, ydata=ref_tac_vals, initial=0.0)
-    x_matrix[:, 1] = cum_trapz(xdata=ref_tac_times, ydata=target_tac_vals, initial=0.0)
+    x_matrix[:, 1] = cum_trapz(xdata=ref_tac_times, ydata=tgt_tac_vals, initial=0.0)
     x_matrix[:, 2] = ref_tac_vals
     
     fit_ans = np.linalg.lstsq(x_matrix[t_thresh:], y[t_thresh:])[0]
