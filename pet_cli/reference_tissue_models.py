@@ -404,13 +404,13 @@ def fit_mrtm_original_to_tac(tgt_tac_vals: np.ndarray,
     non_zero_indices = np.argwhere(tgt_tac_vals != 0.).T[0]
     
     if len(non_zero_indices) <= 2:
-        return np.asarray([np.nan, np.nan])
+        return np.asarray([np.nan, np.nan, np.nan])
     
     t_thresh = get_index_from_threshold(times_in_minutes=ref_tac_times[non_zero_indices],
                                         t_thresh_in_minutes=t_thresh_in_mins)
     
     if len(ref_tac_times[non_zero_indices][t_thresh:]) <= 2:
-        return np.asarray([np.nan, np.nan])
+        return np.asarray([np.nan, np.nan, np.nan])
     
     y = cum_trapz(xdata=ref_tac_times, ydata=tgt_tac_vals, initial=0.0)
     y = y[non_zero_indices] / tgt_tac_vals[non_zero_indices]
@@ -432,7 +432,6 @@ def fit_mrtm_original_to_tac(tgt_tac_vals: np.ndarray,
 def fit_mrtm_2003_to_tac(tgt_tac_vals, ref_tac_times, ref_tac_vals, t_thresh_in_mins):
     
     t_thresh = get_index_from_threshold(times_in_minutes=ref_tac_times, t_thresh_in_minutes=t_thresh_in_mins)
-    
     if t_thresh == -1:
         return np.asarray([np.nan, np.nan, np.nan])
     
@@ -445,3 +444,22 @@ def fit_mrtm_2003_to_tac(tgt_tac_vals, ref_tac_times, ref_tac_vals, t_thresh_in_
     fit_ans = np.linalg.lstsq(x_matrix[t_thresh:], y[t_thresh:])[0]
     return fit_ans
 
+
+@numba.njit(fastmath=True)
+def fit_mrtm2_2003_to_tac(tgt_tac_vals, ref_tac_times, ref_tac_vals, t_thresh_in_mins, k2_prime):
+    
+    t_thresh = get_index_from_threshold(times_in_minutes=ref_tac_times, t_thresh_in_minutes=t_thresh_in_mins)
+    if t_thresh == -1:
+        return np.asarray([np.nan, np.nan])
+    
+    x1 = cum_trapz(xdata=ref_tac_times, ydata=ref_tac_vals, initial=0.0)
+    x1 += ref_tac_vals / k2_prime
+    x2 = cum_trapz(xdata=ref_tac_times, ydata=tgt_tac_vals, initial=0.0)
+
+    y = tgt_tac_vals
+    x_matrix = np.ones((len(y), 2), float)
+    x_matrix[:, 0] = x1[:]
+    x_matrix[:, 1] = x2[:]
+    
+    fit_ans = np.linalg.lstsq(x_matrix[t_thresh:], y[t_thresh:])[0]
+    return fit_ans
