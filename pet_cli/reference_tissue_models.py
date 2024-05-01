@@ -1,3 +1,10 @@
+"""
+Todo:
+    * Add the Ichise paper citations.
+    * Add the SRTM and FRTM paper citations.
+
+"""
+
 import numpy as np
 from scipy.optimize import curve_fit as sp_fit
 import numba
