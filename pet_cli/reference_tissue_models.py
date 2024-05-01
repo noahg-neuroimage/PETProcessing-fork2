@@ -1,5 +1,8 @@
 import numpy as np
 from scipy.optimize import curve_fit as sp_fit
+import numba
+from .graphical_analysis import get_index_from_threshold
+from .graphical_analysis import cumulative_trapezoidal_integral as cum_trapz
 from . import tcms_as_convolutions as tcms_conv
 
 
@@ -390,3 +393,36 @@ def fit_frtm_to_tac_with_bounds(tgt_tac_vals: np.ndarray,
     
     return sp_fit(f=_fitting_frtm, xdata=ref_tac_times, ydata=tgt_tac_vals,
                   p0=st_values, bounds=[lo_values, hi_values])
+
+
+@numba.njit(fastmath=True)
+def fit_mrtm_originial_to_tac(tgt_tac_vals: np.ndarray,
+                              ref_tac_times: np.ndarray,
+                              ref_tac_vals: np.ndarray,
+                              t_thresh_in_mins: float):
+    
+    non_zero_indices = np.argwhere(tgt_tac_vals != 0.).T[0]
+    
+    if len(non_zero_indices) <= 2:
+        return np.asarray([np.nan, np.nan])
+    
+    t_thresh = get_index_from_threshold(times_in_minutes=ref_tac_times[non_zero_indices],
+                                        t_thresh_in_minutes=t_thresh_in_mins)
+    
+    if len(ref_tac_times[non_zero_indices][t_thresh:]) <= 2:
+        return np.asarray([np.nan, np.nan])
+    
+    y = cum_trapz(xdata=ref_tac_times, ydata=tgt_tac_vals, initial=0.0)
+    y = y[non_zero_indices] / tgt_tac_vals[non_zero_indices]
+    
+    x1 = cum_trapz(xdata=ref_tac_times, ydata=ref_tac_vals, initial=0.0)
+    x1 = x1[non_zero_indices] / tgt_tac_vals[non_zero_indices]
+    
+    x2 = ref_tac_vals[non_zero_indices] / tgt_tac_vals[non_zero_indices]
+    
+    x_matrix = np.ones((len(y), 3), float)
+    x_matrix[:, 0] = x1[:]
+    x_matrix[:, 1] = x2[:]
+    
+    fit_ans = np.linalg.lstsq(x_matrix[t_thresh:], y[t_thresh:])[0]
+    return fit_ans
