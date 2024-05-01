@@ -400,6 +400,37 @@ def fit_mrtm_original_to_tac(tgt_tac_vals: np.ndarray,
                               ref_tac_times: np.ndarray,
                               ref_tac_vals: np.ndarray,
                               t_thresh_in_mins: float):
+    r"""
+    Fit the original (1996) Multilinear Reference Tissue Model (MRTM) to the provided target Time Activity Curve (TAC)
+    values given the reference TAC, times, and threshold time (in minutes). The data are fit for all values beyond the
+    threshold. We assume that the target TAC and reference TAC are sampled at the same times.
+
+    .. important::
+        This function assumes that both TACs are sampled at the same time, and that the time is in minutes.
+
+
+    We have the following multilinear regression:
+    
+    .. math::
+    
+        \frac{\int_{0}^{T}C(t)\mathrm{d}t}{C(T)}=\frac{V}{V^{\prime}} \frac{\int_{0}^{T}C^{\prime}(t)\mathrm{d}t}{C(T)}
+        - \frac{V}{V^{\prime}k_{2}^{\prime}} \frac{C^{\prime}(T)}{C(T)} + b
+
+
+    Args:
+        tgt_tac_vals (np.ndarray): Target TAC values to fit the MRTM.
+        ref_tac_times (np.ndarray): Times of the reference TAC (in minutes).
+        ref_tac_vals (np.ndarray): Reference TAC values.
+        t_thresh_in_mins (float): Threshold time in minutes.
+
+    Returns:
+        np.ndarray: Array containing fit results. (:math:`\frac{V}{V^{\prime}}`,
+        :math:`\frac{V}{V^{\prime}k_{2}^{\prime}}`, :math:`b`)
+
+    Note:
+        This function is implemented with numba for improved performance.
+        
+    """
     
     non_zero_indices = np.argwhere(tgt_tac_vals != 0.).T[0]
     
