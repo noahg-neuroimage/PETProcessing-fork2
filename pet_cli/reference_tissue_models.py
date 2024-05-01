@@ -397,9 +397,9 @@ def fit_frtm_to_tac_with_bounds(tgt_tac_vals: np.ndarray,
 
 @numba.njit(fastmath=True)
 def fit_mrtm_original_to_tac(tgt_tac_vals: np.ndarray,
-                              ref_tac_times: np.ndarray,
-                              ref_tac_vals: np.ndarray,
-                              t_thresh_in_mins: float):
+                             ref_tac_times: np.ndarray,
+                             ref_tac_vals: np.ndarray,
+                             t_thresh_in_mins: float):
     r"""
     Fit the original (1996) Multilinear Reference Tissue Model (MRTM) to the provided target Time Activity Curve (TAC)
     values given the reference TAC, times, and threshold time (in minutes). The data are fit for all values beyond the
@@ -460,7 +460,40 @@ def fit_mrtm_original_to_tac(tgt_tac_vals: np.ndarray,
 
 
 @numba.njit(fastmath=True)
-def fit_mrtm_2003_to_tac(tgt_tac_vals, ref_tac_times, ref_tac_vals, t_thresh_in_mins):
+def fit_mrtm_2003_to_tac(tgt_tac_vals: np.ndarray,
+                         ref_tac_times: np.ndarray,
+                         ref_tac_vals: np.ndarray,
+                         t_thresh_in_mins: float):
+    r"""
+    Fit the 2003 Multilinear Reference Tissue Model (MRTM) to the provided target Time Activity Curve (TAC) values given
+    the reference TAC, times, and threshold time (in minutes). The data are fit for all values beyond the threshold. We
+    assume that the target TAC and reference TAC are sampled at the same times.
+
+    .. important::
+        This function assumes that both TACs are sampled at the same time, and that the time is in minutes.
+
+    We have the following multilinear regression:
+
+    .. math::
+
+        C(T)=-\frac{V}{V^{\prime}b} \int_{0}^{T}C^{\prime}(t)\mathrm{d}t + \frac{1}{b} \int_{0}^{T}C(t)\mathrm{d}t
+        - \frac{V}{V^{\prime}k_{2}^{\prime}b}C^{\prime}(T)
+
+
+    Args:
+        tgt_tac_vals (np.ndarray): Target TAC values to fit the MRTM.
+        ref_tac_times (np.ndarray): Times of the reference TAC (in minutes).
+        ref_tac_vals (np.ndarray): Reference TAC values.
+        t_thresh_in_mins (float): Threshold time in minutes.
+
+    Returns:
+        np.ndarray: Array containing fit results. (:math:`-\frac{V}{V^{\prime}b}`,
+        :math:`\frac{1}{b}`, :math:`-\frac{V}{V^{\prime}k_{2}^{\prime}b}`)
+
+    Note:
+        This function is implemented with numba for improved performance.
+
+    """
     
     t_thresh = get_index_from_threshold(times_in_minutes=ref_tac_times, t_thresh_in_minutes=t_thresh_in_mins)
     if t_thresh == -1:
@@ -477,7 +510,41 @@ def fit_mrtm_2003_to_tac(tgt_tac_vals, ref_tac_times, ref_tac_vals, t_thresh_in_
 
 
 @numba.njit(fastmath=True)
-def fit_mrtm2_2003_to_tac(tgt_tac_vals, ref_tac_times, ref_tac_vals, t_thresh_in_mins, k2_prime):
+def fit_mrtm2_2003_to_tac(tgt_tac_vals: np.ndarray,
+                          ref_tac_times: np.ndarray,
+                          ref_tac_vals: np.ndarray,
+                          t_thresh_in_mins: float,
+                          k2_prime: float):
+    r"""
+    Fit the second version of Multilinear Reference Tissue Model (MRTM2) to the provided target Time Activity Curve
+    (TAC) values given the reference TAC, times, threshold time (in minutes), and k2_prime. The data are fit for all
+    values beyond the threshold. We assume that the target TAC and reference TAC are sampled at the same times.
+    
+    .. important::
+        This function assumes that both TACs are sampled at the same time, and that the time is in minutes.
+
+    We have the following multilinear regression:
+
+    .. math::
+
+        C(T) = -\frac{V}{V^{\prime}b}\left(\int_{0}^{T}C^{\prime}(t)\mathrm{d}t -\frac{1}{k_{2}^{\prime}}C^{\prime}(T) \right)
+        + \frac{1}{b} \int_{0}^{T}C(t)\mathrm{d}t
+
+
+    Args:
+        tgt_tac_vals (np.ndarray): Target TAC values to fit the MRTM2.
+        ref_tac_times (np.ndarray): Times of the reference TAC (in minutes).
+        ref_tac_vals (np.ndarray): Reference TAC values.
+        t_thresh_in_mins (float): Threshold time in minutes.
+        k2_prime (float): Kinetic parameter: washout rate for the reference region.
+
+    Returns:
+        np.ndarray: Array containing fit results. (:math:`-\frac{V}{V^{\prime}b}`, :math:`\frac{1}{b}`)
+
+    Note:
+        This function is implemented with numba for improved performance.
+        
+    """
     
     t_thresh = get_index_from_threshold(times_in_minutes=ref_tac_times, t_thresh_in_minutes=t_thresh_in_mins)
     if t_thresh == -1:
