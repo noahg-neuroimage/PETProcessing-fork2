@@ -15,6 +15,8 @@ TODOs:
     * (extract_tac_from_4dnifty_using_mask) Write the number of voxels in the mask, or the
       volume of the mask. This is necessary for certain analyses with the resulting tacs,
       such as finding the average uptake encompassing two regions.
+    * Methods that create new images should copy over a previous metadata file, if one exists,
+      and create a new one if it does not.
 
 """
 import os
@@ -28,6 +30,7 @@ from nibabel import processing
 import numpy as np
 from . import image_io
 from . import math_lib
+from . import qc_plots
 
 
 def weighted_series_sum(input_image_4d_path: str,
@@ -329,6 +332,10 @@ def register_pet(input_reg_image_path: str,
     ants.image_write(xfm_apply, out_image_path)
     if verbose:
         print(f'Transformed image saved to {out_image_path}')
+
+    copy_meta_path = re.sub('.nii.gz|.nii', '.json', out_image_path)
+    meta_data_dict = image_io.ImageIO.load_metadata_for_nifty_with_same_filename(input_reg_image_path)
+    image_io.write_dict_to_json(meta_data_dict=meta_data_dict, out_path=copy_meta_path)
 
 
 def resample_segmentation(input_image_4d_path: str,
@@ -642,12 +649,18 @@ class ImageOps4d():
             output_file_name = f'{self.output_filename_prefix}_moco.nii.gz'
             outfile = os.path.join(self.output_directory,
                                    output_file_name)
-            motion_correction(input_image_4d_path=preproc_props['FilePathMocoInp'],
-                              motion_target_option=preproc_props['MotionTarget'],
-                              out_image_path=outfile,
-                              verbose=preproc_props['Verbose'],
-                              half_life=preproc_props['HalfLife'],
-                              kwargs=preproc_props['MocoPars'])
+            moco_outputs = motion_correction(input_image_4d_path=preproc_props['FilePathMocoInp'],
+                                             motion_target_option=preproc_props['MotionTarget'],
+                                             out_image_path=outfile,
+                                             verbose=preproc_props['Verbose'],
+                                             half_life=preproc_props['HalfLife'],
+                                             kwargs=preproc_props['MocoPars'])
+            motion = moco_outputs[2]
+            output_plot = os.path.join(self.output_directory,
+                                       f'{self.output_filename_prefix}_motion.png')
+            qc_plots.motion_plot(framewise_displacement=motion,
+                                 output_plot=output_plot)
+            return moco_outputs
         elif method_name=='register_pet':
             output_file_name = f'{self.output_filename_prefix}_reg.nii.gz'
             outfile = os.path.join(self.output_directory,
@@ -675,6 +688,7 @@ class ImageOps4d():
                                                 verbose=preproc_props['Verbose'])
         elif method_name=='write_tacs':
             outdir = os.path.join(self.output_directory,'tacs')
+            os.makedirs(outdir,exist_ok=True)
             write_tacs(input_image_4d_path=preproc_props['FilePathTACInput'],
                        label_map_path=preproc_props['FilePathLabelMap'],
                        segmentation_image_path=preproc_props['FilePathSeg'],
