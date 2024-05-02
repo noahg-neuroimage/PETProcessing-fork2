@@ -597,10 +597,52 @@ def calc_BP_from_mrtm_original_fit(fit_vals: np.ndarray) -> float:
 
 
 def calc_BP_from_mrtm_2003_fit(fit_vals: np.ndarray) -> float:
+    r"""
+    Given the 2003 MRTM (`Ichise et. al, 1996`) fit values, we calculate the binding potential (BP).
+
+    The binding potential (BP) is defined as:
+
+    .. math::
+
+        \mathrm{BP} = -\left(\frac{\beta_0}{\beta_1} + 1\right)
+
+    where :math:`\beta_0` is the first fit coefficient, and :math:`\beta_1` is the second fit coefficient.
+
+    Args:
+        fit_vals (np.ndarray): The multilinear regression fit values for the original MRTM.
+
+    Returns:
+        float: Binding potential (BP) value.
+
+    See Also:
+        * :func:`fit_mrtm_2003_to_tac` where the order of the regression coefficients is laid out.
+
+    """
     return -(fit_vals[0]/fit_vals[1] + 1.0)
 
 
 def calc_BP_from_mrtm2_2003_fit(fit_vals: np.ndarray) -> float:
+    r"""
+    Given the 2003 MRTM2 (`Ichise et. al, 1996`) fit values, we calculate the binding potential (BP).
+
+    The binding potential (BP) is defined as:
+
+    .. math::
+
+        \mathrm{BP} = -\left(\frac{\beta_0}{\beta_1} + 1\right)
+
+    where :math:`\beta_0` is the first fit coefficient, and :math:`\beta_1` is the second fit coefficient.
+
+    Args:
+        fit_vals (np.ndarray): The multilinear regression fit values for the original MRTM.
+
+    Returns:
+        float: Binding potential (BP) value.
+
+    See Also:
+        * :func:`fit_mrtm_2003_to_tac` where the order of the regression coefficients is laid out.
+
+    """
     return -(fit_vals[0]/fit_vals[1] + 1.0)
 
 
