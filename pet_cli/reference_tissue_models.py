@@ -585,12 +585,13 @@ def calc_BP_from_mrtm_original_fit(fit_vals: np.ndarray) -> float:
     
     Args:
         fit_vals (np.ndarray): The multilinear regression fit values for the original MRTM.
+            Output of :func:`fit_mrtm_original_to_tac`.
 
     Returns:
         float: Binding potential (BP) value.
         
     See Also:
-        * :func:`fit_mrtm_original_to_tac` where the order of the regression coefficients is laid out.
+        :func:`fit_mrtm_original_to_tac` where the order of the regression coefficients is laid out.
         
     """
     return fit_vals[0] - 1.0
@@ -600,7 +601,7 @@ def calc_BP_from_mrtm_2003_fit(fit_vals: np.ndarray) -> float:
     r"""
     Given the 2003 MRTM (`Ichise et. al, 1996`) fit values, we calculate the binding potential (BP).
 
-    The binding potential (BP) is defined as:
+    The binding potential (BP) is calculated as:
 
     .. math::
 
@@ -609,13 +610,14 @@ def calc_BP_from_mrtm_2003_fit(fit_vals: np.ndarray) -> float:
     where :math:`\beta_0` is the first fit coefficient, and :math:`\beta_1` is the second fit coefficient.
 
     Args:
-        fit_vals (np.ndarray): The multilinear regression fit values for the original MRTM.
+        fit_vals (np.ndarray): The multilinear regression fit values for the 2003 MRTM.
+            Output of :func:`fit_mrtm_2003_to_tac`.
 
     Returns:
         float: Binding potential (BP) value.
 
     See Also:
-        * :func:`fit_mrtm_2003_to_tac` where the order of the regression coefficients is laid out.
+        :func:`fit_mrtm_2003_to_tac` where the order of the regression coefficients is laid out.
 
     """
     return -(fit_vals[0]/fit_vals[1] + 1.0)
@@ -625,7 +627,7 @@ def calc_BP_from_mrtm2_2003_fit(fit_vals: np.ndarray) -> float:
     r"""
     Given the 2003 MRTM2 (`Ichise et. al, 1996`) fit values, we calculate the binding potential (BP).
 
-    The binding potential (BP) is defined as:
+    The binding potential (BP) is calculated as:
 
     .. math::
 
@@ -635,20 +637,67 @@ def calc_BP_from_mrtm2_2003_fit(fit_vals: np.ndarray) -> float:
 
     Args:
         fit_vals (np.ndarray): The multilinear regression fit values for the original MRTM.
+            Output of :func:`fit_mrtm2_2003_to_tac`.
 
     Returns:
         float: Binding potential (BP) value.
 
     See Also:
-        * :func:`fit_mrtm_2003_to_tac` where the order of the regression coefficients is laid out.
+        :func:`fit_mrtm2_2003_to_tac` where the order of the regression coefficients is laid out.
 
     """
     return -(fit_vals[0]/fit_vals[1] + 1.0)
 
 
 def calc_k2prime_from_mrtm_original_fit(fit_vals: np.ndarray):
+    r"""
+    Given the original MRTM (`Ichise et. al, 1996`) fit values, we calculate :math:`k_{2}^{\prime}`.
+
+    The :math:`k_{2}^{\prime}` is calculated as:
+
+    .. math::
+
+         k_{2}^{\prime}= \frac{\beta_{0}}{\beta_{1}}
+
+    where :math:`\beta_0` is the first fit coefficient and :math:`\beta_1` is the second fit coefficient.
+
+
+    Args:
+        fit_vals (np.ndarray): The multilinear regression fit values for the original MRTM.
+            Output of :func:`fit_mrtm_original_to_tac`.
+
+    Returns:
+        float: :math:`k_2^\prime` value.
+
+    See Also:
+        :func:`fit_mrtm_original_to_tac` where the order of the regression coefficients is laid out.
+
+    """
     return fit_vals[0]/fit_vals[1]
 
 
 def calc_k2prime_from_mrtm_2003_fit(fit_vals: np.ndarray):
-    return fit_vals[0]/fit_vals[-1]
+    r"""
+    Given the 2003 MRTM (`Ichise et. al, 2003`) fit values, we calculate :math:`k_{2}^{\prime}`.
+
+    The :math:`k_{2}^{\prime}` is calculated as:
+
+    .. math::
+
+         k_{2}^{\prime}= \frac{\beta_{0}}{\beta_{2}}
+
+    where :math:`\beta_0` is the first fit coefficient and :math:`\beta_2` is the third fit coefficient.
+
+
+    Args:
+        fit_vals (np.ndarray): The multilinear regression fit values for the original MRTM.
+            Output of :func:`fit_mrtm_2003_to_tac`.
+
+    Returns:
+        float: :math:`k_2^\prime` value.
+
+    See Also:
+        :func:`fit_mrtm_2003_to_tac` where the order of the regression coefficients is laid out.
+
+    """
+    return fit_vals[0]/fit_vals[2]
