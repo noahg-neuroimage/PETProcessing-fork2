@@ -568,3 +568,23 @@ def fit_mrtm2_2003_to_tac(tgt_tac_vals: np.ndarray,
     
     fit_ans = np.linalg.lstsq(x_matrix[t_thresh:], y[t_thresh:])[0]
     return fit_ans
+
+
+def calc_BP_from_mrtm_original_fit(fit_vals: np.ndarray):
+    return fit_vals[0] - 1.0
+
+
+def calc_BP_from_mrtm_2003_fit(fit_vals: np.ndarray):
+    return -(fit_vals[0]/fit_vals[1] + 1.0)
+
+
+def calc_BP_from_mrtm2_2003_fit(fit_vals: np.ndarray):
+    return -(fit_vals[0]/fit_vals[1] + 1.0)
+
+
+def calc_k2prime_from_mrtm_original_fit(fit_vals: np.ndarray):
+    return fit_vals[0]/fit_vals[1]
+
+
+def calc_k2prime_from_mrtm_2003_fit(fit_vals: np.ndarray):
+    return fit_vals[0]/fit_vals[-1]
