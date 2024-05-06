@@ -407,12 +407,13 @@ def fit_tac_to_1tcm_with_bounds(tgt_tac_vals: np.ndarray,
     def _fitting_tac(tac_times: np.ndarray, k1: float, k2: float):
         tac = generate_tac_1tcm_c1_from_tac(tac_times=tac_times, tac_vals=input_tac_vals, k1=k1, k2=k2)[1]
         return tac
-
-    k1_guess, k1_lo, k1_hi = k1_bounds
-    k2_guess, k2_lo, k2_hi = k2_bounds
+    
+    st_vals = (k1_bounds[0], k2_bounds[0])
+    lo_vals = (k1_bounds[1], k2_bounds[1])
+    hi_vals = (k1_bounds[2], k2_bounds[2])
     
     p_opt, p_cov = sp_fit(f=_fitting_tac, xdata=input_tac_times, ydata=tgt_tac_vals,
-                          p0=(k1_guess, k2_guess), bounds=((k1_lo, k2_lo), (k1_hi, k2_hi)))
+                          p0=st_vals, bounds=(lo_vals, hi_vals))
     return p_opt, p_cov
 
 
@@ -428,4 +429,25 @@ def fit_tac_to_irreversible_2tcm(tgt_tac_vals: np.ndarray,
         return tac
     
     p_opt, p_cov = sp_fit(f=_fitting_tac, xdata=input_tac_times, ydata=tgt_tac_vals, p0=(k1_guess, k2_guess, k3_guess))
+    return p_opt, p_cov
+
+
+def fit_tac_to_irreversible_2tcm_with_bounds(tgt_tac_vals: np.ndarray,
+                                             input_tac_times: np.ndarray,
+                                             input_tac_vals: np.ndarray,
+                                             k1_bounds: tuple[float, float, float] = (0.5, 1e-6, 5.0),
+                                             k2_bounds: tuple[float, float, float] = (0.5, 1e-6, 5.0),
+                                             k3_bounds: tuple[float, float, float] = (0.5, 1e-6, 5.0),
+                                             ):
+    def _fitting_tac(tac_times: np.ndarray, k1: float, k2: float, k3: float):
+        _tac_gen = generate_tac_2tcm_with_k4zero_cpet_from_tac
+        tac = _tac_gen(tac_times=tac_times, tac_vals=input_tac_vals, k1=k1, k2=k2, k3=k3)[1]
+        return tac
+    
+    st_vals = (k1_bounds[0], k2_bounds[0], k3_bounds[0])
+    lo_vals = (k1_bounds[1], k2_bounds[1], k3_bounds[1])
+    hi_vals = (k1_bounds[2], k2_bounds[2], k3_bounds[2])
+    
+    p_opt, p_cov = sp_fit(f=_fitting_tac, xdata=input_tac_times, ydata=tgt_tac_vals,
+                          p0=st_vals, bounds=(lo_vals, hi_vals))
     return p_opt, p_cov
