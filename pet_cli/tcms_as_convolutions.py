@@ -397,3 +397,19 @@ def fit_tac_to_1tcm(tgt_tac_vals: np.ndarray,
         return tac
     p_opt, p_cov = sp_fit(f=_fitting_tac, xdata=input_tac_times, ydata=tgt_tac_vals, p0=(k1_guess, k2_guess))
     return p_opt
+
+
+def fit_tac_to_1tcm_with_bounds(tgt_tac_vals: np.ndarray,
+                                input_tac_times: np.ndarray,
+                                input_tac_vals: np.ndarray,
+                                k1_bounds: float = (0.5, 1e-6, 5.0),
+                                k2_bounds: float = (0.5, 1e-6, 5.0)):
+    def _fitting_tac(tac_times: np.ndarray, k1: float, k2: float):
+        tac = generate_tac_1tcm_c1_from_tac(tac_times=tac_times, tac_vals=input_tac_vals, k1=k1, k2=k2)[1]
+        return tac
+    k1_guess, k1_lo, k1_hi = k1_bounds
+    k2_guess, k2_lo, k2_hi = k2_bounds
+    
+    p_opt, p_cov = sp_fit(f=_fitting_tac, xdata=input_tac_times, ydata=tgt_tac_vals,
+                          p0=(k1_guess, k2_guess), bounds=((k1_lo, k2_lo), (k1_hi, k2_hi)))
+    return p_opt
