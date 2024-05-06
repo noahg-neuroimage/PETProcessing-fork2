@@ -392,11 +392,37 @@ def fit_tac_to_1tcm(tgt_tac_vals: np.ndarray,
                     input_tac_vals: np.ndarray,
                     k1_guess: float = 0.5,
                     k2_guess: float = 0.5):
+    r"""
+    Fits a target Time Activity Curve (TAC) to the one tissue compartment model (1TCM), taking into account the input
+    TAC values, times, and starting guesses for the kinetic parameters k1 and k2.
+
+    .. important::
+        This function assumes that the input TAC  and target TAC are uniformly sampled with respect to time since we
+        perform convolutions.
+    
+    This is a simple wrapper around :func:`scipy.optimize.curve_fit` and does not use any bounds for the different
+    parameters.
+
+    Args:
+        tgt_tac_vals (np.ndarray): Target TAC to fit.
+        input_tac_times (np.ndarray): Input TAC times,
+        input_tac_vals (np.ndarray): Input TAC values.
+        k1_guess (float): Starting guess for parameter k1. Defaults to 0.5.
+        k2_guess (float): Starting guess for parameter k2. Defaults to 0.5.
+
+    Returns:
+        tuple: (``fit_parameters``, ``fit_covariance``).
+
+    See Also:
+        * :func:`scipy.optimize.curve_fit`
+        * :func:`generate_tac_1tcm_c1_from_tac`
+        
+    """
     def _fitting_tac(tac_times: np.ndarray, k1: float, k2: float):
         tac = generate_tac_1tcm_c1_from_tac(tac_times=tac_times, tac_vals=input_tac_vals, k1=k1, k2=k2)[1]
         return tac
     p_opt, p_cov = sp_fit(f=_fitting_tac, xdata=input_tac_times, ydata=tgt_tac_vals, p0=(k1_guess, k2_guess))
-    return p_opt
+    return p_opt, p_cov
 
 
 def fit_tac_to_1tcm_with_bounds(tgt_tac_vals: np.ndarray,
@@ -404,6 +430,32 @@ def fit_tac_to_1tcm_with_bounds(tgt_tac_vals: np.ndarray,
                                 input_tac_vals: np.ndarray,
                                 k1_bounds: tuple[float, float, float] = (0.5, 1e-6, 5.0),
                                 k2_bounds: tuple[float, float, float] = (0.5, 1e-6, 5.0)) -> tuple:
+    r"""
+    Fits a target Time Activity Curve (TAC) to the one tissue compartment model (1TCM), given the input TAC values,
+    times, and bounds for the kinetic parameters k1 and k2.
+
+    .. important::
+        This function assumes that the input TAC  and target TAC are uniformly sampled with respect to time since we
+        perform convolutions.
+        
+    This function is a wrapper around `scipy.optimize.curve_fit` and uses parameter bounds during optimization. The
+    bounds for each parameter are formatted as: ``(starting_value, lo_bound, hi_bound)``.
+
+    Args:
+        tgt_tac_vals (np.ndarray): Target TAC to fit with the 1TCM.
+        input_tac_times (np.ndarray): Input TAC times.
+        input_tac_vals (np.ndarray): Input TAC values.
+        k1_bounds (tuple[float, float, float]): The bounds for parameter k1. Defaults to (0.5, 1e-6, 5.0).
+        k2_bounds (tuple[float, float, float]): The bounds for parameter k2. Defaults to (0.5, 1e-6, 5.0).
+
+    Returns:
+        tuple: (``fit_parameters``, ``fit_covariance``).
+
+    See Also:
+        * :func:`scipy.optimize.curve_fit`
+        * :func:`generate_tac_1tcm_c1_from_tac`
+        
+    """
     def _fitting_tac(tac_times: np.ndarray, k1: float, k2: float):
         tac = generate_tac_1tcm_c1_from_tac(tac_times=tac_times, tac_vals=input_tac_vals, k1=k1, k2=k2)[1]
         return tac
