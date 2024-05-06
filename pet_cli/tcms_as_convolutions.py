@@ -16,7 +16,7 @@ TODO:
 
 import numba
 import numpy as np
-
+from scipy.optimize import curve_fit as sp_fit
 
 def calc_convolution_with_check(f: np.ndarray, g: np.ndarray, dt: float) -> np.ndarray:
     r"""Performs a discrete convolution of two arrays, assumed to represent time-series data. Checks if the arrays are
@@ -385,3 +385,11 @@ def generate_tac_serial_2tcm_cpet_from_tac(tac_times: np.ndarray,
     dt = tac_times[1] - tac_times[0]
     cpet = calc_convolution_with_check(f=tac_vals, g=_resp_vals, dt=dt)
     return np.asarray([tac_times, cpet])
+
+
+def fit_tac_to_1tcm(tgt_tac_vals, input_tac_times, input_tac_vals, initial_guess=(0.25, 0.25)):
+    def _fitting_tac(input_tac_times, k1, k2):
+        tac = generate_tac_1tcm_c1_from_tac(tac_times=input_tac_times, tac_vals=input_tac_vals, k1=k1, k2=k2)[1]
+        return tac
+    p_opt, p_cov = sp_fit(f=_fitting_tac, xdata=input_tac_times, ydata=tgt_tac_vals, p0=initial_guess)
+    return p_opt
