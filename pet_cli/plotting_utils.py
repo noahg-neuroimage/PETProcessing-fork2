@@ -66,3 +66,37 @@ def bland_atlman_figure(axes,
         
         fax[ax_id].set_title(f"{title} Fits", fontweight='bold')
         fax[ax_id].set(xlabel=fr'$\frac{{S_1+S_2}}{{2}}$ (Mean)', ylabel=fr'$S_1-S_2$ (Diff.)')
+
+
+def ratio_bland_atlman_figure(axes,
+                              fit_values: np.ndarray,
+                              true_values: np.ndarray,
+                              ax_titles: list[str],
+                              sca_kwargs: dict = None,
+                              bland_kwargs: dict = None):
+    
+    if sca_kwargs is None:
+        sca_kwargs = dict(s=10, marker='.', color='red')
+    
+    if bland_kwargs is None:
+        bland_kwargs = dict(s=10, color='red', alpha=0.8, lw=1)
+    
+    fax = axes.flatten()
+    for ax_id, (xAr, yAr, title) in enumerate((zip(fit_values.T, true_values.T, ax_titles))):
+        x = (np.log(xAr) + np.log(yAr)) / 2.0
+        y = np.log(xAr) - np.log(yAr)
+        
+        fax[ax_id].scatter(x, y, **sca_kwargs)
+        
+        mean_diff = np.nanmean(y)
+        std_dev = np.nanstd(y)
+        mid = mean_diff
+        hi = mean_diff + 1.96 * std_dev
+        lo = mean_diff - 1.96 * std_dev
+        
+        fax[ax_id].axhline(hi, ls='--', zorder=0, color=bland_kwargs['color'])
+        fax[ax_id].axhline(lo, ls='--', zorder=0, color=bland_kwargs['color'])
+        fax[ax_id].axhline(mid, ls='-', zorder=0, color=bland_kwargs['color'])
+        
+        fax[ax_id].set_title(f"{title} Fits", fontweight='bold')
+        fax[ax_id].set(xlabel=fr'$\frac{{\log S_1+\log S_2}}{{2}}$ (Mean)', ylabel=fr'$\log S_1-\log S_2$ (Diff.)')
