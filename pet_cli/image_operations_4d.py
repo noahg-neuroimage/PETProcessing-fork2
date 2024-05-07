@@ -255,14 +255,13 @@ def motion_correction(input_image_4d_path: str,
         pet_moco_fd (list[float]): List of framewise displacement measure
             corresponding to each frame transform.
     """
-    pet_nibabel = nibabel.load(input_image_4d_path)
+    pet_ants = ants.image_read(input_image_4d_path)
 
     motion_target_image_path = determine_motion_target(motion_target_option=motion_target_option,
                                                        input_image_4d_path=input_image_4d_path,
                                                        half_life=half_life)
 
-    motion_target_image = nibabel.load(motion_target_image_path)
-    pet_ants = ants.from_nibabel(pet_nibabel)
+    motion_target_image = ants.image_read(motion_target_image_path)
     motion_target_image_ants = ants.from_nibabel(motion_target_image)
     pet_moco_ants_dict = ants.motion_correction(image=pet_ants,
                                                 fixed=motion_target_image_ants,
