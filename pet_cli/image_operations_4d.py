@@ -221,32 +221,39 @@ def motion_correction(input_image_4d_path: str,
                       half_life: float=None,
                       **kwargs) -> tuple[np.ndarray, list[str], list[float]]:
     """
-    Correct PET image series for inter-frame motion. Runs rigid motion correction module
-    from Advanced Normalisation Tools (ANTs) with default inputs. 
+    Correct PET image series for inter-frame motion. Runs rigid motion
+    correction module from Advanced Normalisation Tools (ANTs) with default
+    inputs.
 
     Args:
         input_image_4d_path (str): Path to a .nii or .nii.gz file containing a 4D
             PET image to be motion corrected.
         motion_target_option (str | tuple): Target image for computing
             transformation. See :meth:`determine_motion_target`.
-        reference_image_path (str): Path to a .nii or .nii.gz file containing a 3D reference
-            image in the same space as the input PET image. Can be a weighted series sum,
-            first or last frame, an average over a subset of frames, or another option depending
-            on the needs of the data.
-        out_image_path (str): Path to a .nii or .nii.gz file to which the motion corrected PET
-            series is written.
+        reference_image_path (str): Path to a .nii or .nii.gz file containing a
+            3D reference image in the same space as the input PET image. Can be
+            a weighted series sum, first or last frame, an average over a
+            subset of frames, or another option depending on the needs of the
+            data.
+        out_image_path (str): Path to a .nii or .nii.gz file to which the
+            motion corrected PET series is written.
         verbose (bool): Set to `True` to output processing information.
-        type_of_transform (str): Type of transform to perform on the PET image, must be one of antspy's
-            transformation types, i.e. 'DenseRigid' or 'Translation'. Any transformation type that uses
-            >6 degrees of freedom is not recommended, use with caution. See :py:func:`ants.registration`.
+        type_of_transform (str): Type of transform to perform on the PET image,
+            must be one of antspy's transformation types, i.e. 'DenseRigid' or
+            'Translation'. Any transformation type that uses >6 degrees of
+            freedom is not recommended, use with caution. See 
+            :py:func:`ants.registration`.
         half_life (float): Half life of the PET radioisotope in seconds.
-        kwargs (keyword arguments): Additional arguments passed to `ants.motion_correction`.
+        kwargs (keyword arguments): Additional arguments passed to
+            `ants.motion_correction`.
 
     Returns:
-        pet_moco_np (np.ndarray): Motion corrected PET image series as a numpy array.
-        pet_moco_params (list[str]): List of ANTS registration files applied to each frame.
-        pet_moco_fd (list[float]): List of framewise displacement measure corresponding 
-        to each frame transform.
+        pet_moco_np (np.ndarray): Motion corrected PET image series as a numpy
+            array.
+        pet_moco_params (list[str]): List of ANTS registration files applied to
+            each frame.
+        pet_moco_fd (list[float]): List of framewise displacement measure
+            corresponding to each frame transform.
     """
     pet_nibabel = nibabel.load(input_image_4d_path)
 
@@ -435,6 +442,10 @@ def apply_xfm_fsl(input_image_path: str,
     Applies existing transforms in FSL format to an input image, onto a
     reference image. This is useful for applying the same transform on
     different images to atlas space, for example.
+
+    .. important::
+        Requires installation of `FSL`, and environment variables `FSLDIR` and
+        `FSLOUTPUTTYPE` set appropriately in the shell.
 
     Args:
         input_image_path (str): Path to image on which transform is applied.
