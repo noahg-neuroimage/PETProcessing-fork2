@@ -23,9 +23,9 @@ def scatter_with_regression_figure(axes,
     for ax_id, (xAr, yAr, title) in enumerate((zip(true_values.T, fit_values.T, ax_titles))):
         x = xAr[~np.isnan(yAr)]
         y = yAr[~np.isnan(yAr)]
-        lin_reg = linregress(x, y)
-        
         fax[ax_id].scatter(x, y, **sca_kwargs)
+        
+        lin_reg = linregress(x, y)
         fax[ax_id].plot(x, x * lin_reg.slope + lin_reg.intercept, **reg_kwargs)
         
         fax[ax_id].text(0.05, 0.95, fr"$r^2={lin_reg.rvalue:<5.3f}$",
@@ -33,3 +33,5 @@ def scatter_with_regression_figure(axes,
                         ha='left', va='top', bbox=_TEXT_BOX_)
         fax[ax_id].set_title(f"{title} Fits", fontweight='bold')
         fax[ax_id].set(xlabel=fr'True Values', ylabel=fr'Fit Values')
+        
+        
