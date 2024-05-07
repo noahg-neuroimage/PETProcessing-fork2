@@ -12,7 +12,23 @@ def scatter_with_regression_figure(axes,
                                    ax_titles: list[str],
                                    sca_kwargs: dict = None,
                                    reg_kwargs: dict = None):
+    r"""
+    Generates a scatter plot with regression for the specified axes, fitted and true values.
     
+    The function is intended to be used to generate multiple sets of figures for comparing multiple fit parameters. The
+    format of the values is ``values=[[first_param, second_param, ...], [first_param, second_param, ...], ..]``.
+
+    Args:
+        axes (list[matplotlib.axes]): The axes on which to generate the scatter plot.
+        fit_values (np.ndarray): The fitted values to plot.
+        true_values (np.ndarray): The true values to plot.
+        ax_titles (list[str]): Titles of the axes.
+        sca_kwargs (dict, optional): Additional keyword arguments for the scatter plot. Defaults to red dots.
+        reg_kwargs (dict, optional): Additional keyword arguments for the regression line. Defaults to a black, solid line.
+
+    Note:
+        Uses :func:`scipy.stats.linregress` for linear regression.
+    """
     if sca_kwargs is None:
         sca_kwargs = dict(s=10, marker='.', color='red')
     
@@ -41,6 +57,23 @@ def bland_atlman_figure(axes,
                         ax_titles: list[str],
                         sca_kwargs: dict = None,
                         bland_kwargs: dict = None):
+    r"""
+    Generates a Bland-Altman plot for the specified axes, fitted and true values.
+    
+    The function is intended to be used to generate multiple sets of figures for comparing multiple fit parameters. The
+    format of the values is ``values=[[first_param, second_param, ...], [first_param, second_param, ...], ..]``.
+
+    Args:
+        axes (list[matplotlib.axes]): The axes on which to generate the Bland-Altman plot.
+        fit_values (np.ndarray): The fitted values to plot.
+        true_values (np.ndarray): The true values to plot.
+        ax_titles (list[str]): Titles of the axes.
+        sca_kwargs (dict, optional): Additional keyword arguments for the scatter plot. Defaults to red dots.
+        bland_kwargs (dict, optional): Additional keyword arguments for Bland-Altman lines. Defaults to red lines.
+
+    Note:
+        Bland-Altman plot is a method of data plotting used in analyzing the agreement between two different assays.
+    """
     
     if sca_kwargs is None:
         sca_kwargs = dict(s=10, marker='.', color='red')
@@ -74,6 +107,24 @@ def ratio_bland_atlman_figure(axes,
                               ax_titles: list[str],
                               sca_kwargs: dict = None,
                               bland_kwargs: dict = None):
+    r"""
+    Generates a ratio Bland-Altman plot for the specified axes, fitted and true values.
+
+    The function is intended to be used to generate multiple sets of figures for comparing multiple fit parameters. The
+    format of the values is ``values=[[first_param, second_param, ...], [first_param, second_param, ...], ..]``.
+
+    Args:
+        axes (list[matplotlib.axes]): The axes on which to generate the ratio Bland-Altman plot.
+        fit_values (np.ndarray): The fitted values to plot.
+        true_values (np.ndarray): The true values to plot.
+        ax_titles (list[str]): Titles of the axes.
+        sca_kwargs (dict, optional): Additional keyword arguments for the scatter plot. Defaults to red dots.
+        bland_kwargs (dict, optional): Additional keyword arguments for ratio Bland-Altman lines. Defaults to a red.
+
+    Note:
+        A ratio Bland-Altman plot considers ratios, instead of differences, between the two methods; useful when
+        the difference between the measures depends on the size of the measurement.
+    """
     
     if sca_kwargs is None:
         sca_kwargs = dict(s=10, marker='.', color='red')
