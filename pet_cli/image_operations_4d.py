@@ -23,10 +23,12 @@ import os
 import re
 import tempfile
 from typing import Union
+import fsl.wrappers
 from scipy.interpolate import interp1d
 import ants
 import nibabel
 from nibabel import processing
+import fsl
 import numpy as np
 from . import image_io
 from . import math_lib
@@ -342,6 +344,7 @@ def warp_pet_atlas(input_image_path: str,
                    anat_image_path: str,
                    atlas_image_path: str,
                    out_image_path: str,
+                   verbose: bool,
                    type_of_transform: str='SyN',
                    **kwargs):
     """
@@ -354,9 +357,13 @@ def warp_pet_atlas(input_image_path: str,
         anat_image_path (str): Image used to compute registration to atlas space.
         atlas_image_path (str): Atlas to which input image is warped.
         out_image_path (str): Path to which warped image is saved.
-        type_of_transform (str): Type of non-linear transform applied to input image
-            using `ants.registration`.
-        kwargs (keyword arguments): Additional arguments passed to :py:func:`ants.registration`.
+        type_of_transform (str): Type of non-linear transform applied to input 
+            image using `ants.registration`.
+        kwargs (keyword arguments): Additional arguments passed to
+            :py:func:`ants.registration`.
+    
+    Returns:
+        xfm_to_apply (list[str]): The computed transforms, saved to a temp dir.
     """
     pet_image_ants = ants.image_read(input_image_path)
     anat_image_ants = ants.image_read(anat_image_path)
@@ -365,23 +372,92 @@ def warp_pet_atlas(input_image_path: str,
     anat_atlas_xfm = ants.registration(fixed=atlas_image_ants,
                                        moving=anat_image_ants,
                                        type_of_transform=type_of_transform,
-                                       write_composite_transform=True)
+                                       write_composite_transform=True,
+                                       **kwargs)
     xfm_to_apply = anat_atlas_xfm['fwdtransforms']
+    if verbose:
+        print(f'Xfms located at: {xfm_to_apply}')
 
     dim = pet_image_ants.dimension
-    print(dim)
     pet_atlas_xfm = ants.apply_transforms(fixed=atlas_image_ants,
                                           moving=pet_image_ants,
                                           transformlist=xfm_to_apply,
-                                          imagetype=dim-1,
-                                          verbose=True)
-    
+                                          imagetype=dim-1)
+
     ants.image_write(pet_atlas_xfm,out_image_path)
-    
+
     copy_meta_path = re.sub('.nii.gz|.nii', '.json', out_image_path)
     meta_data_dict = image_io.ImageIO.load_metadata_for_nifty_with_same_filename(input_image_path)
     image_io.write_dict_to_json(meta_data_dict=meta_data_dict, out_path=copy_meta_path)
 
+    return xfm_to_apply
+
+def apply_xfm_ants(input_image_path: str,
+                   ref_image_path: str,
+                   out_image_path: str,
+                   xfm_paths: list[str]):
+    """
+    Applies existing transforms in ANTs or ITK format to an input image, onto
+    a reference image. This is useful for applying the same transform on
+    different images to atlas space, for example.
+
+    Args:
+        input_image_path (str): Path to image on which transform is applied.
+        ref_image_path (str): Path to image to which transform is applied.
+        out_image_path (str): Path to which the transformed image is saved.
+        xfm_paths (list[str]): List of transforms to apply to image. Must be in
+            ANTs or ITK format, and can be affine matrix or warp coefficients.
+    """
+    pet_image_ants = ants.image_read(input_image_path)
+    ref_image_ants = ants.image_read(ref_image_path)
+
+    dim = pet_image_ants.dimension
+    xfm_image = ants.apply_transforms(fixed=ref_image_ants,
+                                      moving=pet_image_ants,
+                                      transformlist=xfm_paths,
+                                      imagetype=dim-1)
+
+    ants.image_write(xfm_image,out_image_path)
+
+    copy_meta_path = re.sub('.nii.gz|.nii', '.json', out_image_path)
+    meta_data_dict = image_io.ImageIO.load_metadata_for_nifty_with_same_filename(input_image_path)
+    image_io.write_dict_to_json(meta_data_dict=meta_data_dict, out_path=copy_meta_path)
+
+
+def apply_xfm_fsl(input_image_path: str,
+                  ref_image_path: str,
+                  out_image_path: str,
+                  warp_path: str=None,
+                  premat_path: str=None,
+                  postmat_path: str=None,
+                  **kwargs):
+    """
+    Applies existing transforms in FSL format to an input image, onto a
+    reference image. This is useful for applying the same transform on
+    different images to atlas space, for example.
+
+    Args:
+        input_image_path (str): Path to image on which transform is applied.
+        ref_image_path (str): Path to image to which transform is applied.
+        out_image_path (str): Path to which the transformed image is saved.
+        warp_path (str): Path to FSL warp file.
+        premat_path (str): Path to FSL `premat` matrix file.
+        postmat_path (str): Path to FSL `postmat` matrix file.
+        kwargs (keyword arguments): Additional arguments passed to
+            :py:func:`fsl.wrappers.applywarp`.
+    """
+
+    fsl.wrappers.applywarp(src=input_image_path,
+                           ref=ref_image_path,
+                           out=out_image_path,
+                           warp=warp_path,
+                           premat=premat_path,
+                           postmat=postmat_path,
+                           **kwargs)
+
+    copy_meta_path = re.sub('.nii.gz|.nii', '.json', out_image_path)
+    meta_data_dict = image_io.ImageIO.load_metadata_for_nifty_with_same_filename(input_image_path)
+    image_io.write_dict_to_json(meta_data_dict=meta_data_dict, out_path=copy_meta_path)
 
 
 def resample_segmentation(input_image_4d_path: str,
