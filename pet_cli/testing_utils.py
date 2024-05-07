@@ -6,6 +6,47 @@ from scipy.stats import linregress
 _TEXT_BOX_ = {'facecolor': 'lightblue', 'edgecolor': 'black', 'lw': 2.0, 'alpha': 0.2}
 
 
+def generate_random_parameter_samples(num_samples, num_params, hi, lo):
+    r"""
+    Generates an array of random parameter samples.
+
+    Args:
+        num_samples (int): The number of samples to generate.
+        num_params (int): The number of parameters per sample.
+        hi (float): The upper limit (exclusive) of the interval to draw random samples.
+        lo (float): The lower limit (inclusive) of the interval to draw random samples.
+
+    Returns:
+        np.ndarray: An array of random parameters samples with shape ``(num_samples, num_params)``.
+
+    Note:
+        Uses :func:`np.random.random` to generate random values in a given shape.
+    """
+    return np.random.random((num_samples, num_params)) * (hi - lo) + lo
+
+
+def add_gaussian_noise_to_tac_based_on_max(tac_vals: np.ndarray, scale: float = 0.05) -> np.ndarray:
+    r"""
+    Adds Gaussian noise to a Time Activity Curve (TAC) based on the maximum TAC value.
+
+    Args:
+        tac_vals (np.ndarray): The Time Activity Curve values to which noise will be added.
+        scale (float, optional): Scale of the noise to create. Defaults to 0.05.
+
+    Returns:
+        np.ndarray: Time Activity Curve with added Gaussian noise.
+
+    Note:
+        Uses :func:`np.random.normal` to generate random Gaussian noise.
+        
+    """
+    noise = np.random.normal(loc=0.0, scale=np.max(tac_vals) * scale, size=tac_vals.shape)
+    tac_out = tac_vals + noise
+    tac_out[tac_out < 0] = 0.0
+    tac_out[0] = 0.0
+    return tac_out
+
+
 def scatter_with_regression_figure(axes,
                                    fit_values: np.ndarray,
                                    true_values: np.ndarray,
