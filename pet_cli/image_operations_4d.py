@@ -606,35 +606,33 @@ class ImageOps4d():
 
     Example:
 
-    `
     .. code-block:: python
-    output_directory = '/path/to/processing'
-    output_filename_prefix = 'sub-01'
-    sub_01 = pet_cli.image_operations_4d.ImageOps4d(output_directory,output_filename_prefix)
-    params = {
-        'FilePathPET': '/path/to/pet.nii.gz',
-        'FilePathAnat': '/path/to/mri.nii.gz',
-        'HalfLife': 1220.04,  # C11 half-life in seconds
-        'FilePathRegInp': '/path/to/image/to/be/registered.nii.gz',
-        'FilePathMocoInp': '/path/to/image/to/be/motion/corrected.nii.gz',
-        'MotionTarget': '/path/to/pet/reference/target.nii.gz',
-        'FilePathTACInput': '/path/to/registered/pet.nii.gz',
-        'FilePathLabelMap': '/path/to/label/map.tsv',
-        'FilePathSeg': '/path/to/segmentation.nii.gz',
-        'TimeFrameKeyword': 'FrameTimesStart'  # using start time or midpoint reference time
-        'Verbose': True,
-    }
-    sub_01.update_props(params)
-    sub_01.run_preproc('weighted_series_sum')
-    sub_01.run_preproc('motion_correction')
-    sub_01.run_preproc('register_pet')
-    sub_01.run_preproc('write_tacs')
-    
-    `
-    
+        output_directory = '/path/to/processing'
+        output_filename_prefix = 'sub-01'
+        sub_01 = pet_cli.image_operations_4d.ImageOps4d(output_directory,output_filename_prefix)
+        params = {
+            'FilePathPET': '/path/to/pet.nii.gz',
+            'FilePathAnat': '/path/to/mri.nii.gz',
+            'HalfLife': 1220.04,  # C11 half-life in seconds
+            'FilePathRegInp': '/path/to/image/to/be/registered.nii.gz',
+            'FilePathMocoInp': '/path/to/image/to/be/motion/corrected.nii.gz',
+            'MotionTarget': '/path/to/pet/reference/target.nii.gz',
+            'FilePathTACInput': '/path/to/registered/pet.nii.gz',
+            'FilePathLabelMap': '/path/to/label/map.tsv',
+            'FilePathSeg': '/path/to/segmentation.nii.gz',
+            'TimeFrameKeyword': 'FrameTimesStart'  # using start time or midpoint reference time
+            'Verbose': True,
+        }
+        sub_01.update_props(params)
+        sub_01.run_preproc('weighted_series_sum')
+        sub_01.run_preproc('motion_correction')
+        sub_01.run_preproc('register_pet')
+        sub_01.run_preproc('write_tacs')
+
+
     See Also:
         :class:`ImageIO`
-    
+
     """
     def __init__(self,
                  output_directory: str,
@@ -756,7 +754,7 @@ class ImageOps4d():
                                  "processing properties. Existing properties "
                                  f"are: {existing_keys}, while needed keys to "
                                  f"run {method_name} are: {required_keys}.")
-    
+
 
     def run_preproc(self,
                     method_name: str):
