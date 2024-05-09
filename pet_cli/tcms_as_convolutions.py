@@ -18,6 +18,7 @@ import numba
 import numpy as np
 from scipy.optimize import curve_fit as sp_fit
 
+
 def calc_convolution_with_check(f: np.ndarray, g: np.ndarray, dt: float) -> np.ndarray:
     r"""Performs a discrete convolution of two arrays, assumed to represent time-series data. Checks if the arrays are
     of the same shape.
@@ -63,7 +64,9 @@ def response_function_1tcm_c1(t: np.ndarray, k1: float, k2: float) -> np.ndarray
 
 @numba.njit()
 def response_function_2tcm_with_k4zero_c1(t: np.ndarray, k1: float, k2: float, k3: float) -> np.ndarray:
-    r"""The response function for first compartment in the serial 2TCM with :math:`k_{4}=0`; :math:`f(t)=k_{1}e^{-(k_{2} + k_{3})t}`.
+    r"""
+    The response function for first compartment in the serial 2TCM with
+    :math:`k_{4}=0`; :math:`f(t)=k_{1}e^{-(k_{2} + k_{3})t}`.
     
     Args:
         t (np.ndarray): Array containing time-points where :math:`t\geq0`.
@@ -83,7 +86,8 @@ def response_function_2tcm_with_k4zero_c1(t: np.ndarray, k1: float, k2: float, k
 
 @numba.njit()
 def response_function_2tcm_with_k4zero_c2(t: np.ndarray, k1: float, k2: float, k3: float) -> np.ndarray:
-    r"""The response function for second compartment in the serial 2TCM with :math:`k_{4}=0`; :math:`f(t)=\frac{k_{1}k_{3}}{k_{2}+k_{3}}(1-e^{-(k_{2} + k_{3})t})`.
+    r"""The response function for second compartment in the serial 2TCM with :math:`k_{4}=0`;
+    :math:`f(t)=\frac{k_{1}k_{3}}{k_{2}+k_{3}}(1-e^{-(k_{2} + k_{3})t})`.
 
     Args:
         t (np.ndarray): Array containing time-points where :math:`t\geq0`.
@@ -236,7 +240,9 @@ def generate_tac_2tcm_with_k4zero_c2_from_tac(tac_times: np.ndarray,
                                               k1: float,
                                               k2: float,
                                               k3: float) -> np.ndarray:
-    """Calculate the TTAC of the second comparment, given the input TAC, for a 2TCM (with :math:`k_{4}=0`) as an explicit convolution.
+    r"""
+    Calculate the TTAC of the second comparment, given the input TAC, for a 2TCM (with :math:`k_{4}=0`) as an
+    explicit convolution.
     
     Args:
         tac_times (np.ndarray): Array containing time-points where :math:`t\geq0` and equal time-steps.
@@ -249,7 +255,8 @@ def generate_tac_2tcm_with_k4zero_c2_from_tac(tac_times: np.ndarray,
         ((np.ndarray, np.ndarray)): Arrays containing the times and TTAC given the input TAC and parameters.
         
     See Also:
-        :func:`response_function_2tcm_with_k4zero_c2` for more details about the 2TCM response function, of the second compartment, used for the convolution.
+        :func:`response_function_2tcm_with_k4zero_c2` for more details about the 2TCM response function, of the second
+        compartment, used for the convolution.
         
     """
     _resp_vals = response_function_2tcm_with_k4zero_c2(t=tac_times, k1=k1, k2=k2, k3=k3)
@@ -263,7 +270,9 @@ def generate_tac_2tcm_with_k4zero_cpet_from_tac(tac_times: np.ndarray,
                                                 k1: float,
                                                 k2: float,
                                                 k3: float) -> np.ndarray:
-    """Calculate the PET-TTAC (sum of both compartments), given the input TAC, for a 2TCM (with :math:`k_{4}=0`) as an explicit convolution.
+    r"""
+    Calculate the PET-TTAC (sum of both compartments), given the input TAC, for a 2TCM (with :math:`k_{4}=0`) as an
+    explicit convolution.
     
     Args:
         tac_times (np.ndarray): Array containing time-points where :math:`t\geq0` and equal time-steps.
@@ -276,8 +285,10 @@ def generate_tac_2tcm_with_k4zero_cpet_from_tac(tac_times: np.ndarray,
         ((np.ndarray, np.ndarray)): Arrays containing the times and TTAC given the input TAC and parameters.
         
     See Also:
-        * :func:`response_function_2tcm_with_k4zero_c1` for more details about the 2TCM response function, of the first compartment, used for the convolution.
-        * :func:`response_function_2tcm_with_k4zero_c2` for more details about the 2TCM response function, of the second compartment, used for the convolution.
+        * :func:`response_function_2tcm_with_k4zero_c1` for more details about the 2TCM response function, of the first
+            compartment, used for the convolution.
+        * :func:`response_function_2tcm_with_k4zero_c2` for more details about the 2TCM response function, of the second
+            compartment, used for the convolution.
         
     """
     _resp_vals = response_function_2tcm_with_k4zero_c1(t=tac_times, k1=k1, k2=k2, k3=k3)
@@ -293,7 +304,7 @@ def generate_tac_serial_2tcm_c1_from_tac(tac_times: np.ndarray,
                                          k2: float,
                                          k3: float,
                                          k4: float) -> np.ndarray:
-    """
+    r"""
     Calculate the TTAC of the first comparment, given the input TAC, for a serial 2TCM as an explicit convolution.
     
     Args:
@@ -308,8 +319,10 @@ def generate_tac_serial_2tcm_c1_from_tac(tac_times: np.ndarray,
         ((np.ndarray, np.ndarray)): Arrays containing the times and TTAC given the input TAC and parameters.
         
     See Also:
-        * :func:`response_function_serial_2tcm_c1` for more details about the 2TCM response function, of the first compartment, used for the convolution.
-        * :func:`response_function_2tcm_with_k4zero_c1` for more details about the 2TCM response function (with :math:`k_{4}=0`), of the first compartment, used for the convolution.
+        * :func:`response_function_serial_2tcm_c1` for more details about the 2TCM response function, of the first
+            compartment, used for the convolution.
+        * :func:`response_function_2tcm_with_k4zero_c1` for more details about the 2TCM response function
+            (with :math:`k_{4}=0`), of the first compartment, used for the convolution.
         
     """
     _resp_vals = response_function_serial_2tcm_c1(t=tac_times, k1=k1, k2=k2, k3=k3, k4=k4)
@@ -324,7 +337,7 @@ def generate_tac_serial_2tcm_c2_from_tac(tac_times: np.ndarray,
                                          k2: float,
                                          k3: float,
                                          k4: float) -> np.ndarray:
-    """
+    r"""
     Calculate the TTAC of the second comparment, given the input TAC, for a serial 2TCM as an explicit convolution.
 
     Args:
@@ -339,8 +352,10 @@ def generate_tac_serial_2tcm_c2_from_tac(tac_times: np.ndarray,
         ((np.ndarray, np.ndarray)): Arrays containing the times and TTAC given the input TAC and parameters.
 
     See Also:
-        * :func:`response_function_serial_2tcm_c2` for more details about the 2TCM response function, of the second compartment, used for the convolution.
-        * :func:`response_function_2tcm_with_k4zero_c2` for more details about the 2TCM response function (with :math:`k_{4}=0`), of the second compartment, used for the convolution.
+        * :func:`response_function_serial_2tcm_c2` for more details about the 2TCM response function, of the second
+            compartment, used for the convolution.
+        * :func:`response_function_2tcm_with_k4zero_c2` for more details about the 2TCM response function
+            (with :math:`k_{4}=0`), of the second compartment, used for the convolution.
         
     """
     _resp_vals = response_function_serial_2tcm_c2(t=tac_times, k1=k1, k2=k2, k3=k3, k4=k4)
@@ -355,8 +370,9 @@ def generate_tac_serial_2tcm_cpet_from_tac(tac_times: np.ndarray,
                                            k2: float,
                                            k3: float,
                                            k4: float) -> np.ndarray:
-    """
-    Calculate the PET-TTAC (sum of both compartments), given the input TAC, for a serial 2TCM as an explicit convolution.
+    r"""
+    Calculate the PET-TTAC (sum of both compartments), given the input TAC, for a serial 2TCM as an explicit
+    convolution.
 
     Args:
         tac_times (np.ndarray): Array containing time-points where :math:`t\geq0` and equal time-steps.
@@ -421,8 +437,10 @@ def fit_tac_to_1tcm(tgt_tac_vals: np.ndarray,
     def _fitting_tac(tac_times: np.ndarray, k1: float, k2: float):
         tac = generate_tac_1tcm_c1_from_tac(tac_times=tac_times, tac_vals=input_tac_vals, k1=k1, k2=k2)[1]
         return tac
-    p_opt, p_cov = sp_fit(f=_fitting_tac, xdata=input_tac_times, ydata=tgt_tac_vals, p0=(k1_guess, k2_guess))
-    return p_opt, p_cov
+    
+    fit_parameters, fit_params_covariance = sp_fit(f=_fitting_tac, xdata=input_tac_times, ydata=tgt_tac_vals,
+                                                   p0=(k1_guess, k2_guess))
+    return fit_parameters, fit_params_covariance
 
 
 def fit_tac_to_1tcm_with_bounds(tgt_tac_vals: np.ndarray,
@@ -464,17 +482,17 @@ def fit_tac_to_1tcm_with_bounds(tgt_tac_vals: np.ndarray,
     lo_vals = (k1_bounds[1], k2_bounds[1])
     hi_vals = (k1_bounds[2], k2_bounds[2])
     
-    p_opt, p_cov = sp_fit(f=_fitting_tac, xdata=input_tac_times, ydata=tgt_tac_vals,
-                          p0=st_vals, bounds=(lo_vals, hi_vals))
-    return p_opt, p_cov
+    fit_parameters, fit_params_covariance = sp_fit(f=_fitting_tac, xdata=input_tac_times, ydata=tgt_tac_vals,
+                                                   p0=st_vals, bounds=(lo_vals, hi_vals))
+    return fit_parameters, fit_params_covariance
 
 
 def fit_tac_to_irreversible_2tcm(tgt_tac_vals: np.ndarray,
                                  input_tac_times: np.ndarray,
                                  input_tac_vals: np.ndarray,
-                                 k1_guess: float,
-                                 k2_guess: float,
-                                 k3_guess: float):
+                                 k1_guess: float = 0.5,
+                                 k2_guess: float = 0.5,
+                                 k3_guess: float = 0.5):
     r"""
     Fits a target Time Activity Curve (TAC) to the irreversible two tissue compartment model (2TCM), given the input TAC
     values, times, and starting guesses for the kinetic parameters k1, k2 and k3.
@@ -507,8 +525,9 @@ def fit_tac_to_irreversible_2tcm(tgt_tac_vals: np.ndarray,
         tac = _tac_gen(tac_times=tac_times, tac_vals=input_tac_vals, k1=k1, k2=k2, k3=k3)[1]
         return tac
     
-    p_opt, p_cov = sp_fit(f=_fitting_tac, xdata=input_tac_times, ydata=tgt_tac_vals, p0=(k1_guess, k2_guess, k3_guess))
-    return p_opt, p_cov
+    fit_parameters, fit_params_covariance = sp_fit(f=_fitting_tac, xdata=input_tac_times, ydata=tgt_tac_vals,
+                                                   p0=(k1_guess, k2_guess, k3_guess))
+    return fit_parameters, fit_params_covariance
 
 
 def fit_tac_to_irreversible_2tcm_with_bounds(tgt_tac_vals: np.ndarray,
@@ -553,18 +572,18 @@ def fit_tac_to_irreversible_2tcm_with_bounds(tgt_tac_vals: np.ndarray,
     lo_vals = (k1_bounds[1], k2_bounds[1], k3_bounds[1])
     hi_vals = (k1_bounds[2], k2_bounds[2], k3_bounds[2])
     
-    p_opt, p_cov = sp_fit(f=_fitting_tac, xdata=input_tac_times, ydata=tgt_tac_vals,
-                          p0=st_vals, bounds=(lo_vals, hi_vals))
-    return p_opt, p_cov
+    fit_parameters, fit_params_covariance = sp_fit(f=_fitting_tac, xdata=input_tac_times, ydata=tgt_tac_vals,
+                                                   p0=st_vals, bounds=(lo_vals, hi_vals))
+    return fit_parameters, fit_params_covariance
 
 
 def fit_tac_to_serial_2tcm(tgt_tac_vals: np.ndarray,
                            input_tac_times: np.ndarray,
                            input_tac_vals: np.ndarray,
-                           k1_guess: float,
-                           k2_guess: float,
-                           k3_guess: float,
-                           k4_guess: float):
+                           k1_guess: float = 0.5,
+                           k2_guess: float = 0.5,
+                           k3_guess: float = 0.5,
+                           k4_guess: float = 0.5):
     r"""
     Fits a target Time Activity Curve (TAC) to the serial two tissue compartment model (2TCM), given the input TAC
     values, times, and starting guesses for the kinetic parameters k1, k2 and k3.
@@ -599,9 +618,9 @@ def fit_tac_to_serial_2tcm(tgt_tac_vals: np.ndarray,
         tac = _tac_gen(tac_times=tac_times, tac_vals=input_tac_vals, k1=k1, k2=k2, k3=k3, k4=k4)[1]
         return tac
     
-    p_opt, p_cov = sp_fit(f=_fitting_tac, xdata=input_tac_times, ydata=tgt_tac_vals,
-                          p0=(k1_guess, k2_guess, k3_guess, k4_guess))
-    return p_opt, p_cov
+    fit_parameters, fit_params_covariance = sp_fit(f=_fitting_tac, xdata=input_tac_times, ydata=tgt_tac_vals,
+                                                   p0=(k1_guess, k2_guess, k3_guess, k4_guess))
+    return fit_parameters, fit_params_covariance
 
 
 def fit_tac_to_serial_2tcm_with_bounds(tgt_tac_vals: np.ndarray,
@@ -648,6 +667,6 @@ def fit_tac_to_serial_2tcm_with_bounds(tgt_tac_vals: np.ndarray,
     lo_vals = (k1_bounds[1], k2_bounds[1], k3_bounds[1], k4_bounds[1])
     hi_vals = (k1_bounds[2], k2_bounds[2], k3_bounds[2], k4_bounds[2])
     
-    p_opt, p_cov = sp_fit(f=_fitting_tac, xdata=input_tac_times, ydata=tgt_tac_vals,
-                          p0=st_vals, bounds=(lo_vals, hi_vals))
-    return p_opt, p_cov
+    fit_parameters, fit_params_covariance = sp_fit(f=_fitting_tac, xdata=input_tac_times, ydata=tgt_tac_vals,
+                                                   p0=st_vals, bounds=(lo_vals, hi_vals))
+    return fit_parameters, fit_params_covariance
