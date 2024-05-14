@@ -25,10 +25,10 @@ import tempfile
 from typing import Union
 import fsl.wrappers
 from scipy.interpolate import interp1d
+from scipy.ndimage import gaussian_filter
 import ants
 import nibabel
 from nibabel import processing
-import fsl
 import numpy as np
 from . import image_io
 from . import math_lib
@@ -53,7 +53,7 @@ def weighted_series_sum(input_image_4d_path: str,
 
     Where :math:`f_i,t_i,d_i` are the i-th frame, frame duration, and decay correction factor of
     the PET series. This scaled image is summed over the time axis. Then, to get the output, we
-    multiply by a factor called `total decay` and divide by the full length of the image:
+    multiply by a factor called ``total decay`` and divide by the full length of the image:
 
     .. math::
 
@@ -77,19 +77,19 @@ def weighted_series_sum(input_image_4d_path: str,
         out_image_path (str): Path to a .nii or .nii.gz file to which the weighted
             sum is written.
         half_life (float): Half life of the PET radioisotope in seconds.
-        verbose (bool): Set to `True` to output processing information.
+        verbose (bool): Set to ``True`` to output processing information.
         start_time (float): Time, relative to scan start in seconds, at which
-            calculation begins. Must be used with `end_time`. Default value 0.
+            calculation begins. Must be used with ``end_time``. Default value 0.
         end_time (float): Time, relative to scan start in seconds, at which
-            calculation ends. Use value `-1` to use all frames in image series.
-            If equal to `start_time`, one frame at start_time is used. Default value -1.
+            calculation ends. Use value ``-1`` to use all frames in image series.
+            If equal to ``start_time`, one frame at start_time is used. Default value -1.
 
     Returns:
         summed_image (np.ndarray): 3D image array, in the same space as the input,
             with the weighted sum calculation applied.
 
     Raises:
-        ValueError: If `half_life` is zero or negative.
+        ValueError: If ``half_life`` is zero or negative.
     """
     if half_life <= 0:
         raise ValueError('(ImageOps4d): Radioisotope half life is zero or negative.')
@@ -152,14 +152,14 @@ def determine_motion_target(motion_target_option: Union[str,tuple],
                             input_image_4d_path: str=None,
                             half_life: float=None):
     """
-    Produce a motion target given the `motion_target_option` from a method
+    Produce a motion target given the ``motion_target_option`` from a method
     running registrations on PET, i.e. :meth:`motion_correction` or
     :meth:`register_pet`.
 
     The motion target option can be a string or a tuple. If it is a string,
     then if this string is a file, use the file as the motion target.
 
-    If it is the option `weighted_series_sum`, then run
+    If it is the option ``weighted_series_sum``, then run
     :meth:`weighted_series_sum` and return the output path.
 
     If it is a tuple, run a weighted sum on the PET series on a range of 
@@ -176,7 +176,7 @@ def determine_motion_target(motion_target_option: Union[str,tuple],
             be supplied by the parent method employing this function. Default
             value None.
         half_life (float): Half life of the radiotracer used in the image
-            located at `input_image_4d_path`. Only used if a calculation is
+            located at ``input_image_4d_path``. Only used if a calculation is
             performed.
     
     Returns:
@@ -237,7 +237,7 @@ def motion_correction(input_image_4d_path: str,
             data.
         out_image_path (str): Path to a .nii or .nii.gz file to which the
             motion corrected PET series is written.
-        verbose (bool): Set to `True` to output processing information.
+        verbose (bool): Set to ``True`` to output processing information.
         type_of_transform (str): Type of transform to perform on the PET image,
             must be one of antspy's transformation types, i.e. 'DenseRigid' or
             'Translation'. Any transformation type that uses >6 degrees of
@@ -245,7 +245,7 @@ def motion_correction(input_image_4d_path: str,
             :py:func:`ants.registration`.
         half_life (float): Half life of the PET radioisotope in seconds.
         kwargs (keyword arguments): Additional arguments passed to
-            `ants.motion_correction`.
+            :py:func:`ants.motion_correction`.
 
     Returns:
         pet_moco_np (np.ndarray): Motion corrected PET image series as a numpy
@@ -312,7 +312,7 @@ def register_pet(input_reg_image_path: str,
             >6 degrees of freedom is not recommended, use with caution. See :py:func:`ants.registration`.
         out_image_path (str): Path to a .nii or .nii.gz file to which the registered PET series
             is written.
-        verbose (bool): Set to `True` to output processing information.
+        verbose (bool): Set to ``True`` to output processing information.
         kwargs (keyword arguments): Additional arguments passed to :py:func:`ants.registration`.
     """
     motion_target = determine_motion_target(motion_target_option=motion_target_option,
@@ -364,7 +364,7 @@ def warp_pet_atlas(input_image_path: str,
         atlas_image_path (str): Atlas to which input image is warped.
         out_image_path (str): Path to which warped image is saved.
         type_of_transform (str): Type of non-linear transform applied to input 
-            image using `ants.registration`.
+            image using :py:func:`ants.registration`.
         kwargs (keyword arguments): Additional arguments passed to
             :py:func:`ants.registration`.
     
@@ -443,16 +443,16 @@ def apply_xfm_fsl(input_image_path: str,
     different images to atlas space, for example.
 
     .. important::
-        Requires installation of `FSL`, and environment variables `FSLDIR` and
-        `FSLOUTPUTTYPE` set appropriately in the shell.
+        Requires installation of ``FSL``, and environment variables ``FSLDIR`` and
+        ``FSLOUTPUTTYPE`` set appropriately in the shell.
 
     Args:
         input_image_path (str): Path to image on which transform is applied.
         ref_image_path (str): Path to image to which transform is applied.
         out_image_path (str): Path to which the transformed image is saved.
         warp_path (str): Path to FSL warp file.
-        premat_path (str): Path to FSL `premat` matrix file.
-        postmat_path (str): Path to FSL `postmat` matrix file.
+        premat_path (str): Path to FSL ``premat`` matrix file.
+        postmat_path (str): Path to FSL ``postmat`` matrix file.
         kwargs (keyword arguments): Additional arguments passed to
             :py:func:`fsl.wrappers.applywarp`.
     """
@@ -477,7 +477,7 @@ def resample_segmentation(input_image_4d_path: str,
     """
     Resamples a segmentation image to the resolution of a 4D PET series image. Takes the affine 
     information stored in the PET image, and the shape of the image frame data, as well as the 
-    segmentation image, and applies NiBabel's `resample_from_to` to resample the segmentation to
+    segmentation image, and applies NiBabel's ``resample_from_to`` to resample the segmentation to
     the resolution of the PET image. This is used for extracting TACs from PET imaging where the 
     PET and ROI data are registered to the same space, but have different resolutions.
 
@@ -488,7 +488,7 @@ def resample_segmentation(input_image_4d_path: str,
             image, where integer indices label specific regions.
         out_seg_path (str): Path to a .nii or .nii.gz file to which the resampled segmentation
             image is written.
-        verbose (bool): Set to `True` to output processing information.
+        verbose (bool): Set to ``True`` to output processing information.
     """
     pet_image = nibabel.load(input_image_4d_path)
     seg_image = nibabel.load(segmentation_image_path)
@@ -521,7 +521,7 @@ def extract_tac_from_4dnifty_using_mask(input_image_4d_path: str,
             input.
         region (int): Value in the segmentation image corresponding to a region
             over which the TAC is computed.
-        verbose (bool): Set to `True` to output processing information.
+        verbose (bool): Set to ``True`` to output processing information.
 
     Returns:
         tac_out (np.ndarray): Mean of PET image within regions for each frame in 4D PET series.
@@ -532,7 +532,10 @@ def extract_tac_from_4dnifty_using_mask(input_image_4d_path: str,
     """
 
     pet_image_4d = nibabel.load(input_image_4d_path).get_fdata()
-    num_frames = pet_image_4d.shape[3]
+    if len(pet_image_4d.shape)==4:
+        num_frames = pet_image_4d.shape[3]
+    else:
+        num_frames = 1
     seg_image = nibabel.load(segmentation_image_path).get_fdata()
 
     if seg_image.shape!=pet_image_4d.shape[:3]:
@@ -549,6 +552,86 @@ def extract_tac_from_4dnifty_using_mask(input_image_4d_path: str,
     tac_out = np.mean(masked_image, axis=0)
     return tac_out
 
+
+def suvr(input_image_path: str,
+         segmentation_image_path: str,
+         ref_region: int,
+         out_image_path: str,
+         verbose: bool):
+    """
+    Computes an ``SUVR`` (Standard Uptake Value Ratio) by taking the average of
+    an input image within a reference region, and dividing the input image by
+    said average value.
+
+    Args:
+        input_image_path (str): Path to 3D weighted series sum or other
+            parametric image on which we compute SUVR.
+        segmentation_image_path (str): Path to segmentation image, which we use
+            to compute average uptake value in the reference region.
+        ref_region (int): Region number mapping to the reference region in the
+            segmentation image.
+        out_image_path (str): Path to output image file which is written to.
+        verbose (bool): Set to ``True`` to output processing information.
+    """
+    ref_region_avg = extract_tac_from_4dnifty_using_mask(input_image_4d_path=input_image_path,
+                                                         segmentation_image_path=segmentation_image_path,
+                                                         region=ref_region,
+                                                         verbose=verbose)
+
+    pet_nibabel = nibabel.load(filename=input_image_path)
+    pet_image = pet_nibabel.get_fdata()
+    suvr_image = pet_image / ref_region_avg,
+
+    out_image = nibabel.nifti1.Nifti1Image(dataobj=suvr_image,
+                                           affine=pet_nibabel.affine,
+                                           header=pet_nibabel.header)
+    nibabel.save(img=out_image,filename=out_image_path)
+
+    copy_meta_path = re.sub('.nii.gz|.nii', '.json', out_image_path)
+    meta_data_dict = image_io.ImageIO.load_metadata_for_nifty_with_same_filename(input_image_path)
+    image_io.write_dict_to_json(meta_data_dict=meta_data_dict, out_path=copy_meta_path)
+
+    return out_image
+
+
+def gauss_blur(input_image_path: str,
+               blur_size_mm: float,
+               out_image_path: str,
+               verbose: bool):
+    """
+    Blur an image with a 3D Gaussian kernal of a provided size in mm.
+
+    Args:
+        input_image_path (str): Path to 3D or 4D input image to be blurred.
+        blur_size_mm (float): Size of the Gaussian kernal in mm.
+        out_image_path (str): Path to save the blurred output image.
+        verbose (bool): Set to ``True`` to output processing information.
+
+    Returns:
+        out_image (nibabel.nifti1.Nifti1Image): Blurred image in nibabel format.
+    """
+    input_nibabel = nibabel.load(filename=input_image_path)
+    input_image = input_nibabel.get_fdata()
+    input_zooms = input_nibabel.header.get_zooms()
+
+    sigma_x = blur_size_mm / input_zooms[0]
+    sigma_y = blur_size_mm / input_zooms[1]
+    sigma_z = blur_size_mm / input_zooms[2]
+
+    blur_image = gaussian_filter(input=input_image,
+                                 sigma=(sigma_x,sigma_y,sigma_z),
+                                 axes=(0,1,2))
+
+    out_image = nibabel.nifti1.Nifti1Image(dataobj=blur_image,
+                                           affine=input_nibabel.affine,
+                                           header=input_nibabel.header)
+    nibabel.save(img=out_image,filename=out_image_path)
+
+    copy_meta_path = re.sub('.nii.gz|.nii', '.json', out_image_path)
+    meta_data_dict = image_io.ImageIO.load_metadata_for_nifty_with_same_filename(input_image_path)
+    image_io.write_dict_to_json(meta_data_dict=meta_data_dict, out_path=copy_meta_path)
+
+    return out_image
 
 def write_tacs(input_image_4d_path: str,
                label_map_path: str,
@@ -568,34 +651,35 @@ def write_tacs(input_image_4d_path: str,
                          "'FrameReferenceTime' or 'FrameTimesStart'")
 
     pet_meta = image_io.ImageIO.load_metadata_for_nifty_with_same_filename(input_image_4d_path)
-    label_map = image_io.ImageIO.read_label_map_json(label_map_file=label_map_path)
-    regions_list = label_map['data']
+    label_map = image_io.ImageIO.read_label_map_tsv(label_map_file=label_map_path)
+    regions_abrev = label_map['abbreviations']
+    regions_map = label_map['mappings']
 
     tac_extraction_func = extract_tac_from_4dnifty_using_mask
 
-    for region_index, region_name in regions_list:
+    for i, _maps in enumerate(label_map['mappings']):
         extracted_tac = tac_extraction_func(input_image_4d_path=input_image_4d_path,
                                             segmentation_image_path=segmentation_image_path,
-                                            region=int(region_index),
+                                            region=int(regions_map[i]),
                                             verbose=verbose)
         region_tac_file = np.array([pet_meta[time_frame_keyword],extracted_tac]).T
-        header_text = f'{time_frame_keyword}\t{region_name}_mean_activity'
-        out_tac_path = os.path.join(out_tac_dir, f'tac-{region_name}.tsv')
+        header_text = f'{time_frame_keyword}\t{regions_abrev[i]}_mean_activity'
+        out_tac_path = os.path.join(out_tac_dir, f'tac-{regions_abrev[i]}.tsv')
         np.savetxt(out_tac_path,region_tac_file,delimiter='\t',header=header_text,comments='')
 
 
 class ImageOps4d():
     """
     :class:`ImageOps4D` to provide basic implementations of the preprocessing functions in module
-    `image_operations_4d`. Uses a properties dictionary `preproc_props` to
+    ``image_operations_4d``. Uses a properties dictionary ``preproc_props`` to
     determine the inputs and outputs of preprocessing methods.
 
     Key methods include:
-        - :meth:`update_props`: Update properties dictionary `preproc_props`
+        - :meth:`update_props`: Update properties dictionary ``preproc_props``
           with new properties.
-        - :meth:`run_preproc`: Given a method in `image_operations_4d`, run the
+        - :meth:`run_preproc`: Given a method in ``image_operations_4d``, run the
           provided method with inputs and outputs determined by properties
-          dictionary `preproc_props`.
+          dictionary ``preproc_props``.
 
     Attributes:
         -`output_directory`: Directory in which files are written to.
@@ -637,9 +721,6 @@ class ImageOps4d():
     def __init__(self,
                  output_directory: str,
                  output_filename_prefix: str) -> None:
-        """
-        Init
-        """
         self.output_directory = os.path.abspath(output_directory)
         self.output_filename_prefix = output_filename_prefix
         self.preproc_props = self._init_preproc_props()
@@ -655,7 +736,7 @@ class ImageOps4d():
             * FilePathPET (str): Path to PET file to be analysed.
             * FilePathMocoInp (str): Path to PET file to be motion corrected.
             * FilePathRegInp (str): Path to PET file to be registered to anatomical data.
-            * FilePathAnat (str): Path to anatomical image to which `FilePathRegInp` is registered.
+            * FilePathAnat (str): Path to anatomical image to which ``FilePathRegInp`` is registered.
             * FilePathTACInput (str): Path to PET file with which TACs are computed.
             * FilePathSeg (str): Path to a segmentation image in anatomical space.
             * FilePathLabelMap (str): Path to a label map file, indexing segmentation values to ROIs.
@@ -665,7 +746,7 @@ class ImageOps4d():
             * HalfLife (float): Half life of radioisotope.
             * RegionExtract (int): Region index in the segmentation image to extract TAC from, if running TAC on a single ROI.
             * TimeFrameKeyword (str): Keyword in metadata file corresponding to frame timing array to be used in analysis.
-            * Verbose (bool): Set to `True` to output processing information.
+            * Verbose (bool): Set to ``True`` to output processing information.
 
         """
         preproc_props = {'FilePathPET': None,
@@ -695,7 +776,7 @@ class ImageOps4d():
                 list of fields.
 
         Returns:
-            updated_props (dict): The updated `preproc_props` dictionary.
+            updated_props (dict): The updated ``preproc_props`` dictionary.
 
 
         """
@@ -719,7 +800,7 @@ class ImageOps4d():
     def _check_method_props_exist(self,
                                  method_name: str) -> None:
         """
-        Check if all necessary properties exist in the `props` dictionary to
+        Check if all necessary properties exist in the ``props`` dictionary to
         run the given method.
 
         Args:
