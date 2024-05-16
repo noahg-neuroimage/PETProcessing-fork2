@@ -1,5 +1,8 @@
 """
-
+Provides methods to motion correct 4D PET data. Includes method
+:meth:`determine_motion_target`, which produces a flexible target based on the
+4D input data to optimize contrast when computing motion correction or
+registration.
 """
 import os
 import re

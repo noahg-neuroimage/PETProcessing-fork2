@@ -1,5 +1,6 @@
 """
-
+Provides tools to register PET images to anatomical or atlas space. Wrapper for
+ANTs and FSL registration software.
 """
 import re
 from typing import Union

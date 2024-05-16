@@ -1,5 +1,7 @@
 """
-
+Introduces class :class:`PreProc` which handles preprocessing of PET and other
+neuroimaging data for a PET study. Acts as a wrapper for other tools supplied
+in `PPM` 
 """
 import os
 from . import qc_plots
@@ -8,7 +10,7 @@ from register import register_pet
 from motion_corr import motion_correction
 
 
-class ImageOps4d():
+class PreProc():
     """
     :class:`ImageOps4D` to provide basic implementations of the preprocessing functions in module
     ``image_operations_4d``. Uses a properties dictionary ``preproc_props`` to
