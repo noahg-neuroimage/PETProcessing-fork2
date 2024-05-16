@@ -171,7 +171,7 @@ def resample_segmentation(input_image_4d_path: str,
         print(f'Resampled segmentation saved to {out_seg_path}')
 
 
-def extract_tac_from_4dnifty_using_mask(input_image_4d_path: str,
+def extract_tac_from_nifty_using_mask(input_image_4d_path: str,
                                         segmentation_image_path: str,
                                         region: int,
                                         verbose: bool) -> np.ndarray:
@@ -242,7 +242,7 @@ def suvr(input_image_path: str,
         out_image_path (str): Path to output image file which is written to.
         verbose (bool): Set to ``True`` to output processing information.
     """
-    ref_region_avg = extract_tac_from_4dnifty_using_mask(input_image_4d_path=input_image_path,
+    ref_region_avg = extract_tac_from_nifty_using_mask(input_image_4d_path=input_image_path,
                                                          segmentation_image_path=segmentation_image_path,
                                                          region=ref_region,
                                                          verbose=verbose)
@@ -324,7 +324,7 @@ def write_tacs(input_image_4d_path: str,
     regions_abrev = label_map['abbreviations']
     regions_map = label_map['mappings']
 
-    tac_extraction_func = extract_tac_from_4dnifty_using_mask
+    tac_extraction_func = extract_tac_from_nifty_using_mask
 
     for i, _maps in enumerate(label_map['mappings']):
         extracted_tac = tac_extraction_func(input_image_4d_path=input_image_4d_path,

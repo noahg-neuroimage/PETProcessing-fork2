@@ -80,13 +80,13 @@ def determine_motion_target(motion_target_option: Union[str,tuple],
         return out_image_file
 
 
-def motion_correction(input_image_4d_path: str,
-                      motion_target_option: Union[str,tuple],
-                      out_image_path: str,
-                      verbose: bool,
-                      type_of_transform: str='DenseRigid',
-                      half_life: float=None,
-                      **kwargs) -> tuple[np.ndarray, list[str], list[float]]:
+def motion_corr(input_image_4d_path: str,
+                motion_target_option: Union[str,tuple],
+                out_image_path: str,
+                verbose: bool,
+                type_of_transform: str='DenseRigid',
+                half_life: float=None,
+                **kwargs) -> tuple[np.ndarray, list[str], list[float]]:
     """
     Correct PET image series for inter-frame motion. Runs rigid motion
     correction module from Advanced Normalisation Tools (ANTs) with default
@@ -123,7 +123,6 @@ def motion_correction(input_image_4d_path: str,
             corresponding to each frame transform.
     """
     pet_ants = ants.image_read(input_image_4d_path)
-
     motion_target_image_path = determine_motion_target(motion_target_option=motion_target_option,
                                                        input_image_4d_path=input_image_4d_path,
                                                        half_life=half_life)
