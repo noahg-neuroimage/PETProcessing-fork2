@@ -183,7 +183,8 @@ def response_function_serial_2tcm_c2(t: np.ndarray, k1: float, k2: float, k3: fl
 def generate_tac_1tcm_c1_from_tac(tac_times: np.ndarray,
                                   tac_vals: np.ndarray,
                                   k1: float,
-                                  k2: float) -> np.ndarray:
+                                  k2: float,
+                                  vb: float = 0.0) -> np.ndarray:
     r"""Calculate the TTAC, given the input TAC, for a 1TCM as an explicit convolution.
     
     Args:
@@ -202,7 +203,7 @@ def generate_tac_1tcm_c1_from_tac(tac_times: np.ndarray,
     _resp_vals = response_function_1tcm_c1(t=tac_times, k1=k1, k2=k2)
     dt = tac_times[1] - tac_times[0]
     c1 = calc_convolution_with_check(f=tac_vals, g=_resp_vals, dt=dt)
-    return np.asarray([tac_times, c1])
+    return np.asarray([tac_times, (1.0-vb)*c1 + vb*tac_vals])
 
 
 def generate_tac_2tcm_with_k4zero_c1_from_tac(tac_times: np.ndarray,
@@ -269,7 +270,8 @@ def generate_tac_2tcm_with_k4zero_cpet_from_tac(tac_times: np.ndarray,
                                                 tac_vals: np.ndarray,
                                                 k1: float,
                                                 k2: float,
-                                                k3: float) -> np.ndarray:
+                                                k3: float,
+                                                vb: float = 0.0) -> np.ndarray:
     r"""
     Calculate the PET-TTAC (sum of both compartments), given the input TAC, for a 2TCM (with :math:`k_{4}=0`) as an
     explicit convolution.
@@ -295,7 +297,7 @@ def generate_tac_2tcm_with_k4zero_cpet_from_tac(tac_times: np.ndarray,
     _resp_vals += response_function_2tcm_with_k4zero_c2(t=tac_times, k1=k1, k2=k2, k3=k3)
     dt = tac_times[1] - tac_times[0]
     cpet = calc_convolution_with_check(f=tac_vals, g=_resp_vals, dt=dt)
-    return np.asarray([tac_times, cpet])
+    return np.asarray([tac_times, (1.0-vb)*cpet + vb*tac_vals])
 
 
 def generate_tac_serial_2tcm_c1_from_tac(tac_times: np.ndarray,
@@ -369,7 +371,8 @@ def generate_tac_serial_2tcm_cpet_from_tac(tac_times: np.ndarray,
                                            k1: float,
                                            k2: float,
                                            k3: float,
-                                           k4: float) -> np.ndarray:
+                                           k4: float,
+                                           vb: float = 0.0) -> np.ndarray:
     r"""
     Calculate the PET-TTAC (sum of both compartments), given the input TAC, for a serial 2TCM as an explicit
     convolution.
@@ -400,7 +403,7 @@ def generate_tac_serial_2tcm_cpet_from_tac(tac_times: np.ndarray,
     _resp_vals += response_function_serial_2tcm_c2(t=tac_times, k1=k1, k2=k2, k3=k3, k4=k4)
     dt = tac_times[1] - tac_times[0]
     cpet = calc_convolution_with_check(f=tac_vals, g=_resp_vals, dt=dt)
-    return np.asarray([tac_times, cpet])
+    return np.asarray([tac_times, (1.0-vb)*cpet + vb*tac_vals])
 
 
 def fit_tac_to_1tcm(tgt_tac_vals: np.ndarray,
