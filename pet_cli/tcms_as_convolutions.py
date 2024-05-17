@@ -438,7 +438,7 @@ def fit_tac_to_1tcm(tgt_tac_vals: np.ndarray,
         
     """
     def _fitting_tac(tac_times: np.ndarray, k1: float, k2: float):
-        tac = generate_tac_1tcm_c1_from_tac(tac_times=tac_times, tac_vals=input_tac_vals, k1=k1, k2=k2)[1]
+        tac = generate_tac_1tcm_c1_from_tac(tac_times=tac_times, tac_vals=input_tac_vals, k1=k1, k2=k2, vb=0.0)[1]
         return tac
     
     fit_parameters, fit_params_covariance = sp_fit(f=_fitting_tac, xdata=input_tac_times, ydata=tgt_tac_vals,
@@ -478,7 +478,7 @@ def fit_tac_to_1tcm_with_bounds(tgt_tac_vals: np.ndarray,
         
     """
     def _fitting_tac(tac_times: np.ndarray, k1: float, k2: float):
-        tac = generate_tac_1tcm_c1_from_tac(tac_times=tac_times, tac_vals=input_tac_vals, k1=k1, k2=k2)[1]
+        tac = generate_tac_1tcm_c1_from_tac(tac_times=tac_times, tac_vals=input_tac_vals, k1=k1, k2=k2, vb=0.0)[1]
         return tac
     
     st_vals = (k1_bounds[0], k2_bounds[0])
@@ -489,6 +489,51 @@ def fit_tac_to_1tcm_with_bounds(tgt_tac_vals: np.ndarray,
                                                    p0=st_vals, bounds=(lo_vals, hi_vals))
     return fit_parameters, fit_params_covariance
 
+
+def fit_tac_to_1tcm_with_bounds_with_vb(tgt_tac_vals: np.ndarray,
+                                input_tac_times: np.ndarray,
+                                input_tac_vals: np.ndarray,
+                                k1_bounds: tuple[float, float, float] = (0.5, 1e-6, 5.0),
+                                k2_bounds: tuple[float, float, float] = (0.5, 1e-6, 5.0),
+                                vb_bounds: tuple[float, float, float] = (0.1, 0.0, 1.0)) -> tuple:
+    r"""
+    Fits a target Time Activity Curve (TAC) to the one tissue compartment model (1TCM), given the input TAC values,
+    times, and bounds for the kinetic parameters k1 and k2.
+
+    .. important::
+        This function assumes that the input TAC  and target TAC are uniformly sampled with respect to time since we
+        perform convolutions.
+
+    This function is a wrapper around `scipy.optimize.curve_fit` and uses parameter bounds during optimization. The
+    bounds for each parameter are formatted as: ``(starting_value, lo_bound, hi_bound)``.
+
+    Args:
+        tgt_tac_vals (np.ndarray): Target TAC to fit with the 1TCM.
+        input_tac_times (np.ndarray): Input TAC times.
+        input_tac_vals (np.ndarray): Input TAC values.
+        k1_bounds (tuple[float, float, float]): The bounds for parameter k1. Defaults to (0.5, 1e-6, 5.0).
+        k2_bounds (tuple[float, float, float]): The bounds for parameter k2. Defaults to (0.5, 1e-6, 5.0).
+
+    Returns:
+        tuple: (``fit_parameters``, ``fit_covariance``).
+
+    See Also:
+        * :func:`scipy.optimize.curve_fit`
+        * :func:`generate_tac_1tcm_c1_from_tac`
+
+    """
+    
+    def _fitting_tac(tac_times: np.ndarray, k1: float, k2: float):
+        tac = generate_tac_1tcm_c1_from_tac(tac_times=tac_times, tac_vals=input_tac_vals, k1=k1, k2=k2, vb=0.0)[1]
+        return tac
+    
+    st_vals = (k1_bounds[0], k2_bounds[0], vb_bounds[0])
+    lo_vals = (k1_bounds[1], k2_bounds[1], vb_bounds[1])
+    hi_vals = (k1_bounds[2], k2_bounds[2], vb_bounds[2])
+    
+    fit_parameters, fit_params_covariance = sp_fit(f=_fitting_tac, xdata=input_tac_times, ydata=tgt_tac_vals,
+                                                   p0=st_vals, bounds=(lo_vals, hi_vals))
+    return fit_parameters, fit_params_covariance
 
 def fit_tac_to_irreversible_2tcm(tgt_tac_vals: np.ndarray,
                                  input_tac_times: np.ndarray,
@@ -525,7 +570,7 @@ def fit_tac_to_irreversible_2tcm(tgt_tac_vals: np.ndarray,
     """
     def _fitting_tac(tac_times: np.ndarray, k1: float, k2: float, k3: float):
         _tac_gen = generate_tac_2tcm_with_k4zero_cpet_from_tac
-        tac = _tac_gen(tac_times=tac_times, tac_vals=input_tac_vals, k1=k1, k2=k2, k3=k3)[1]
+        tac = _tac_gen(tac_times=tac_times, tac_vals=input_tac_vals, k1=k1, k2=k2, k3=k3, vb=0.0)[1]
         return tac
     
     fit_parameters, fit_params_covariance = sp_fit(f=_fitting_tac, xdata=input_tac_times, ydata=tgt_tac_vals,
@@ -568,7 +613,7 @@ def fit_tac_to_irreversible_2tcm_with_bounds(tgt_tac_vals: np.ndarray,
     """
     def _fitting_tac(tac_times: np.ndarray, k1: float, k2: float, k3: float):
         _tac_gen = generate_tac_2tcm_with_k4zero_cpet_from_tac
-        tac = _tac_gen(tac_times=tac_times, tac_vals=input_tac_vals, k1=k1, k2=k2, k3=k3)[1]
+        tac = _tac_gen(tac_times=tac_times, tac_vals=input_tac_vals, k1=k1, k2=k2, k3=k3, vb=0.0)[1]
         return tac
     
     st_vals = (k1_bounds[0], k2_bounds[0], k3_bounds[0])
@@ -617,8 +662,8 @@ def fit_tac_to_irreversible_2tcm_with_bounds_with_vb(tgt_tac_vals: np.ndarray,
     
     def _fitting_tac(tac_times: np.ndarray, k1: float, k2: float, k3: float, vb: float):
         _tac_gen = generate_tac_2tcm_with_k4zero_cpet_from_tac
-        tac = _tac_gen(tac_times=tac_times, tac_vals=input_tac_vals, k1=k1, k2=k2, k3=k3)[1]
-        return (1 - vb) * tac + vb * input_tac_vals
+        tac = _tac_gen(tac_times=tac_times, tac_vals=input_tac_vals, k1=k1, k2=k2, k3=k3, vb=vb)[1]
+        return tac
     
     st_vals = (k1_bounds[0], k2_bounds[0], k3_bounds[0], vb_bounds[0])
     lo_vals = (k1_bounds[1], k2_bounds[1], k3_bounds[1], vb_bounds[1])
@@ -667,7 +712,7 @@ def fit_tac_to_serial_2tcm(tgt_tac_vals: np.ndarray,
     def _fitting_tac(tac_times: np.ndarray, k1: float, k2: float, k3: float, k4: float):
         
         _tac_gen = generate_tac_serial_2tcm_cpet_from_tac
-        tac = _tac_gen(tac_times=tac_times, tac_vals=input_tac_vals, k1=k1, k2=k2, k3=k3, k4=k4)[1]
+        tac = _tac_gen(tac_times=tac_times, tac_vals=input_tac_vals, k1=k1, k2=k2, k3=k3, k4=k4, vb=0.0)[1]
         return tac
     
     fit_parameters, fit_params_covariance = sp_fit(f=_fitting_tac, xdata=input_tac_times, ydata=tgt_tac_vals,
@@ -712,12 +757,63 @@ def fit_tac_to_serial_2tcm_with_bounds(tgt_tac_vals: np.ndarray,
     """
     def _fitting_tac(tac_times: np.ndarray, k1: float, k2: float, k3: float, k4: float):
         _tac_gen = generate_tac_serial_2tcm_cpet_from_tac
-        tac = _tac_gen(tac_times=tac_times, tac_vals=input_tac_vals, k1=k1, k2=k2, k3=k3, k4=k4)[1]
+        tac = _tac_gen(tac_times=tac_times, tac_vals=input_tac_vals, k1=k1, k2=k2, k3=k3, k4=k4, vb=0.0)[1]
         return tac
     
     st_vals = (k1_bounds[0], k2_bounds[0], k3_bounds[0], k4_bounds[0])
     lo_vals = (k1_bounds[1], k2_bounds[1], k3_bounds[1], k4_bounds[1])
     hi_vals = (k1_bounds[2], k2_bounds[2], k3_bounds[2], k4_bounds[2])
+    
+    fit_parameters, fit_params_covariance = sp_fit(f=_fitting_tac, xdata=input_tac_times, ydata=tgt_tac_vals,
+                                                   p0=st_vals, bounds=(lo_vals, hi_vals))
+    return fit_parameters, fit_params_covariance
+
+
+def fit_tac_to_serial_2tcm_with_bounds_with_vb(tgt_tac_vals: np.ndarray,
+                                               input_tac_times: np.ndarray,
+                                               input_tac_vals: np.ndarray,
+                                               k1_bounds: tuple[float, float, float] = (0.5, 1e-6, 5.0),
+                                               k2_bounds: tuple[float, float, float] = (0.5, 1e-6, 5.0),
+                                               k3_bounds: tuple[float, float, float] = (0.5, 1e-6, 5.0),
+                                               k4_bounds: tuple[float, float, float] = (0.5, 1e-6, 5.0),
+                                               vb_bounds: tuple[float, float, float] = (0.1, 0.0, 1.0)):
+    r"""
+    Fits a target Time Activity Curve (TAC) to the serial two tissue compartment model (2TCM), given the input TAC
+    values, times, and bounds for the kinetic parameters k1, k2, k3 and k4.
+
+    .. important::
+        This function assumes that the input TAC  and target TAC are uniformly sampled with respect to time since we
+        perform convolutions.
+
+    This function is a wrapper around `scipy.optimize.curve_fit` and uses parameter bounds during optimization. The
+    bounds for each parameter are formatted as: ``(starting_value, lo_bound, hi_bound)``.
+
+    Args:
+        tgt_tac_vals (np.ndarray): Target TAC to fit with the 1TCM.
+        input_tac_times (np.ndarray): Input TAC times.
+        input_tac_vals (np.ndarray): Input TAC values.
+        k1_bounds (tuple[float, float, float]): The bounds for parameter k1. Defaults to (0.5, 1e-6, 5.0).
+        k2_bounds (tuple[float, float, float]): The bounds for parameter k2. Defaults to (0.5, 1e-6, 5.0).
+        k3_bounds (tuple[float, float, float]): The bounds for parameter k3. Defaults to (0.5, 1e-6, 5.0).
+        k4_bounds (tuple[float, float, float]): The bounds for parameter k4. Defaults to (0.5, 1e-6, 5.0).
+
+    Returns:
+        tuple: (``fit_parameters``, ``fit_covariance``).
+
+    See Also:
+        * :func:`scipy.optimize.curve_fit`
+        * :func:`generate_tac_serial_2tcm_cpet_from_tac`
+
+    """
+    
+    def _fitting_tac(tac_times: np.ndarray, k1: float, k2: float, k3: float, k4: float):
+        _tac_gen = generate_tac_serial_2tcm_cpet_from_tac
+        tac = _tac_gen(tac_times=tac_times, tac_vals=input_tac_vals, k1=k1, k2=k2, k3=k3, k4=k4, vb=0.0)[1]
+        return tac
+    
+    st_vals = (k1_bounds[0], k2_bounds[0], k3_bounds[0], k4_bounds[0], vb_bounds[0])
+    lo_vals = (k1_bounds[1], k2_bounds[1], k3_bounds[1], k4_bounds[1], vb_bounds[1])
+    hi_vals = (k1_bounds[2], k2_bounds[2], k3_bounds[2], k4_bounds[2], vb_bounds[2])
     
     fit_parameters, fit_params_covariance = sp_fit(f=_fitting_tac, xdata=input_tac_times, ydata=tgt_tac_vals,
                                                    p0=st_vals, bounds=(lo_vals, hi_vals))
@@ -764,7 +860,7 @@ def weighted_fit_tac_to_irreversible_2tcm_with_bounds(tgt_tac_vals: np.ndarray,
     
     def _fitting_tac(tac_times: np.ndarray, k1: float, k2: float, k3: float):
         _tac_gen = generate_tac_2tcm_with_k4zero_cpet_from_tac
-        tac = _tac_gen(tac_times=tac_times, tac_vals=input_tac_vals, k1=k1, k2=k2, k3=k3)[1]
+        tac = _tac_gen(tac_times=tac_times, tac_vals=input_tac_vals, k1=k1, k2=k2, k3=k3, vb=0.0)[1]
         return tac
     
     st_vals = (k1_bounds[0], k2_bounds[0], k3_bounds[0])
@@ -783,6 +879,109 @@ def weighted_fit_tac_to_irreversible_2tcm_with_bounds_with_vb(tgt_tac_vals: np.n
                                                               k1_bounds: tuple[float, float, float] = (0.5, 1e-6, 5.0),
                                                               k2_bounds: tuple[float, float, float] = (0.5, 1e-6, 5.0),
                                                               k3_bounds: tuple[float, float, float] = (0.5, 1e-6, 5.0),
+                                                              vb_bounds: tuple[float, float, float] = (
+                                                              0.01, 1e-6, 1.0)):
+    r"""
+    Fits a target Time Activity Curve (TAC) to the irreversible two tissue compartment model (2TCM), given the input TAC
+    values, times, and bounds for the kinetic parameters k1, k2 and k3.
+
+    .. important::
+        This function assumes that the input TAC  and target TAC are uniformly sampled with respect to time since we
+        perform convolutions.
+
+    This function is a wrapper around `scipy.optimize.curve_fit` and uses parameter bounds during optimization. The
+    bounds for each parameter are formatted as: ``(starting_value, lo_bound, hi_bound)``.
+
+    Args:
+        tgt_tac_vals (np.ndarray): Target TAC to fit with the 1TCM.
+        input_tac_times (np.ndarray): Input TAC times.
+        input_tac_vals (np.ndarray): Input TAC values.
+        k1_bounds (tuple[float, float, float]): The bounds for parameter k1. Defaults to (0.5, 1e-6, 5.0).
+        k2_bounds (tuple[float, float, float]): The bounds for parameter k2. Defaults to (0.5, 1e-6, 5.0).
+        k3_bounds (tuple[float, float, float]): The bounds for parameter k3. Defaults to (0.5, 1e-6, 5.0).
+
+    Returns:
+        tuple: (``fit_parameters``, ``fit_covariance``).
+
+    See Also:
+        * :func:`scipy.optimize.curve_fit`
+        * :func:`generate_tac_2tcm_with_k4zero_cpet_from_tac`
+
+    """
+    
+    if tgt_weights is None:
+        tgt_weights = np.ones_like(input_tac_times)
+    
+    def _fitting_tac(tac_times: np.ndarray, k1: float, k2: float, vb: float):
+        _tac_gen = generate_tac_1tcm_c1_from_tac
+        tac = _tac_gen(tac_times=tac_times, tac_vals=input_tac_vals, k1=k1, k2=k2, vb=vb)[1]
+        return tac
+    
+    st_vals = (k1_bounds[0], k2_bounds[0], k3_bounds[0], vb_bounds[0])
+    lo_vals = (k1_bounds[1], k2_bounds[1], k3_bounds[1], vb_bounds[1])
+    hi_vals = (k1_bounds[2], k2_bounds[2], k3_bounds[2], vb_bounds[2])
+    
+    fit_parameters, fit_params_covariance = sp_fit(f=_fitting_tac, xdata=input_tac_times, ydata=tgt_tac_vals,
+                                                   p0=st_vals, bounds=(lo_vals, hi_vals), sigma=tgt_weights)
+    return fit_parameters, fit_params_covariance
+
+
+def weighted_fit_tac_to_1tcm_with_bounds(tgt_tac_vals: np.ndarray,
+                                                input_tac_times: np.ndarray,
+                                                input_tac_vals: np.ndarray,
+                                                tgt_weights: np.ndarray = None,
+                                                k1_bounds: tuple[float, float, float] = (0.5, 1e-6, 5.0),
+                                                k2_bounds: tuple[float, float, float] = (0.5, 1e-6, 5.0)):
+    r"""
+    Fits a target Time Activity Curve (TAC) to the irreversible two tissue compartment model (2TCM), given the input TAC
+    values, times, and bounds for the kinetic parameters k1, k2 and k3.
+
+    .. important::
+        This function assumes that the input TAC  and target TAC are uniformly sampled with respect to time since we
+        perform convolutions.
+
+    This function is a wrapper around `scipy.optimize.curve_fit` and uses parameter bounds during optimization. The
+    bounds for each parameter are formatted as: ``(starting_value, lo_bound, hi_bound)``.
+
+    Args:
+        tgt_tac_vals (np.ndarray): Target TAC to fit with the 1TCM.
+        input_tac_times (np.ndarray): Input TAC times.
+        input_tac_vals (np.ndarray): Input TAC values.
+        k1_bounds (tuple[float, float, float]): The bounds for parameter k1. Defaults to (0.5, 1e-6, 5.0).
+        k2_bounds (tuple[float, float, float]): The bounds for parameter k2. Defaults to (0.5, 1e-6, 5.0).
+        k3_bounds (tuple[float, float, float]): The bounds for parameter k3. Defaults to (0.5, 1e-6, 5.0).
+
+    Returns:
+        tuple: (``fit_parameters``, ``fit_covariance``).
+
+    See Also:
+        * :func:`scipy.optimize.curve_fit`
+        * :func:`generate_tac_2tcm_with_k4zero_cpet_from_tac`
+
+    """
+    
+    if tgt_weights is None:
+        tgt_weights = np.ones_like(input_tac_times)
+    
+    def _fitting_tac(tac_times: np.ndarray, k1: float, k2: float):
+        _tac_gen = generate_tac_1tcm_c1_from_tac
+        tac = _tac_gen(tac_times=tac_times, tac_vals=input_tac_vals, k1=k1, k2=k2, vb=0.0)[1]
+        return tac
+    
+    st_vals = (k1_bounds[0], k2_bounds[0])
+    lo_vals = (k1_bounds[1], k2_bounds[1])
+    hi_vals = (k1_bounds[2], k2_bounds[2])
+    
+    fit_parameters, fit_params_covariance = sp_fit(f=_fitting_tac, xdata=input_tac_times, ydata=tgt_tac_vals,
+                                                   p0=st_vals, bounds=(lo_vals, hi_vals), sigma=tgt_weights)
+    return fit_parameters, fit_params_covariance
+
+def weighted_fit_tac_to_1tcm_with_bounds_with_vb(tgt_tac_vals: np.ndarray,
+                                                              input_tac_times: np.ndarray,
+                                                              input_tac_vals: np.ndarray,
+                                                              tgt_weights: np.ndarray = None,
+                                                              k1_bounds: tuple[float, float, float] = (0.5, 1e-6, 5.0),
+                                                              k2_bounds: tuple[float, float, float] = (0.5, 1e-6, 5.0),
                                                               vb_bounds: tuple[float, float, float] = (0.01, 1e-6, 1.0)):
     r"""
     Fits a target Time Activity Curve (TAC) to the irreversible two tissue compartment model (2TCM), given the input TAC
@@ -815,14 +1014,121 @@ def weighted_fit_tac_to_irreversible_2tcm_with_bounds_with_vb(tgt_tac_vals: np.n
     if tgt_weights is None:
         tgt_weights = np.ones_like(input_tac_times)
     
-    def _fitting_tac(tac_times: np.ndarray, k1: float, k2: float, k3: float, vb: float):
-        _tac_gen = generate_tac_2tcm_with_k4zero_cpet_from_tac
-        tac = _tac_gen(tac_times=tac_times, tac_vals=input_tac_vals, k1=k1, k2=k2, k3=k3)[1]
-        return (1 - vb) * tac + vb * input_tac_vals
+    def _fitting_tac(tac_times: np.ndarray, k1: float, k2: float, vb: float):
+        _tac_gen = generate_tac_1tcm_c1_from_tac
+        tac = _tac_gen(tac_times=tac_times, tac_vals=input_tac_vals, k1=k1, k2=k2, vb=vb)[1]
+        return tac
     
-    st_vals = (k1_bounds[0], k2_bounds[0], k3_bounds[0], vb_bounds[0])
-    lo_vals = (k1_bounds[1], k2_bounds[1], k3_bounds[1], vb_bounds[1])
-    hi_vals = (k1_bounds[2], k2_bounds[2], k3_bounds[2], vb_bounds[2])
+    st_vals = (k1_bounds[0], k2_bounds[0], vb_bounds[0])
+    lo_vals = (k1_bounds[1], k2_bounds[1], vb_bounds[1])
+    hi_vals = (k1_bounds[2], k2_bounds[2], vb_bounds[2])
+    
+    fit_parameters, fit_params_covariance = sp_fit(f=_fitting_tac, xdata=input_tac_times, ydata=tgt_tac_vals,
+                                                   p0=st_vals, bounds=(lo_vals, hi_vals), sigma=tgt_weights)
+    return fit_parameters, fit_params_covariance
+
+
+def weighted_fit_tac_to_serial_2tcm_with_bounds(tgt_tac_vals: np.ndarray,
+                                                input_tac_times: np.ndarray,
+                                                input_tac_vals: np.ndarray,
+                                                tgt_weights: np.ndarray = None,
+                                                k1_bounds: tuple[float, float, float] = (0.5, 1e-6, 5.0),
+                                                k2_bounds: tuple[float, float, float] = (0.5, 1e-6, 5.0),
+                                                k3_bounds: tuple[float, float, float] = (0.5, 1e-6, 5.0),
+                                                k4_bounds: tuple[float, float, float] = (0.5, 1e-6, 5.0)):
+    r"""
+    Fits a target Time Activity Curve (TAC) to the irreversible two tissue compartment model (2TCM), given the input TAC
+    values, times, and bounds for the kinetic parameters k1, k2 and k3.
+
+    .. important::
+        This function assumes that the input TAC  and target TAC are uniformly sampled with respect to time since we
+        perform convolutions.
+
+    This function is a wrapper around `scipy.optimize.curve_fit` and uses parameter bounds during optimization. The
+    bounds for each parameter are formatted as: ``(starting_value, lo_bound, hi_bound)``.
+
+    Args:
+        tgt_tac_vals (np.ndarray): Target TAC to fit with the 1TCM.
+        input_tac_times (np.ndarray): Input TAC times.
+        input_tac_vals (np.ndarray): Input TAC values.
+        k1_bounds (tuple[float, float, float]): The bounds for parameter k1. Defaults to (0.5, 1e-6, 5.0).
+        k2_bounds (tuple[float, float, float]): The bounds for parameter k2. Defaults to (0.5, 1e-6, 5.0).
+        k3_bounds (tuple[float, float, float]): The bounds for parameter k3. Defaults to (0.5, 1e-6, 5.0).
+
+    Returns:
+        tuple: (``fit_parameters``, ``fit_covariance``).
+
+    See Also:
+        * :func:`scipy.optimize.curve_fit`
+        * :func:`generate_tac_2tcm_with_k4zero_cpet_from_tac`
+
+    """
+    
+    if tgt_weights is None:
+        tgt_weights = np.ones_like(input_tac_times)
+    
+    def _fitting_tac(tac_times: np.ndarray, k1: float, k2: float, k3: float):
+        _tac_gen = generate_tac_serial_2tcm_cpet_from_tac
+        tac = _tac_gen(tac_times=tac_times, tac_vals=input_tac_vals, k1=k1, k2=k2, k3=k3, vb=0.0)[1]
+        return tac
+    
+    st_vals = (k1_bounds[0], k2_bounds[0], k3_bounds[0], k4_bounds[0])
+    lo_vals = (k1_bounds[1], k2_bounds[1], k3_bounds[1], k4_bounds[1])
+    hi_vals = (k1_bounds[2], k2_bounds[2], k3_bounds[2], k4_bounds[2])
+    
+    fit_parameters, fit_params_covariance = sp_fit(f=_fitting_tac, xdata=input_tac_times, ydata=tgt_tac_vals,
+                                                   p0=st_vals, bounds=(lo_vals, hi_vals), sigma=tgt_weights)
+    return fit_parameters, fit_params_covariance
+
+
+def weighted_fit_tac_to_serial_2tcm_with_bounds_with_vb(tgt_tac_vals: np.ndarray,
+                                                        input_tac_times: np.ndarray,
+                                                        input_tac_vals: np.ndarray,
+                                                        tgt_weights: np.ndarray = None,
+                                                        k1_bounds: tuple[float, float, float] = (0.5, 1e-6, 5.0),
+                                                        k2_bounds: tuple[float, float, float] = (0.5, 1e-6, 5.0),
+                                                        k3_bounds: tuple[float, float, float] = (0.5, 1e-6, 5.0),
+                                                        k4_bounds: tuple[float, float, float] = (0.5, 1e-6, 5.0),
+                                                        vb_bounds: tuple[float, float, float] = (0.01, 1e-6, 1.0)):
+    r"""
+    Fits a target Time Activity Curve (TAC) to the irreversible two tissue compartment model (2TCM), given the input TAC
+    values, times, and bounds for the kinetic parameters k1, k2 and k3.
+
+    .. important::
+        This function assumes that the input TAC  and target TAC are uniformly sampled with respect to time since we
+        perform convolutions.
+
+    This function is a wrapper around `scipy.optimize.curve_fit` and uses parameter bounds during optimization. The
+    bounds for each parameter are formatted as: ``(starting_value, lo_bound, hi_bound)``.
+
+    Args:
+        tgt_tac_vals (np.ndarray): Target TAC to fit with the 1TCM.
+        input_tac_times (np.ndarray): Input TAC times.
+        input_tac_vals (np.ndarray): Input TAC values.
+        k1_bounds (tuple[float, float, float]): The bounds for parameter k1. Defaults to (0.5, 1e-6, 5.0).
+        k2_bounds (tuple[float, float, float]): The bounds for parameter k2. Defaults to (0.5, 1e-6, 5.0).
+        k3_bounds (tuple[float, float, float]): The bounds for parameter k3. Defaults to (0.5, 1e-6, 5.0).
+
+    Returns:
+        tuple: (``fit_parameters``, ``fit_covariance``).
+
+    See Also:
+        * :func:`scipy.optimize.curve_fit`
+        * :func:`generate_tac_2tcm_with_k4zero_cpet_from_tac`
+
+    """
+    
+    if tgt_weights is None:
+        tgt_weights = np.ones_like(input_tac_times)
+    
+    def _fitting_tac(tac_times: np.ndarray, k1: float, k2: float, k3: float, vb: float):
+        _tac_gen = generate_tac_serial_2tcm_cpet_from_tac
+        tac = _tac_gen(tac_times=tac_times, tac_vals=input_tac_vals, k1=k1, k2=k2, k3=k3, vb=vb)[1]
+        return tac
+    
+    st_vals = (k1_bounds[0], k2_bounds[0], k3_bounds[0], k4_bounds[0], vb_bounds[0])
+    lo_vals = (k1_bounds[1], k2_bounds[1], k3_bounds[1], k4_bounds[1], vb_bounds[1])
+    hi_vals = (k1_bounds[2], k2_bounds[2], k3_bounds[2], k4_bounds[2], vb_bounds[2])
     
     fit_parameters, fit_params_covariance = sp_fit(f=_fitting_tac, xdata=input_tac_times, ydata=tgt_tac_vals,
                                                    p0=st_vals, bounds=(lo_vals, hi_vals), sigma=tgt_weights)
