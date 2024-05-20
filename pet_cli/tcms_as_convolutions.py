@@ -1136,13 +1136,44 @@ def weighted_fit_tac_to_serial_2tcm_with_bounds_with_vb(tgt_tac_vals: np.ndarray
     return fit_parameters, fit_params_covariance
 
 
-def fit_tac_to_2TCM_with_k4zero(tgt_tac_vals,
-                                tac_times,
-                                input_tac_vals,
-                                weights,
-                                k1_bounds,
-                                k2_bounds,
-                                k3_bounds,
-                                k4_bounds,
-                                vb_bounds):
-    pass
+def fit_tac_to_2TCM_with_k4zero(tgt_tac_vals: np.ndarray,
+                                tac_times: np.ndarray,
+                                input_tac_vals: np.ndarray,
+                                weights: np.ndarray = None,
+                                k1_bounds: tuple = None,
+                                k2_bounds: tuple = None,
+                                k3_bounds: tuple = None,
+                                vb_bounds: tuple = None):
+    
+    assert ((len(tgt_tac_vals) == len(input_tac_vals))
+            and (len(tgt_tac_vals) == len(tac_times))), ("`tgt_tac_vals`, `input_tac_vals` and `tac_times` "
+                                                         "must have the same length!")
+    
+    if weights is None:
+        fit_wts = np.ones_like(tgt_tac_vals)
+    else:
+        assert (len(tgt_tac_vals) == len(weights)), "The weights must have the same length as the TACs."
+        fit_wts = weights
+    
+    if k1_bounds is None:
+        k1_bounds = (0.5, 1.0e-8, 10)
+    if k2_bounds is None:
+        k2_bounds = (0.5, 1.0e-8, 10)
+    if k3_bounds is None:
+        k3_bounds = (0.5, 1.0e-8, 10)
+    if vb_bounds is None:
+        vb_bounds = (0.01, 0.0, 1.0)
+    
+    def _fitting_tac(tac_times: np.ndarray, k1: float, k2: float, k3: float, vb: float):
+        _tac_gen = generate_tac_2tcm_with_k4zero_cpet_from_tac
+        tac = _tac_gen(tac_times=tac_times, tac_vals=input_tac_vals, k1=k1, k2=k2, k3=k3, vb=vb)[1]
+        return tac
+    
+    st_vals = (k1_bounds[0], k2_bounds[0], k3_bounds[0], vb_bounds[0])
+    lo_vals = (k1_bounds[1], k2_bounds[1], k3_bounds[1], vb_bounds[1])
+    hi_vals = (k1_bounds[2], k2_bounds[2], k3_bounds[2], vb_bounds[2])
+    
+    fit_parameters, fit_params_covariance = sp_fit(f=_fitting_tac, xdata=tac_times, ydata=tgt_tac_vals, p0=st_vals,
+                                                   bounds=(lo_vals, hi_vals), sigma=fit_wts)
+    
+    return fit_parameters, fit_params_covariance
