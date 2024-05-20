@@ -32,15 +32,15 @@ def sgtm(pet_3d: np.ndarray,
     Examples:
         .. code-block:: python
 
-            >>> pet_image = np.random.rand(64, 64, 64)
-            >>> roi_image = np.random.randint(0, 4, size=(64, 64, 64))
-            >>> fwhm, resolution = 8.0, 2.5
-            >>> labels, corrected_values, cond_number = sgtm(pet_image, roi_image, fwhm, resolution)
-            >>> labels.shape
+            pet_image = np.random.rand(64, 64, 64)
+            roi_image = np.random.randint(0, 4, size=(64, 64, 64))
+            fwhm, resolution = 8.0, 2.5
+            labels, corrected_values, cond_number = sgtm(pet_image, roi_image, fwhm, resolution)
+            labels.shape
             (3,)
-            >>> corrected_values.shape
+            corrected_values.shape
             (3,)
-            >>> type(cond_number)
+            type(cond_number)
             <class 'float'>
 
     Notes:
