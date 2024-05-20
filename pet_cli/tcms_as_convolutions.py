@@ -1134,3 +1134,15 @@ def weighted_fit_tac_to_serial_2tcm_with_bounds_with_vb(tgt_tac_vals: np.ndarray
     fit_parameters, fit_params_covariance = sp_fit(f=_fitting_tac, xdata=input_tac_times, ydata=tgt_tac_vals,
                                                    p0=st_vals, bounds=(lo_vals, hi_vals), sigma=tgt_weights)
     return fit_parameters, fit_params_covariance
+
+
+def fit_tac_to_2TCM_with_k4zero(tgt_tac_vals,
+                                tac_times,
+                                input_tac_vals,
+                                weights,
+                                k1_bounds,
+                                k2_bounds,
+                                k3_bounds,
+                                k4_bounds,
+                                vb_bounds):
+    pass
