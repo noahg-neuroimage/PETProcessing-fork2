@@ -1,12 +1,12 @@
 import numpy as np
-from typing import Tuple
+from typing import Tuple, Union
 from scipy.ndimage import gaussian_filter
 import nibabel as nib
 
 
 def sgtm(pet_nifti: nib.Nifti1Image,
          roi_nifti: nib.Nifti1Image,
-         fwhm: Tuple[float, float, float],
+         fwhm: Union[float, Tuple[float, float, float]],
          zeroth_roi: bool = False) -> Tuple[np.ndarray, np.ndarray, float]:
     """
     Apply Symmetric Geometric Transfer Matrix (SGTM) method for Partial Volume Correction (PVC) to PET images based
@@ -15,14 +15,17 @@ def sgtm(pet_nifti: nib.Nifti1Image,
     This method involves using a matrix-based approach to adjust the PET signal intensities for the effects of
     partial volume averaging.
 
-    Args: pet_nifti (nib.Nifti1Image): The 3D PET image Nifti1 object. roi_nifti (nib.Nifti1Image): The 3D ROI image
-    Nifti1 object, should have the same dimensions as `pet_nifti`. fwhm (Tuple[float, float, float]): Full width at
-    half maximum of the Gaussian blurring kernel for each dimension. zeroth_roi (bool): If False, ignores the zero
-    label in calculations, often used to exclude background or non-ROI regions.
+    Args:
+        pet_nifti (nib.Nifti1Image): The 3D PET image Nifti1 object.
+        roi_nifti (nib.Nifti1Image): The 3D ROI image, Nifti1 object, should have the same dimensions as `pet_nifti`.
+        fwhm (Union[float, Tuple[float, float, float]]): Full width at half maximum of the Gaussian blurring kernel for each dimension.
+        zeroth_roi (bool): If False, ignores the zero label in calculations, often used to exclude background or non-ROI regions.
 
-    Returns: Tuple[np.ndarray, np.ndarray, float]: - np.ndarray: Array of unique ROI labels. - np.ndarray: Corrected
-    PET values after applying PVC. - float: Condition number of the omega matrix, indicating the numerical stability
-    of the inversion.
+    Returns:
+        Tuple[np.ndarray, np.ndarray, float]:
+            - np.ndarray: Array of unique ROI labels.
+            - np.ndarray: Corrected PET values after applying PVC.
+            - float: Condition number of the omega matrix, indicating the numerical stability of the inversion.
 
     Raises:
         AssertionError: If `pet_nifti` and `roi_nifti` do not have the same dimensions.
@@ -32,7 +35,7 @@ def sgtm(pet_nifti: nib.Nifti1Image,
 
             pet_nifti = nib.load('path_to_pet_image.nii')
             roi_nifti = nib.load('path_to_roi_image.nii')
-            fwhm = (8.0, 8.0, 8.0)
+            fwhm = (8.0, 8.0, 8.0)  # or fwhm = 8.0
             labels, corrected_values, cond_number = sgtm(pet_nifti, roi_nifti, fwhm)
             labels.shape
             (3,)
@@ -69,7 +72,10 @@ def sgtm(pet_nifti: nib.Nifti1Image,
     assert pet_3d.shape == roi_3d.shape, "PET and ROI images must be the same dimensions"
 
     resolution = pet_nifti.header.get_zooms()[:3]
-    sigma = [(fwhm_i / 2.355) / res_i for fwhm_i, res_i in zip(fwhm, resolution)]
+    if isinstance(fwhm, float):
+        sigma = [(fwhm / 2.355) / res for res in resolution]
+    else:
+        sigma = [(fwhm_i / 2.355) / res_i for fwhm_i, res_i in zip(fwhm, resolution)]
 
     unique_labels = np.unique(roi_3d)
     if not zeroth_roi:
