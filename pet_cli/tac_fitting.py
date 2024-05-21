@@ -39,19 +39,15 @@ class TACFitter(object):
         
         self.raw_p_tac = pTAC.copy()
         self.raw_t_tac = tTAC.copy()
+        self.t_tac_san = None
+        self.resample_times = None
+        self.delta_t = None
+        self.p_tac_san = None
+        self._p_tac_intp = None
+        self.t_tac = None
+        self.p_tac = None
         
-        self.t_tac_san = self.sanitize_tac(*self.raw_t_tac)
-        self.resample_times = np.linspace(self.t_tac_san[0][0], self.t_tac_san[0][-1], resample_num)
-        self.delta_t = self.resample_times[1] - self.resample_times[0]
-        
-        self.p_tac_san = self.sanitize_tac(*self.raw_p_tac)
-        self._p_tac_intp = pet_bld.BloodInputFunction(time=self.p_tac_san[0],
-                                                      activity=self.p_tac_san[1],
-                                                      thresh_in_mins=aif_fit_thresh_in_mins)
-        
-        self.t_tac = self.resample_tac_on_new_times(*self.t_tac_san, self.resample_times)
-        self.p_tac = np.asarray([self.resample_times[:],
-                                 self._p_tac_intp.calc_blood_input_function(t=self.resample_times)])
+        self.resample_tacs_evenly(aif_fit_thresh_in_mins, resample_num)
         
         self.set_weights(weights)
         
@@ -89,6 +85,19 @@ class TACFitter(object):
         self.initial_guesses = self.bounds[:, 0]
         self.lo_bounds = self.bounds[:, 1]
         self.hi_bounds = self.bounds[:, 2]
+        
+    def resample_tacs_evenly(self, fit_thresh_in_mins: float, resample_num: int):
+        self.t_tac_san = self.sanitize_tac(*self.raw_t_tac)
+        self.resample_times = np.linspace(self.t_tac_san[0][0], self.t_tac_san[0][-1], resample_num)
+        self.delta_t = self.resample_times[1] - self.resample_times[0]
+        
+        self.p_tac_san = self.sanitize_tac(*self.raw_p_tac)
+        self._p_tac_intp = pet_bld.BloodInputFunction(time=self.p_tac_san[0], activity=self.p_tac_san[1],
+                                                      thresh_in_mins=fit_thresh_in_mins)
+        
+        self.t_tac = self.resample_tac_on_new_times(*self.t_tac_san, self.resample_times)
+        self.p_tac = np.asarray(
+                [self.resample_times[:], self._p_tac_intp.calc_blood_input_function(t=self.resample_times)])
         
     def get_tcm_func_properties(self, tcm_func):
         assert tcm_func in [pet_tcms.generate_tac_1tcm_c1_from_tac,
