@@ -59,9 +59,8 @@ class TACFitter(object):
         
         if isinstance(weights, float):
             tmp_ar = np.sqrt(np.exp(-weights * self.t_tac[0]) * self.t_tac[1])
-            non_zero_idx = tmp_ar != 0.0
-            # tmp_ar[non_zero_idx] = 1. / tmp_ar[non_zero_idx]
-            tmp_ar[~non_zero_idx] = np.inf
+            zero_idx = tmp_ar == 0.0
+            tmp_ar[zero_idx] = np.inf
             self.weights = tmp_ar
         elif isinstance(weights, np.ndarray):
             self.weights = np.interp(x=self.t_tac[0], xp=self.raw_t_tac[0], fp=weights)
