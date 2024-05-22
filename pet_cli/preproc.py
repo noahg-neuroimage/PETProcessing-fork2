@@ -4,7 +4,7 @@ neuroimaging data for a PET study. Acts as a wrapper for other tools supplied
 in `PPM` 
 """
 import os
-from . import qc_plots
+from . import qc_plots, register, image_operations_4d, motion_corr
 from image_operations_4d import weighted_series_sum, write_tacs, extract_tac_from_nifty_using_mask, resample_segmentation
 from register import register_pet
 from motion_corr import motion_corr
@@ -179,9 +179,8 @@ class PreProc():
 
     def _generate_outfile_path(self,
                                method_short: str):
-        output_file_name = f'{self.output_filename_prefix}_wss.nii.gz'
-        outfile = os.path.join(self.output_directory,
-                                   output_file_name)
+        output_file_name = f'{self.output_filename_prefix}_{method_short}.nii.gz'
+        return os.path.join(self.output_directory,output_file_name)
 
     def run_preproc(self,
                     method_name: str):
@@ -196,18 +195,14 @@ class PreProc():
         self._check_method_props_exist(method_name=method_name)
 
         if method_name=='weighted_series_sum':
-            output_file_name = f'{self.output_filename_prefix}_wss.nii.gz'
-            outfile = os.path.join(self.output_directory,
-                                   output_file_name)
+            outfile = self._generate_outfile_path(method_short='wss')
             weighted_series_sum(input_image_4d_path=preproc_props['FilePathWSSInput'],
                                 out_image_path=outfile,
                                 half_life=preproc_props['HalfLife'],
                                 verbose=preproc_props['Verbose'])
 
         elif method_name=='motion_corr':
-            output_file_name = f'{self.output_filename_prefix}_moco.nii.gz'
-            outfile = os.path.join(self.output_directory,
-                                   output_file_name)
+            outfile = self._generate_outfile_path(method_short='moco')
             moco_outputs = motion_corr(input_image_4d_path=preproc_props['FilePathMocoInp'],
                                        motion_target_option=preproc_props['MotionTarget'],
                                        out_image_path=outfile,
@@ -222,9 +217,7 @@ class PreProc():
             return moco_outputs
 
         elif method_name=='register_pet':
-            output_file_name = f'{self.output_filename_prefix}_reg.nii.gz'
-            outfile = os.path.join(self.output_directory,
-                                   output_file_name)
+            outfile = self._generate_outfile_path(method_short='reg')
             register_pet(motion_target_option=preproc_props['MotionTarget'],
                          input_reg_image_path=preproc_props['FilePathRegInp'],
                          reference_image_path=preproc_props['FilePathAnat'],
@@ -234,9 +227,7 @@ class PreProc():
                          kwargs=preproc_props['RegPars'])
 
         elif method_name=='resample_segmentation':
-            output_file_name = f'{self.output_filename_prefix}_seg-res.nii.gz'
-            outfile = os.path.join(self.output_directory,
-                                   output_file_name)
+            outfile = self._generate_outfile_path(method_short='seg-res')
             resample_segmentation(input_image_4d_path=preproc_props['FilePathTACInput'],
                                   segmentation_image_path=preproc_props['FilePathSeg'],
                                   out_seg_path=outfile,

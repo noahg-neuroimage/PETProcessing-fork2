@@ -6,7 +6,7 @@ import re
 from typing import Union
 import fsl.wrappers
 import ants
-from . import image_io
+from . import image_io, motion_corr
 from motion_corr import determine_motion_target
 
 
