@@ -1,5 +1,5 @@
 import inspect
-from typing import Callable, Union
+from typing import Callable, Union, override
 import numpy as np
 from scipy.optimize import curve_fit as sp_cv_fit
 from . import tcms_as_convolutions as pet_tcms
@@ -22,9 +22,10 @@ class TACFitter(object):
                  weights: np.ndarray = None,
                  tcm_func: Callable = None,
                  fit_bounds: np.ndarray = None,
-                 resample_num: int = 2048,
-                 aif_fit_thresh_in_mins: float = 30.0):
-        
+                 resample_num: int = 512,
+                 aif_fit_thresh_in_mins: float = 30.0,
+                 max_iters: int = 2500):
+        self.max_func_evals = max_iters
         self.tcm_func = None
         self.fit_param_number = None
         self.fit_param_names = None
@@ -132,4 +133,56 @@ class TACFitter(object):
     def run_fit(self) -> None:
         self.fit_results = sp_cv_fit(f=self.fitting_func, xdata=self.resample_times, ydata=self.tgt_tac_vals,
                                      p0=self.initial_guesses, bounds=(self.bounds_lo, self.bounds_hi),
-                                     sigma=self.weights)
+                                     sigma=self.weights, maxfev=self.max_func_evals)
+
+
+class TACFitterWithoutBloodVolume(TACFitter):
+    def __init__(self,
+                 pTAC: np.ndarray,
+                 tTAC: np.ndarray,
+                 weights: np.ndarray = None,
+                 tcm_func: Callable = None,
+                 fit_bounds: np.ndarray = None,
+                 resample_num: int = 2048,
+                 aif_fit_thresh_in_mins: float = 30.0,
+                 max_iters: int = 2500):
+        
+        super().__init__(pTAC, tTAC, weights, tcm_func, fit_bounds, resample_num, aif_fit_thresh_in_mins, max_iters)
+        self.get_tcm_func_properties(tcm_func)
+        self.set_bounds_and_initial_guesses(fit_bounds)
+    
+    @override
+    def get_tcm_func_properties(self, tcm_func: Callable) -> None:
+        assert tcm_func in [pet_tcms.generate_tac_1tcm_c1_from_tac,
+                            pet_tcms.generate_tac_2tcm_with_k4zero_cpet_from_tac,
+                            pet_tcms.generate_tac_serial_2tcm_cpet_from_tac], (
+            "`tcm_func should be one of `pet_tcms.generate_tac_1tcm_c1_from_tac`, "
+            "`pet_tcms.generate_tac_2tcm_with_k4zero_cpet_from_tac`, "
+            "`pet_tcms.generate_tac_serial_2tcm_cpet_from_tac`")
+        
+        self.tcm_func = tcm_func
+        self.fit_param_names = get_fitting_params_for_tcm_func(self.tcm_func)[:-1]
+        self.fit_param_number = len(self.fit_param_names)
+    
+    @override
+    def set_bounds_and_initial_guesses(self, fit_bounds: np.ndarray) -> None:
+        assert self.tcm_func is not None, "This method should be run after `get_tcm_func_properties`"
+        if fit_bounds is not None:
+            assert fit_bounds.shape == (self.fit_param_number, 3), ("Fit bounds has the wrong shape. For each potential"
+                                                                    " fitting parameter in `tcm_func`, we require the "
+                                                                    "tuple: `(initial, lower, upper)`.")
+            self.bounds = fit_bounds.copy()
+        else:
+            bounds = np.zeros((self.fit_param_number, 3), float)
+            for pid, param in enumerate(bounds[:]):
+                bounds[pid] = [0.1, 1.0e-8, 5.0]
+            self.bounds = bounds.copy()
+        
+        self.initial_guesses = self.bounds[:, 0]
+        self.bounds_lo = self.bounds[:, 1]
+        self.bounds_hi = self.bounds[:, 2]
+    
+    @override
+    def fitting_func(self, x: np.ndarray, *params) -> np.ndarray:
+        return self.tcm_func(x, self.p_tac_vals, *params, vb=0.0)[1]
+    
