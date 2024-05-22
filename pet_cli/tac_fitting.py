@@ -20,7 +20,7 @@ class TACFitter(object):
                  pTAC: np.ndarray,
                  tTAC: np.ndarray,
                  weights: np.ndarray = None,
-                 tcm_func: Callable = pet_tcms.generate_tac_2tcm_with_k4zero_cpet_from_tac,
+                 tcm_func: Callable = None,
                  fit_bounds: np.ndarray = None,
                  resample_num: int = 2048,
                  aif_fit_thresh_in_mins: float = 30.0):
@@ -28,7 +28,7 @@ class TACFitter(object):
         self.tcm_func = None
         self.number_of_fit_params = None
         self.fit_param_names = None
-        self.weights = None
+        
         self.bounds = None
         self.initial_guesses = None
         self.lo_bounds = None
@@ -49,6 +49,7 @@ class TACFitter(object):
         
         self.resample_tacs_evenly(aif_fit_thresh_in_mins, resample_num)
         
+        self.weights = None
         self.set_weights(weights)
         
         self.p_tac_vals = self.p_tac[1]
@@ -56,7 +57,7 @@ class TACFitter(object):
         self.fit_results = None
     
     def set_weights(self, weights) -> None:
-        
+        assert self.t_tac is not None, 'This method should be run after `resample_tacs_evenly`'
         if isinstance(weights, float):
             tmp_ar = np.sqrt(np.exp(-weights * self.t_tac[0]) * self.t_tac[1])
             zero_idx = tmp_ar == 0.0
@@ -68,6 +69,7 @@ class TACFitter(object):
             self.weights = np.ones_like(self.t_tac[1])
     
     def set_bounds_and_initial_guesses(self, fit_bounds: np.ndarray) -> None:
+        assert self.tcm_func is not None, "This method should be run after `get_tcm_func_properties`"
         if fit_bounds is not None:
             assert fit_bounds.shape == (self.number_of_fit_params, 3), (
                 "Fit bounds has the wrong shape. For each potential"
@@ -127,7 +129,7 @@ class TACFitter(object):
     def fitting_func(self, x, *params):
         return self.tcm_func(x, self.p_tac_vals, *params)[1]
     
-    def run_fitting(self):
+    def run_fit(self):
         self.fit_results = sp_cv_fit(f=self.fitting_func,
                                      xdata=self.resample_times,
                                      ydata=self.tgt_tac_vals,
