@@ -11,8 +11,9 @@ from typing import Union
 import ants
 import nibabel
 import numpy as np
-from . import image_io, image_operations_4d 
-from image_operations_4d import weighted_series_sum
+from . import image_io, image_operations_4d
+
+weighted_series_sum = image_operations_4d.weighted_series_sum
 
 
 def determine_motion_target(motion_target_option: Union[str,tuple],

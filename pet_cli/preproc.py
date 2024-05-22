@@ -5,10 +5,12 @@ in `PPM`
 """
 import os
 from . import qc_plots, register, image_operations_4d, motion_corr
-from image_operations_4d import weighted_series_sum, write_tacs, extract_tac_from_nifty_using_mask, resample_segmentation
-from register import register_pet
-from motion_corr import motion_corr
 
+weighted_series_sum = image_operations_4d.weighted_series_sum
+write_tacs = image_operations_4d.write_tacs
+extract_tac_from_nifty_using_mask = image_operations_4d.extract_tac_from_nifty_using_mask
+resample_segmentation = image_operations_4d.resample_segmentation
+register_pet = register.register_pet
 
 class PreProc():
     """
@@ -203,12 +205,12 @@ class PreProc():
 
         elif method_name=='motion_corr':
             outfile = self._generate_outfile_path(method_short='moco')
-            moco_outputs = motion_corr(input_image_4d_path=preproc_props['FilePathMocoInp'],
-                                       motion_target_option=preproc_props['MotionTarget'],
-                                       out_image_path=outfile,
-                                       verbose=preproc_props['Verbose'],
-                                       half_life=preproc_props['HalfLife'],
-                                       kwargs=preproc_props['MocoPars'])
+            moco_outputs = motion_corr.motion_corr(input_image_4d_path=preproc_props['FilePathMocoInp'],
+                                                   motion_target_option=preproc_props['MotionTarget'],
+                                                   out_image_path=outfile,
+                                                   verbose=preproc_props['Verbose'],
+                                                   half_life=preproc_props['HalfLife'],
+                                                   kwargs=preproc_props['MocoPars'])
             motion = moco_outputs[2]
             output_plot = os.path.join(self.output_directory,
                                        f'{self.output_filename_prefix}_motion.png')

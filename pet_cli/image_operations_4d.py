@@ -24,7 +24,6 @@ import nibabel
 from nibabel import processing
 import numpy as np
 from . import image_io, math_lib
-from math_lib import weighted_sum_computation
 
 def weighted_series_sum(input_image_4d_path: str,
                         out_image_path: str,
@@ -124,11 +123,12 @@ def weighted_series_sum(input_image_4d_path: str,
         frame_duration_adjusted = frame_duration[calc_first_frame:calc_last_frame]
         decay_correction_adjusted = decay_correction[calc_first_frame:calc_last_frame]
 
-    image_weighted_sum = weighted_sum_computation(frame_duration=frame_duration_adjusted,
-                                                  half_life=half_life,
-                                                  pet_series=pet_series_adjusted,
-                                                  frame_start=frame_start_adjusted,
-                                                  decay_correction=decay_correction_adjusted)
+    wsc = math_lib.weighted_sum_computation
+    image_weighted_sum = wsc(frame_duration=frame_duration_adjusted,
+                             half_life=half_life,
+                             pet_series=pet_series_adjusted,
+                             frame_start=frame_start_adjusted,
+                             decay_correction=decay_correction_adjusted)
 
     pet_sum_image = nibabel.nifti1.Nifti1Image(dataobj=image_weighted_sum,
                                                affine=pet_image.affine,
@@ -171,10 +171,10 @@ def resample_segmentation(input_image_4d_path: str,
         print(f'Resampled segmentation saved to {out_seg_path}')
 
 
-def extract_tac_from_nifty_using_mask(input_image_4d_path: str,
-                                        segmentation_image_path: str,
-                                        region: int,
-                                        verbose: bool) -> np.ndarray:
+def extract_tac_from_nifty_using_mask(input_image_4d_numpy: str,
+                                      segmentation_image_numpy: str,
+                                      region: int,
+                                      verbose: bool) -> np.ndarray:
     """
     Creates a time-activity curve (TAC) by computing the average value within a region, for each 
     frame in a 4D PET image series. Takes as input a PET image, which has been registered to
@@ -200,12 +200,12 @@ def extract_tac_from_nifty_using_mask(input_image_4d_path: str,
             sampling.
     """
 
-    pet_image_4d = nibabel.load(input_image_4d_path).get_fdata()
+    pet_image_4d = input_image_4d_numpy
     if len(pet_image_4d.shape)==4:
         num_frames = pet_image_4d.shape[3]
     else:
         num_frames = 1
-    seg_image = nibabel.load(segmentation_image_path).get_fdata()
+    seg_image = segmentation_image_numpy
 
     if seg_image.shape!=pet_image_4d.shape[:3]:
         raise ValueError('Mis-match in image shape of segmentation image '
@@ -321,14 +321,16 @@ def write_tacs(input_image_4d_path: str,
 
     pet_meta = image_io.ImageIO.load_metadata_for_nifty_with_same_filename(input_image_4d_path)
     label_map = image_io.ImageIO.read_label_map_tsv(label_map_file=label_map_path)
-    regions_abrev = label_map['abbreviations']
-    regions_map = label_map['mappings']
+    regions_abrev = label_map['abbreviation']
+    regions_map = label_map['mapping']
 
     tac_extraction_func = extract_tac_from_nifty_using_mask
+    pet_numpy = nibabel.load(input_image_4d_path).get_fdata()
+    seg_numpy = nibabel.load(segmentation_image_path).get_fdata()
 
-    for i, _maps in enumerate(label_map['mappings']):
-        extracted_tac = tac_extraction_func(input_image_4d_path=input_image_4d_path,
-                                            segmentation_image_path=segmentation_image_path,
+    for i, _maps in enumerate(label_map['mapping']):
+        extracted_tac = tac_extraction_func(input_image_4d_numpy=pet_numpy,
+                                            segmentation_image_numpy=seg_numpy,
                                             region=int(regions_map[i]),
                                             verbose=verbose)
         region_tac_file = np.array([pet_meta[time_frame_keyword],extracted_tac]).T

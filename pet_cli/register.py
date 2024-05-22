@@ -7,8 +7,8 @@ from typing import Union
 import fsl.wrappers
 import ants
 from . import image_io, motion_corr
-from motion_corr import determine_motion_target
 
+determine_motion_target = motion_corr.determine_motion_target
 
 def register_pet(input_reg_image_path: str,
                  reference_image_path: str,
