@@ -1,4 +1,5 @@
 import numpy as np
+from typing import Union
 import matplotlib.pyplot as plt
 from scipy.stats import linregress
 
@@ -6,7 +7,7 @@ from scipy.stats import linregress
 _TEXT_BOX_ = {'facecolor': 'lightblue', 'edgecolor': 'black', 'lw': 2.0, 'alpha': 0.2}
 
 
-def generate_random_parameter_samples(num_samples, num_params, hi, lo):
+def generate_random_parameter_samples(num_samples: int, num_params: int, hi: Union[float, tuple], lo: Union[float, tuple]):
     r"""
     Generates an array of random parameter samples.
 
@@ -22,7 +23,29 @@ def generate_random_parameter_samples(num_samples, num_params, hi, lo):
     Note:
         Uses :func:`np.random.random` to generate random values in a given shape.
     """
-    return np.random.random((num_samples, num_params)) * (hi - lo) + lo
+    rand_samples = np.zeros((num_samples, num_params))
+    if isinstance(hi, tuple):
+        assert len(hi) == num_params, "`hi` must be of length num_params"
+        if isinstance(lo, tuple):
+            assert len(lo) == num_params, "`lo` must be of length num_params"
+            for i in range(num_params):
+                rand_samples[:, i] = np.random.random(num_samples) * (hi[i] - lo[i]) + lo[i]
+        else:
+            for i in range(num_params):
+                rand_samples[:, i] = np.random.random(num_samples) * (hi[i] - lo) + lo
+    elif isinstance(lo, tuple):
+        assert len(lo) == num_params, "`lo` must be of length num_params"
+        if isinstance(hi, tuple):
+            assert len(hi) == num_params, "`hi` must be of length num_params"
+            for i in range(num_params):
+                rand_samples[:, i] = np.random.random(num_samples) * (hi[i] - lo[i]) + lo[i]
+        else:
+            for i in range(num_params):
+                rand_samples[:, i] = np.random.random(num_samples) * (hi - lo[i]) + lo[i]
+    else:
+        rand_samples = np.random.random((num_samples, num_params)) * (hi - lo) + lo
+    
+    return rand_samples
 
 
 def add_gaussian_noise_to_tac_based_on_max(tac_vals: np.ndarray, scale: float = 0.05) -> np.ndarray:
