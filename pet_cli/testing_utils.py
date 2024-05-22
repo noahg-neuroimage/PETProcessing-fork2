@@ -94,10 +94,10 @@ def scatter_with_regression_figure(axes,
         Uses :func:`scipy.stats.linregress` for linear regression.
     """
     if sca_kwargs is None:
-        sca_kwargs = dict(ms=10, marker='.', color='red')
+        sca_kwargs = dict(s=10, marker='.', color='red')
     
     if reg_kwargs is None:
-        reg_kwargs = dict(s=10, color='black', alpha=0.8, lw=3, ls='-')
+        reg_kwargs = dict(ms=10, color='black', alpha=0.8, lw=3, ls='-')
     
     fax = axes.flatten()
     for ax_id, (xAr, yAr, title) in enumerate((zip(true_values.T, fit_values.T, ax_titles))):
