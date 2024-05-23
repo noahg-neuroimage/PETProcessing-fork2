@@ -25,35 +25,35 @@ class TACFitter(object):
                  resample_num: int = 512,
                  aif_fit_thresh_in_mins: float = 30.0,
                  max_iters: int = 2500):
-        self.max_func_evals = max_iters
-        self.tcm_func = None
-        self.fit_param_number = None
-        self.fit_param_names = None
+        self.max_func_evals: int = max_iters
+        self.tcm_func: Callable = None
+        self.fit_param_number: int = None
+        self.fit_param_names: list = None
         
-        self.bounds = None
-        self.initial_guesses = None
-        self.bounds_lo = None
-        self.bounds_hi = None
+        self.bounds: np.ndarray = None
+        self.initial_guesses: np.ndarray = None
+        self.bounds_lo: np.ndarray = None
+        self.bounds_hi: np.ndarray = None
         
         self.get_tcm_func_properties(tcm_func)
         self.set_bounds_and_initial_guesses(fit_bounds)
         
-        self.raw_p_tac = pTAC.copy()
-        self.raw_t_tac = tTAC.copy()
-        self.sanitized_t_tac = None
-        self.sanitized_p_tac = None
-        self.resample_times = None
-        self.delta_t = None
-        self.resampled_t_tac = None
-        self.resampled_p_tac = None
+        self.raw_p_tac: np.ndarray = pTAC.copy()
+        self.raw_t_tac: np.ndarray = tTAC.copy()
+        self.sanitized_t_tac: np.ndarray = None
+        self.sanitized_p_tac: np.ndarray = None
+        self.resample_times: np.ndarray = None
+        self.delta_t: float = None
+        self.resampled_t_tac: np.ndarray = None
+        self.resampled_p_tac: np.ndarray = None
         
         self.resample_tacs_evenly(aif_fit_thresh_in_mins, resample_num)
         
-        self.weights = None
+        self.weights: np.ndarray = None
         self.set_weights(weights)
         
-        self.p_tac_vals = self.resampled_p_tac[1]
-        self.tgt_tac_vals = self.resampled_t_tac[1]
+        self.p_tac_vals: np.ndarray = self.resampled_p_tac[1]
+        self.tgt_tac_vals: np.ndarray = self.resampled_t_tac[1]
         self.fit_results = None
     
     def set_bounds_and_initial_guesses(self, fit_bounds: np.ndarray) -> None:
@@ -124,8 +124,8 @@ class TACFitter(object):
             return np.asarray([tac_times, out_vals])
     
     @staticmethod
-    def resample_tac_on_new_times(tac_times: np.ndarray, tac_vals: np.ndarray, new_times: np.ndarray):
-        return new_times, np.interp(x=new_times, xp=tac_times, fp=tac_vals)
+    def resample_tac_on_new_times(tac_times: np.ndarray, tac_vals: np.ndarray, new_times: np.ndarray) -> np.ndarray:
+        return np.asarray([new_times, np.interp(x=new_times, xp=tac_times, fp=tac_vals)])
     
     def fitting_func(self, x: np.ndarray, *params) -> np.ndarray:
         return self.tcm_func(x, self.p_tac_vals, *params)[1]
@@ -185,4 +185,3 @@ class TACFitterWithoutBloodVolume(TACFitter):
     @override
     def fitting_func(self, x: np.ndarray, *params) -> np.ndarray:
         return self.tcm_func(x, self.p_tac_vals, *params, vb=0.0)[1]
-    
