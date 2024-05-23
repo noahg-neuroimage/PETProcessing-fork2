@@ -1,17 +1,46 @@
 import inspect
-from typing import Callable, Union, override
+from typing import Callable, Union
 import numpy as np
 from scipy.optimize import curve_fit as sp_cv_fit
 from . import tcms_as_convolutions as pet_tcms
 from . import blood_input as pet_bld
 import os
 
+pet_tcms.generate_tac_1tcm_c1_from_tac
+pet_tcms.generate_tac_2tcm_with_k4zero_cpet_from_tac
+pet_tcms.generate_tac_serial_2tcm_cpet_from_tac
 
 def get_fitting_params_for_tcm_func(f: Callable) -> list:
+    """
+    Fetches the parameter names from the function signature of a given Tissue Compartment Model (TCM) function. The
+    functions can be one of the following:
+        * :func:`generate_tac_1tcm_c1_from_tac<pet_cli.tcms_as_convolutions.generate_tac_1tcm_c1_from_tac>`
+        * :func:`generate_tac_2tcm_with_k4zero_cpet_from_tac<pet_cli.tcms_as_convolutions.generate_tac_2tcm_with_k4zero_cpet_from_tac>`
+        * :func:`generate_tac_serial_2tcm_cpet_from_tac<pet_cli.tcms_as_convolutions.generate_tac_serial_2tcm_cpet_from_tac>`
+
+    Args:
+        f (Callable): TCM function.
+
+    Returns:
+        list: List of parameter names.
+    """
     return list(inspect.signature(f).parameters.keys())[2:]
 
 
 def get_number_of_fit_params_for_tcm_func(f: Callable) -> int:
+    """
+    Counts the number of fitting parameters for a given Tissue Compartment Model (TCM) function. The
+    functions can be one of the following:
+        * :func:`generate_tac_1tcm_c1_from_tac<pet_cli.tcms_as_convolutions.generate_tac_1tcm_c1_from_tac>`
+        * :func:`generate_tac_2tcm_with_k4zero_cpet_from_tac<pet_cli.tcms_as_convolutions.generate_tac_2tcm_with_k4zero_cpet_from_tac>`
+        * :func:`generate_tac_serial_2tcm_cpet_from_tac<pet_cli.tcms_as_convolutions.generate_tac_serial_2tcm_cpet_from_tac>`
+
+    Args:
+        f (Callable): TCM function.
+
+    Returns:
+        int: Number of fitting parameters.
+    """
     return len(get_fitting_params_for_tcm_func(f))
 
 
@@ -151,7 +180,6 @@ class TACFitterWithoutBloodVolume(TACFitter):
         self.get_tcm_func_properties(tcm_func)
         self.set_bounds_and_initial_guesses(fit_bounds)
     
-    @override
     def get_tcm_func_properties(self, tcm_func: Callable) -> None:
         assert tcm_func in [pet_tcms.generate_tac_1tcm_c1_from_tac,
                             pet_tcms.generate_tac_2tcm_with_k4zero_cpet_from_tac,
@@ -164,7 +192,6 @@ class TACFitterWithoutBloodVolume(TACFitter):
         self.fit_param_names = get_fitting_params_for_tcm_func(self.tcm_func)[:-1]
         self.fit_param_number = len(self.fit_param_names)
     
-    @override
     def set_bounds_and_initial_guesses(self, fit_bounds: np.ndarray) -> None:
         assert self.tcm_func is not None, "This method should be run after `get_tcm_func_properties`"
         if fit_bounds is not None:
@@ -182,6 +209,5 @@ class TACFitterWithoutBloodVolume(TACFitter):
         self.bounds_lo = self.bounds[:, 1]
         self.bounds_hi = self.bounds[:, 2]
     
-    @override
     def fitting_func(self, x: np.ndarray, *params) -> np.ndarray:
         return self.tcm_func(x, self.p_tac_vals, *params, vb=0.0)[1]
