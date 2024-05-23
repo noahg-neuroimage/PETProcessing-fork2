@@ -129,9 +129,8 @@ def motion_corr(input_image_4d_path: str,
                                                        half_life=half_life)
 
     motion_target_image = ants.image_read(motion_target_image_path)
-    motion_target_image_ants = ants.from_nibabel(motion_target_image)
     pet_moco_ants_dict = ants.motion_correction(image=pet_ants,
-                                                fixed=motion_target_image_ants,
+                                                fixed=motion_target_image,
                                                 type_of_transform=type_of_transform,
                                                 **kwargs)
     if verbose:
