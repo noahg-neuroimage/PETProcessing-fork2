@@ -334,7 +334,7 @@ def fit_frtm_to_tac(tgt_tac_vals: np.ndarray,
         r1_start (float): Starting guess for the :math:`R_1\equiv\frac{k_1^\prime}{k_1}` parameter.
         k2_start (float): Starting guess for :math:`k_2` parameter.
         k3_start (float): Starting guess for :math:`k_3` parameter.
-        k3_start (float): Starting guess for :math:`k_4` parameter.
+        k4_start (float): Starting guess for :math:`k_4` parameter.
 
     Returns:
         tuple: (``fit_parameters``, ``fit_covariance``). Output from :func:`scipy.optimize.curve_fit`
@@ -701,3 +701,67 @@ def calc_k2prime_from_mrtm_2003_fit(fit_vals: np.ndarray):
 
     """
     return fit_vals[0]/fit_vals[2]
+
+class RTMAnalysis:
+    def __init__(self,
+                 target_tac_vals,
+                 reference_tac_times=None,
+                 reference_tac_vals=None,
+                 method=None,
+                 bounds=None,
+                 t_thresh_in_mins=None,
+                 k2_prime=None):
+        
+        self.target_tac_vals = target_tac_vals
+        self.reference_tac_times = reference_tac_times
+        self.reference_tac_vals = reference_tac_vals
+        self.method = method
+        self.bounds = bounds
+        self.t_thresh_in_mins = t_thresh_in_mins
+        self.k2_prime = k2_prime
+    
+    def fit_tac_to_model(self):
+        if self.method == "srtm":
+            if self.bounds:
+                return fit_srtm_to_tac_with_bounds(self.target_tac_vals,
+                                                   self.reference_tac_times,
+                                                   self.reference_tac_vals,
+                                                   *self.bounds)
+            else:
+                return fit_srtm_to_tac(self.target_tac_vals,
+                                       self.reference_tac_times,
+                                       self.reference_tac_vals)
+        
+        if self.method == "frtm":
+            if self.bounds:
+                return fit_frtm_to_tac_with_bounds(self.target_tac_vals,
+                                                   self.reference_tac_times,
+                                                   
+                                                   self.reference_tac_vals,
+                                                   *self.bounds)
+            else:
+                return fit_frtm_to_tac(self.target_tac_vals,
+                                       self.reference_tac_times,
+                                       self.reference_tac_vals)
+        
+        if self.method == "mrtm-original":
+            return fit_mrtm_original_to_tac(self.target_tac_vals,
+                                            self.reference_tac_times,
+                                            self.reference_tac_vals,
+                                            self.t_thresh_in_mins)
+        
+        if self.method == "mrtm":
+            return fit_mrtm_2003_to_tac(self.target_tac_vals,
+                                        self.reference_tac_times,
+                                        self.reference_tac_vals,
+                                        self.t_thresh_in_mins)
+        
+        if self.method == "mrtm2":
+            return fit_mrtm2_2003_to_tac(self.target_tac_vals,
+                                         self.reference_tac_times,
+                                         self.reference_tac_vals,
+                                         self.t_thresh_in_mins,
+                                         self.k2_prime)
+        
+        raise ValueError(f"Invalid method! Must be either 'srtm', 'frtm', 'mrtm-original', 'mrtm' or 'mrtm2'")
+    
