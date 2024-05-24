@@ -85,6 +85,35 @@ class TACFitter(object):
         self.fit_results = None
     
     def set_bounds_and_initial_guesses(self, fit_bounds: np.ndarray) -> None:
+        r"""
+        Sets initial guesses for the fitting parameters, along with their lower and upper bounds.
+
+        The function checks if a custom ``fit_bounds`` is provided. If yes, it makes
+        sure that its shape is valid (that is, for each fitting parameter it requires
+        the tuple: ``(initial, lower, upper)``) and then sets it. But if no custom
+        `fit_bounds` is given, it first initializes bounds to all zeros and then sets
+        each parameter's bounds to ``(0.1, 1.0e-8, 5.0)`` except for the last parameter,
+        which it sets to ``(0.1, 0.0, 1.0)`` because it corresponds to the fraction of blood
+        and is physically constrained between 0 and 1. The function separately stores the initial points,
+        lower and upper bounds in three different numpy arrays for later use.
+
+        Args:
+            fit_bounds (numpy.ndarray): A 2D numpy array containing initial parameter guesses, and their lower and
+                upper bounds in the form of ``(initial, lower, upper)``. The shape should be
+                (``number_of_fit_params``, 3).
+
+        Raises:
+            AssertionError: If `fit_bounds` doesn't have a valid shape.
+
+        Side Effects:
+            - bounds (np.ndarray): Either takes custom defined ``fit_bounds``, or sets the default bounds
+                                   for each parameter with the last parameter having bounds defined
+                                   between 0 and 1.
+            - initial_guesses (np.ndarray): Initial guesses for all the parameters.
+            - bounds_lo (np.ndarray): Lower bounds for all the parameters.
+            - bounds_hi (np.ndarray): Upper bounds for all the parameters.
+        
+        """
         assert self.tcm_func is not None, "This method should be run after `get_tcm_func_properties`"
         if fit_bounds is not None:
             assert fit_bounds.shape == (self.fit_param_number, 3), ("Fit bounds has the wrong shape. For each potential"
