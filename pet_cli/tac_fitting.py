@@ -1,3 +1,25 @@
+"""
+This module provides functionalities for fitting Tissue Compartment Models (TCM) to Time Activity Curves (TAC)
+using various methods.
+
+It includes classes that handle different parts of the TAC fitting process:
+    - :class:`TACFitter`: The primary class for fitting TCMs to TACs. It provides utility methods to prepare data,
+      set up fitting parameters, and perform the curve fitting. This class allows fitting based on various TCM functions
+      such as one-tissue compartment model (1TCM), 2TCM, and others.
+    - :class:`TACFitterWithoutBloodVolume`: A subclass of TACFitter designed for scenarios when there is no signal
+      contribution from blood volume in the TAC. It utilises the functionalities of :class:`TACFitter` and modifies
+      certain methods to exclude the blood volume parameter.
+
+Functions and methods in this module use :mod:`numpy` and :mod:`scipy` packages for data manipulation and optimization
+of the fitting process.
+
+Please refer to the documentation of each class for more detailed information.
+
+See Also:
+    * :mod:`pet_cli.tcms_as_convolutions`
+    * :mod:`pet_cli.blood_input`
+    
+"""
 import inspect
 from typing import Callable, Union
 import numpy as np
