@@ -7,11 +7,14 @@ _TEXT_BOX_ = {'facecolor': 'lightblue', 'edgecolor': 'black', 'lw': 2.0, 'alpha'
 
 
 class TACPlots(object):
-    def __init__(self, figsize: tuple = (8, 4)):
+    def __init__(self,
+                 figsize: tuple = (8, 4),
+                 xlabel: str = r'$t$ [minutes]',
+                 ylabel: str = r'TAC [$\mathrm{kBq/ml}$]'):
         self.fig, self.axes = plt.subplots(1, 2, sharey=True, constrained_layout=True, figsize=figsize)
         self.fax = self.axes.flatten()
-        [ax.set(xlabel=r'$t$ [minutes]') for ax in self.fax]
-        self.fax[0].set(ylabel=r'TAC [$\mathrm{kBq/ml}$]', title='Linear')
+        [ax.set(xlabel=xlabel) for ax in self.fax]
+        self.fax[0].set(ylabel=ylabel, title='Linear')
         self.fax[1].set(xscale='log', title='SemiLog-X')
     
     def add_tac(self, tac_times: np.ndarray, tac_vals: np.ndarray, label: str = None, pl_kwargs: dict = None):
