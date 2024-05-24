@@ -135,6 +135,9 @@ class TACFitter(object):
             - resampled_t_tac (np.ndarray): tTAC resampled at the time points defined in resample_times.
             - resampled_p_tac (np.ndarray): pTAC resampled and extrapolated (if necessary) at the time points defined in
               resample_times.
+              
+        See Also:
+            - :class:`pet_cli.blood_input.BloodInputFunction`
             
         """
         self.sanitized_t_tac = self.sanitize_tac(*self.raw_t_tac)
@@ -151,6 +154,35 @@ class TACFitter(object):
                 [self.resample_times[:], p_tac_interp_obj.calc_blood_input_function(t=self.resample_times)])
     
     def set_weights(self, weights: Union[float, str, None]) -> None:
+        r"""
+        Sets the weights for handling the residuals in the optimization process.
+
+        The ``weights`` parameter determines how weights will be used:
+            - It can be a float which will generate the weights based on an exponential decay formula. We assume that
+              the passed in float is the decay constant, :math:`\lambda=\ln(2)/T_{1/2}`, where the half-life is in
+              minutes. The weights are generated as: :math:`\sigma_i=\sqrt{e^{-\lambda t_i}C(t_i)}`, to be used as the
+              ``sigma`` parameter for :func:`scipy.optimize.curve_fit`.
+            - If it's a numpy array, the weights are linearly interpolated on the calculated `resample_times`.
+            - If no specific value or an array is given, a numpy array of ones is used (i.e., it assumes equal weight).
+
+        The method asserts that ``resampled_t_tac`` has been computed, thus :meth:`resample_tacs_evenly`
+        method should be run before this.
+
+        Args:
+            weights (Union[float, str, None]): Determines how weights will be computed. If a float, it is used
+                                               as the exponential decay constant. If a numpy array, the provided weights
+                                               are linearly interpolated on the calculated resampled times. If None,
+                                               equal weights are assumed.
+
+        Returns:
+            None
+
+        Side Effects:
+            weights (np.ndarray): Sets the weights attribute of the class based on logical conditions. Either
+                                  they are based on an exponential decay function, directly supplied, or assumed
+                                  as equal weights.
+                                  
+        """
         assert self.resampled_t_tac is not None, 'This method should be run after `resample_tacs_evenly`'
         
         if isinstance(weights, float):
