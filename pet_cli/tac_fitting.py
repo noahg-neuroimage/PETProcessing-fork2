@@ -209,6 +209,20 @@ class TACFitter(object):
     
     @staticmethod
     def sanitize_tac(tac_times: np.ndarray, tac_vals: np.ndarray) -> np.ndarray:
+        r"""
+        Makes sure that the Time-Activity Curve (TAC) starts from time zero.
+
+        The method ensures that the TAC starts from time zero by checking the first timestamp. If it's not zero, a zero
+        timestamp and value are prepended, otherwise, the first value is set to zero. This method assumes that
+        `tac_times` and `tac_vals` arrays have the same shape.
+
+        Args:
+            tac_times (numpy.ndarray): The original times of the TAC.
+            tac_vals (numpy.ndarray): The original values of the TAC.
+
+        Returns:
+            numpy.ndarray: The sanitized TAC: ``[sanitized_times, sanitized_vals]``.
+        """
         assert tac_times.shape == tac_vals.shape, "`tac_times` and `tac_vals` must have the same shape."
         if tac_times[0] != 0.0:
             return np.asarray([np.append(0, tac_times), np.append(0, tac_vals)])
@@ -219,6 +233,23 @@ class TACFitter(object):
     
     @staticmethod
     def resample_tac_on_new_times(tac_times: np.ndarray, tac_vals: np.ndarray, new_times: np.ndarray) -> np.ndarray:
+        r"""
+        Resamples the Time-Activity Curve (TAC) on given new time points by linear interpolation.
+
+        The method performs a linear interpolation of `tac_vals` on `new_times` based on `tac_times`.
+
+        Args:
+            tac_times (numpy.ndarray): The original times of the TAC.
+            tac_vals (numpy.ndarray): The original values of the TAC.
+            new_times (numpy.ndarray): The new times to resample the TAC on.
+
+        Returns:
+            numpy.ndarray: The resampled TAC: the resampled times and values. ``[new_times, new_vals]``.
+            
+        See Also:
+            :func:`numpy.interp`
+            
+        """
         return np.asarray([new_times, np.interp(x=new_times, xp=tac_times, fp=tac_vals)])
     
     def fitting_func(self, x: np.ndarray, *params) -> np.ndarray:
