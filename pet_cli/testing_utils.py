@@ -7,6 +7,27 @@ from scipy.stats import linregress
 _TEXT_BOX_ = {'facecolor': 'lightblue', 'edgecolor': 'black', 'lw': 2.0, 'alpha': 0.2}
 
 
+class TACPlots(object):
+    def __init__(self, figsize: tuple = (8, 4)):
+        self.fig, self.axes = plt.subplots(1, 2, sharey=True, constrained_layout=True, figsize=figsize)
+        self.fax = self.axes.flatten()
+        [ax.set(xlabel=r'$t$ [minutes]') for ax in self.fax]
+        self.fax[0].set(ylabel=r'TAC [$\mathrm{kBq/ml}$]', title='Linear')
+        self.fax[1].set(xscale='log', title='SemiLog-X')
+    
+    def add_tac(self, tac_times: np.ndarray, tac_vals: np.ndarray, label: str = None, pl_kwargs: dict = None):
+        if pl_kwargs is None:
+            pl_kwargs = {'lw': 2, 'alpha': 0.8}
+        
+        if label is None:
+            [ax.plot(tac_times, tac_vals, **pl_kwargs) for ax in self.fax]
+        else:
+            [ax.plot(tac_times, tac_vals, label=label, **pl_kwargs) for ax in self.fax]
+    
+    def gen_legend(self):
+        self.fig.legend(*self.fax[0].get_legend_handles_labels(), bbox_to_anchor=(1.0, 0.5), loc='center left')
+
+
 def generate_random_parameter_samples(num_samples: int, num_params: int, hi: Union[float, tuple], lo: Union[float, tuple]):
     r"""
     Generates an array of random parameter samples.

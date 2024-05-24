@@ -43,6 +43,93 @@ def _get_number_of_fit_params_for_tcm_func(f: Callable) -> int:
 
 
 class TACFitter(object):
+    r"""
+    A class used for fitting Tissue Compartment Models(TCM) to Time Activity Curves (TAC).
+
+    It facilitates and simplifies the curve fitting process of TCM functions to TAC data. The class
+    takes in raw TAC data for the plasma and tissue as input, and provides numerous utility methods
+    to prepare data, set up fitting parameters, and perform the curve fitting. The resample method ensures
+    data is appropriate for curve fitting by interpolating the TAC data over a regular time grid, and includes a
+    time=0 data-point to the TACs if necessary.
+
+    The class provides multiple options for setting up weights for the curve fitting residuals and for providing
+    initial guesses and setting up bounds for the fitting parameters of the TCM function.
+
+    Allows fitting on the basis of various TCM functions like one-tissue compartment model (1TCM), 2TCM, and others.
+
+    Attributes:
+        resample_times (np.ndarray): Times at which TACs are resampled.
+        resampled_t_tac (np.ndarray): Tissue TAC values resampled at these times.
+        p_tac_vals (np.ndarray): Plasma TAC values used for feeding to TCM function.
+        raw_t_tac (np.ndarray): Raw TAC times for tissue, fed at initialization.
+        weights (np.ndarray): Weights for handling residuals during the optimization process.
+        tgt_tac_vals (np.ndarray): Tissue TAC values to fit TCM model.
+        fit_param_number (int): Number of fitting parameters in the TCM function.
+        initial_guesses (np.ndarray): Initial guesses for all the parameters for curve fitting.
+        bounds_hi (np.ndarray): Upper bounds for all the parameters for curve fitting.
+        fit_results (np.optimize.OptimizeResult): The results of the fit, including optimized parameters and covariance
+            matrix.
+        fit_param_names (List[str]): Names of fitting parameters in the TCM function.
+        raw_p_tac (np.ndarray): Raw TAC times for plasma, fed at initialization.
+        resampled_p_tac (np.ndarray): Plasma TAC values resampled on these times.
+        sanitized_t_tac (np.ndarray): Sanitized version of tissue TAC times.
+        bounds_lo (np.ndarray): Lower bounds for all the parameters for curve fitting.
+        bounds (np.ndarray): Bounds for each parameter for curve fitting.
+        max_func_evals (int): Maximum number of function evaluations (iterations) for the optimization process.
+        tcm_func (Callable): The tissue compartment model (TCM) function to fit.
+        sanitized_p_tac (np.ndarray): Sanitized version of plasma TAC times.
+        delta_t (float): Delta between the newly created time steps in resampled times.
+        
+    Example:
+        In the following quick example, ``tTAC`` represents a tissue TAC (``[times, values]``) and ``pTAC`` represents the
+        input function (``[times, values]``). Furthermore, we want to fit the provided ``tTAC`` with a 2TCM.
+        
+        .. code-block:: python
+        
+            import pet_cli.tcms_as_convolutions as pet_tcm
+            import pet_cli.tac_fitting as pet_fit
+            import numpy as np
+            
+            tcm_func = pet_tcm.generate_tac_serial_2tcm_cpet_from_tac
+            fit = pet_fit.TACFitter(pTAC=pTAC, tTAC=tTAC, tcm_func=tcm_func, resample_num=512)
+            fit.run_fit()
+            fit_params = fit.fit_results[0]
+            print(fit_params.round(3))
+    
+        In the following example, we use an FDG input function from the module-provided data, and simulate a noisy 1TCM
+        TAC and fit it -- showing a plot of everything at the end.
+    
+        .. plot::
+            :include-source:
+            :caption: Fitting a noisy simulated FDG-like TAC
+            
+            import numpy as np
+            import pet_cli.tcms_as_convolutions as pet_tcm
+            import pet_cli.tac_fitting as pet_fit
+            import matplotlib.pyplot as plt
+            import pet_cli.testing_utils as pet_tst
+            
+            tcm_func = pet_tcm.generate_tac_1tcm_c1_from_tac
+            pTAC = np.asarray(np.loadtxt("../data/tcm_tacs/fdg_plasma_clamp_evenly_resampled.txt").T)
+            tTAC = tcm_func(*pTAC, k1=1.0, k2=0.25, vb=0.05)
+            tTAC[1] = pet_tst.add_gaussian_noise_to_tac_based_on_max(tTAC[1])
+            
+            fitter = pet_fit.TACFitter(pTAC=pTAC, tTAC=tTAC, tcm_func=tcm_func)
+            fitter.run_fit()
+            fit_params = fitter.fit_results[0]
+            fit_tac = pet_tcm.generate_tac_1tcm_c1_from_tac(*pTAC, *fit_params)
+            
+            plotter = pet_tst.TACPlots()
+            plotter.add_tac(*pTAC, label='Input TAC', pl_kwargs={'color':'black', 'ls':'--'})
+            plotter.add_tac(*tTAC, label='Tissue TAC', pl_kwargs={'color':'blue', 'ls':'', 'marker':'o', 'mec':'k'})
+            plotter.add_tac(*fit_tac, label='Fit TAC', pl_kwargs={'color':'red', 'ls':'-', 'marker':'', 'lw':2.5})
+            plt.legend()
+            plt.show()
+    
+    See Also:
+        * :class:`TACFitterWithoutBloodVolume` to assume :math:`V_B=0` and only fit the kinetic parameters.
+        
+    """
     def __init__(self,
                  pTAC: np.ndarray,
                  tTAC: np.ndarray,
