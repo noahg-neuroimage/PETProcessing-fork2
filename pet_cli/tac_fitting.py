@@ -139,6 +139,30 @@ class TACFitter(object):
                  resample_num: int = 512,
                  aif_fit_thresh_in_mins: float = 30.0,
                  max_iters: int = 2500):
+        r"""
+        Initialize TACFitter with provided arguments.
+
+        The init function performs several important operations:
+            1. It sets the maximum number of function evaluations (iterations) for the optimization process.
+            2. It sets the TCM function properties and initial bounds with the provided TCM function and fit bounds.
+            3. It loads the raw tissue and plasma TACs and then resamples them evenly over a regular time grid.
+            4. It determines the weights to be used for handling residuals during the optimization process.
+            5. It sets the plasma TAC values and tissue TAC values to fit the TCM model.
+
+        Args:
+            pTAC (np.ndarray): The plasma TAC, with the form ``[times, values]``.
+            tTAC (np.ndarray): The tissue TAC to which we will fit a TCM, with the form ``[times, values]``.
+            weights (float, np.ndarray or None, optional): Weights for handling residuals during the optimization
+                process. If None, all residuals are equally weighted. Defaults to None.
+            tcm_func (Callable, optional): The specific TCM function to be used for fitting. Defaults to None.
+            fit_bounds (np.ndarray or None, optional): Bounds for each parameter for curve fitting.
+                If None, they will be guessed. Defaults to None.
+            resample_num (int, optional): The number of time points used when resampling TAC data. Defaults to 512.
+            aif_fit_thresh_in_mins (float, optional): The threshold in minutes when resampling. Defaults to 30.0.
+            max_iters (int, optional): Maximum number of function evaluations (iterations) for the optimization process.
+                Defaults to 2500.
+                
+        """
         
         self.max_func_evals: int = max_iters
         self.tcm_func: Callable = None
@@ -467,6 +491,35 @@ class TACFitterWithoutBloodVolume(TACFitter):
                  resample_num: int = 2048,
                  aif_fit_thresh_in_mins: float = 30.0,
                  max_iters: int = 2500):
+        r"""
+        Initializes TACFitterWithoutBloodVolume with provided arguments. Inherits all arguments from parent class TACFitter.
+
+        This ``__init__`` method, in comparison to TACFitter's ``__init__``, executes the same initial operations but
+        disregards the blood volume parameter. The significant steps are:
+            1. Calls the TACFitter's __init__ with the provided arguments.
+            2. Sets the TCM function properties while eliminating blood volume.
+            3. Sets the fitting bounds and initial guesses, again excluding blood volume.
+
+        Args:
+            pTAC (np.ndarray): The plasma TAC, with the form [times, values].
+            tTAC (np.ndarray): The tissue TAC to which we will fit a TCM, with the form [times, values].
+            weights (float, np.ndarray or None, optional): Weights for handling residuals during the optimization process.
+                If None, all residuals are equally weighted. Defaults to None.
+            tcm_func (Callable, optional): The specific TCM function to be used for fitting. Defaults to None.
+            fit_bounds (np.ndarray or None, optional): Bounds for each parameter for curve fitting.
+                If None, they will be guessed. Defaults to None.
+            resample_num (int, optional): The number of time points used when resampling TAC data. Defaults to 512.
+            aif_fit_thresh_in_mins (float, optional): The threshold in minutes when resampling. Defaults to 30.0.
+            max_iters (int, optional): Maximum number of function evaluations (iterations) for the optimization process.
+                Defaults to 2500.
+
+        Side-effect:
+            Sets the TCM function properties and initial bounds while disregarding the blood volume parameter.
+            
+        See Also
+            * :class:`TACFitter`
+            
+        """
         
         super().__init__(pTAC, tTAC, weights, tcm_func, fit_bounds, resample_num, aif_fit_thresh_in_mins, max_iters)
         self.get_tcm_func_properties(tcm_func)
@@ -540,6 +593,6 @@ class TACFitterWithoutBloodVolume(TACFitter):
 
         Returns:
             The values of the TCM function with the given parameters at the given x-values,
-            with blood volume (vb) set to 0.
+            with blood volume (``vb``) set to 0.
         """
         return self.tcm_func(x, self.p_tac_vals, *params, vb=0.0)[1]
