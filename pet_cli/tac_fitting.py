@@ -101,7 +101,7 @@ class TACFitter(object):
     
         .. plot::
             :include-source:
-            :caption: Fitting a noisy simulated FDG-like TAC
+            :caption: Fitting a noisy simulated 1TCM TAC.
             
             import numpy as np
             import pet_cli.tcms_as_convolutions as pet_tcm
