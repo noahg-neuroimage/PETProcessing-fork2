@@ -6,12 +6,9 @@ from . import tcms_as_convolutions as pet_tcms
 from . import blood_input as pet_bld
 import os
 
-pet_tcms.generate_tac_1tcm_c1_from_tac
-pet_tcms.generate_tac_2tcm_with_k4zero_cpet_from_tac
-pet_tcms.generate_tac_serial_2tcm_cpet_from_tac
 
 def get_fitting_params_for_tcm_func(f: Callable) -> list:
-    """
+    r"""
     Fetches the parameter names from the function signature of a given Tissue Compartment Model (TCM) function. The
     functions can be one of the following:
         * :func:`generate_tac_1tcm_c1_from_tac<pet_cli.tcms_as_convolutions.generate_tac_1tcm_c1_from_tac>`
@@ -28,7 +25,7 @@ def get_fitting_params_for_tcm_func(f: Callable) -> list:
 
 
 def get_number_of_fit_params_for_tcm_func(f: Callable) -> int:
-    """
+    r"""
     Counts the number of fitting parameters for a given Tissue Compartment Model (TCM) function. The
     functions can be one of the following:
         * :func:`generate_tac_1tcm_c1_from_tac<pet_cli.tcms_as_convolutions.generate_tac_1tcm_c1_from_tac>`
@@ -48,12 +45,13 @@ class TACFitter(object):
     def __init__(self,
                  pTAC: np.ndarray,
                  tTAC: np.ndarray,
-                 weights: np.ndarray = None,
+                 weights: Union[None, float, np.ndarray] = None,
                  tcm_func: Callable = None,
-                 fit_bounds: np.ndarray = None,
+                 fit_bounds: Union[np.ndarray, None] = None,
                  resample_num: int = 512,
                  aif_fit_thresh_in_mins: float = 30.0,
                  max_iters: int = 2500):
+        
         self.max_func_evals: int = max_iters
         self.tcm_func: Callable = None
         self.fit_param_number: int = None
@@ -104,6 +102,41 @@ class TACFitter(object):
         self.bounds_hi = self.bounds[:, 2]
     
     def resample_tacs_evenly(self, fit_thresh_in_mins: float, resample_num: int) -> None:
+        r"""
+        Resample pTAC and tTAC evenly with respect to time, and at the same times.
+
+        The method takes a threshold in minutes and a resample number as inputs. It starts by sanitizing
+        the pTAC and tTAC (prepending a :math:`f(t=0)=0` point to data if necessary). A regularly sampled time is
+        then generated using the start, end, and number of samples dictated by resample_num. Following this,
+        an interpolation object is created using the :class:`pet_cli.blood_input.BloodInputFunction` class for the pTAC.
+        This allows both interpolation and extrapolation for times beyond the pTAC onto the new tTAC times.
+
+        Finally, the method resamples the sanitized tTAC and pTAC across these new evenly distributed
+        times to ensure that they are regularly spaced over time. These resampled values are stored for
+        future computations. The :math:`\Delta t` for the regularly sampled times is also stored.
+
+        Args:
+            fit_thresh_in_mins (float): Threshold in minutes used for defining how to fit half of the pTAC.
+                                        The fitting time threshold determines the point at which the pTAC
+                                        switches from interpolation to fitting. It should be a positive float value.
+
+            resample_num (int): Number of samples to generate when resampling the tTAC. This will be the total
+                                number of samples in tTAC after it has been resampled. It should be a positive integer.
+
+        Returns:
+            None
+
+        Side Effects:
+            - sanitized_t_tac (np.ndarray): Sanitized version of the original tTAC given during class initialization.
+            - sanitized_p_tac (np.ndarray): Sanitized version of the original pTAC given during class initialization.
+            - resample_times (np.ndarray): Regularly sampled time points generated from the start and end of sanitized
+              tTAC, and the passed resample_num.
+            - delta_t (float): Delta between the newly created time steps in resample_times.
+            - resampled_t_tac (np.ndarray): tTAC resampled at the time points defined in resample_times.
+            - resampled_p_tac (np.ndarray): pTAC resampled and extrapolated (if necessary) at the time points defined in
+              resample_times.
+            
+        """
         self.sanitized_t_tac = self.sanitize_tac(*self.raw_t_tac)
         self.sanitized_p_tac = self.sanitize_tac(*self.raw_p_tac)
         
