@@ -299,9 +299,38 @@ class TACFitter(object):
         return np.asarray([new_times, np.interp(x=new_times, xp=tac_times, fp=tac_vals)])
     
     def fitting_func(self, x: np.ndarray, *params) -> np.ndarray:
+        r"""
+        A wrapper function to fit the Tissue Compartment Model (TCM) using given parameters.
+
+        It calculates the results of the TCM function with the given times and parameters using the resampled pTAC.
+
+        Args:
+            x (np.ndarray): The independent data (time-points for TAC)
+            *params: The parameters for the TCM function
+
+        Returns:
+            np.ndarray: The values of the TCM function with the given parameters at the given x-values.
+        """
         return self.tcm_func(x, self.p_tac_vals, *params)[1]
     
     def run_fit(self) -> None:
+        r"""
+        Runs the optimization/fitting process on the data, using previously defined function and parameters.
+
+        This method runs the curve fitting process on the TAC data, starting with the initial guesses
+        for the parameters and the preset bounds for each. ``fitting_func``, initial guesses and bounds
+        should have been set prior to calling this method. Optimized fit results and fit covariances are stored in
+        ``fit_results``.
+
+        Returns:
+            None
+
+        Side Effects:
+            - fit_results (OptimizeResult): The results of the fit, including optimized parameters and covariance matrix.
+              Fitted values can be extracted using fit_results.x, among other available attributes (refer to
+              :func:`scipy.optimize.curve_fit` documentation for more details).
+              
+        """
         self.fit_results = sp_cv_fit(f=self.fitting_func, xdata=self.resample_times, ydata=self.tgt_tac_vals,
                                      p0=self.initial_guesses, bounds=(self.bounds_lo, self.bounds_hi),
                                      sigma=self.weights, maxfev=self.max_func_evals)
