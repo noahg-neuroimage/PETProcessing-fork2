@@ -13,7 +13,7 @@ from .graphical_analysis import cumulative_trapezoidal_integral as cum_trapz
 from . import tcms_as_convolutions as tcms_conv
 
 
-def calc_srtm_tac(tac_times: np.ndarray, r1: float, k2: float, bp: float, ref_tac_vals: np.ndarray) -> np.ndarray:
+def calc_srtm_tac(tac_times: np.ndarray, ref_tac_vals: np.ndarray, r1: float, k2: float, bp: float) -> np.ndarray:
     r"""
     Calculate the Time Activity Curve (TAC) using the Simplified Reference Tissue Model (SRTM) with the given reference
     TAC and kinetic parameters.
@@ -62,12 +62,12 @@ def calc_srtm_tac(tac_times: np.ndarray, r1: float, k2: float, bp: float, ref_ta
 
 
 def _calc_simplified_frtm_tac(tac_times: np.ndarray,
+                              ref_tac_vals: np.ndarray,
                               r1: float,
                               a1: float,
                               a2: float,
                               alpha_1: float,
-                              alpha_2: float,
-                              ref_tac_vals: np.ndarray) -> np.ndarray:
+                              alpha_2: float) -> np.ndarray:
     r"""
     Calculate the Time Activity Curve (TAC) for the Full Reference Tissue Model (FRTM) given the reference TAC and
     simplified coefficients. The coefficients can be generated from kinetic constants using
@@ -162,11 +162,11 @@ def _calc_frtm_params_from_kinetic_params(r1: float,
 
 
 def calc_frtm_tac(tac_times: np.ndarray,
+                  ref_tac_vals: np.ndarray,
                   r1: float,
                   k2: float,
                   k3: float,
-                  k4: float,
-                  ref_tac_vals: np.ndarray) -> np.ndarray:
+                  k4: float) -> np.ndarray:
     r"""
     Calculate the Time Activity Curve (TAC) using the Full Reference Tissue Model (SRTM) with the given reference
     TAC and kinetic parameters.
@@ -215,8 +215,8 @@ def calc_frtm_tac(tac_times: np.ndarray,
 
     """
     r1_n, a1, a2, alpha_1, alpha_2 = _calc_frtm_params_from_kinetic_params(r1=r1, k2=k2, k3=k3, k4=k4)
-    return _calc_simplified_frtm_tac(tac_times=tac_times, r1=r1_n, a1=a1, a2=a2, alpha_1=alpha_1, alpha_2=alpha_2,
-                                     ref_tac_vals=ref_tac_vals)
+    return _calc_simplified_frtm_tac(tac_times=tac_times, ref_tac_vals=ref_tac_vals, r1=r1_n, a1=a1, a2=a2,
+                                     alpha_1=alpha_1, alpha_2=alpha_2)
 
 
 def fit_srtm_to_tac(tgt_tac_vals: np.ndarray,
@@ -255,7 +255,7 @@ def fit_srtm_to_tac(tgt_tac_vals: np.ndarray,
         
     """
     def _fitting_srtm(tac_times, r1, k2, bp):
-        return calc_srtm_tac(tac_times=tac_times, r1=r1, k2=k2, bp=bp, ref_tac_vals=ref_tac_vals)
+        return calc_srtm_tac(tac_times=tac_times, ref_tac_vals=ref_tac_vals, r1=r1, k2=k2, bp=bp)
     
     starting_values = [r1_start, k2_start, bp_start]
     
@@ -299,7 +299,7 @@ def fit_srtm_to_tac_with_bounds(tgt_tac_vals: np.ndarray,
 
     """
     def _fitting_srtm(tac_times, r1, k2, bp):
-        return calc_srtm_tac(tac_times=tac_times, r1=r1, k2=k2, bp=bp, ref_tac_vals=ref_tac_vals)
+        return calc_srtm_tac(tac_times=tac_times, ref_tac_vals=ref_tac_vals, r1=r1, k2=k2, bp=bp)
     
     st_values = (r1_bounds[0], k2_bounds[0], bp_bounds[0])
     lo_values = (r1_bounds[1], k2_bounds[1], bp_bounds[1])
@@ -347,7 +347,7 @@ def fit_frtm_to_tac(tgt_tac_vals: np.ndarray,
         
     """
     def _fitting_frtm(tac_times, r1, k2, k3, k4):
-        return calc_frtm_tac(tac_times=tac_times, r1=r1, k2=k2, k3=k3, k4=k4, ref_tac_vals=ref_tac_vals)
+        return calc_frtm_tac(tac_times=tac_times, ref_tac_vals=ref_tac_vals, r1=r1, k2=k2, k3=k3, k4=k4)
 
     starting_values = (r1_start, k2_start, k3_start, k4_start)
     return sp_fit(f=_fitting_frtm, xdata=ref_tac_times, ydata=tgt_tac_vals, p0=starting_values)
@@ -392,7 +392,7 @@ def fit_frtm_to_tac_with_bounds(tgt_tac_vals: np.ndarray,
 
     """
     def _fitting_frtm(tac_times, r1, k2, k3, k4):
-        return calc_frtm_tac(tac_times=tac_times, r1=r1, k2=k2, k3=k3, k4=k4, ref_tac_vals=ref_tac_vals)
+        return calc_frtm_tac(tac_times=tac_times, ref_tac_vals=ref_tac_vals, r1=r1, k2=k2, k3=k3, k4=k4)
     
     st_values = (r1_bounds[0], k2_bounds[0], k3_bounds[0], k4_bounds[0])
     lo_values = (r1_bounds[1], k2_bounds[1], k3_bounds[1], k4_bounds[1])
