@@ -2,7 +2,8 @@
 Todo:
     * Add the Ichise paper citations.
     * Add the SRTM and FRTM paper citations.
-
+    * Add implementations for the SRTM2 and FRTM2 analyses.
+    
 """
 from typing import Union
 
@@ -703,6 +704,7 @@ def calc_k2prime_from_mrtm_2003_fit(fit_vals: np.ndarray):
     """
     return fit_vals[0]/fit_vals[2]
 
+
 class RTMAnalysis:
     def __init__(self,
                  target_tac_vals: np.ndarray,
@@ -713,60 +715,72 @@ class RTMAnalysis:
                  t_thresh_in_mins: float = None,
                  k2_prime: float = None):
         
-        self.target_tac_vals = target_tac_vals
-        self.reference_tac_times = reference_tac_times
-        self.reference_tac_vals = reference_tac_vals
-        self.method = method
-        self.bounds = bounds
-        self.t_thresh_in_mins = t_thresh_in_mins
-        self.k2_prime = k2_prime
+        self.target_tac_vals: np.ndarray = target_tac_vals
+        self.reference_tac_times: np.ndarray = reference_tac_times
+        self.reference_tac_vals: np.ndarray = reference_tac_vals
+        self.method: str = method
+        self.bounds: Union[None, np.ndarray] = bounds
+        self.validate_bounds()
+        
+        self.t_thresh_in_mins: float = t_thresh_in_mins
+        self.k2_prime: float = k2_prime
+        self.fit_results: Union[None, np.ndarray] = None
+    
+    def validate_bounds(self):
+        if self.bounds is not None:
+            if self.method == "srtm":
+                assert self.bounds.shape == (3, 3), ("The bounds have the wrong shape. Bounds must be (start, lo, hi) "
+                                                     "for each of the fitting parameters: r1, k2, bp")
+            if self.method == "frtm":
+                assert self.bounds.shape == (3, 4), ("The bounds have the wrong shape. Bounds must be (start, lo, hi) "
+                                                     "for each of the fitting parameters: r1, k2, k3, k4")
+            else:
+                raise ValueError(f"Invalid method! Must be either 'srtm' or 'frtm' if bounds are provided.")
     
     def fit_tac_to_model(self):
         if self.method == "srtm":
             if self.bounds:
-                return fit_srtm_to_tac_with_bounds(self.target_tac_vals,
-                                                   self.reference_tac_times,
-                                                   self.reference_tac_vals,
-                                                   r1_bounds=self.bounds[0],
-                                                   k2_bounds=self.bounds[1],
-                                                   bp_bounds=self.bounds[2])
+                self.fit_results = fit_srtm_to_tac_with_bounds(self.target_tac_vals, self.reference_tac_times,
+                                                               self.reference_tac_vals,
+                                                               r1_bounds=self.bounds[0],
+                                                               k2_bounds=self.bounds[1],
+                                                               bp_bounds=self.bounds[2])
             else:
-                return fit_srtm_to_tac(tgt_tac_vals=self.target_tac_vals,
-                                       ref_tac_times=self.reference_tac_times,
-                                       ref_tac_vals=self.reference_tac_vals)
+                self.fit_results = fit_srtm_to_tac(tgt_tac_vals=self.target_tac_vals,
+                                                   ref_tac_times=self.reference_tac_times,
+                                                   ref_tac_vals=self.reference_tac_vals)
         
         if self.method == "frtm":
             if self.bounds:
-                return fit_frtm_to_tac_with_bounds(tgt_tac_vals=self.target_tac_vals,
-                                                   ref_tac_times=self.reference_tac_times,
-                                                   ref_tac_vals=self.reference_tac_vals,
-                                                   r1_bounds=self.bounds[0],
-                                                   k2_bounds=self.bounds[1],
-                                                   k3_bounds=self.bounds[2],
-                                                   k4_bounds=self.bounds[3])
+                self.fit_results = fit_frtm_to_tac_with_bounds(tgt_tac_vals=self.target_tac_vals,
+                                                               ref_tac_times=self.reference_tac_times,
+                                                               ref_tac_vals=self.reference_tac_vals,
+                                                               r1_bounds=self.bounds[0],
+                                                               k2_bounds=self.bounds[1],
+                                                               k3_bounds=self.bounds[2],
+                                                               k4_bounds=self.bounds[3])
             else:
-                return fit_frtm_to_tac(tgt_tac_vals=self.target_tac_vals,
-                                       ref_tac_times=self.reference_tac_times,
-                                       ref_tac_vals=self.reference_tac_vals)
+                self.fit_results = fit_frtm_to_tac(tgt_tac_vals=self.target_tac_vals,
+                                                   ref_tac_times=self.reference_tac_times,
+                                                   ref_tac_vals=self.reference_tac_vals)
         
         if self.method == "mrtm-original":
-            return fit_mrtm_original_to_tac(tgt_tac_vals=self.target_tac_vals,
-                                            ref_tac_times=self.reference_tac_times,
-                                            ref_tac_vals=self.reference_tac_vals,
-                                            t_thresh_in_mins=self.t_thresh_in_mins)
+            self.fit_results = fit_mrtm_original_to_tac(tgt_tac_vals=self.target_tac_vals,
+                                                        ref_tac_times=self.reference_tac_times,
+                                                        ref_tac_vals=self.reference_tac_vals,
+                                                        t_thresh_in_mins=self.t_thresh_in_mins)
         
         if self.method == "mrtm":
-            return fit_mrtm_2003_to_tac(tgt_tac_vals=self.target_tac_vals,
-                                        ref_tac_times=self.reference_tac_times,
-                                        ref_tac_vals=self.reference_tac_vals,
-                                        t_thresh_in_mins=self.t_thresh_in_mins)
+            self.fit_results = fit_mrtm_2003_to_tac(tgt_tac_vals=self.target_tac_vals,
+                                                    ref_tac_times=self.reference_tac_times,
+                                                    ref_tac_vals=self.reference_tac_vals,
+                                                    t_thresh_in_mins=self.t_thresh_in_mins)
         
         if self.method == "mrtm2":
-            return fit_mrtm2_2003_to_tac(tgt_tac_vals=self.target_tac_vals,
-                                         ref_tac_times=self.reference_tac_times,
-                                         ref_tac_vals=self.reference_tac_vals,
-                                         t_thresh_in_mins=self.t_thresh_in_mins,
-                                         k2_prime=self.k2_prime)
+            self.fit_results = fit_mrtm2_2003_to_tac(tgt_tac_vals=self.target_tac_vals,
+                                                     ref_tac_times=self.reference_tac_times,
+                                                     ref_tac_vals=self.reference_tac_vals,
+                                                     t_thresh_in_mins=self.t_thresh_in_mins,
+                                                     k2_prime=self.k2_prime)
         
         raise ValueError(f"Invalid method! Must be either 'srtm', 'frtm', 'mrtm-original', 'mrtm' or 'mrtm2'")
-    
