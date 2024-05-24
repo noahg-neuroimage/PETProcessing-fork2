@@ -68,8 +68,10 @@ class TACPlots(object):
         r"""
         Generate a legend using the labels provided in the add_tac() method.
 
-        Note: It is recommended to add all TACs before generating the legend. Any TACs added after the legend is
+        Note:
+            It is recommended to add all TACs before generating the legend. Any TACs added after the legend is
         generated will not be included in the legend.
+        
         """
         self.fig.legend(*self.fax[0].get_legend_handles_labels(), bbox_to_anchor=(1.0, 0.5), loc='center left')
 
