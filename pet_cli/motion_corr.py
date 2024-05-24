@@ -34,7 +34,7 @@ def determine_motion_target(motion_target_option: Union[str,tuple],
     frames. The elements of the tuple are treated as times in seconds, counted
     from the time of the first frame, i.e. (0,300) would average all frames 
     from the first to the frame 300 seconds later. If the two elements are the
-    same, returns the frame closest to the entered time.
+    same, returns the one frame closest to the entered time.
 
     Args:
         motion_target_option (str | tuple): Determines how the method behaves,
@@ -50,6 +50,10 @@ def determine_motion_target(motion_target_option: Union[str,tuple],
     Returns:
         out_image_file (str): File to use as a target to compute
             transformations on.
+
+    Raises:
+        ValueError: If ``motion_target_option`` does not match an acceptable option.
+        TypeError: If start and end time are incompatible with ``float`` type.
     """
     if isinstance(motion_target_option,str):
         if os.path.exists(motion_target_option):
@@ -61,6 +65,8 @@ def determine_motion_target(motion_target_option: Union[str,tuple],
                                 half_life=half_life,
                                 verbose=False)
             return out_image_file
+        else:
+            raise ValueError("motion_target_option did not match a file or 'weighted_series_sum'")
     elif isinstance(motion_target_option,tuple):
         start_time = motion_target_option[0]
         end_time = motion_target_option[1]
@@ -79,6 +85,8 @@ def determine_motion_target(motion_target_option: Union[str,tuple],
                             start_time=start_time,
                             end_time=end_time)
         return out_image_file
+    else:
+        raise ValueError('motion_target_option did not match str or tuple type.')
 
 
 def motion_corr(input_image_4d_path: str,

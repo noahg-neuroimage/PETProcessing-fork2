@@ -11,6 +11,7 @@ write_tacs = image_operations_4d.write_tacs
 extract_tac_from_nifty_using_mask = image_operations_4d.extract_tac_from_nifty_using_mask
 resample_segmentation = image_operations_4d.resample_segmentation
 register_pet = register.register_pet
+warp_pet_atlas = register.warp_pet_atlas
 
 class PreProc():
     """
@@ -100,10 +101,22 @@ class PreProc():
                  'FilePathTACInput': None,
                  'FilePathSeg': None,
                  'FilePathLabelMap': None,
+                 'FilePathWarpInput': None,
+                 'FilePathAtlas': None,
+                 'FilePathSUVRInput': None,
+                 'FilePathBlurInput': None,
+                 'FilePathPostmat': None,
+                 'FilePathPremat': None,
+                 'FilePathWarpRef': None,
+                 'FilePathWarp': None,
+                 'FilePathXfms': None,
+                 'HalfLife': None,
                  'MotionTarget': None,
                  'MocoPars': None,
                  'RegPars': None,
-                 'HalfLife': None,
+                 'WarpPars': None,
+                 'RefRegion': None,
+                 'BlurSize': None,
                  'RegionExtract': None,
                  'TimeFrameKeyword': None,
                  'Verbose': False}
@@ -128,7 +141,6 @@ class PreProc():
         keys_to_update = [*new_preproc_props]
 
         for key in keys_to_update:
-
             if key not in valid_keys:
                 raise ValueError("Invalid preproc property! Expected one of:\n"
                                  f"{valid_keys}.\n Got {key}.")
@@ -164,11 +176,22 @@ class PreProc():
             required_keys = ['FilePathTACInput','FilePathSeg','RegionExtract','Verbose']
         elif method_name=='write_tacs':
             required_keys = ['FilePathTACInput','FilePathLabelMap','FilePathSeg','Verbose','TimeFrameKeyword']
+        elif method_name=='warp_pet_atlas':
+            required_keys = ['FilePathWarpInput','FilePathAnat','FilePathAtlas','Verbose']
+        elif method_name=='suvr':
+            required_keys = ['FilePathSUVRInput','FilePathSeg','RefRegion','Verbose']
+        elif method_name=='gauss_blur':
+            required_keys = ['FilePathBlurInput','BlurSize','Verbose'],
+        elif method_name=='apply_xfm_ants':
+            required_keys = ['FilePathWarpInput','FilePathWarpRef','FilePathXfms','Verbose']
+        elif method_name=='apply_xfm_fsl':
+            required_keys = ['FilePathWarpInput','FilePathWarpRef','FilePathWarp','FilePathPremat','FilePathPostmat','Verbose']
         else:
             raise ValueError("Invalid method_name! Must be either"
                              "'weighted_series_sum', 'motion_corr', "
                              "'register_pet', 'resample_segmentation', "
-                             "'extract_tac_from_4dnifty_using_mask', or "
+                             "'extract_tac_from_4dnifty_using_mask', "
+                             "'warp_pet_atlas', 'suvr', 'gauss_blur' or "
                              f"'write_tacs'. Got {method_name}")
         for key in required_keys:
             if key not in existing_keys:
@@ -251,6 +274,15 @@ class PreProc():
                        out_tac_dir=outdir,
                        verbose=preproc_props['Verbose'],
                        time_frame_keyword=preproc_props['TimeFrameKeyword'])
+
+        elif method_name=='warp_pet_atlas':
+            outfile = self._generate_outfile_path(method_short='reg-atlas')
+            warp_pet_atlas(input_image_path=preproc_props['FilePathWarpInput'],
+                           anat_image_path=preproc_props['FilePathAnat'],
+                           atlas_image_path=['FilePathAtlas'],
+                           out_image_path=outfile,
+                           verbose=preproc_props['Verbose'],
+                           kwargs=preproc_props['WarpPars'])
 
         else:
             raise ValueError("Invalid method_name! Must be either"
