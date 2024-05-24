@@ -424,6 +424,40 @@ class TACFitter(object):
 
 
 class TACFitterWithoutBloodVolume(TACFitter):
+    r"""
+    A sub-class of TACFitter used specifically for fitting Tissue Compartment Models(TCM) to Time Activity Curves (TAC),
+    when there is no signal contribution from blood volume in the TAC.
+
+    It uses the functionalities of :class:`TACFitter` and modifies the methods calculating the ``tcm_function``
+    properties and the bounds setting, and the wrapped ``fitting_func`` to ignore the blood volume parameter, ``vb``.
+
+    Attributes:
+        resample_times (np.ndarray): Times at which TACs are resampled.
+        resampled_t_tac (np.ndarray): Tissue TAC values resampled at these times.
+        p_tac_vals (np.ndarray): Plasma TAC values used for feeding to TCM function.
+        raw_t_tac (np.ndarray): Raw TAC times for tissue, fed at initialization.
+        weights (np.ndarray): Weights for handling residuals during the optimization process.
+        tgt_tac_vals (np.ndarray): Tissue TAC values to fit TCM model.
+        fit_param_number (int): Number of fitting parameters in the TCM function.
+        initial_guesses (np.ndarray): Initial guesses for all the parameters for curve fitting.
+        bounds_hi (np.ndarray): Upper bounds for all the parameters for curve fitting.
+        fit_results (np.optimize.OptimizeResult): The results of the fit, including optimized parameters and covariance
+            matrix.
+        fit_param_names (List[str]): Names of fitting parameters in the TCM function.
+        raw_p_tac (np.ndarray): Raw TAC times for plasma, fed at initialization.
+        resampled_p_tac (np.ndarray): Plasma TAC values resampled on these times.
+        sanitized_t_tac (np.ndarray): Sanitized version of tissue TAC times.
+        bounds_lo (np.ndarray): Lower bounds for all the parameters for curve fitting.
+        bounds (np.ndarray): Bounds for each parameter for curve fitting.
+        max_func_evals (int): Maximum number of function evaluations (iterations) for the optimization process.
+        tcm_func (Callable): The tissue compartment model (TCM) function to fit.
+        sanitized_p_tac (np.ndarray): Sanitized version of plasma TAC times.
+        delta_t (float): Delta between the newly created time steps in resampled times.
+        
+    See Also:
+        * :class:`TACFitter`
+
+    """
     def __init__(self,
                  pTAC: np.ndarray,
                  tTAC: np.ndarray,
@@ -439,6 +473,21 @@ class TACFitterWithoutBloodVolume(TACFitter):
         self.set_bounds_and_initial_guesses(fit_bounds)
     
     def get_tcm_func_properties(self, tcm_func: Callable) -> None:
+        r"""
+        Overridden method to define a TCM function excluding blood volume.
+        
+        The ``tcm_func`` should be one of the following:
+            * :func:`generate_tac_1tcm_c1_from_tac<pet_cli.tcms_as_convolutions.generate_tac_1tcm_c1_from_tac>`
+            * :func:`generate_tac_2tcm_with_k4zero_cpet_from_tac<pet_cli.tcms_as_convolutions.generate_tac_2tcm_with_k4zero_cpet_from_tac>`
+            * :func:`generate_tac_serial_2tcm_cpet_from_tac<pet_cli.tcms_as_convolutions.generate_tac_serial_2tcm_cpet_from_tac>`
+
+        Args:
+            tcm_func: The chosen TCM function model.
+
+        Side-effect:
+            Sets ``tcm_func``, ``fit_param_names``, and ``fit_param_number`` attributes.
+            
+        """
         assert tcm_func in [pet_tcms.generate_tac_1tcm_c1_from_tac,
                             pet_tcms.generate_tac_2tcm_with_k4zero_cpet_from_tac,
                             pet_tcms.generate_tac_serial_2tcm_cpet_from_tac], (
@@ -451,6 +500,17 @@ class TACFitterWithoutBloodVolume(TACFitter):
         self.fit_param_number = len(self.fit_param_names)
     
     def set_bounds_and_initial_guesses(self, fit_bounds: np.ndarray) -> None:
+        r"""
+        Overridden method to set bounds and initial guesses excluding blood volume parameter.
+
+        Args:
+            fit_bounds: The input bounds for fitting parameters.
+
+        Side-effect:
+            - Sets ``initial_guesses``, ``bounds_lo``, ``bounds_hi``, and ``bounds``, ignoring the last parameter
+              (blood volume).
+              
+        """
         assert self.tcm_func is not None, "This method should be run after `get_tcm_func_properties`"
         if fit_bounds is not None:
             assert fit_bounds.shape == (self.fit_param_number, 3), ("Fit bounds has the wrong shape. For each potential"
@@ -468,4 +528,18 @@ class TACFitterWithoutBloodVolume(TACFitter):
         self.bounds_hi = self.bounds[:, 2]
     
     def fitting_func(self, x: np.ndarray, *params) -> np.ndarray:
+        r"""
+        Overridden method to fit the TCM model setting ``vb=0.0`` explicitly.
+        
+        It calculates the results of the TCM function with the given times and parameters using the resampled pTAC (with
+        ``vb=0.0``).
+
+        Args:
+            x: The independent data (time-points for TAC).
+            *params: Parameters of TCM function (excluding blood volume).
+
+        Returns:
+            The values of the TCM function with the given parameters at the given x-values,
+            with blood volume (vb) set to 0.
+        """
         return self.tcm_func(x, self.p_tac_vals, *params, vb=0.0)[1]
