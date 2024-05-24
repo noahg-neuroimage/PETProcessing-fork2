@@ -7,7 +7,7 @@ from . import blood_input as pet_bld
 import os
 
 
-def get_fitting_params_for_tcm_func(f: Callable) -> list:
+def _get_fitting_params_for_tcm_func(f: Callable) -> list:
     r"""
     Fetches the parameter names from the function signature of a given Tissue Compartment Model (TCM) function. The
     functions can be one of the following:
@@ -20,11 +20,12 @@ def get_fitting_params_for_tcm_func(f: Callable) -> list:
 
     Returns:
         list: List of parameter names.
+        
     """
     return list(inspect.signature(f).parameters.keys())[2:]
 
 
-def get_number_of_fit_params_for_tcm_func(f: Callable) -> int:
+def _get_number_of_fit_params_for_tcm_func(f: Callable) -> int:
     r"""
     Counts the number of fitting parameters for a given Tissue Compartment Model (TCM) function. The
     functions can be one of the following:
@@ -38,7 +39,7 @@ def get_number_of_fit_params_for_tcm_func(f: Callable) -> int:
     Returns:
         int: Number of fitting parameters.
     """
-    return len(get_fitting_params_for_tcm_func(f))
+    return len(_get_fitting_params_for_tcm_func(f))
 
 
 class TACFitter(object):
@@ -196,6 +197,22 @@ class TACFitter(object):
             self.weights = np.ones_like(self.resampled_t_tac[1])
     
     def get_tcm_func_properties(self, tcm_func: Callable) -> None:
+        r"""
+        Analyzes the provided tissue compartment model (TCM) function, sets it for the current instance, and extracts
+        related property information. The ``tcm_func`` should be one of the following:
+            * :func:`generate_tac_1tcm_c1_from_tac<pet_cli.tcms_as_convolutions.generate_tac_1tcm_c1_from_tac>`
+            * :func:`generate_tac_2tcm_with_k4zero_cpet_from_tac<pet_cli.tcms_as_convolutions.generate_tac_2tcm_with_k4zero_cpet_from_tac>`
+            * :func:`generate_tac_serial_2tcm_cpet_from_tac<pet_cli.tcms_as_convolutions.generate_tac_serial_2tcm_cpet_from_tac>`
+
+        The function extracts fitting parameter names and their count from the function signature and sets them in the
+        current instance for later usage.
+
+        Args:
+            tcm_func (Callable): A function that generates a TAC using a specific compartment model.
+
+        Raises:
+            AssertionError: If ``tcm_func`` is not one of the allowed TCM functions.
+        """
         assert tcm_func in [pet_tcms.generate_tac_1tcm_c1_from_tac,
                             pet_tcms.generate_tac_2tcm_with_k4zero_cpet_from_tac,
                             pet_tcms.generate_tac_serial_2tcm_cpet_from_tac], (
@@ -204,7 +221,7 @@ class TACFitter(object):
             "`pet_tcms.generate_tac_serial_2tcm_cpet_from_tac`")
         
         self.tcm_func = tcm_func
-        self.fit_param_names = get_fitting_params_for_tcm_func(self.tcm_func)
+        self.fit_param_names = _get_fitting_params_for_tcm_func(self.tcm_func)
         self.fit_param_number = len(self.fit_param_names)
     
     @staticmethod
@@ -285,7 +302,7 @@ class TACFitterWithoutBloodVolume(TACFitter):
             "`pet_tcms.generate_tac_serial_2tcm_cpet_from_tac`")
         
         self.tcm_func = tcm_func
-        self.fit_param_names = get_fitting_params_for_tcm_func(self.tcm_func)[:-1]
+        self.fit_param_names = _get_fitting_params_for_tcm_func(self.tcm_func)[:-1]
         self.fit_param_number = len(self.fit_param_names)
     
     def set_bounds_and_initial_guesses(self, fit_bounds: np.ndarray) -> None:
