@@ -691,6 +691,7 @@ class ImageOps4d():
     Example:
 
     .. code-block:: python
+    
         output_directory = '/path/to/processing'
         output_filename_prefix = 'sub-01'
         sub_01 = pet_cli.image_operations_4d.ImageOps4d(output_directory,output_filename_prefix)

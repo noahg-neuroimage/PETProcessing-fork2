@@ -706,6 +706,69 @@ def calc_k2prime_from_mrtm_2003_fit(fit_vals: np.ndarray):
 
 
 class RTMAnalysis:
+    r"""
+    A class used to fit a kinetic model to both a target and a reference Time Activity Curve (TAC).
+
+    The :class:`RTMAnalysis` class simplifies the process of kinetic model fitting by providing methods for validating
+    input data, choosing a model to fit, and then performing the fit. It takes in raw intensity values of TAC for both
+    target and reference regions as inputs, which are then used in curve fitting.
+
+    This class supports various kinetic models, including but not limited to: the simplified and full reference tissue
+    models (SRTM & FRTM), and the multilinear reference tissue models (Orignial MRMT, MRTM & MRTM2). Each model type '
+    can be bounded or unbounded.
+
+    The fitting result contains the estimated kinetic parameters depending on the chosen model.
+
+    Attributes:
+        target_tac_vals (np.ndarray): The target TAC values.
+        reference_tac_times (np.ndarray): The time points of the reference TAC.
+        reference_tac_vals (np.ndarray): The reference TAC values.
+        method (str): Optional. The kinetic model to use. Defaults to 'mrtm'.
+        bounds (np.ndarray): Optional. Parameter bounds for the specified kinetic model. Defaults to None.
+        t_thresh_in_mins (float): Optional. The times at which the reference TAC was sampled. Defaults to None.
+        k2_prime (float): Optional. The estimated efflux rate constant for the non-displaceable compartment. Defaults to
+            None.
+        fit_results (np.ndarray): The result of the fit.
+
+    Example:
+        The following example shows how to use the :class:`RTMAnalysis` class to fit the SRTM to a target and reference
+        TAC.
+
+        .. code-block:: python
+
+            import numpy as np
+            import pet_cli.tcms_as_convolutions as pet_tcm
+            import pet_cli.reference_tissue_models as pet_rtms
+            
+            # loading the input tac to generate a reference region tac
+            input_tac_times, input_tac_vals = np.asarray(np.loadtxt("../../data/tcm_tacs/fdg_plasma_clamp_evenly_resampled.txt").T,
+                                                         float)
+            
+            # generating a reference region tac
+            ref_tac_times, ref_tac_vals = pet_tcm.generate_tac_1tcm_c1_from_tac(tac_times=input_tac_times, tac_vals=input_tac_vals,
+                                                                                k1=1.0, k2=0.2)
+            
+            # generating an SRTM tac
+            srtm_tac_vals = pet_rtms.calc_srtm_tac(tac_times=ref_tac_times, ref_tac_vals=ref_tac_vals, r1=1.0, k2=0.25, bp=3.0)
+            
+            rtm_analysis = pet_rtms.RTMAnalysis(target_tac_vals=srtm_tac_vals,
+                                                reference_tac_times=ref_tac_times,
+                                                reference_tac_vals=ref_tac_vals,
+                                                method='srtm')
+            
+            # performing the fit
+            rtm_analysis.fit_tac_to_model()
+            fit_results = rtm_analysis.fit_results[1]
+
+
+    This will give you the kinetic parameter values of the SRTM for the provided TACs.
+
+    See Also:
+        * :meth:`validate_bounds`
+        * :meth:`validate_method_inputs`
+        * :meth:`fit_tac_to_model`
+        
+    """
     def __init__(self,
                  target_tac_vals: np.ndarray,
                  reference_tac_times: np.ndarray,
@@ -714,6 +777,27 @@ class RTMAnalysis:
                  bounds: Union[None, np.ndarray] = None,
                  t_thresh_in_mins: float = None,
                  k2_prime: float = None):
+        r"""
+        Initialize the RTMAnalysis object with specified parameters.
+
+        This method sets up several crucial parameters that would influence subsequent method calls on the RTMAnalysis
+        object. By doing so, it prepares the object for deeper analysis via other methods.
+
+        Args:
+            target_tac_vals (np.ndarray): The array representing the target TAC values.
+            reference_tac_times (np.ndarray): The array representing time points associated with the reference TAC.
+            reference_tac_vals (np.ndarray): The array representing values of the reference TAC.
+            method (str, optional): The kinetics method to be used. Default is 'mrtm'.
+            bounds (Union[None, np.ndarray], optional): Bounds for kinetic parameters used in optimization. None
+                represents absence of bounds. Default is None.
+            t_thresh_in_mins (float, optional): Threshold for time separation in minutes. Default is None.
+            k2_prime (float, optional): The estimated rate constant related to the non-displaceable compartment. Default
+                is None.
+
+        Raises:
+            ValueError: If a parameter necessary for chosen method is not provided.
+            AssertionError: If rate constant k2_prime is non-positive.
+        """
         
         self.target_tac_vals: np.ndarray = target_tac_vals
         self.reference_tac_times: np.ndarray = reference_tac_times
@@ -730,6 +814,29 @@ class RTMAnalysis:
         self.fit_results: Union[None, np.ndarray] = None
     
     def validate_method_inputs(self):
+        r"""Validates the inputs for different methods
+
+        This method validates the inputs depending on the chosen method in the object.
+
+        - If the method is of type 'mrtm', it checks if `t_thresh_in_mins` is defined and positive.
+        - If the method ends with a '2' (the reduced/modified methods), it checks if `k2_prime` is defined and positive.
+
+        Raises:
+            ValueError: If `t_thresh_in_mins` is not defined while the method starts with 'mrtm'.
+            AssertionError: If `t_thresh_in_mins` is not a positive number.
+            ValueError: If `k2_prime` is not defined while the method ends with '2'.
+            AssertionError: If `k2_prime` is not a positive number.
+        
+        See Also:
+            * :func:`fit_srtm_to_tac_with_bounds`
+            * :func:`fit_srtm_to_tac`
+            * :func:`fit_frtm_to_tac_with_bounds`
+            * :func:`fit_frtm_to_tac`
+            * :func:`fit_mrtm_original_to_tac`
+            * :func:`fit_mrtm_2003_to_tac`
+            * :func:`fit_mrtm2_2003_to_tac`
+        
+        """
         if self.method.startswith("mrtm"):
             if self.t_thresh_in_mins is None:
                 raise ValueError(f"t_t_thresh_in_mins must be defined if method is 'mrtm'")
@@ -742,6 +849,28 @@ class RTMAnalysis:
             assert self.k2_prime >= 0, f"k2_prime must be a positive number."
     
     def validate_bounds(self):
+        r"""Validates the bounds for different methods
+
+        This method validates the shape of the bounds depending on the chosen method in the object.
+
+        - If the method is 'srtm', it checks that bounds shape is (3, 3).
+        - If the method is 'frtm', it checks that bounds shape is (3, 4).
+
+        Raises:
+            AssertionError: If the bounds shape for method 'srtm' is not (3, 3)
+            AssertionError: If the bounds shape for method 'frtm' is not (3, 4).
+            ValueError: If the method is not 'srtm' or 'frtm' while providing bounds.
+            
+        See Also:
+            * :func:`fit_srtm_to_tac_with_bounds`
+            * :func:`fit_srtm_to_tac`
+            * :func:`fit_frtm_to_tac_with_bounds`
+            * :func:`fit_frtm_to_tac`
+            * :func:`fit_mrtm_original_to_tac`
+            * :func:`fit_mrtm_2003_to_tac`
+            * :func:`fit_mrtm2_2003_to_tac`
+            
+        """
         if self.bounds is not None:
             if self.method == "srtm":
                 assert self.bounds.shape == (3, 3), ("The bounds have the wrong shape. Bounds must be (start, lo, hi) "
@@ -753,10 +882,33 @@ class RTMAnalysis:
                 raise ValueError(f"Invalid method! Must be either 'srtm' or 'frtm' if bounds are provided.")
     
     def fit_tac_to_model(self):
+        r"""Fits TAC vals to model
+
+        This method fits the target TAC values to the model depending on the chosen method in the object.
+
+        - If the method is 'srtm' or 'frtm', and bounds are provided, fitting functions with bounds are used.
+        - If the method is 'srtm' or 'frtm', and bounds are not provided, fitting functions without bounds are used.
+        - If the method is 'mrtm-original', 'mrtm' or 'mrtm2', related fitting methods are utilized.
+
+        Raises:
+            ValueError: If the method name is invalid and not one of 'srtm', 'frtm', 'mrtm-original', 'mrtm' or 'mrtm2'.
+            
+            
+        See Also:
+            * :func:`fit_srtm_to_tac_with_bounds`
+            * :func:`fit_srtm_to_tac`
+            * :func:`fit_frtm_to_tac_with_bounds`
+            * :func:`fit_frtm_to_tac`
+            * :func:`fit_mrtm_original_to_tac`
+            * :func:`fit_mrtm_2003_to_tac`
+            * :func:`fit_mrtm2_2003_to_tac`
+            
+        """
         if self.method == "srtm":
             if self.bounds:
-                self.fit_results = fit_srtm_to_tac_with_bounds(self.target_tac_vals, self.reference_tac_times,
-                                                               self.reference_tac_vals,
+                self.fit_results = fit_srtm_to_tac_with_bounds(tgt_tac_vals=self.target_tac_vals,
+                                                               ref_tac_times=self.reference_tac_times,
+                                                               ref_tac_vals=self.reference_tac_vals,
                                                                r1_bounds=self.bounds[0],
                                                                k2_bounds=self.bounds[1],
                                                                bp_bounds=self.bounds[2])
