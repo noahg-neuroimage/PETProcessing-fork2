@@ -724,7 +724,22 @@ class RTMAnalysis:
         
         self.t_thresh_in_mins: float = t_thresh_in_mins
         self.k2_prime: float = k2_prime
+        
+        self.validate_method_inputs()
+        
         self.fit_results: Union[None, np.ndarray] = None
+    
+    def validate_method_inputs(self):
+        if self.method.startswith("mrtm"):
+            if self.t_thresh_in_mins is None:
+                raise ValueError(f"t_t_thresh_in_mins must be defined if method is 'mrtm'")
+            else:
+                assert self.t_thresh_in_mins >= 0, f"t_thresh_in_mins must be a positive number."
+        if self.method.endswith("2"):
+            if self.k2_prime is None:
+                raise ValueError(f"k2_prime must be defined if we are using the reduced models: FRTM2, SRTM2, "
+                                 f"and MRTM2.")
+            assert self.k2_prime >= 0, f"k2_prime must be a positive number."
     
     def validate_bounds(self):
         if self.bounds is not None:
