@@ -780,8 +780,9 @@ class RTMAnalysis:
         r"""
         Initialize the RTMAnalysis object with specified parameters.
 
-        This method sets up several crucial parameters that would influence subsequent method calls on the RTMAnalysis
-        object. By doing so, it prepares the object for deeper analysis via other methods.
+        This method sets up input parameters and validates them. We check if the bounds are correct for the given
+        'method', and we make sure that any fitting threshold are defined for the MRTM analyses.
+        
 
         Args:
             target_tac_vals (np.ndarray): The array representing the target TAC values.
@@ -791,8 +792,8 @@ class RTMAnalysis:
             bounds (Union[None, np.ndarray], optional): Bounds for kinetic parameters used in optimization. None
                 represents absence of bounds. Default is None.
             t_thresh_in_mins (float, optional): Threshold for time separation in minutes. Default is None.
-            k2_prime (float, optional): The estimated rate constant related to the non-displaceable compartment. Default
-                is None.
+            k2_prime (float, optional): The estimated rate constant related to the flush-out rate of the reference
+                compartment. Default is None.
 
         Raises:
             ValueError: If a parameter necessary for chosen method is not provided.
@@ -822,10 +823,10 @@ class RTMAnalysis:
         - If the method ends with a '2' (the reduced/modified methods), it checks if `k2_prime` is defined and positive.
 
         Raises:
-            ValueError: If `t_thresh_in_mins` is not defined while the method starts with 'mrtm'.
-            AssertionError: If `t_thresh_in_mins` is not a positive number.
-            ValueError: If `k2_prime` is not defined while the method ends with '2'.
-            AssertionError: If `k2_prime` is not a positive number.
+            ValueError: If ``t_thresh_in_mins`` is not defined while the method starts with 'mrtm'.
+            AssertionError: If ``t_thresh_in_mins`` is not a positive number.
+            ValueError: If ``k2_prime`` is not defined while the method ends with '2'.
+            AssertionError: If ``k2_prime`` is not a positive number.
         
         See Also:
             * :func:`fit_srtm_to_tac_with_bounds`
