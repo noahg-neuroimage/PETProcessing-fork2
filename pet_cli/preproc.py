@@ -4,6 +4,7 @@ neuroimaging data for a PET study. Acts as a wrapper for other tools supplied
 in `PPM` 
 """
 import os
+import json
 from . import qc_plots, register, image_operations_4d, motion_corr
 
 weighted_series_sum = image_operations_4d.weighted_series_sum
@@ -27,8 +28,8 @@ _PREPROC_PROPS_ = {'FilePathWSSInput': None,
                    'FilePathAtlas': None,
                    'FilePathSUVRInput': None,
                    'FilePathBlurInput': None,
-                   'FilePathPostmat': None,
-                   'FilePathPremat': None,
+                   'FilePathFSLPostmat': None,
+                   'FilePathFSLPremat': None,
                    'FilePathWarpRef': None,
                    'FilePathWarp': None,
                    'FilePathXfms': None,
@@ -53,7 +54,7 @@ _REQUIRED_KEYS_ = {
     'suvr': ['FilePathSUVRInput','FilePathSeg','RefRegion','Verbose'],
     'gauss_blur': ['FilePathBlurInput','BlurSize','Verbose'],
     'apply_xfm_ants': ['FilePathWarpInput','FilePathWarpRef','FilePathXfms','Verbose'],
-    'apply_xfm_fsl': ['FilePathWarpInput','FilePathWarpRef','FilePathWarp','FilePathPremat','FilePathPostmat','Verbose']
+    'apply_xfm_fsl': ['FilePathWarpInput','FilePathWarpRef','FilePathWarp','FilePathFSLPremat','FilePathFSLPostmat','Verbose']
 }
 
 
@@ -111,6 +112,7 @@ class PreProc():
                  output_directory: str,
                  output_filename_prefix: str) -> None:
         self.output_directory = os.path.abspath(output_directory)
+        os.makedirs(self.output_directory,exist_ok=True)
         self.output_filename_prefix = output_filename_prefix
         self.preproc_props = self._init_preproc_props()
 
@@ -139,7 +141,7 @@ class PreProc():
 
         """
         return _PREPROC_PROPS_
-    
+
 
     def update_props(self,new_preproc_props: dict) -> dict:
         """
@@ -168,6 +170,26 @@ class PreProc():
         self.preproc_props = updated_props
         return updated_props
 
+
+    def _write_params_json(self):
+        """
+        Write current class properties to json params file. 
+        """
+        json_path = os.path.join(self.output_directory,f"{self.output_filename_prefix}-params.json")
+        with open(json_path,'w+') as f:
+            json.dumps(self.preproc_props,f,indent=4)
+
+
+    def _read_params_json(self) -> dict:
+        """
+        Read a json params file and set the class properties to the saved params.
+        """
+        json_path = os.path.join(self.output_directory,f"{self.output_filename_prefix}-params.json")
+        with open(json_path,'r') as f:
+            preproc_props = json.load(f)
+        
+        self.update_props(preproc_props)
+        return preproc_props
 
     def _check_method_props_exist(self,
                                   method_name: str) -> None:
@@ -297,8 +319,8 @@ class PreProc():
                           ref_image_path=preproc_props['FilePathWarpRef'],
                           out_image_path=outfile,
                           warp_path=preproc_props['FilePathWarp'],
-                          premat_path=preproc_props['FilePathPremat'],
-                          postmat_path=preproc_props['FilePathPostmat'])
+                          premat_path=preproc_props['FilePathFSLPremat'],
+                          postmat_path=preproc_props['FilePathFSLPostmat'])
 
         else:
             raise ValueError("Invalid method_name! Must be either"
