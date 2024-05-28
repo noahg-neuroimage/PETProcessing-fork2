@@ -5,6 +5,7 @@ Todo:
     * Add implementations for the SRTM2 and FRTM2 analyses.
     
 """
+import os.path
 from typing import Union
 
 import numpy as np
@@ -952,3 +953,11 @@ class FitTACWithRTMs:
                                                      k2_prime=self.k2_prime)
         
         raise ValueError(f"Invalid method! Must be either 'srtm', 'frtm', 'mrtm-original', 'mrtm' or 'mrtm2'")
+
+class RTMAnalysis:
+    def __init__(self, ref_tac_path: str, roi_tac_path: str, output_directory: str, output_filename_prefix: str):
+        self.input_tac_path = os.path.abspath(ref_tac_path)
+        self.roi_tac_path = os.path.abs(roi_tac_path)
+        self.output_directory = os.path.abspath(output_directory)
+        self.output_filename_prefix = output_filename_prefix
+        # self.analysis_props = self.in
