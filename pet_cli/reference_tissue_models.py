@@ -5,6 +5,7 @@ Todo:
     * Add implementations for the SRTM2 and FRTM2 analyses.
     
 """
+import json
 import os.path
 from typing import Union
 
@@ -954,6 +955,30 @@ class FitTACWithRTMs:
         
         raise ValueError(f"Invalid method! Must be either 'srtm', 'frtm', 'mrtm-original', 'mrtm' or 'mrtm2'")
 
+# TODO: Use the safe loading of TACs function from an IO module when it is implemented
+def _safe_load_tac(filename: str, **kwargs) -> np.ndarray:
+    """
+    Loads time-activity curves (TAC) from a file.
+
+    Tries to read a TAC from specified file and raises an exception if unable to do so. We assume that the file has two
+    columns, the first corresponding to time and second corresponding to activity.
+
+    Args:
+        filename (str): The name of the file to be loaded.
+
+    Returns:
+        np.ndarray: A numpy array containing the loaded TAC. The first index corresponds to the times, and the second
+        corresponds to the activity.
+
+    Raises:
+        Exception: An error occurred loading the TAC.
+    """
+    try:
+        return np.array(np.loadtxt(filename).T, dtype=float, order='C', **kwargs)
+    except Exception as e:
+        print(f"Couldn't read file {filename}. Error: {e}")
+        raise e
+
 class RTMAnalysis:
     def __init__(self,
                  ref_tac_path: str,
@@ -961,11 +986,13 @@ class RTMAnalysis:
                  output_directory: str,
                  output_filename_prefix: str,
                  method: str):
-        self.ref_tac_path = os.path.abspath(ref_tac_path)
-        self.roi_tac_path = os.path.abspath(roi_tac_path)
-        self.output_directory = os.path.abspath(output_directory)
-        self.output_filename_prefix = output_filename_prefix
-        self.analysis_props = self.init_analysis_props(method.lower())
+        self.ref_tac_path: str = os.path.abspath(ref_tac_path)
+        self.roi_tac_path: str = os.path.abspath(roi_tac_path)
+        self.output_directory: str = os.path.abspath(output_directory)
+        self.output_filename_prefix: str = output_filename_prefix
+        self.method = method.lower()
+        self.analysis_props: dict = self.init_analysis_props(self.method)
+        self.has_analysis_been_run: bool = False
         
     def init_analysis_props(self, method: str) -> dict:
         common_props = {'FilePathRTAC': self.ref_tac_path,
@@ -973,14 +1000,16 @@ class RTMAnalysis:
                         'MethodName': method.upper()}
         props = {}
         if method.startswith("mrtm"):
-            props = {**common_props,
-                     'ThresholdTime': None,
-                     'StartFrameTime': None,
-                     'EndFrameTime': None,
-                     'NumberOfPointsFit': None,
-                     'Slope': None,
-                     'Intercept': None,
-                     'RSquared': None}
+            props = {
+                **common_props,
+                'k2Prime': None,
+                'BP': None,
+                'ThresholdTime': None,
+                'StartFrameTime': None,
+                'EndFrameTime' : None,
+                'NumberOfPointsFit': None,
+                'RawFits': None,
+                }
         elif method.startswith("srtm") or method.startswith("frtm"):
             props = {
                 **common_props,
@@ -990,5 +1019,76 @@ class RTMAnalysis:
         else:
             raise ValueError(f"Invalid method! Must be either 'srtm', 'frtm', 'mrtm-original', 'mrtm' or 'mrtm2'")
         return props
+    
+    def run_analysis(self,
+                     bounds: Union[None, np.ndarray] = None,
+                     t_thresh_in_mins: float = None,
+                     k2_prime: float = None,
+                     **tac_load_kwargs):
+        fit_results = self.calculate_fit(bounds=bounds,
+                                         t_thresh_in_mins=t_thresh_in_mins,
+                                         k2_prime=k2_prime,
+                                         **tac_load_kwargs)
+        self.calculate_fit_properties(fit_results=fit_results)
+        self.has_analysis_been_run = True
+    
+    def calculate_fit(self,
+                      bounds: Union[None, np.ndarray] = None,
+                      t_thresh_in_mins: float = None,
+                      k2_prime: float = None,
+                      **tac_load_kwargs):
+        
+        ref_tac_times, ref_tac_vals = _safe_load_tac(filename=self.ref_tac_path, **tac_load_kwargs)
+        tgt_tac_times, tgt_tac_vals = _safe_load_tac(filename=self.roi_tac_path, **tac_load_kwargs)
+        analysis_obj = FitTACWithRTMs(target_tac_vals=tgt_tac_vals,
+                                      reference_tac_times=ref_tac_times,
+                                      reference_tac_vals=ref_tac_times,
+                                      method=self.method,
+                                      bounds=bounds,
+                                      t_thresh_in_mins=t_thresh_in_mins,
+                                      k2_prime=k2_prime)
+        
+        return analysis_obj.fit_tac_to_model()
+    
+    def calculate_fit_properties(self, fit_results: Union[np.ndarray, tuple[np.ndarray, np.ndarray]],
+                                 t_thresh_in_mins: float = None,
+                                 k2_prime: float = None):
+        if self.method.startswith("frtm") and self.method.startswith("srtm"):
+            fit_params, fit_covariances = fit_results
+            fit_stderr = np.sqrt(np.diagonal(fit_covariances))
+            self.analysis_props["FitValues"] = fit_params.copy()
+            self.analysis_props["FitStdErr"] = fit_stderr.copy()
+        else:
+            k2_val = k2_prime
+            if self.method == 'mrtm-orignial':
+                bp_val = calc_BP_from_mrtm_original_fit(fit_results)
+                k2_val = calc_k2prime_from_mrtm_original_fit(fit_results)
+            elif self.method == 'mrtm':
+                bp_val = calc_BP_from_mrtm_2003_fit(fit_results)
+                k2_val = calc_k2prime_from_mrtm_2003_fit(fit_results)
+            else:
+                bp_val = calc_BP_from_mrtm2_2003_fit(fit_results)
+            self.analysis_props["k2Prime"] = k2_val
+            self.analysis_props["BP"] = bp_val
+            self.analysis_props["RawFits"] = fit_results.copy()
+            ref_tac_times, _ = _safe_load_tac(filename=self.ref_tac_path)
+            t_thresh_index = get_index_from_threshold(times_in_minutes=ref_tac_times,
+                                                      t_thresh_in_minutes=t_thresh_in_mins)
+            self.analysis_props['StartFrameTime'] = ref_tac_times[t_thresh_index]
+            self.analysis_props['EndFrameTime'] = ref_tac_times[-1]
+            self.analysis_props['NumberOfPointsFit'] = len(ref_tac_times[t_thresh_index:])
+            
+    def save_analysis(self):
+        if not self.has_analysis_been_run:
+            raise RuntimeError("'run_analysis' method must be called before 'save_analysis'.")
+        file_name_prefix = os.path.join(self.output_directory,
+                                        f"{self.output_filename_prefix}_analysis-{self.analysis_props['MethodName']}")
+        analysis_props_file = f"{file_name_prefix}_props.json"
+        with open(analysis_props_file, 'w') as f:
+            json.dump(obj=self.analysis_props, fp=f, indent=4)
+            
+        
+        
+    
     
     
