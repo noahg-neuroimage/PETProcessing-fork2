@@ -1000,6 +1000,19 @@ class RTMAnalysis:
         self.has_analysis_been_run: bool = False
         
     def init_analysis_props(self, method: str) -> dict:
+        r"""
+        Initializes the analysis properties dict based on the specified RTM analysis method.
+
+        Args:
+            method (str): RTM analysis method. Must be one of 'srtm', 'frtm', 'mrtm-original',
+            'mrtm' or 'mrtm2'.
+
+        Returns:
+            dict: A dictionary containing method-specific property keys and default values.
+
+        Raises:
+            ValueError: If input `method` is not one of the supported RTM methods.
+        """
         common_props = {'FilePathRTAC': self.ref_tac_path,
                         'FilePathTTAC': self.roi_tac_path,
                         'MethodName': method.upper()}
@@ -1029,6 +1042,23 @@ class RTMAnalysis:
                      t_thresh_in_mins: float = None,
                      k2_prime: float = None,
                      **tac_load_kwargs):
+        r"""
+        Runs the full RTM analysis process which involves validating inputs, calculation fits, and deducing fit
+        properties.
+
+        Specifically, it executes the following sequence:
+            1. :meth:`validate_analysis_inputs`
+            2. :meth:`calculate_fit`
+            3. :meth:`calculate_fit_properties`
+
+        Args:
+            bounds (Union[None, np.ndarray], optional): Optional boundaries for parameters for fitting function.
+            t_thresh_in_mins (float, optional): Threshold time in minutes for the MRTM analyses.
+            k2_prime (float, optional): Input for the modified RTM (MRTM2, FRTM2, and SRTM2) analyses.
+
+        Returns:
+            None
+        """
         self.validate_analysis_inputs(k2_prime=k2_prime, t_thresh_in_mins=t_thresh_in_mins)
         
         fit_results = self.calculate_fit(bounds=bounds,
@@ -1041,6 +1071,19 @@ class RTMAnalysis:
         self.has_analysis_been_run = True
     
     def validate_analysis_inputs(self, k2_prime, t_thresh_in_mins):
+        r"""
+        Validates the provided inputs for the RTM analysis.
+
+        If MRTM type of analysis is being run, it ensures that ``t_thresh_in_mins`` is not None.
+        If modified analysis is being done (MRTM2, FRTM2, SRTM2), it ensures ``k2_prime`` is not None.
+
+        Args:
+            k2_prime (float): k2 prime value.
+            t_thresh_in_mins (float): Threshold time for MRTM analyses.
+
+        Raises:
+            ValueError: If an input required for the selected method is `None`.
+        """
         if self.method.startswith("mrtm") and t_thresh_in_mins is None:
             raise ValueError("t_thresh_in_mins must be set for the MRTM analyses.")
         if self.method.endswith("2") and k2_prime is None:
@@ -1051,6 +1094,23 @@ class RTMAnalysis:
                       t_thresh_in_mins: float = None,
                       k2_prime: float = None,
                       **tac_load_kwargs):
+        r"""
+        Calculates the model fitting parameters for TACs using the chosen RTM analysis method.
+
+        This method executes the following sequence:
+            1. :meth:`validate_analysis_inputs`
+            2. :meth:`_safe_load_tac` for both reference and ROI TACs
+            3. Creates a :class:`FitTACWithRTMs` instance and fits TAC to the model
+
+        Args:
+            bounds (Union[None, np.ndarray]): Boundaries for parameters for fitting function.
+            t_thresh_in_mins (float): Threshold time for MRTM analyses.
+            k2_prime (float): k2 prime value.
+            tac_load_kwargs (Any): Additional keyword arguments for the loading TAC function.
+
+        Returns:
+            FitResults: Object containing fit results.
+        """
         self.validate_analysis_inputs(k2_prime=k2_prime, t_thresh_in_mins=t_thresh_in_mins)
         
         ref_tac_times, ref_tac_vals = _safe_load_tac(filename=self.ref_tac_path, **tac_load_kwargs)
@@ -1069,6 +1129,21 @@ class RTMAnalysis:
     def calculate_fit_properties(self, fit_results: Union[np.ndarray, tuple[np.ndarray, np.ndarray]],
                                  t_thresh_in_mins: float = None,
                                  k2_prime: float = None):
+        r"""
+        Calculates additional fitting properties based on the raw fit results.
+
+        It delegates the calculation to method-specific functions:
+            1. For 'srtm' or 'frtm' methods: :meth:`_calc_frtm_or_srtm_fit_props` is used.
+            2. For 'mrtm' methods: :meth:`_calc_mrtm_fit_props` is used.
+
+        Args:
+            fit_results (Union[np.ndarray, tuple[np.ndarray, np.ndarray]]): The fit results.
+            t_thresh_in_mins (float): Threshold time for MRTM analyses.
+            k2_prime (float): k2 prime value for 'mrtm' based methods.
+
+        Returns:
+            None
+        """
         if self.method.startswith("frtm") or self.method.startswith("srtm"):
             self._calc_frtm_or_srtm_fit_props(fit_results=fit_results)
         else:
@@ -1077,6 +1152,14 @@ class RTMAnalysis:
                                       t_thresh_in_mins=t_thresh_in_mins)
             
     def save_analysis(self):
+        r"""
+        Save the analysis results in JSON format.
+
+        The results are only saved if the analysis has been run (has_analysis_been_run flag is checked).
+
+        Raises:
+            RuntimeError: If the :meth:'run_analysis' method has not been called yet.
+        """
         if not self.has_analysis_been_run:
             raise RuntimeError("'run_analysis' method must be called before 'save_analysis'.")
         file_name_prefix = os.path.join(self.output_directory,
@@ -1088,6 +1171,16 @@ class RTMAnalysis:
     def _calc_mrtm_fit_props(self, fit_results: np.ndarray,
                              k2_prime: float,
                              t_thresh_in_mins: float):
+        r"""
+        Internal function used to calculate additional fitting properties for 'mrtm' type analyses.
+
+        This method is used internally within :meth:`calculate_fit_properties`.
+
+        Args:
+            fit_results (np.ndarray): Resulting fit parameters.
+            k2_prime (float): k2 prime value for 'mrtm' based methods.
+            t_thresh_in_mins (float): Threshold time for MRTM analyses.
+        """
         self.validate_analysis_inputs(k2_prime=k2_prime, t_thresh_in_mins=t_thresh_in_mins)
         if self.method == 'mrtm-original':
             bp_val = calc_BP_from_mrtm_original_fit(fit_results)
@@ -1110,6 +1203,16 @@ class RTMAnalysis:
         self.analysis_props['NumberOfPointsFit'] = len(ref_tac_times[t_thresh_index:])
     
     def _calc_frtm_or_srtm_fit_props(self, fit_results: tuple[np.ndarray, np.ndarray]):
+        r"""
+        Internal function used to calculate additional fitting properties for 'frtm' and 'srtm' type analyses.
+
+        This method is used internally within :meth:`calculate_fit_properties`.
+
+        Args:
+            fit_results (tuple[np.ndarray, np.ndarray]): Tuple containing the fit parameters and their corresponding fit
+                covariances.
+            
+        """
         fit_params, fit_covariances = fit_results
         fit_stderr = np.sqrt(np.diagonal(fit_covariances))
         
@@ -1123,8 +1226,30 @@ class RTMAnalysis:
     
     @staticmethod
     def _get_pretty_srtm_fit_param_vals(param_fits: np.ndarray) -> dict:
+        r"""
+        Utility function to get nicely formatted fit parameters for 'srtm' analysis.
+
+        Returns a dictionary with keys: 'R1', 'k2', and 'BP' and the corresponding values from ``param_fits``.
+
+        Args:
+            param_fits (np.ndarray): array containing the fit parameters.
+
+        Returns:
+            dict: Dictionary of fit parameters and their corresponding values.
+        """
         return {name: val for name, val in zip(['R1', 'k2', 'BP'], param_fits)}
     
     @staticmethod
     def _get_pretty_frtm_fit_param_vals(param_fits: np.ndarray) -> dict:
+        r"""
+        Utility function to get nicely formatted fit parameters for 'frtm' analysis.
+
+        Returns a dictionary with keys: 'R1', 'k2', 'k3', and 'k4' and the corresponding values from ``param_fits``.
+
+        Args:
+            param_fits (np.ndarray): array containing the fit parameters.
+
+        Returns:
+            dict: Dictionary of fit parameters and their corresponding values.
+        """
         return {name: val for name, val in zip(['R1', 'k2', 'k3', 'k4'], param_fits)}
