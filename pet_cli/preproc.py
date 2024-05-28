@@ -12,6 +12,50 @@ extract_tac_from_nifty_using_mask = image_operations_4d.extract_tac_from_nifty_u
 resample_segmentation = image_operations_4d.resample_segmentation
 register_pet = register.register_pet
 warp_pet_atlas = register.warp_pet_atlas
+apply_xfm_ants = register.apply_xfm_ants
+apply_xfm_fsl = register.apply_xfm_fsl
+
+
+_PREPROC_PROPS_ = {'FilePathWSSInput': None,
+                   'FilePathMocoInp': None,
+                   'FilePathRegInp': None,
+                   'FilePathAnat': None,
+                   'FilePathTACInput': None,
+                   'FilePathSeg': None,
+                   'FilePathLabelMap': None,
+                   'FilePathWarpInput': None,
+                   'FilePathAtlas': None,
+                   'FilePathSUVRInput': None,
+                   'FilePathBlurInput': None,
+                   'FilePathPostmat': None,
+                   'FilePathPremat': None,
+                   'FilePathWarpRef': None,
+                   'FilePathWarp': None,
+                   'FilePathXfms': None,
+                   'HalfLife': None,
+                   'MotionTarget': None,
+                   'MocoPars': None,
+                   'RegPars': None,
+                   'WarpPars': None,
+                   'RefRegion': None,
+                   'BlurSize': None,
+                   'RegionExtract': None,
+                   'TimeFrameKeyword': None,
+                   'Verbose': False}
+_REQUIRED_KEYS_ = {
+    'weighted_series_sum': ['FilePathWSSInput','HalfLife','Verbose'],
+    'motion_corr': ['FilePathMocoInp','MotionTarget','Verbose'],
+    'register_pet': ['MotionTarget','FilePathRegInp','FilePathAnat','Verbose'],
+    'resample_segmentation': ['FilePathTACInput','FilePathSeg','Verbose'],
+    'extract_tac_from_nifty_using_mask': ['FilePathTACInput','FilePathSeg','RegionExtract','Verbose'],
+    'write_tacs': ['FilePathTACInput','FilePathLabelMap','FilePathSeg','Verbose','TimeFrameKeyword'],
+    'warp_pet_atlas': ['FilePathWarpInput','FilePathAnat','FilePathAtlas','Verbose'],
+    'suvr': ['FilePathSUVRInput','FilePathSeg','RefRegion','Verbose'],
+    'gauss_blur': ['FilePathBlurInput','BlurSize','Verbose'],
+    'apply_xfm_ants': ['FilePathWarpInput','FilePathWarpRef','FilePathXfms','Verbose'],
+    'apply_xfm_fsl': ['FilePathWarpInput','FilePathWarpRef','FilePathWarp','FilePathPremat','FilePathPostmat','Verbose']
+}
+
 
 class PreProc():
     """
@@ -94,33 +138,7 @@ class PreProc():
             * Verbose (bool): Set to ``True`` to output processing information.
 
         """
-        preproc_props = {'FilePathWSSInput': None,
-                 'FilePathMocoInp': None,
-                 'FilePathRegInp': None,
-                 'FilePathAnat': None,
-                 'FilePathTACInput': None,
-                 'FilePathSeg': None,
-                 'FilePathLabelMap': None,
-                 'FilePathWarpInput': None,
-                 'FilePathAtlas': None,
-                 'FilePathSUVRInput': None,
-                 'FilePathBlurInput': None,
-                 'FilePathPostmat': None,
-                 'FilePathPremat': None,
-                 'FilePathWarpRef': None,
-                 'FilePathWarp': None,
-                 'FilePathXfms': None,
-                 'HalfLife': None,
-                 'MotionTarget': None,
-                 'MocoPars': None,
-                 'RegPars': None,
-                 'WarpPars': None,
-                 'RefRegion': None,
-                 'BlurSize': None,
-                 'RegionExtract': None,
-                 'TimeFrameKeyword': None,
-                 'Verbose': False}
-        return preproc_props
+        return _PREPROC_PROPS_
     
 
     def update_props(self,new_preproc_props: dict) -> dict:
@@ -164,35 +182,16 @@ class PreProc():
         preproc_props = self.preproc_props
         existing_keys = [*preproc_props]
 
-        if method_name=='weighted_series_sum':
-            required_keys = ['FilePathWSSInput','HalfLife','Verbose']
-        elif method_name=='motion_corr':
-            required_keys = ['FilePathMocoInp','MotionTarget','Verbose']
-        elif method_name=='register_pet':
-            required_keys = ['MotionTarget','FilePathRegInp','FilePathAnat','Verbose']
-        elif method_name=='resample_segmentation':
-            required_keys = ['FilePathTACInput','FilePathSeg','Verbose']
-        elif method_name=='extract_tac_from_nifty_using_mask':
-            required_keys = ['FilePathTACInput','FilePathSeg','RegionExtract','Verbose']
-        elif method_name=='write_tacs':
-            required_keys = ['FilePathTACInput','FilePathLabelMap','FilePathSeg','Verbose','TimeFrameKeyword']
-        elif method_name=='warp_pet_atlas':
-            required_keys = ['FilePathWarpInput','FilePathAnat','FilePathAtlas','Verbose']
-        elif method_name=='suvr':
-            required_keys = ['FilePathSUVRInput','FilePathSeg','RefRegion','Verbose']
-        elif method_name=='gauss_blur':
-            required_keys = ['FilePathBlurInput','BlurSize','Verbose'],
-        elif method_name=='apply_xfm_ants':
-            required_keys = ['FilePathWarpInput','FilePathWarpRef','FilePathXfms','Verbose']
-        elif method_name=='apply_xfm_fsl':
-            required_keys = ['FilePathWarpInput','FilePathWarpRef','FilePathWarp','FilePathPremat','FilePathPostmat','Verbose']
-        else:
-            raise ValueError("Invalid method_name! Must be either"
-                             "'weighted_series_sum', 'motion_corr', "
-                             "'register_pet', 'resample_segmentation', "
-                             "'extract_tac_from_4dnifty_using_mask', "
-                             "'warp_pet_atlas', 'suvr', 'gauss_blur' or "
-                             f"'write_tacs'. Got {method_name}")
+        try:
+            required_keys = _REQUIRED_KEYS_[method_name]
+        except KeyError as e:
+            raise KeyError("Invalid method_name! Must be either "
+                           "'weighted_series_sum', 'motion_corr', "
+                           "'register_pet', 'resample_segmentation', "
+                           "'extract_tac_from_4dnifty_using_mask', "
+                           "'warp_pet_atlas', 'suvr', 'gauss_blur' or "
+                           f"'write_tacs'. Got {method_name}")
+
         for key in required_keys:
             if key not in existing_keys:
                 raise ValueError(f"Preprocessing method requires property"
@@ -206,6 +205,7 @@ class PreProc():
                                method_short: str):
         output_file_name = f'{self.output_filename_prefix}_{method_short}.nii.gz'
         return os.path.join(self.output_directory,output_file_name)
+
 
     def run_preproc(self,
                     method_name: str):
@@ -283,6 +283,22 @@ class PreProc():
                            out_image_path=outfile,
                            verbose=preproc_props['Verbose'],
                            kwargs=preproc_props['WarpPars'])
+
+        elif method_name=='apply_xfm_ants':
+            outfile = self._generate_outfile_path(method_short='reg-ants')
+            apply_xfm_ants(input_image_path=preproc_props['FilePathWarpInput'],
+                           ref_image_path=preproc_props['FilePathWarpRef'],
+                           out_image_path=outfile,
+                           xfm_paths=preproc_props['FilePathXfms'])
+
+        elif method_name=='apply_xfm_fsl':
+            outfile = self._generate_outfile_path(method_short='reg-fsl')
+            apply_xfm_fsl(input_image_path=preproc_props['FilePathWarpInput'],
+                          ref_image_path=preproc_props['FilePathWarpRef'],
+                          out_image_path=outfile,
+                          warp_path=preproc_props['FilePathWarp'],
+                          premat_path=preproc_props['FilePathPremat'],
+                          postmat_path=preproc_props['FilePathPostmat'])
 
         else:
             raise ValueError("Invalid method_name! Must be either"
