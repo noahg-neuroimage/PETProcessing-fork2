@@ -1,7 +1,7 @@
 """
 Introduces class :class:`PreProc` which handles preprocessing of PET and other
 neuroimaging data for a PET study. Acts as a wrapper for other tools supplied
-in `PPM`.
+in ``PPM``.
 """
 import os
 import json
@@ -307,7 +307,7 @@ class PreProc():
             outfile = self._generate_outfile_path(method_short='reg-atlas')
             warp_pet_atlas(input_image_path=preproc_props['FilePathWarpInput'],
                            anat_image_path=preproc_props['FilePathAnat'],
-                           atlas_image_path=['FilePathAtlas'],
+                           atlas_image_path=preproc_props['FilePathAtlas'],
                            out_image_path=outfile,
                            verbose=preproc_props['Verbose'],
                            kwargs=preproc_props['WarpPars'])
