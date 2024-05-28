@@ -16,7 +16,7 @@ from . import image_io, image_operations_4d
 weighted_series_sum = image_operations_4d.weighted_series_sum
 
 
-def determine_motion_target(motion_target_option: Union[str,tuple],
+def determine_motion_target(motion_target_option: Union[str,tuple,list],
                             input_image_4d_path: str=None,
                             half_life: float=None):
     """
@@ -67,7 +67,7 @@ def determine_motion_target(motion_target_option: Union[str,tuple],
             return out_image_file
         else:
             raise ValueError("motion_target_option did not match a file or 'weighted_series_sum'")
-    elif isinstance(motion_target_option,tuple):
+    elif isinstance(motion_target_option,tuple) or isinstance(motion_target_option,list):
         start_time = motion_target_option[0]
         end_time = motion_target_option[1]
         try:

@@ -136,6 +136,11 @@ def weighted_series_sum(input_image_4d_path: str,
     nibabel.save(pet_sum_image, out_image_path)
     if verbose:
         print(f"(ImageOps4d): weighted sum image saved to {out_image_path}")
+
+    copy_meta_path = re.sub('.nii.gz|.nii', '.json', out_image_path)
+    meta_data_dict = image_io.ImageIO.load_metadata_for_nifty_with_same_filename(input_image_4d_path)
+    image_io.write_dict_to_json(meta_data_dict=meta_data_dict, out_path=copy_meta_path)
+
     return pet_sum_image
 
 
@@ -242,14 +247,21 @@ def suvr(input_image_path: str,
         out_image_path (str): Path to output image file which is written to.
         verbose (bool): Set to ``True`` to output processing information.
     """
-    ref_region_avg = extract_tac_from_nifty_using_mask(input_image_4d_path=input_image_path,
-                                                         segmentation_image_path=segmentation_image_path,
-                                                         region=ref_region,
-                                                         verbose=verbose)
-
     pet_nibabel = nibabel.load(filename=input_image_path)
     pet_image = pet_nibabel.get_fdata()
-    suvr_image = pet_image / ref_region_avg,
+    seg_nibabel = nibabel.load(filename=segmentation_image_path)
+    seg_image = seg_nibabel.get_fdata()
+
+    if len(pet_image.shape)!=3:
+        raise ValueError("SUVR input image is not 3D. If your image is dynamic"
+                         ", try running 'weighted_series_sum' first.")
+
+    ref_region_avg = extract_tac_from_nifty_using_mask(input_image_4d_numpy=pet_image,
+                                                       segmentation_image_numpy=seg_image,
+                                                       region=ref_region,
+                                                       verbose=verbose)
+
+    suvr_image = pet_image / ref_region_avg[0]
 
     out_image = nibabel.nifti1.Nifti1Image(dataobj=suvr_image,
                                            affine=pet_nibabel.affine,

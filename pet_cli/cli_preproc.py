@@ -23,6 +23,8 @@ def main():
                                      epilog=_PREPROC_EXAMPLES_,
                                      formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument('-p','--params',help='Path to a params file',required=True)
+    parser.add_argument('-o','--output_directory',help='Directory to which output files are saved.',required=False)
+    parser.add_argument('-f','--filename_prefix',help='Prefix appended to beginning of written file names.')
     parser.add_argument('-m','--method',help='Name of process or method to run',nargs='*',required=False)
     args = parser.parse_args()
 
@@ -33,10 +35,9 @@ def main():
     with open(args.params,'r') as f:
         preproc_props = json.load(f)
 
-    subject = preproc.PreProc(output_directory='',output_filename_prefix='')
+    subject = preproc.PreProc(output_directory=args.output_directory,
+                              output_filename_prefix=args.filename_prefix)
     subject.update_props(new_preproc_props=preproc_props)
-
-
 
     methods = args.method
     for method in methods:

@@ -2,10 +2,6 @@
 Introduces class :class:`PreProc` which handles preprocessing of PET and other
 neuroimaging data for a PET study. Acts as a wrapper for other tools supplied
 in `PPM`.
-
-TODO:
-    * Flexibility with file naming suffixes
-    * Blur suffix should incorporate blur size
 """
 import os
 import json
@@ -174,6 +170,7 @@ class PreProc():
             updated_props[key] = new_preproc_props[key]
 
         self.preproc_props = updated_props
+        print(updated_props)
         return updated_props
 
 
@@ -221,7 +218,7 @@ class PreProc():
                            f"'write_tacs'. Got {method_name}")
 
         for key in required_keys:
-            if key not in existing_keys:
+            if preproc_props[key] is None:
                 raise ValueError(f"Preprocessing method requires property"
                                  f" {key}, however {key} was not found in "
                                  "processing properties. Existing properties "
@@ -340,7 +337,7 @@ class PreProc():
                  verbose=preproc_props['Verbose'])
 
         elif method_name=='gauss_blur':
-            outfile = self._generate_outfile_path(method_short='blur')
+            outfile = self._generate_outfile_path(method_short=f"blur_{preproc_props['BlurSize']}mm")
             gauss_blur(input_image_path=preproc_props['FilePathBlurInput'],
                        blur_size_mm=preproc_props['BlurSize'],
                        out_image_path=outfile,
