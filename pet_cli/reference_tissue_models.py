@@ -856,11 +856,11 @@ class FitTACWithRTMs:
         This method validates the shape of the bounds depending on the chosen method in the object.
 
         - If the method is 'srtm', it checks that bounds shape is (3, 3).
-        - If the method is 'frtm', it checks that bounds shape is (3, 4).
+        - If the method is 'frtm', it checks that bounds shape is (4, 3).
 
         Raises:
             AssertionError: If the bounds shape for method 'srtm' is not (3, 3)
-            AssertionError: If the bounds shape for method 'frtm' is not (3, 4).
+            AssertionError: If the bounds shape for method 'frtm' is not (4, 3).
             ValueError: If the method is not 'srtm' or 'frtm' while providing bounds.
             
         See Also:
@@ -878,7 +878,7 @@ class FitTACWithRTMs:
                 assert self.bounds.shape == (3, 3), ("The bounds have the wrong shape. Bounds must be (start, lo, hi) "
                                                      "for each of the fitting parameters: r1, k2, bp")
             if self.method == "frtm":
-                assert self.bounds.shape == (3, 4), ("The bounds have the wrong shape. Bounds must be (start, lo, hi) "
+                assert self.bounds.shape == (4, 3), ("The bounds have the wrong shape. Bounds must be (start, lo, hi) "
                                                      "for each of the fitting parameters: r1, k2, k3, k4")
             else:
                 raise ValueError(f"Invalid method! Must be either 'srtm' or 'frtm' if bounds are provided.")
@@ -955,9 +955,40 @@ class FitTACWithRTMs:
         raise ValueError(f"Invalid method! Must be either 'srtm', 'frtm', 'mrtm-original', 'mrtm' or 'mrtm2'")
 
 class RTMAnalysis:
-    def __init__(self, ref_tac_path: str, roi_tac_path: str, output_directory: str, output_filename_prefix: str):
-        self.input_tac_path = os.path.abspath(ref_tac_path)
-        self.roi_tac_path = os.path.abs(roi_tac_path)
+    def __init__(self,
+                 ref_tac_path: str,
+                 roi_tac_path: str,
+                 output_directory: str,
+                 output_filename_prefix: str,
+                 method: str):
+        self.ref_tac_path = os.path.abspath(ref_tac_path)
+        self.roi_tac_path = os.path.abspath(roi_tac_path)
         self.output_directory = os.path.abspath(output_directory)
         self.output_filename_prefix = output_filename_prefix
-        # self.analysis_props = self.in
+        self.analysis_props = self.init_analysis_props(method.lower())
+        
+    def init_analysis_props(self, method: str) -> dict:
+        common_props = {'FilePathRTAC': self.ref_tac_path,
+                        'FilePathTTAC': self.roi_tac_path,
+                        'MethodName': method.upper()}
+        props = {}
+        if method.startswith("mrtm"):
+            props = {**common_props,
+                     'ThresholdTime': None,
+                     'StartFrameTime': None,
+                     'EndFrameTime': None,
+                     'NumberOfPointsFit': None,
+                     'Slope': None,
+                     'Intercept': None,
+                     'RSquared': None}
+        elif method.startswith("srtm") or method.startswith("frtm"):
+            props = {
+                **common_props,
+                'FitValues': None,
+                'FitStdErr': None,
+                }
+        else:
+            raise ValueError(f"Invalid method! Must be either 'srtm', 'frtm', 'mrtm-original', 'mrtm' or 'mrtm2'")
+        return props
+    
+    
