@@ -705,11 +705,11 @@ def calc_k2prime_from_mrtm_2003_fit(fit_vals: np.ndarray):
     return fit_vals[0]/fit_vals[2]
 
 
-class RTMAnalysis:
+class FitTACWithRTMs:
     r"""
     A class used to fit a kinetic model to both a target and a reference Time Activity Curve (TAC).
 
-    The :class:`RTMAnalysis` class simplifies the process of kinetic model fitting by providing methods for validating
+    The :class:`FitTACWithRTMs` class simplifies the process of kinetic model fitting by providing methods for validating
     input data, choosing a model to fit, and then performing the fit. It takes in raw intensity values of TAC for both
     target and reference regions as inputs, which are then used in curve fitting.
 
@@ -731,7 +731,7 @@ class RTMAnalysis:
         fit_results (np.ndarray): The result of the fit.
 
     Example:
-        The following example shows how to use the :class:`RTMAnalysis` class to fit the SRTM to a target and reference
+        The following example shows how to use the :class:`FitTACWithRTMs` class to fit the SRTM to a target and reference
         TAC.
 
         .. code-block:: python
@@ -751,7 +751,7 @@ class RTMAnalysis:
             # generating an SRTM tac
             srtm_tac_vals = pet_rtms.calc_srtm_tac(tac_times=ref_tac_times, ref_tac_vals=ref_tac_vals, r1=1.0, k2=0.25, bp=3.0)
             
-            rtm_analysis = pet_rtms.RTMAnalysis(target_tac_vals=srtm_tac_vals,
+            rtm_analysis = pet_rtms.FitTACWithRTMs(target_tac_vals=srtm_tac_vals,
                                                 reference_tac_times=ref_tac_times,
                                                 reference_tac_vals=ref_tac_vals,
                                                 method='srtm')
@@ -778,7 +778,7 @@ class RTMAnalysis:
                  t_thresh_in_mins: float = None,
                  k2_prime: float = None):
         r"""
-        Initialize the RTMAnalysis object with specified parameters.
+        Initialize the FitTACWithRTMs object with specified parameters.
 
         This method sets up input parameters and validates them. We check if the bounds are correct for the given
         'method', and we make sure that any fitting threshold are defined for the MRTM analyses.
