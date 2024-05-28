@@ -624,7 +624,7 @@ def calc_BP_from_mrtm_2003_fit(fit_vals: np.ndarray) -> float:
         :func:`fit_mrtm_2003_to_tac` where the order of the regression coefficients is laid out.
 
     """
-    return -(fit_vals[0]/fit_vals[1] + 1.0)
+    return (-fit_vals[0]/fit_vals[1] + 1.0)
 
 
 def calc_BP_from_mrtm2_2003_fit(fit_vals: np.ndarray) -> float:
@@ -704,7 +704,7 @@ def calc_k2prime_from_mrtm_2003_fit(fit_vals: np.ndarray):
         :func:`fit_mrtm_2003_to_tac` where the order of the regression coefficients is laid out.
 
     """
-    return fit_vals[0]/fit_vals[2]
+    return fit_vals[0]/fit_vals[-1]
 
 
 class FitTACWithRTMs:
@@ -875,12 +875,15 @@ class FitTACWithRTMs:
             
         """
         if self.bounds is not None:
+            num_params, num_vals = self.bounds.shape
             if self.method == "srtm":
-                assert self.bounds.shape == (3, 3), ("The bounds have the wrong shape. Bounds must be (start, lo, hi) "
-                                                     "for each of the fitting parameters: r1, k2, bp")
-            if self.method == "frtm":
-                assert self.bounds.shape == (4, 3), ("The bounds have the wrong shape. Bounds must be (start, lo, hi) "
-                                                     "for each of the fitting parameters: r1, k2, k3, k4")
+                assert num_params == 3 and num_vals == 3, ("The bounds have the wrong shape. Bounds must "
+                                                           "be (start, lo, hi) for each of the fitting "
+                                                           "parameters: r1, k2, bp")
+            elif self.method == "frtm":
+                assert num_params == 4 and num_vals == 3, (
+                    "The bounds have the wrong shape. Bounds must be (start, lo, hi) "
+                    "for each of the fitting parameters: r1, k2, k3, k4")
             else:
                 raise ValueError(f"Invalid method! Must be either 'srtm' or 'frtm' if bounds are provided.")
     
@@ -908,7 +911,7 @@ class FitTACWithRTMs:
             
         """
         if self.method == "srtm":
-            if self.bounds:
+            if self.bounds is not None:
                 self.fit_results = fit_srtm_to_tac_with_bounds(tgt_tac_vals=self.target_tac_vals,
                                                                ref_tac_times=self.reference_tac_times,
                                                                ref_tac_vals=self.reference_tac_vals,
@@ -921,7 +924,7 @@ class FitTACWithRTMs:
                                                    ref_tac_vals=self.reference_tac_vals)
         
         elif self.method == "frtm":
-            if self.bounds:
+            if self.bounds is not None:
                 self.fit_results = fit_frtm_to_tac_with_bounds(tgt_tac_vals=self.target_tac_vals,
                                                                ref_tac_times=self.reference_tac_times,
                                                                ref_tac_vals=self.reference_tac_vals,
@@ -955,6 +958,7 @@ class FitTACWithRTMs:
         else:
             raise ValueError(f"Invalid method! Must be either 'srtm', 'frtm', 'mrtm-original', 'mrtm' or 'mrtm2'")
 
+
 # TODO: Use the safe loading of TACs function from an IO module when it is implemented
 def _safe_load_tac(filename: str, **kwargs) -> np.ndarray:
     """
@@ -978,6 +982,7 @@ def _safe_load_tac(filename: str, **kwargs) -> np.ndarray:
     except Exception as e:
         print(f"Couldn't read file {filename}. Error: {e}")
         raise e
+
 
 class RTMAnalysis:
     def __init__(self,
@@ -1052,7 +1057,7 @@ class RTMAnalysis:
         tgt_tac_times, tgt_tac_vals = _safe_load_tac(filename=self.roi_tac_path, **tac_load_kwargs)
         analysis_obj = FitTACWithRTMs(target_tac_vals=tgt_tac_vals,
                                       reference_tac_times=ref_tac_times,
-                                      reference_tac_vals=ref_tac_times,
+                                      reference_tac_vals=ref_tac_vals,
                                       method=self.method,
                                       bounds=bounds,
                                       t_thresh_in_mins=t_thresh_in_mins,
@@ -1070,13 +1075,21 @@ class RTMAnalysis:
             self._calc_mrtm_fit_props(fit_results=fit_results,
                                       k2_prime=k2_prime,
                                       t_thresh_in_mins=t_thresh_in_mins)
+            
+    def save_analysis(self):
+        if not self.has_analysis_been_run:
+            raise RuntimeError("'run_analysis' method must be called before 'save_analysis'.")
+        file_name_prefix = os.path.join(self.output_directory,
+                                        f"{self.output_filename_prefix}_analysis-{self.analysis_props['MethodName']}")
+        analysis_props_file = f"{file_name_prefix}_props.json"
+        with open(analysis_props_file, 'w') as f:
+            json.dump(obj=self.analysis_props, fp=f, indent=4)
     
     def _calc_mrtm_fit_props(self, fit_results: np.ndarray,
                              k2_prime: float,
                              t_thresh_in_mins: float):
         self.validate_analysis_inputs(k2_prime=k2_prime, t_thresh_in_mins=t_thresh_in_mins)
-        k2_val = k2_prime
-        if self.method == 'mrtm-orignial':
+        if self.method == 'mrtm-original':
             bp_val = calc_BP_from_mrtm_original_fit(fit_results)
             k2_val = calc_k2prime_from_mrtm_original_fit(fit_results)
         elif self.method == 'mrtm':
@@ -1085,9 +1098,9 @@ class RTMAnalysis:
         else:
             bp_val = calc_BP_from_mrtm2_2003_fit(fit_results)
             k2_val = None
-        self.analysis_props["k2Prime"] = k2_val
-        self.analysis_props["BP"] = bp_val
-        self.analysis_props["RawFits"] = list(fit_results.copy())
+        self.analysis_props["k2Prime"] = k2_val.round(5)
+        self.analysis_props["BP"] = bp_val.round(5)
+        self.analysis_props["RawFits"] = list(fit_results.round(5))
         
         ref_tac_times, _ = _safe_load_tac(filename=self.ref_tac_path)
         t_thresh_index = get_index_from_threshold(times_in_minutes=ref_tac_times, t_thresh_in_minutes=t_thresh_in_mins)
@@ -1099,20 +1112,19 @@ class RTMAnalysis:
     def _calc_frtm_or_srtm_fit_props(self, fit_results: tuple[np.ndarray, np.ndarray]):
         fit_params, fit_covariances = fit_results
         fit_stderr = np.sqrt(np.diagonal(fit_covariances))
-        self.analysis_props["FitValues"] = list(fit_params.copy())
-        self.analysis_props["FitStdErr"] = list(fit_stderr.copy())
-    
-    def save_analysis(self):
-        if not self.has_analysis_been_run:
-            raise RuntimeError("'run_analysis' method must be called before 'save_analysis'.")
-        file_name_prefix = os.path.join(self.output_directory,
-                                        f"{self.output_filename_prefix}_analysis-{self.analysis_props['MethodName']}")
-        analysis_props_file = f"{file_name_prefix}_props.json"
-        with open(analysis_props_file, 'w') as f:
-            json.dump(obj=self.analysis_props, fp=f, indent=4)
+        
+        if self.method.startswith('srtm'):
+            format_func =  self._get_pretty_srtm_fit_param_vals
+        else:
+            format_func = self._get_pretty_frtm_fit_param_vals
             
-        
-        
+        self.analysis_props["FitValues"] = format_func(fit_params.round(5))
+        self.analysis_props["FitStdErr"] = format_func(fit_stderr.round(5))
     
+    @staticmethod
+    def _get_pretty_srtm_fit_param_vals(param_fits: np.ndarray) -> dict:
+        return {name: val for name, val in zip(['R1', 'k2', 'BP'], param_fits)}
     
-    
+    @staticmethod
+    def _get_pretty_frtm_fit_param_vals(param_fits: np.ndarray) -> dict:
+        return {name: val for name, val in zip(['R1', 'k2', 'k3', 'k4'], param_fits)}
