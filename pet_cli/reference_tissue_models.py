@@ -576,7 +576,7 @@ def fit_mrtm2_2003_to_tac(tgt_tac_vals: np.ndarray,
 
 def calc_BP_from_mrtm_original_fit(fit_vals: np.ndarray) -> float:
     r"""
-    Given the original MRTM (`Ichise et. al, 1996`) fit values, we calculate the binding potential (BP).
+    Given the original MRTM (`Ichise et al., 1996`) fit values, we calculate the binding potential (BP).
     
     The binding potential (BP) is defined as:
     
@@ -603,7 +603,7 @@ def calc_BP_from_mrtm_original_fit(fit_vals: np.ndarray) -> float:
 
 def calc_BP_from_mrtm_2003_fit(fit_vals: np.ndarray) -> float:
     r"""
-    Given the 2003 MRTM (`Ichise et. al, 1996`) fit values, we calculate the binding potential (BP).
+    Given the 2003 MRTM (`Ichise et al., 1996`) fit values, we calculate the binding potential (BP).
 
     The binding potential (BP) is calculated as:
 
@@ -629,7 +629,7 @@ def calc_BP_from_mrtm_2003_fit(fit_vals: np.ndarray) -> float:
 
 def calc_BP_from_mrtm2_2003_fit(fit_vals: np.ndarray) -> float:
     r"""
-    Given the 2003 MRTM2 (`Ichise et. al, 1996`) fit values, we calculate the binding potential (BP).
+    Given the 2003 MRTM2 (`Ichise et al., 1996`) fit values, we calculate the binding potential (BP).
 
     The binding potential (BP) is calculated as:
 
@@ -655,7 +655,7 @@ def calc_BP_from_mrtm2_2003_fit(fit_vals: np.ndarray) -> float:
 
 def calc_k2prime_from_mrtm_original_fit(fit_vals: np.ndarray):
     r"""
-    Given the original MRTM (`Ichise et. al, 1996`) fit values, we calculate :math:`k_{2}^{\prime}`.
+    Given the original MRTM (`Ichise et al., 1996`) fit values, we calculate :math:`k_{2}^{\prime}`.
 
     The :math:`k_{2}^{\prime}` is calculated as:
 
@@ -682,7 +682,7 @@ def calc_k2prime_from_mrtm_original_fit(fit_vals: np.ndarray):
 
 def calc_k2prime_from_mrtm_2003_fit(fit_vals: np.ndarray):
     r"""
-    Given the 2003 MRTM (`Ichise et. al, 2003`) fit values, we calculate :math:`k_{2}^{\prime}`.
+    Given the 2003 MRTM (`Ichise et al., 2003`) fit values, we calculate :math:`k_{2}^{\prime}`.
 
     The :math:`k_{2}^{\prime}` is calculated as:
 
@@ -805,7 +805,7 @@ class FitTACWithRTMs:
         self.target_tac_vals: np.ndarray = target_tac_vals
         self.reference_tac_times: np.ndarray = reference_tac_times
         self.reference_tac_vals: np.ndarray = reference_tac_vals
-        self.method: str = method
+        self.method: str = method.lower()
         self.bounds: Union[None, np.ndarray] = bounds
         self.validate_bounds()
         
@@ -920,7 +920,7 @@ class FitTACWithRTMs:
                                                    ref_tac_times=self.reference_tac_times,
                                                    ref_tac_vals=self.reference_tac_vals)
         
-        if self.method == "frtm":
+        elif self.method == "frtm":
             if self.bounds:
                 self.fit_results = fit_frtm_to_tac_with_bounds(tgt_tac_vals=self.target_tac_vals,
                                                                ref_tac_times=self.reference_tac_times,
@@ -934,26 +934,26 @@ class FitTACWithRTMs:
                                                    ref_tac_times=self.reference_tac_times,
                                                    ref_tac_vals=self.reference_tac_vals)
         
-        if self.method == "mrtm-original":
+        elif self.method == "mrtm-original":
             self.fit_results = fit_mrtm_original_to_tac(tgt_tac_vals=self.target_tac_vals,
                                                         ref_tac_times=self.reference_tac_times,
                                                         ref_tac_vals=self.reference_tac_vals,
                                                         t_thresh_in_mins=self.t_thresh_in_mins)
         
-        if self.method == "mrtm":
+        elif self.method == "mrtm":
             self.fit_results = fit_mrtm_2003_to_tac(tgt_tac_vals=self.target_tac_vals,
                                                     ref_tac_times=self.reference_tac_times,
                                                     ref_tac_vals=self.reference_tac_vals,
                                                     t_thresh_in_mins=self.t_thresh_in_mins)
         
-        if self.method == "mrtm2":
+        elif self.method == "mrtm2":
             self.fit_results = fit_mrtm2_2003_to_tac(tgt_tac_vals=self.target_tac_vals,
                                                      ref_tac_times=self.reference_tac_times,
                                                      ref_tac_vals=self.reference_tac_vals,
                                                      t_thresh_in_mins=self.t_thresh_in_mins,
                                                      k2_prime=self.k2_prime)
-        
-        raise ValueError(f"Invalid method! Must be either 'srtm', 'frtm', 'mrtm-original', 'mrtm' or 'mrtm2'")
+        else:
+            raise ValueError(f"Invalid method! Must be either 'srtm', 'frtm', 'mrtm-original', 'mrtm' or 'mrtm2'")
 
 # TODO: Use the safe loading of TACs function from an IO module when it is implemented
 def _safe_load_tac(filename: str, **kwargs) -> np.ndarray:
@@ -998,23 +998,22 @@ class RTMAnalysis:
         common_props = {'FilePathRTAC': self.ref_tac_path,
                         'FilePathTTAC': self.roi_tac_path,
                         'MethodName': method.upper()}
-        props = {}
         if method.startswith("mrtm"):
             props = {
-                **common_props,
-                'k2Prime': None,
                 'BP': None,
+                'k2Prime': None,
                 'ThresholdTime': None,
                 'StartFrameTime': None,
                 'EndFrameTime' : None,
                 'NumberOfPointsFit': None,
                 'RawFits': None,
+                **common_props
                 }
         elif method.startswith("srtm") or method.startswith("frtm"):
             props = {
-                **common_props,
                 'FitValues': None,
                 'FitStdErr': None,
+                **common_props
                 }
         else:
             raise ValueError(f"Invalid method! Must be either 'srtm', 'frtm', 'mrtm-original', 'mrtm' or 'mrtm2'")
@@ -1025,18 +1024,29 @@ class RTMAnalysis:
                      t_thresh_in_mins: float = None,
                      k2_prime: float = None,
                      **tac_load_kwargs):
+        self.validate_analysis_inputs(k2_prime=k2_prime, t_thresh_in_mins=t_thresh_in_mins)
+        
         fit_results = self.calculate_fit(bounds=bounds,
                                          t_thresh_in_mins=t_thresh_in_mins,
                                          k2_prime=k2_prime,
                                          **tac_load_kwargs)
-        self.calculate_fit_properties(fit_results=fit_results)
+        self.calculate_fit_properties(fit_results=fit_results,
+                                      t_thresh_in_mins=t_thresh_in_mins,
+                                      k2_prime=k2_prime)
         self.has_analysis_been_run = True
+    
+    def validate_analysis_inputs(self, k2_prime, t_thresh_in_mins):
+        if self.method.startswith("mrtm") and t_thresh_in_mins is None:
+            raise ValueError("t_thresh_in_mins must be set for the MRTM analyses.")
+        if self.method.endswith("2") and k2_prime is None:
+            raise ValueError("k2_prime must be set for the modified RTM (MRTM2, FRTM2, and SRTM2) analyses.")
     
     def calculate_fit(self,
                       bounds: Union[None, np.ndarray] = None,
                       t_thresh_in_mins: float = None,
                       k2_prime: float = None,
                       **tac_load_kwargs):
+        self.validate_analysis_inputs(k2_prime=k2_prime, t_thresh_in_mins=t_thresh_in_mins)
         
         ref_tac_times, ref_tac_vals = _safe_load_tac(filename=self.ref_tac_path, **tac_load_kwargs)
         tgt_tac_times, tgt_tac_vals = _safe_load_tac(filename=self.roi_tac_path, **tac_load_kwargs)
@@ -1047,37 +1057,51 @@ class RTMAnalysis:
                                       bounds=bounds,
                                       t_thresh_in_mins=t_thresh_in_mins,
                                       k2_prime=k2_prime)
+        analysis_obj.fit_tac_to_model()
         
-        return analysis_obj.fit_tac_to_model()
+        return analysis_obj.fit_results
     
     def calculate_fit_properties(self, fit_results: Union[np.ndarray, tuple[np.ndarray, np.ndarray]],
                                  t_thresh_in_mins: float = None,
                                  k2_prime: float = None):
-        if self.method.startswith("frtm") and self.method.startswith("srtm"):
-            fit_params, fit_covariances = fit_results
-            fit_stderr = np.sqrt(np.diagonal(fit_covariances))
-            self.analysis_props["FitValues"] = fit_params.copy()
-            self.analysis_props["FitStdErr"] = fit_stderr.copy()
+        if self.method.startswith("frtm") or self.method.startswith("srtm"):
+            self._calc_frtm_or_srtm_fit_props(fit_results=fit_results)
         else:
-            k2_val = k2_prime
-            if self.method == 'mrtm-orignial':
-                bp_val = calc_BP_from_mrtm_original_fit(fit_results)
-                k2_val = calc_k2prime_from_mrtm_original_fit(fit_results)
-            elif self.method == 'mrtm':
-                bp_val = calc_BP_from_mrtm_2003_fit(fit_results)
-                k2_val = calc_k2prime_from_mrtm_2003_fit(fit_results)
-            else:
-                bp_val = calc_BP_from_mrtm2_2003_fit(fit_results)
-            self.analysis_props["k2Prime"] = k2_val
-            self.analysis_props["BP"] = bp_val
-            self.analysis_props["RawFits"] = fit_results.copy()
-            ref_tac_times, _ = _safe_load_tac(filename=self.ref_tac_path)
-            t_thresh_index = get_index_from_threshold(times_in_minutes=ref_tac_times,
-                                                      t_thresh_in_minutes=t_thresh_in_mins)
-            self.analysis_props['StartFrameTime'] = ref_tac_times[t_thresh_index]
-            self.analysis_props['EndFrameTime'] = ref_tac_times[-1]
-            self.analysis_props['NumberOfPointsFit'] = len(ref_tac_times[t_thresh_index:])
-            
+            self._calc_mrtm_fit_props(fit_results=fit_results,
+                                      k2_prime=k2_prime,
+                                      t_thresh_in_mins=t_thresh_in_mins)
+    
+    def _calc_mrtm_fit_props(self, fit_results: np.ndarray,
+                             k2_prime: float,
+                             t_thresh_in_mins: float):
+        self.validate_analysis_inputs(k2_prime=k2_prime, t_thresh_in_mins=t_thresh_in_mins)
+        k2_val = k2_prime
+        if self.method == 'mrtm-orignial':
+            bp_val = calc_BP_from_mrtm_original_fit(fit_results)
+            k2_val = calc_k2prime_from_mrtm_original_fit(fit_results)
+        elif self.method == 'mrtm':
+            bp_val = calc_BP_from_mrtm_2003_fit(fit_results)
+            k2_val = calc_k2prime_from_mrtm_2003_fit(fit_results)
+        else:
+            bp_val = calc_BP_from_mrtm2_2003_fit(fit_results)
+            k2_val = None
+        self.analysis_props["k2Prime"] = k2_val
+        self.analysis_props["BP"] = bp_val
+        self.analysis_props["RawFits"] = list(fit_results.copy())
+        
+        ref_tac_times, _ = _safe_load_tac(filename=self.ref_tac_path)
+        t_thresh_index = get_index_from_threshold(times_in_minutes=ref_tac_times, t_thresh_in_minutes=t_thresh_in_mins)
+        self.analysis_props['ThresholdTime'] = t_thresh_in_mins
+        self.analysis_props['StartFrameTime'] = ref_tac_times[t_thresh_index]
+        self.analysis_props['EndFrameTime'] = ref_tac_times[-1]
+        self.analysis_props['NumberOfPointsFit'] = len(ref_tac_times[t_thresh_index:])
+    
+    def _calc_frtm_or_srtm_fit_props(self, fit_results: tuple[np.ndarray, np.ndarray]):
+        fit_params, fit_covariances = fit_results
+        fit_stderr = np.sqrt(np.diagonal(fit_covariances))
+        self.analysis_props["FitValues"] = list(fit_params.copy())
+        self.analysis_props["FitStdErr"] = list(fit_stderr.copy())
+    
     def save_analysis(self):
         if not self.has_analysis_been_run:
             raise RuntimeError("'run_analysis' method must be called before 'save_analysis'.")
