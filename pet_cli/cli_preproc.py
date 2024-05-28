@@ -11,9 +11,9 @@ Examples:
 """)
 
 
-def create_blank_properties(properties_file: str):
-    preproc_props = preproc.PreProc._init_preproc_props()
-    with open(properties_file,'w') as f:
+def create_blank_params(params_file: str):
+    preproc_props = preproc._PREPROC_PROPS_
+    with open(params_file,'w') as f:
         json.dump(preproc_props,f,indent=4)
 
 
@@ -22,14 +22,26 @@ def main():
                                      description='Preprocessing command line interface',
                                      epilog=_PREPROC_EXAMPLES_,
                                      formatter_class=argparse.RawTextHelpFormatter)
-    parser.add_argument('-p','--properties',help='Path to a properties file')
-    parser.add_argument('-m','--method_name',help='Name of process or method to run')
+    parser.add_argument('-p','--params',help='Path to a params file',required=True)
+    parser.add_argument('-m','--method',help='Name of process or method to run',nargs='*',required=False)
     args = parser.parse_args()
 
-    with open(args.properties,'r') as f:
-        preproc_props = json.load(f)
+    if args.method is None:
+        create_blank_params(args.params)
+        return 0
 
+    with open(args.params,'r') as f:
+        preproc_props = json.load(f)
 
     subject = preproc.PreProc(output_directory='',output_filename_prefix='')
     subject.update_props(new_preproc_props=preproc_props)
-    subject.run_preproc(method_name=args.method_name)
+
+
+
+    methods = args.method
+    for method in methods:
+        subject.run_preproc(method_name=method)
+
+
+if __name__ == "__main__":
+    main()

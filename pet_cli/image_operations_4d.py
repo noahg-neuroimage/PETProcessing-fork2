@@ -302,6 +302,39 @@ def gauss_blur(input_image_path: str,
 
     return out_image
 
+
+def roi_tac(input_image_4d_path: str,
+            roi_image_path: str,
+            region: int,
+            out_tac_path: str,
+            verbose: bool,
+            time_frame_keyword: str = 'FrameReferenceTime'):
+    """
+    Function to write Tissue Activity Curves for a single region, given a mask,
+    4D PET image, and region mapping. Computes the average of the PET image 
+    within each region. Writes a tsv table with region name, frame start time,
+    and mean value within region.
+    """
+
+    if time_frame_keyword not in ['FrameReferenceTime', 'FrameTimesStart']:
+        raise ValueError("'time_frame_keyword' must be one of "
+                         "'FrameReferenceTime' or 'FrameTimesStart'")
+
+    pet_meta = image_io.ImageIO.load_metadata_for_nifty_with_same_filename(input_image_4d_path)
+    tac_extraction_func = extract_tac_from_nifty_using_mask
+    pet_numpy = nibabel.load(input_image_4d_path).get_fdata()
+    seg_numpy = nibabel.load(roi_image_path).get_fdata()
+
+
+    extracted_tac = tac_extraction_func(input_image_4d_numpy=pet_numpy,
+                                        segmentation_image_numpy=seg_numpy,
+                                        region=region,
+                                        verbose=verbose)
+    region_tac_file = np.array([pet_meta[time_frame_keyword],extracted_tac]).T
+    header_text = f'mean_activity'
+    np.savetxt(out_tac_path,region_tac_file,delimiter='\t',header=header_text,comments='')
+
+
 def write_tacs(input_image_4d_path: str,
                label_map_path: str,
                segmentation_image_path: str,
