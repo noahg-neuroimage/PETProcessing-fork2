@@ -756,11 +756,32 @@ class FitTCMToTAC(object):
         return tcm_funcs[compartment_model]
     
     def run_analysis(self):
+        r"""
+        Runs the fitting analysis given the file-paths and method.
+        
+        :meth:`calculate_fit` and :meth:`calculate_fit_properties` are run, and the analysis-has-been-fun flag is set to
+        true.
+
+        This method first calculates the fit, then updates the analysis properties with the
+        fit results and finally sets the flag denoting that analysis has been successfully run.
+        
+        
+        """
         self.calculate_fit()
         self.calculate_fit_properties()
         self._has_analysis_been_run = True
     
     def save_analysis(self):
+        r"""
+        Saves the analysis properties to a json file in the prescribed output directory.
+
+        The saved filename is constructed as a combination of the output directory, filename prefix,
+        "analysis", and the used TissueCompartmentModel.
+        If the analysis has not been run before calling this method, a RuntimeError is raised.
+
+        Raises:
+            RuntimeError: If the method is called before the analysis has been run.
+        """
         if not self._has_analysis_been_run:
             raise RuntimeError("'run_analysis' method must be run before running this method.")
         
@@ -772,6 +793,13 @@ class FitTCMToTAC(object):
             json.dump(obj=self.analysis_props, fp=f, indent=4)
     
     def calculate_fit_properties(self):
+        r"""
+        Calculates the fit properties and updates the analysis properties.
+
+        This method retrieves the fitting parameters and their standard errors from the fitting
+        results, formats them for readability, and stores them in the analysis properties dictionary.
+        Bounds to the fitting parameters are also formatted and stored.
+        """
         fit_params, fit_covariances = self.fit_results
         fit_stderr = np.sqrt(np.diagonal(fit_covariances))
         format_func = self._generate_pretty_params
@@ -783,6 +811,24 @@ class FitTCMToTAC(object):
         self.analysis_props["FitProperties"]["Bounds"] = format_func(self.bounds.round(5))
     
     def calculate_fit(self):
+        r"""
+        Performs the fit and stores results to the instance.
+
+        This method has a series of actions which it performs in the following order:
+            1. Loads TAC files using the :func:`_safe_load_tac` method, specific to the paths stored in instance
+               variables.
+            2. Creates a fitting object with the relevant parameters and TACs.
+            3. Runs the fit using the fitting object's ``run_fit`` method.
+            4. Stores the results of the fit in the ``fit_results`` instance variable.
+
+        As a result of this method, ``fit_results`` instance variable will hold the results of the fit, that
+        can be used for further analysis or calculations.
+        
+        See Also:
+            * :class:`TACFitter`
+            * :class:`TACFitterWithoutBloodVolume`
+        
+        """
         p_tac = _safe_load_tac(self.input_tac_path)
         t_tac = _safe_load_tac(self.roi_tac_path)
         self.fitting_obj = self.fitting_obj(pTAC=p_tac, tTAC=t_tac,
@@ -820,12 +866,12 @@ class FitTCMToTAC(object):
             return {**k_vals, **vb}
     
     def _generate_pretty_bounds(self, bounds: np.ndarray) -> dict:
-        r""
+        r"""
         Transforms array of bounds into a formatted dictionary.
 
         This method creates a dictionary of the fitting parameters and their corresponding
         initial values and lower and upper bounds. The keys of the dictionary are the names
-        of the fitting parameters from _generate_pretty_params method.
+        of the fitting parameters from :meth:`_generate_pretty_params` method.
 
         Args:
             bounds (np.ndarray): The array of parameter bounds.
