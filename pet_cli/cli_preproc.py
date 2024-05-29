@@ -44,42 +44,7 @@ See Also:
 """
 import os
 import argparse
-from . import image_operations_4d
-
-
-def _generate_image_path_and_directory(main_dir, ops_dir_name, file_prefix, ops_desc) -> str:
-    """
-    Generates the full path of an image file based on given parameters and creates the necessary directories.
-
-    This function takes in four arguments: the main directory (main_dir), the operations directory (ops_dir),
-    the subject ID (sub_id), and the operations extension (ops_ext). It joins these to generate the full path
-    for an image file. The generated directories are created if they do not already exist.
-
-    Args:
-        main_dir (str): The main directory path.
-        ops_dir_name (str): The operations (ops) directory. This is a directory inside `main_dir`.
-        file_prefix (str): The prefix for the file name. Usually sub-XXXX if following BIDS.
-        ops_desc (str): The operations (ops) extension to append to the filename.
-
-    Returns:
-        str: The full path of the image file with '.nii.gz' extension.
-
-    Side Effects:
-        Creates directories denoted by `main_dir`/`ops_dir_name` if they do not exist.
-
-    Example:
-        
-        .. code-block:: python
-        
-            _generate_image_path_and_directory('/home/images', 'ops', '123', 'preprocessed')
-            # '/home/images/ops/123_desc-preprocessed.nii.gz'
-            # Directories '/home/images/ops' are created if they do not exist.
-            
-    """
-    image_dir = os.path.join(main_dir, ops_dir_name)
-    os.makedirs(image_dir, exist_ok=True)
-    image_path = os.path.join(f'{image_dir}', f'{file_prefix}_desc-{ops_desc}.nii.gz')
-    return str(image_path)
+from . import image_operations_4d, preproc
 
 
 _PREPROC_EXAMPLES_ = (r"""
@@ -128,9 +93,9 @@ def _add_common_args(parser: argparse.ArgumentParser) -> None:
             print(args.prefix)
             
     """
-    parser.add_argument('-p', '--pet', required=True, help='Path to PET file')
     parser.add_argument('-o', '--out-dir', default='./', help='Output directory')
     parser.add_argument('-f', '--prefix', default="sub_XXXX", help='Output file prefix')
+    parser.add_argument('-p', '--pet',required=True,help='Path to PET image.',type=str)
 
 
 def _generate_args() -> argparse.Namespace:
@@ -146,133 +111,98 @@ def _generate_args() -> argparse.Namespace:
     
     # create subparsers
     subparsers = parser.add_subparsers(dest="command", help="Sub-command help.")
-    
+
     # create parser for "weighted-sum" command
-    parser_sum = subparsers.add_parser('weighted-sum', help='Half-life weighted sum of 4D PET series.')
-    _add_common_args(parser_sum)
-    parser_sum.add_argument('-l', '--half-life', required=True, help='Half life of radioisotope in seconds.',
+    parser_wss = subparsers.add_parser('weighted-series-sum', help='Half-life weighted sum of 4D PET series.')
+    _add_common_args(parser_wss)
+    parser_wss.add_argument('-l', '--half-life', required=True, help='Half life of radioisotope in seconds.',
                             type=float)
-    
+
     # create parser for "register" command
-    parser_reg = subparsers.add_parser('register', help='Register 4D PET to MRI anatomical space.')
+    parser_reg = subparsers.add_parser('register-pet', help='Register 4D PET to MRI anatomical space.')
     _add_common_args(parser_reg)
     parser_reg.add_argument('-a', '--anatomical', required=True, help='Path to 3D anatomical image (T1w or T2w).',
                             type=str)
-    parser_reg.add_argument('-r', '--pet-reference', default=None,
-                            help='Path to reference image for motion correction, if not weighted_sum.')
-    
+    parser_reg.add_argument('-t', '--motion-target', default=None,
+                            help='Motion target option. Can be an image path, or a tuple. See (ref).') # TODO: fix reference
+
     # create parser for the "motion-correct" command
-    parser_moco = subparsers.add_parser('motion-correct', help='Motion correction for 4D PET using ANTS')
+    parser_moco = subparsers.add_parser('motion-corr', help='Motion correction for 4D PET using ANTS')
     _add_common_args(parser_moco)
-    parser_moco.add_argument('-r', '--pet-reference', default=None,
-                             help='Path to reference image for motion correction, if not weighted_sum.')
-    
+    parser_moco.add_argument('-t', '--motion-target', default=None,
+                            help='Motion target option. Can be an image path, or a tuple. See (ref).') # TODO: fix reference
+
     # create parser for the "write-tacs" command
     parser_tac = subparsers.add_parser('write-tacs', help='Write ROI TACs from 4D PET using segmentation masks.')
     _add_common_args(parser_tac)
     parser_tac.add_argument('-s', '--segmentation', required=True,
                             help='Path to segmentation image in anatomical space.')
-    parser_tac.add_argument('-c', '--color-table-path', required=True, help='Path to color table in JSON format')
-    parser_tac.add_argument('-r', '--resample-segmentation', default=False, action='store_true',
-                            help='Resample segmentation.')
-    
+    parser_tac.add_argument('-l', '--label-map-path', required=True, help='Path to label map dseg.tsv')
+    parser_tac.add_argument('-k', '--time-frame-keyword', required=False, help='Time keyword used for frame timing',default='FrameTimeReference')
+
+    parser_warp = subparsers.add_parser('warp-pet-atlas',help='Perform nonlinear warp on PET to atlas.')
+    _add_common_args(parser_warp)
+    parser_warp.add_argument('-a', '--anatomical', required=True, help='Path to 3D anatomical image (T1w or T2w).',
+                            type=str)
+    parser_warp.add_argument('-r','--reference-atlas',required=True,help='Path to anatomical atlas.',type=str)
+
+    parser_res = subparsers.add_parser('resample-segmentation',help='Resample segmentation image to PET resolution.')
+    _add_common_args(parser_res)
+    parser_res.add_argument('-s', '--segmentation', required=True,
+                            help='Path to segmentation image in anatomical space.')
+
+    parser_suvr = subparsers.add_parser('suvr',help='Compute SUVR on a parametric PET image.')
+    _add_common_args(parser_suvr)
+    parser_suvr.add_argument('-s', '--segmentation', required=True,
+                            help='Path to segmentation image in anatomical space.')
+    parser_suvr.add_argument('-r','--ref-region',help='Reference region to normalize SUVR to.',required=True)
+
+    parser_blur = subparsers.add_parser('gauss-blur',help='Perform 3D gaussian blurring.')
+    _add_common_args(parser_blur)
+    parser_blur.add_argument('-b','--blur-size-mm',help='Size of gaussian kernal with which to blur image.')
+
+
     verb_group = parser.add_argument_group('Additional information')
     verb_group.add_argument('-v', '--verbose', action='store_true',
                             help='Print processing information during computation.', required=False)
-    
+
     args = parser.parse_args()
-    return args
-
-
-def _check_ref(args) -> str:
-    """
-    Checks if the 'pet-reference' command-line argument was provided. If it was, this function
-    will return its value. If 'pet-reference' argument was not provided, the function will
-    generate an image path and directory using :func:`_generate_image_path_and_directory` and return this path.
-
-    This function is used to determine the reference image for PET processing. If a reference
-    image has been explicitly provided using `--pet-reference`, it's utilized. Otherwise, the
-    function assumes the reference image file will be found in path produced by
-    :func:`_generate_image_path_and_directory` with 'sum_image' as operations directory name and
-    'sum' as operations description.
-
-    Args:
-        args: a namespace contains all command-line arguments. It's the result of ArgumentParser.parse_args().
-
-    Returns:
-        str: The path of the reference image.
-
-    """
-    if args.pet_reference is not None:
-        ref_image = args.pet_reference
-    else:
-        ref_image = _generate_image_path_and_directory(main_dir=args.out_dir,
-                                                       ops_dir_name='sum_image',
-                                                       file_prefix=args.prefix,
-                                                       ops_desc='sum')
-    return ref_image
+    arg_help = parser.print_help()
+    return args, arg_help
 
 
 def main():
     """
     Preprocessing command line interface
     """
-    args = _generate_args()
-    
-    args.out_dir = os.path.abspath(args.out_dir)
-    args.pet = os.path.abspath(args.pet)
-    
-    if args.command == 'weighted-sum':
-        image_write = _generate_image_path_and_directory(main_dir=args.out_dir,
-                                                         ops_dir_name='sum_image',
-                                                         file_prefix=args.prefix,
-                                                         ops_desc='sum')
-        image_operations_4d.weighted_series_sum(input_image_4d_path=args.pet,
-                                                out_image_path=image_write,
-                                                half_life=args.half_life,
-                                                verbose=args.verbose)
-    
-    if args.command == 'motion-correct':
-        image_write = _generate_image_path_and_directory(main_dir=args.out_dir,
-                                                         ops_dir_name='motion-correction',
-                                                         file_prefix=args.prefix,
-                                                         ops_desc='moco')
-        ref_image = _check_ref(args=args)
-        image_operations_4d.motion_correction(input_image_4d_path=args.pet,
-                                              reference_image_path=ref_image,
-                                              out_image_path=image_write,
-                                              verbose=args.verbose)
-    
-    if args.command == 'register':
-        image_write = _generate_image_path_and_directory(main_dir=args.out_dir,
-                                                         ops_dir_name='registration',
-                                                         file_prefix=args.prefix,
-                                                         ops_desc='reg')
-        ref_image = _check_ref(args=args)
-        image_operations_4d.register_pet(input_calc_image_path=ref_image,
-                                         input_reg_image_path=args.pet,
-                                         reference_image_path=args.anatomical,
-                                         out_image_path=image_write,
-                                         verbose=args.verbose)
-    
-    if args.command == 'write-tacs':
-        tac_write_path = os.path.join(args.out_dir, 'tacs')
-        os.makedirs(tac_write_path, exist_ok=True)
-        image_write = _generate_image_path_and_directory(main_dir=args.out_dir,
-                                                         ops_dir_name='segmentation',
-                                                         file_prefix=args.prefix,
-                                                         ops_desc='seg')
-        if args.resample_segmentation:
-            image_operations_4d.resample_segmentation(input_image_4d_path=args.pet,
-                                                      segmentation_image_path=args.segmentation,
-                                                      out_seg_path=image_write,
-                                                      verbose=args.verbose)
-        
-        image_operations_4d.write_tacs(input_image_4d_path=args.pet,
-                                       color_table_path=args.color_table_path,
-                                       segmentation_image_path=image_write,
-                                       out_tac_dir=tac_write_path,
-                                       verbose=args.verbose)
+    args, arg_help = _generate_args()
+
+    if args.command is None:
+        print(arg_help)
+        return 0
+
+    subject = preproc.PreProc(output_directory=os.path.abspath(args.out_dir),
+                              output_filename_prefix=args.prefix)
+    preproc_props = {
+        'FilePathWSSInput': args.pet,
+        'FilePathMocoInp': args.pet,
+        'FilePathRegInp': args.pet,
+        'FilePathAnat': args.anatomical,
+        'FilePathTACInput': args.pet,
+        'FilePathSeg': args.segmentation,
+        'FilePathLabelMap': args.label_map_path,
+        'FilePathWarpInput': args.pet,
+        'FilePathAtlas': args.reference_atlas,
+        'FilePathSUVRInput': args.pet,
+        'FilePathBlurInput': args.pet,
+        'HalfLife': args.half_life,
+        'MotionTarget': args.motion_target,
+        'BlurSize': args.blur_size_mm,
+        'TimeFrameKeyword': args.time_frame_keyword,
+        'Verbose': args.verbose
+    }
+    subject.update_props(new_preproc_props=preproc_props)
+    subject.run_preproc(method_name=args.command)
 
 
 if __name__ == "__main__":
