@@ -1,5 +1,6 @@
 import argparse
 import json
+from time import perf_counter
 from . import preproc
 
 _PREPROC_EXAMPLES_ = (r"""
@@ -39,9 +40,12 @@ def main():
                               output_filename_prefix=args.filename_prefix)
     subject.update_props(new_preproc_props=preproc_props)
 
+    start = perf_counter()
     methods = args.method
     for method in methods:
         subject.run_preproc(method_name=method)
+    finish = perf_counter()
+    print(f'Finished processing in {finish-start} s')
 
 
 if __name__ == "__main__":

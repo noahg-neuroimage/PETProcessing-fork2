@@ -94,7 +94,6 @@ def warp_pet_atlas(input_image_path: str,
     Returns:
         xfm_to_apply (list[str]): The computed transforms, saved to a temp dir.
     """
-    pet_image_ants = ants.image_read(input_image_path)
     anat_image_ants = ants.image_read(anat_image_path)
     atlas_image_ants = ants.image_read(atlas_image_path)
 
@@ -107,12 +106,19 @@ def warp_pet_atlas(input_image_path: str,
     if verbose:
         print(f'Xfms located at: {xfm_to_apply}')
 
-    dim = pet_image_ants.dimension
+    pet_image_ants = ants.image_read(input_image_path)
+    
+    if pet_image_ants.dimension==4:
+        dim = 3
+    else:
+        dim = 0
     pet_atlas_xfm = ants.apply_transforms(fixed=atlas_image_ants,
                                           moving=pet_image_ants,
-                                          transformlist=xfm_to_apply,
-                                          imagetype=dim-1)
+                                          transformlist=xfm_to_apply,verbose=True,
+                                          imagetype=dim)
 
+    if verbose:
+        print('Computed transform, saving to file.')
     ants.image_write(pet_atlas_xfm,out_image_path)
 
     copy_meta_path = re.sub('.nii.gz|.nii', '.json', out_image_path)

@@ -2,6 +2,10 @@
 Introduces class :class:`PreProc` which handles preprocessing of PET and other
 neuroimaging data for a PET study. Acts as a wrapper for other tools supplied
 in ``PPM``.
+
+TODO:
+    * Check if input files exist, through error if no
+
 """
 import os
 import json
@@ -170,7 +174,6 @@ class PreProc():
             updated_props[key] = new_preproc_props[key]
 
         self.preproc_props = updated_props
-        print(updated_props)
         return updated_props
 
 
