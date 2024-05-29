@@ -52,7 +52,7 @@ Examples:
   - Weighted Sum:
     pet-cli-preproc weighted-sum --pet /path/to/pet.nii --out-dir /path/to/output --half-life 6600.0
   - Registration:
-    pet-cli-preproc register --pet /path/to/pet.nii --anatomical /path/to/mri.nii --pet-reference /path/to/pet_sum.nii --out-dir /path/to/output
+    pet-cli-preproc register-pet --pet /path/to/pet.nii --anatomical /path/to/mri.nii --pet-reference /path/to/pet_sum.nii --out-dir /path/to/output
   - Motion Correction:
     pet-cli-preproc motion-correct --pet /path/to/pet.nii --pet-reference /path/to/sum.nii --out-dir /path/to/output
   - Writing TACs From Segmentation Masks:
@@ -96,6 +96,8 @@ def _add_common_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument('-o', '--out-dir', default='./', help='Output directory')
     parser.add_argument('-f', '--prefix', default="sub_XXXX", help='Output file prefix')
     parser.add_argument('-p', '--pet',required=True,help='Path to PET image.',type=str)
+    parser.add_argument('-v', '--verbose', action='store_true',
+                            help='Print processing information during computation.', required=False)
 
 
 def _generate_args() -> argparse.Namespace:
@@ -161,48 +163,56 @@ def _generate_args() -> argparse.Namespace:
     _add_common_args(parser_blur)
     parser_blur.add_argument('-b','--blur-size-mm',help='Size of gaussian kernal with which to blur image.')
 
-
-    verb_group = parser.add_argument_group('Additional information')
-    verb_group.add_argument('-v', '--verbose', action='store_true',
-                            help='Print processing information during computation.', required=False)
-
-    args = parser.parse_args()
-    arg_help = parser.print_help()
-    return args, arg_help
+    return parser
 
 
 def main():
     """
     Preprocessing command line interface
     """
-    args, arg_help = _generate_args()
+    preproc_parser = _generate_args()
+    args = preproc_parser.parse_args()
 
     if args.command is None:
-        print(arg_help)
-        return 0
+        preproc_parser.print_help()
+        raise Exception('Exiting without command')
 
     subject = preproc.PreProc(output_directory=os.path.abspath(args.out_dir),
                               output_filename_prefix=args.prefix)
+    
+    print(args.__dict__)
     preproc_props = {
         'FilePathWSSInput': args.pet,
         'FilePathMocoInp': args.pet,
         'FilePathRegInp': args.pet,
-        'FilePathAnat': args.anatomical,
         'FilePathTACInput': args.pet,
-        'FilePathSeg': args.segmentation,
-        'FilePathLabelMap': args.label_map_path,
         'FilePathWarpInput': args.pet,
-        'FilePathAtlas': args.reference_atlas,
         'FilePathSUVRInput': args.pet,
         'FilePathBlurInput': args.pet,
-        'HalfLife': args.half_life,
-        'MotionTarget': args.motion_target,
-        'BlurSize': args.blur_size_mm,
-        'TimeFrameKeyword': args.time_frame_keyword,
         'Verbose': args.verbose
     }
+
+    if 'anatomical' in args.__dict__.keys():
+        preproc_props['FilePathAnat'] = args.anatomical,
+    if 'segmentation' in args.__dict__.keys():
+        preproc_props['FilePathSeg'] = args.segmentation
+    if 'label_map_path' in args.__dict__.keys():
+        preproc_props['FilePathLabelMap'] = args.label_map_path
+    if 'reference_atlas' in args.__dict__.keys():
+        preproc_props['FilePathAtlas'] = args.reference_atlas
+    if 'half_life' in args.__dict__.keys():
+        preproc_props['HalfLife'] = args.half_life
+    if 'motion_target' in args.__dict__.keys():
+        preproc_props['MotionTarget'] = args.motion_target
+    if 'blur_size_mm' in args.__dict__.keys():
+        preproc_props['BlurSize'] = args.blur_size_mm
+    if 'time_frame_keyword' in args.__dict__.keys():
+        preproc_props['TimeFrameKeyword'] = args.time_frame_keyword
+
+    command = str(args.command).replace('-','_')
+
     subject.update_props(new_preproc_props=preproc_props)
-    subject.run_preproc(method_name=args.command)
+    subject.run_preproc(method_name=command)
 
 
 if __name__ == "__main__":
