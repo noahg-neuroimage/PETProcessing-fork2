@@ -34,9 +34,10 @@ def _get_fitting_params_for_tcm_func(f: Callable) -> list:
     r"""
     Fetches the parameter names from the function signature of a given Tissue Compartment Model (TCM) function. The
     functions can be one of the following:
-        * :func:`generate_tac_1tcm_c1_from_tac<pet_cli.tcms_as_convolutions.generate_tac_1tcm_c1_from_tac>`
-        * :func:`generate_tac_2tcm_with_k4zero_cpet_from_tac<pet_cli.tcms_as_convolutions.generate_tac_2tcm_with_k4zero_cpet_from_tac>`
-        * :func:`generate_tac_serial_2tcm_cpet_from_tac<pet_cli.tcms_as_convolutions.generate_tac_serial_2tcm_cpet_from_tac>`
+    
+    * :func:`generate_tac_1tcm_c1_from_tac<pet_cli.tcms_as_convolutions.generate_tac_1tcm_c1_from_tac>`
+    * :func:`generate_tac_2tcm_with_k4zero_cpet_from_tac<pet_cli.tcms_as_convolutions.generate_tac_2tcm_with_k4zero_cpet_from_tac>`
+    * :func:`generate_tac_serial_2tcm_cpet_from_tac<pet_cli.tcms_as_convolutions.generate_tac_serial_2tcm_cpet_from_tac>`
 
     Args:
         f (Callable): TCM function.
@@ -52,9 +53,10 @@ def _get_number_of_fit_params_for_tcm_func(f: Callable) -> int:
     r"""
     Counts the number of fitting parameters for a given Tissue Compartment Model (TCM) function. The
     functions can be one of the following:
-        * :func:`generate_tac_1tcm_c1_from_tac<pet_cli.tcms_as_convolutions.generate_tac_1tcm_c1_from_tac>`
-        * :func:`generate_tac_2tcm_with_k4zero_cpet_from_tac<pet_cli.tcms_as_convolutions.generate_tac_2tcm_with_k4zero_cpet_from_tac>`
-        * :func:`generate_tac_serial_2tcm_cpet_from_tac<pet_cli.tcms_as_convolutions.generate_tac_serial_2tcm_cpet_from_tac>`
+    
+    * :func:`generate_tac_1tcm_c1_from_tac<pet_cli.tcms_as_convolutions.generate_tac_1tcm_c1_from_tac>`
+    * :func:`generate_tac_2tcm_with_k4zero_cpet_from_tac<pet_cli.tcms_as_convolutions.generate_tac_2tcm_with_k4zero_cpet_from_tac>`
+    * :func:`generate_tac_serial_2tcm_cpet_from_tac<pet_cli.tcms_as_convolutions.generate_tac_serial_2tcm_cpet_from_tac>`
 
     Args:
         f (Callable): TCM function.
@@ -363,9 +365,10 @@ class TACFitter(object):
         r"""
         Analyzes the provided tissue compartment model (TCM) function, sets it for the current instance, and extracts
         related property information. The ``tcm_func`` should be one of the following:
-            * :func:`generate_tac_1tcm_c1_from_tac<pet_cli.tcms_as_convolutions.generate_tac_1tcm_c1_from_tac>`
-            * :func:`generate_tac_2tcm_with_k4zero_cpet_from_tac<pet_cli.tcms_as_convolutions.generate_tac_2tcm_with_k4zero_cpet_from_tac>`
-            * :func:`generate_tac_serial_2tcm_cpet_from_tac<pet_cli.tcms_as_convolutions.generate_tac_serial_2tcm_cpet_from_tac>`
+        
+        * :func:`generate_tac_1tcm_c1_from_tac<pet_cli.tcms_as_convolutions.generate_tac_1tcm_c1_from_tac>`
+        * :func:`generate_tac_2tcm_with_k4zero_cpet_from_tac<pet_cli.tcms_as_convolutions.generate_tac_2tcm_with_k4zero_cpet_from_tac>`
+        * :func:`generate_tac_serial_2tcm_cpet_from_tac<pet_cli.tcms_as_convolutions.generate_tac_serial_2tcm_cpet_from_tac>`
 
         The function extracts fitting parameter names and their count from the function signature and sets them in the
         current instance for later usage.
@@ -553,9 +556,10 @@ class TACFitterWithoutBloodVolume(TACFitter):
         Overridden method to define a TCM function excluding blood volume.
         
         The ``tcm_func`` should be one of the following:
-            * :func:`generate_tac_1tcm_c1_from_tac<pet_cli.tcms_as_convolutions.generate_tac_1tcm_c1_from_tac>`
-            * :func:`generate_tac_2tcm_with_k4zero_cpet_from_tac<pet_cli.tcms_as_convolutions.generate_tac_2tcm_with_k4zero_cpet_from_tac>`
-            * :func:`generate_tac_serial_2tcm_cpet_from_tac<pet_cli.tcms_as_convolutions.generate_tac_serial_2tcm_cpet_from_tac>`
+        
+        * :func:`generate_tac_1tcm_c1_from_tac<pet_cli.tcms_as_convolutions.generate_tac_1tcm_c1_from_tac>`
+        * :func:`generate_tac_2tcm_with_k4zero_cpet_from_tac<pet_cli.tcms_as_convolutions.generate_tac_2tcm_with_k4zero_cpet_from_tac>`
+        * :func:`generate_tac_serial_2tcm_cpet_from_tac<pet_cli.tcms_as_convolutions.generate_tac_serial_2tcm_cpet_from_tac>`
 
         Args:
             tcm_func: The chosen TCM function model.
@@ -699,6 +703,23 @@ class FitTCMToTAC(object):
     
     @staticmethod
     def validated_tcm(compartment_model: str) -> str:
+        r"""
+        Validates the type of tissue compartment model.
+
+        This method checks that the provided compartment model is one of the pre-defined options '1tcm', '2tcm-k4zero'
+        or 'serial-2tcm'. The input is transformed to lowercase and spaces are replaced with hyphens before checking
+        validity.
+
+        Args:
+            compartment_model (str): The name of the compartment model.
+
+        Returns:
+            str: The transformed name of the validated compartment model if it was valid.
+
+        Raises:
+            ValueError: If the provided compartment model is not one of '1tcm', '2tcm-k4zero' or 'serial-2tcm'
+            
+        """
         tcm = compartment_model.lower().replace(' ', '-')
         if tcm not in ['1tcm', '2tcm-k4zero', 'serial-2tcm']:
             raise ValueError("compartment_model must be one of '1tcm', '2tcm-k4zero', or 'serial-2tcm'")
@@ -706,6 +727,26 @@ class FitTCMToTAC(object):
     
     @staticmethod
     def _get_tcm_function(compartment_model: str) -> Callable:
+        """
+        Returns the corresponding function for the provided tissue compartment model used for the fitting class
+
+        Args:
+            compartment_model: The name of the tissue compartment model.
+
+        Returns:
+            function: The corresponding function for the tissue compartment model.
+
+        Raises:
+            KeyError: If the provided tissue compartment model name does not correspond to any known models.
+        
+        See Also:
+            * :func:`generate_tac_1tcm_c1_from_tac<pet_cli.tcms_as_convolutions.generate_tac_1tcm_c1_from_tac>`
+            * :func:`generate_tac_2tcm_with_k4zero_cpet_from_tac<pet_cli.tcms_as_convolutions.generate_tac_2tcm_with_k4zero_cpet_from_tac>`
+            * :func:`generate_tac_serial_2tcm_cpet_from_tac<pet_cli.tcms_as_convolutions.generate_tac_serial_2tcm_cpet_from_tac>`
+            * :class:`TACFitter`
+            * :class:`TACFitterWithoutBloodVolume`
+        
+        """
         tcm_funcs = {
                    '1tcm': pet_tcms.generate_tac_1tcm_c1_from_tac,
                    '2tcm-k4zero': pet_tcms.generate_tac_2tcm_with_k4zero_cpet_from_tac,
@@ -755,6 +796,21 @@ class FitTCMToTAC(object):
         self.fit_results = self.fitting_obj.fit_results
     
     def _generate_pretty_params(self, results: np.ndarray) -> dict:
+        r"""
+        Transforms array of results into a formatted dictionary.
+
+        This method formats the fitting results into a more human-readable form.
+        If the fitting was done without blood volume, it formats all values as 'k_i': value.
+        Otherwise it formats all but the last as 'k_i': value and the last as 'vb': value.
+
+        Args:
+            results (np.ndarray): The array of fitting results.
+
+        Returns:
+            dict: The formatted fitting results as {param: value} pairs. In the case of
+                  TACFitterWithBloodVolume, the last parameter will be named 'vb', others 'k_i'.
+                  In the case of TACFitterWithoutBloodVolume, parameters will be named 'k_i'.
+        """
         if isinstance(self.fitting_obj, TACFitterWithoutBloodVolume):
             k_vals = {f'k_{n + 1}': val for n, val in enumerate(results)}
             return k_vals
@@ -764,6 +820,20 @@ class FitTCMToTAC(object):
             return {**k_vals, **vb}
     
     def _generate_pretty_bounds(self, bounds: np.ndarray) -> dict:
+        r""
+        Transforms array of bounds into a formatted dictionary.
+
+        This method creates a dictionary of the fitting parameters and their corresponding
+        initial values and lower and upper bounds. The keys of the dictionary are the names
+        of the fitting parameters from _generate_pretty_params method.
+
+        Args:
+            bounds (np.ndarray): The array of parameter bounds.
+
+        Returns:
+            dict: The fitting parameters with their corresponding initial values, and lower and
+                  upper bounds, in the following format: {param: {'initial': val, 'lo': lo, 'hi': hi}}
+        """
         param_names = list(self._generate_pretty_params(bounds).keys())
         param_bounds = {f'{param}': {'initial': val[0],
                                      'lo': val[1],
