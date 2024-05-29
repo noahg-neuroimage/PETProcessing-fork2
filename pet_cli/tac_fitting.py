@@ -627,11 +627,40 @@ class FitTCMToTAC(object):
                  output_directory: str,
                  output_filename_prefix: str,
                  compartment_model: str,
-                 parameter_bounds: str,
+                 parameter_bounds: Union[tuple, np.ndarray],
                  resample_num: int,
                  aif_fit_thresh_in_mins: float,
                  max_func_iters: int,
                  ignore_blood_volume: bool = False):
-        pass
-
-
+        self.input_tac_path: str = os.path.abspath(input_tac_path)
+        self.roi_tac_path: str = os.path.abspath(roi_tac_path)
+        self.output_directory: str = os.path.abspath(output_directory)
+        self.output_filename_prefix: str = output_filename_prefix
+        self.compartment_model: str = self.validated_tcm(compartment_model)
+        self._tcm_func: Callable = self._get_tcm_function(self.compartment_model)
+        self.bounds: Union[tuple, np.ndarray] = parameter_bounds
+        self.tac_resample_num: int = resample_num
+        self.input_tac_fitting_thresh_in_mins: float = aif_fit_thresh_in_mins
+        self.max_func_iters: int = max_func_iters
+        
+        if ignore_blood_volume:
+            self.fitting_obj = TACFitterWithoutBloodVolume
+        else:
+            self.fitting_obj = TACFitter
+    
+    @staticmethod
+    def validated_tcm(compartment_model: str) -> str:
+        tcm = compartment_model.lower().replace(' ', '-')
+        if tcm not in ['1tcm', '2tcm-k4zero', 'serial-2tcm']:
+            raise ValueError("compartment_model must be one of '1tcm', '2tcm-k4zero', or 'serial-2tcm'")
+        return tcm
+    
+    @staticmethod
+    def _get_tcm_function(compartment_model: str) -> Callable:
+        tcm_funcs = {
+                   '1tcm': pet_tcms.generate_tac_1tcm_c1_from_tac,
+                   '2tcm-k4zero': pet_tcms.generate_tac_2tcm_with_k4zero_cpet_from_tac,
+                   'serial-2tcm': pet_tcms.generate_tac_serial_2tcm_cpet_from_tac
+                    }
+        
+        return tcm_funcs[compartment_model]
