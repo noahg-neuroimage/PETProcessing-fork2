@@ -21,6 +21,7 @@ See Also:
     
 """
 import inspect
+import json
 from typing import Callable, Union
 import numpy as np
 from scipy.optimize import curve_fit as sp_cv_fit
@@ -653,6 +654,7 @@ class FitTCMToTAC(object):
                  output_filename_prefix: str,
                  compartment_model: str,
                  parameter_bounds: Union[None, np.ndarray] = None,
+                 weights: Union[float, None, np.ndarray] = None,
                  resample_num: int = 512,
                  aif_fit_thresh_in_mins: float = 40.0,
                  max_func_iters: int = 2500,
@@ -668,12 +670,14 @@ class FitTCMToTAC(object):
         self.input_tac_fitting_thresh_in_mins: float = aif_fit_thresh_in_mins
         self.max_func_iters: int = max_func_iters
         self.ignore_blood_volume = ignore_blood_volume
+        self.weights: Union[float, None, np.ndarray] = weights
         if self.ignore_blood_volume:
             self.fitting_obj = TACFitterWithoutBloodVolume
         else:
             self.fitting_obj = TACFitter
         self.analysis_props: dict = self.init_analysis_props()
         self.fit_results: Union[None, tuple[np.ndarray, np.ndarray]] = None
+        self._has_analysis_been_run: bool = False
         
     def init_analysis_props(self):
         props = {
@@ -681,13 +685,13 @@ class FitTCMToTAC(object):
             'FilePathTTAC': self.roi_tac_path,
             'TissueCompartmentModel': self.compartment_model,
             'IgnoreBloodVolume': self.ignore_blood_volume,
-            'PTACFittingThreshold': self.input_tac_fitting_thresh_in_mins,
+            'PTACFittingThresholdTime': self.input_tac_fitting_thresh_in_mins,
             'FitProperties': {
+                'FitValues': [],
+                'FitStdErr': [],
                 'Bounds': [],
                 'ResampleNum': self.tac_resample_num,
                 'MaxIterations': self.max_func_iters,
-                'FitValues': [],
-                'FitStdErr': []
                 }
             }
         
@@ -709,4 +713,60 @@ class FitTCMToTAC(object):
                     }
         
         return tcm_funcs[compartment_model]
-
+    
+    def run_analysis(self):
+        self.calculate_fit()
+        self.calculate_fit_properties()
+        self._has_analysis_been_run = True
+    
+    def save_analysis(self):
+        if not self._has_analysis_been_run:
+            raise RuntimeError("'run_analysis' method must be run before running this method.")
+        
+        file_name_prefix = os.path.join(self.output_directory,
+                                        f"{self.output_filename_prefix}_analysis"
+                                        f"-{self.analysis_props['TissueCompartmentModel']}")
+        analysis_props_file = f"{file_name_prefix}_props.json"
+        with open(analysis_props_file, 'w') as f:
+            json.dump(obj=self.analysis_props, fp=f, indent=4)
+    
+    def calculate_fit_properties(self):
+        fit_params, fit_covariances = self.fit_results
+        fit_stderr = np.sqrt(np.diagonal(fit_covariances))
+        format_func = self._generate_pretty_params
+        
+        self.analysis_props["FitProperties"]["FitValues"] = format_func(fit_params.round(5))
+        self.analysis_props["FitProperties"]["FitStdErr"] = format_func(fit_stderr.round(5))
+        
+        format_func = self._generate_pretty_bounds
+        self.analysis_props["FitProperties"]["Bounds"] = format_func(self.bounds.round(5))
+    
+    def calculate_fit(self):
+        p_tac = _safe_load_tac(self.input_tac_path)
+        t_tac = _safe_load_tac(self.roi_tac_path)
+        self.fitting_obj = self.fitting_obj(pTAC=p_tac, tTAC=t_tac,
+                                            weights=self.weights,
+                                            tcm_func=self._tcm_func,
+                                            fit_bounds=self.bounds,
+                                            max_iters=self.max_func_iters,
+                                            aif_fit_thresh_in_mins=self.input_tac_fitting_thresh_in_mins,
+                                            resample_num=self.tac_resample_num)
+        self.fitting_obj.run_fit()
+        self.fit_results = self.fitting_obj.fit_results
+    
+    def _generate_pretty_params(self, results: np.ndarray) -> dict:
+        if isinstance(self.fitting_obj, TACFitterWithoutBloodVolume):
+            k_vals = {f'k_{n + 1}': val for n, val in enumerate(results)}
+            return k_vals
+        else:
+            k_vals = {f'k_{n + 1}': val for n, val in enumerate(results[:-1])}
+            vb = {f'vb': results[-1]}
+            return {**k_vals, **vb}
+    
+    def _generate_pretty_bounds(self, bounds: np.ndarray) -> dict:
+        param_names = list(self._generate_pretty_params(bounds).keys())
+        param_bounds = {f'{param}': {'initial': val[0],
+                                     'lo': val[1],
+                                     'hi': val[2]} for param, val in
+                        zip(param_names, bounds)}
+        return param_bounds
