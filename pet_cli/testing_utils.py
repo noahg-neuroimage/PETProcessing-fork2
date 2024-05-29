@@ -1,4 +1,5 @@
 import numpy as np
+from typing import Union
 import matplotlib.pyplot as plt
 from scipy.stats import linregress
 
@@ -92,7 +93,29 @@ def generate_random_parameter_samples(num_samples, num_params, hi, lo):
     Note:
         Uses :func:`np.random.random` to generate random values in a given shape.
     """
-    return np.random.random((num_samples, num_params)) * (hi - lo) + lo
+    rand_samples = np.zeros((num_samples, num_params))
+    if isinstance(hi, tuple):
+        assert len(hi) == num_params, "`hi` must be of length num_params"
+        if isinstance(lo, tuple):
+            assert len(lo) == num_params, "`lo` must be of length num_params"
+            for i in range(num_params):
+                rand_samples[:, i] = np.random.random(num_samples) * (hi[i] - lo[i]) + lo[i]
+        else:
+            for i in range(num_params):
+                rand_samples[:, i] = np.random.random(num_samples) * (hi[i] - lo) + lo
+    elif isinstance(lo, tuple):
+        assert len(lo) == num_params, "`lo` must be of length num_params"
+        if isinstance(hi, tuple):
+            assert len(hi) == num_params, "`hi` must be of length num_params"
+            for i in range(num_params):
+                rand_samples[:, i] = np.random.random(num_samples) * (hi[i] - lo[i]) + lo[i]
+        else:
+            for i in range(num_params):
+                rand_samples[:, i] = np.random.random(num_samples) * (hi - lo[i]) + lo[i]
+    else:
+        rand_samples = np.random.random((num_samples, num_params)) * (hi - lo) + lo
+    
+    return rand_samples
 
 
 def add_gaussian_noise_to_tac_based_on_max(tac_vals: np.ndarray, scale: float = 0.05) -> np.ndarray:
@@ -144,7 +167,7 @@ def scatter_with_regression_figure(axes,
         sca_kwargs = dict(s=10, marker='.', color='red')
     
     if reg_kwargs is None:
-        reg_kwargs = dict(s=10, color='black', alpha=0.8, lw=3, ls='-')
+        reg_kwargs = dict(ms=10, color='black', alpha=0.8, lw=3, ls='-')
     
     fax = axes.flatten()
     for ax_id, (xAr, yAr, title) in enumerate((zip(true_values.T, fit_values.T, ax_titles))):
