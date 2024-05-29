@@ -618,3 +618,20 @@ class TACFitterWithoutBloodVolume(TACFitter):
             with blood volume (``vb``) set to 0.
         """
         return self.tcm_func(x, self.p_tac_vals, *params, vb=0.0)[1]
+
+
+class FitTCMToTAC(object):
+    def __init__(self,
+                 input_tac_path: str,
+                 roi_tac_path: str,
+                 output_directory: str,
+                 output_filename_prefix: str,
+                 compartment_model: str,
+                 parameter_bounds: str,
+                 resample_num: int,
+                 aif_fit_thresh_in_mins: float,
+                 max_func_iters: int,
+                 ignore_blood_volume: bool = False):
+        pass
+
+
