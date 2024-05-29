@@ -985,19 +985,81 @@ def _safe_load_tac(filename: str, **kwargs) -> np.ndarray:
 
 
 class RTMAnalysis:
+    r"""
+    A class designed to carry out various Reference Tissue Model (RTM) analyses on Time Activity Curves (TACs).
+
+    This class eases the process of conducting RTM analysis on TACs. Paths to both reference and region-of-interest
+    (ROI) TACs are taken as inputs at initialization. The class further provides multiple utility functions for
+    initializing and running the RTM analysis, and also for validating the inputs based on the RTM method chosen.
+
+    This class currently supports various RTM methods such as :'srtm', 'frtm', 'mrtm-original', 'mrtm', and 'mrtm2'.
+
+    Attributes:
+        ref_tac_path (str): Absolute path for reference TAC
+        roi_tac_path (str): Absolute path for ROI TAC
+        output_directory (str): Absolute path for the output directory
+        output_filename_prefix (str): Prefix for the output filename of the result
+        method (str): RTM analysis method. Converts to lower case at initialization.
+        analysis_props (dict): Analysis properties dictionary initialized with method-specific property keys and
+            default values.
+        _has_analysis_been_run (bool): Flag representing if the RTM analysis has been run to ensure correct order of
+            operations.
+
+    Example:
+        In the proceeding example, we assume that we have two tacs: a reference region tac, and a region of interest
+        (ROI) tac named 'ref_tac.txt' and 'roi_tac.txt', respectively. Furthermore, we assume that both TACs are sampled
+        at the same times, and are evenly sampled with respect to time.
+        
+        .. code-block:: python
+            
+            import numpy as np
+            from pet_cli.reference_tissue_models as pet_rtms
+            
+            file_rtm = pet_rtms.RTMAnalysis(ref_tac_path="ref_tac.txt",
+                                            roi_tac_path="roi_tac.txt",
+                                            output_directory="./",
+                                            output_filename_prefix='pre',
+                                            method="mrtm")
+            file_rtm.run_analysis(t_thresh_in_mins=40.0)
+            file_rtm.save_analysis()
+        
+
+    See Also:
+        * :class:`FitTACWithRTMs`: a class for analyzing TACs with RTMs.
+
+    """
     def __init__(self,
                  ref_tac_path: str,
                  roi_tac_path: str,
                  output_directory: str,
                  output_filename_prefix: str,
                  method: str):
+        r"""
+        Initialize RTMAnalysis with provided arguments.
+
+        The init method executes the following operations:
+            1. It converts the provided analysis method to lower case for consistency in internal processing.
+            2. It obtains the absolute paths for reference and ROI TAC files and the output directory, to ensure
+               they are consistently accessible.
+            3. It initializes the analysis properties dictionary using `init_analysis_props` method.
+            4. It initializes the `_has_analysis_been_run` flag to False, to indicate that the RTM analysis has not yet been run.
+
+        Args:
+            ref_tac_path (str): Path to the file containing reference TAC.
+            roi_tac_path (str): Path to the file containing ROI TAC.
+            output_directory (str): Path to the directory where the output will be saved.
+            output_filename_prefix (str): Prefix that will be used for the output filename.
+            method (str): The RTM analysis method to be used. Could be one of 'srtm', 'frtm', 'mrtm-original',
+                'mrtm' or 'mrtm2'.
+                
+        """
         self.ref_tac_path: str = os.path.abspath(ref_tac_path)
         self.roi_tac_path: str = os.path.abspath(roi_tac_path)
         self.output_directory: str = os.path.abspath(output_directory)
         self.output_filename_prefix: str = output_filename_prefix
         self.method = method.lower()
         self.analysis_props: dict = self.init_analysis_props(self.method)
-        self.has_analysis_been_run: bool = False
+        self._has_analysis_been_run: bool = False
         
     def init_analysis_props(self, method: str) -> dict:
         r"""
@@ -1005,7 +1067,7 @@ class RTMAnalysis:
 
         Args:
             method (str): RTM analysis method. Must be one of 'srtm', 'frtm', 'mrtm-original',
-            'mrtm' or 'mrtm2'.
+                'mrtm' or 'mrtm2'.
 
         Returns:
             dict: A dictionary containing method-specific property keys and default values.
@@ -1068,7 +1130,7 @@ class RTMAnalysis:
         self.calculate_fit_properties(fit_results=fit_results,
                                       t_thresh_in_mins=t_thresh_in_mins,
                                       k2_prime=k2_prime)
-        self.has_analysis_been_run = True
+        self._has_analysis_been_run = True
     
     def validate_analysis_inputs(self, k2_prime, t_thresh_in_mins):
         r"""
@@ -1155,12 +1217,12 @@ class RTMAnalysis:
         r"""
         Save the analysis results in JSON format.
 
-        The results are only saved if the analysis has been run (has_analysis_been_run flag is checked).
+        The results are only saved if the analysis has been run (_has_analysis_been_run flag is checked).
 
         Raises:
             RuntimeError: If the :meth:'run_analysis' method has not been called yet.
         """
-        if not self.has_analysis_been_run:
+        if not self._has_analysis_been_run:
             raise RuntimeError("'run_analysis' method must be called before 'save_analysis'.")
         file_name_prefix = os.path.join(self.output_directory,
                                         f"{self.output_filename_prefix}_analysis-{self.analysis_props['MethodName']}")
