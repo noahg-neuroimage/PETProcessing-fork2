@@ -43,7 +43,7 @@ def register_pet(input_reg_image_path: str,
                                                 half_life=half_life)
     motion_target_image = ants.image_read(motion_target)
     mri_image = ants.image_read(reference_image_path)
-    pet_moco = ants.image_read(input_reg_image_path)
+    pet_image_ants = ants.image_read(input_reg_image_path)
     xfm_output = ants.registration(moving=motion_target_image,
                                    fixed=mri_image,
                                    type_of_transform=type_of_transform,
@@ -53,10 +53,15 @@ def register_pet(input_reg_image_path: str,
         print(f'Registration computed transforming image {motion_target} to '
               f'{reference_image_path} space')
 
-    xfm_apply = ants.apply_transforms(moving=pet_moco,
+    if pet_image_ants.dimension==4:
+        dim = 3
+    else:
+        dim = 0
+
+    xfm_apply = ants.apply_transforms(moving=pet_image_ants,
                                       fixed=mri_image,
                                       transformlist=xfm_output['fwdtransforms'],
-                                      imagetype=3)
+                                      imagetype=dim)
     if verbose:
         print(f'Registration applied to {input_reg_image_path}')
 
@@ -107,11 +112,12 @@ def warp_pet_atlas(input_image_path: str,
         print(f'Xfms located at: {xfm_to_apply}')
 
     pet_image_ants = ants.image_read(input_image_path)
-    
+
     if pet_image_ants.dimension==4:
         dim = 3
     else:
         dim = 0
+
     pet_atlas_xfm = ants.apply_transforms(fixed=atlas_image_ants,
                                           moving=pet_image_ants,
                                           transformlist=xfm_to_apply,verbose=True,
@@ -146,7 +152,11 @@ def apply_xfm_ants(input_image_path: str,
     pet_image_ants = ants.image_read(input_image_path)
     ref_image_ants = ants.image_read(ref_image_path)
 
-    dim = pet_image_ants.dimension
+    if pet_image_ants.dimension==4:
+        dim = 3
+    else:
+        dim = 0
+
     xfm_image = ants.apply_transforms(fixed=ref_image_ants,
                                       moving=pet_image_ants,
                                       transformlist=xfm_paths,
@@ -185,7 +195,6 @@ def apply_xfm_fsl(input_image_path: str,
         kwargs (keyword arguments): Additional arguments passed to
             :py:func:`fsl.wrappers.applywarp`.
     """
-
     fsl.wrappers.applywarp(src=input_image_path,
                            ref=ref_image_path,
                            out=out_image_path,
