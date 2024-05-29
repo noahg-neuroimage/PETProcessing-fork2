@@ -667,11 +667,31 @@ class FitTCMToTAC(object):
         self.tac_resample_num: int = resample_num
         self.input_tac_fitting_thresh_in_mins: float = aif_fit_thresh_in_mins
         self.max_func_iters: int = max_func_iters
-        
-        if ignore_blood_volume:
+        self.ignore_blood_volume = ignore_blood_volume
+        if self.ignore_blood_volume:
             self.fitting_obj = TACFitterWithoutBloodVolume
         else:
             self.fitting_obj = TACFitter
+        self.analysis_props: dict = self.init_analysis_props()
+        self.fit_results: Union[None, tuple[np.ndarray, np.ndarray]] = None
+        
+    def init_analysis_props(self):
+        props = {
+            'FilePathPTAC': self.input_tac_path,
+            'FilePathTTAC': self.roi_tac_path,
+            'TissueCompartmentModel': self.compartment_model,
+            'IgnoreBloodVolume': self.ignore_blood_volume,
+            'PTACFittingThreshold': self.input_tac_fitting_thresh_in_mins,
+            'FitProperties': {
+                'Bounds': [],
+                'ResampleNum': self.tac_resample_num,
+                'MaxIterations': self.max_func_iters,
+                'FitValues': [],
+                'FitStdErr': []
+                }
+            }
+        
+        return props
     
     @staticmethod
     def validated_tcm(compartment_model: str) -> str:
@@ -689,3 +709,4 @@ class FitTCMToTAC(object):
                     }
         
         return tcm_funcs[compartment_model]
+
