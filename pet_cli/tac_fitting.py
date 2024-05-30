@@ -665,7 +665,9 @@ class FitTCMToTAC(object):
         a standard serial 2TCM. Note that we are not fitting any time delay or dispersion corrections.
         
         .. code-block:: python
-        
+            
+            import pet_cli.tac_fitting as pet_fit
+            
             fit_obj = pet_fit.FitTCMToTAC(input_tac_path='./input_tac.txt',
                                           roi_tac_path='./roi_tac.txt',
                                           output_directory='./',
