@@ -16,32 +16,32 @@ Example:
     
     .. code-block:: bash
     
-    pet-cli-rtms frtm --ref-tac-path /path/to/ref/tac --roi-tac-path /path/to/roi/tac --prefix sub_001 --print --initial-guesses 0.1 0.1 0.1 0.1 0.1 --lower-bounds 0.0 0.0 0.0 0.0 0.0 --upper-bounds 5.0 5.0 5.0 5.0 5.0
+        pet-cli-rtms frtm --ref-tac-path /path/to/ref/tac --roi-tac-path /path/to/roi/tac --prefix sub_001 --print --initial-guesses 0.1 0.1 0.1 0.1 0.1 --lower-bounds 0.0 0.0 0.0 0.0 0.0 --upper-bounds 5.0 5.0 5.0 5.0 5.0
     
     For running an SRTM analysis:
     
     .. code-block:: bash
     
-    pet-cli-rtms srtm --ref-tac-path /path/to/ref/tac --roi-tac-path /path/to/roi/tac --prefix sub_001 --print --initial-guesses 0.1 0.1 0.1 0.1 0.1 --lower-bounds 0.0 0.0 0.0 0.0 0.0 --upper-bounds 5.0 5.0 5.0 5.0 5.0
+        pet-cli-rtms srtm --ref-tac-path /path/to/ref/tac --roi-tac-path /path/to/roi/tac --prefix sub_001 --print --initial-guesses 0.1 0.1 0.1 0.1 0.1 --lower-bounds 0.0 0.0 0.0 0.0 0.0 --upper-bounds 5.0 5.0 5.0 5.0 5.0
     
     For running an MRTM analysis:
     
     .. code-block:: bash
     
-    pet-cli-rtms mrtm --ref-tac-path /path/to/ref/tac --roi-tac-path /path/to/roi/tac --prefix sub_001 --print --t-thresh-in-mins 30.0
+        pet-cli-rtms mrtm --ref-tac-path /path/to/ref/tac --roi-tac-path /path/to/roi/tac --prefix sub_001 --print --t-thresh-in-mins 30.0
     
     For running an MRTM2 analysis:
     
     .. code-block:: bash
     
-    pet-cli-rtms mrtm2 --ref-tac-path /path/to/ref/tac --roi-tac-path /path/to/roi/tac --prefix sub_001 --print --t-thresh-in-mins 30.0 --k2-prime 0.1
+        pet-cli-rtms mrtm2 --ref-tac-path /path/to/ref/tac --roi-tac-path /path/to/roi/tac --prefix sub_001 --print --t-thresh-in-mins 30.0 --k2-prime 0.1
     
     
     For running the original MRTM analysis:
     
     .. code-block:: bash
     
-    pet-cli-rtms mrtm-original --ref-tac-path /path/to/ref/tac --roi-tac-path /path/to/roi/tac --prefix sub_001 --print --t-thresh-in-mins 30.0
+        pet-cli-rtms mrtm-original --ref-tac-path /path/to/ref/tac --roi-tac-path /path/to/roi/tac --prefix sub_001 --print --t-thresh-in-mins 30.0
     
     
     
