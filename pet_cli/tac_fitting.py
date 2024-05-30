@@ -651,6 +651,42 @@ def _safe_load_tac(filename: str, **kwargs) -> np.ndarray:
 
 
 class FitTCMToTAC(object):
+    r"""
+    A class dedicated to perform Tissue Compartment Model (TCM) fitting to time-activity curves (TACs).
+
+    This class consolidates all related TAC fitting functionalities. It first initializes relevant fitting parameters
+    and paths to TAC data from input arguments. After initialization, an analysis with methods like `run_analysis()`
+    and `save_analysis()` can be performed. The results, including fit parameters and properties, can be
+    accessed after the analysis.
+
+    Example:
+        In the proceeding example, we assume that we have two tacs: an input function tac, and a region of interest
+        (ROI) tac named 'input_tac.txt' and 'roi_tac.txt', respectively. Here, we are trying to fit the ROI tac to
+        a standard serial 2TCM. Note that we are not fitting any time delay or dispersion corrections.
+        
+        .. code-block:: python
+        
+            fit_obj = pet_fit.FitTCMToTAC(input_tac_path='./input_tac.txt',
+                                          roi_tac_path='./roi_tac.txt',
+                                          output_directory='./',
+                                          output_filename_prefix='fit',
+                                          compartment_model='serial-2tcm',
+                                          weights=None,
+                                          parameter_bounds=np.asarray([[0.1, 0.0, 1.0],
+                                                                       [0.1, 0.0, 1.0],
+                                                                       [0.1, 0.0, 1.0],
+                                                                       [0.1, 0.0, 1.0],
+                                                                       [0.1, 0.0, 1.0]]),
+                                          resample_num=512
+                              )
+            fit_obj.run_analysis()
+            fit_obj.save_analysis()
+    
+    See Also:
+        * :class:`TACFitter`
+        * :class:`TACFitterWithoutBloodVolume`
+    
+    """
     def __init__(self,
                  input_tac_path: str,
                  roi_tac_path: str,
@@ -663,6 +699,23 @@ class FitTCMToTAC(object):
                  aif_fit_thresh_in_mins: float = 40.0,
                  max_func_iters: int = 2500,
                  ignore_blood_volume: bool = False):
+        r"""
+        Initializes an instance of the FitTCMToTAC class.
+
+        The initialization follows these steps:
+            1. Saves absolute paths of the TAC files and output directory.
+            2. Validates and stores the compartment model and the corresponding fitting function.
+            3. Stores the other fitting parameters passed as arguments.
+            4. Initializes the appropriate fitting object, depending on whether blood volume is considered or not.
+            5. Initializes the analysis properties structure.
+
+        After initialization, you can directly run and save the analysis using bundled methods :meth:`run_analysis` and
+        :meth:`save_analysis`, respectively.
+        
+        See Also:
+            * :meth:`validated_tcm`
+            
+        """
         self.input_tac_path: str = os.path.abspath(input_tac_path)
         self.roi_tac_path: str = os.path.abspath(roi_tac_path)
         self.output_directory: str = os.path.abspath(output_directory)
@@ -684,6 +737,29 @@ class FitTCMToTAC(object):
         self._has_analysis_been_run: bool = False
         
     def init_analysis_props(self):
+        r"""
+        Initialize the structure of the analysis properties dictionary. This dictionary can be saved as a JSON file for
+        parsing the results.
+
+        The dictionary structure is as follows:
+
+            FilePathPTAC -> path of the input TAC file
+            FilePathTTAC -> path of the ROI TAC file
+            TissueCompartmentModel -> type of tissue compartment model used
+            IgnoreBloodVolume -> flag indicating whether blood volume is being considered or not
+            PTACFittingThresholdTime -> threshold time for the AIF fitting
+            FitProperties -> an inner dictionary with empty lists/arrays as placeholders
+                            for FitValues, FitStdErr and Bounds. Also contains ResampleNum and MaxIterations.
+
+        FitProperties will be updated during the analysis process.
+
+        Returns:
+            dict: Initialized dictionary with analysis properties structure.
+            
+        See Also:
+            * :meth:`calculate_fit_properties`
+            
+        """
         props = {
             'FilePathPTAC': self.input_tac_path,
             'FilePathTTAC': self.roi_tac_path,
