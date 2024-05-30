@@ -1,14 +1,27 @@
 import os
+from typing import Union
+
 import numpy as np
 import argparse
 from . import tac_fitting as pet_fit
 
+_EXAMPLE_ = ('Fitting a TAC to the serial 2TCM:\n\t'
+             'pet-cli-tcm-fit -i "input_tac.txt"'
+             ' -r "2tcm_tac.txt" '
+             '-m "serial-2tcm" '
+             '-o "./" -p "cli_" -t 35.0 '
+             '-g 0.1 0.1 0.1 0.1 0.1 '
+             '-l 0.0 0.0 0.0 0.0 0.0 '
+             '-u 5.0 5.0 5.0 5.0 5.0 '
+             '-f 1000 -n 512 -b '
+             '--print')
 
 def _generate_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(prog='pet-cli-tcm-fit',
                                      description='Command line interface for fitting Tissue Compartment Models (TCM) '
                                                  'to PET Time Activity Curves (TACs).',
-                                     formatter_class=argparse.RawTextHelpFormatter)
+                                     formatter_class=argparse.RawTextHelpFormatter,
+                                     epilog=_EXAMPLE_)
     
     # IO group
     grp_io = parser.add_argument_group('IO Paths and Prefixes')
@@ -43,8 +56,11 @@ def _generate_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def _generate_bounds(initial: list, lower: list, upper: list) -> np.ndarray:
-    return np.asarray(np.asarray([initial, lower, upper]).T)
+def _generate_bounds(initial: list, lower: list, upper: list) -> Union[np.ndarray, None]:
+    if initial is not None:
+        return np.asarray(np.asarray([initial, lower, upper]).T)
+    else:
+        return None
 
 
 def main():
@@ -68,8 +84,17 @@ def main():
     tac_fitting.save_analysis()
     
     if args.print:
-        print(tac_fitting.analysis_props["FitResults"]["FitValues"])
-        print(tac_fitting.analysis_props["FitResults"]["FitStdErr"])
+        title_str = f"{'Param':<5} {'FitVal':<6}    {'StdErr':<6} ({'%Err':>6})|"
+        print("-" * len(title_str))
+        print(title_str)
+        print("-"*len(title_str))
+        vals = tac_fitting.analysis_props["FitProperties"]["FitValues"]
+        errs = tac_fitting.analysis_props["FitProperties"]["FitStdErr"]
+        for param_name in vals:
+            val = vals[param_name]
+            err = errs[param_name]
+            print(f"{param_name:<5} {val:<6.4f} +- {err:<6.4f} ({err/val*100:>5.2f}%)|")
+    print("-" * len(title_str))
     
 if __name__ == "__main__":
     main()
