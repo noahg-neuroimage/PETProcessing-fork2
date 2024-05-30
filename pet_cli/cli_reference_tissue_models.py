@@ -99,6 +99,10 @@ def _pretty_print_results(vals: dict, errs: dict) -> None:
 def main():
     args = parse_args()
     
+    if args.method is None:
+        args.print_help()
+        raise Exception('Exiting without command')
+    
     analysis = RTMAnalysis(ref_tac_path=args.ref_tac_path,
                            roi_tac_path=args.roi_tac_path,
                            output_directory=args.output_directory,
