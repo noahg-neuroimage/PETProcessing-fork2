@@ -62,6 +62,17 @@ _EXAMPLE_ = ('Fitting a TAC to the serial 2TCM using the F18 decay constant (lam
 
 
 def _generate_args() -> argparse.Namespace:
+    r"""
+    Generates and handles the arguments for the command-line interface.
+
+    This function sets up the argument parser, adds required and optional arguments, and parses input arguments.
+
+    Returns:
+        argparse.Namespace: Parsed command-line arguments.
+
+    Raises:
+        argparse.ArgumentError: If necessary arguments are missing or invalid arguments are provided.
+    """
     parser = argparse.ArgumentParser(prog='pet-cli-tcm-fit',
                                      description='Command line interface for fitting Tissue Compartment Models (TCM) '
                                                  'to PET Time Activity Curves (TACs).',
@@ -105,6 +116,25 @@ def _generate_args() -> argparse.Namespace:
 def _generate_bounds(initial: Union[list, None],
                      lower: Union[list, None],
                      upper: Union[list, None]) -> Union[np.ndarray, None]:
+    r"""
+    Generates the bounds for the fitting parameters.
+
+    This function takes lists of initial fitting parameters, lower bounds, and upper bounds.
+    All lists must have the same length. If no initial parameters are provided, the function returns None.
+
+    Args:
+        initial (list, optional): List of initial guesses for fitting parameters. If None, no bounds are generated.
+        lower (list, optional): List of lower bounds for fitting parameters.
+        upper (list, optional): List of upper bounds for fitting parameters.
+
+    Returns:
+        (np.ndarray, optional): If initial is not None, then we return a numpy array of shape [n, 3],
+        where n is the number of parameters, where column 0 has the initial guesses, column 1 has lower bounds, and
+        column 2 has upper bounds. If initial is None, function will return None.
+
+    Raises:
+        ValueError: If initial is not None and the length of initial, lower, and upper are not the same.
+    """
     if initial is not None:
         if (len(initial) != len(lower)) or (len(initial) != len(upper)) or (len(upper) != len(lower)):
             raise ValueError("The number of initial guesses, lower bounds and upper bounds must be the same.")
