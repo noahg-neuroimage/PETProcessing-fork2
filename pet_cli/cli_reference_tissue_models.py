@@ -29,7 +29,7 @@ def parse_args():
                                         help='Perform Ichise\'s MRTM (2003) analysis')
     parser_mrtm_2 = subparsers.add_parser('mrtm2',
                                           help='Perform Ichise\'s MRTM2 (2003) analysis')
-    parser_mrtm_original = subparsers.add_parser('mrtm_original',
+    parser_mrtm_original = subparsers.add_parser('mrtm-original',
                                                  help='Perform Ichise\'s original MRTM (1996) analysis')
     parser_list = [parser_srtm, parser_frtm, parser_mrtm, parser_mrtm_2, parser_mrtm_original]
     
@@ -84,6 +84,18 @@ def _generate_bounds(initial: Union[list, None],
         return None
 
 
+def _pretty_print_results(vals: dict, errs: dict) -> None:
+    title_str = f"{'Param':<5} {'FitVal':<6}    {'StdErr':<6} ({'%Err':>6})|"
+    print("-" * len(title_str))
+    print(title_str)
+    print("-" * len(title_str))
+    for param_name in vals:
+        val = vals[param_name]
+        err = errs[param_name]
+        print(f"{param_name:<5} {val:<6.4f} +- {err:<6.4f} ({err / val * 100:>5.2f}%)|")
+    print("-" * len(title_str))
+
+
 def main():
     args = parse_args()
     
@@ -93,16 +105,23 @@ def main():
                            output_filename_prefix=args.output_filename_prefix,
                            method=args.method)
     
-    bounds = _generate_bounds(initial=args.initial_guesses, lower=args.lower_bounds, upper=args.upper_bounds)
-    
     if args.method.startswith('mrtm'):
         analysis.run_analysis(t_thresh_in_mins=args.t_thresh_in_mins,
                               k2_prime=getattr(args, 'k2_prime', None))
     else:
+        bounds = _generate_bounds(initial=args.initial_guesses, lower=args.lower_bounds, upper=args.upper_bounds)
         analysis.run_analysis(bounds=bounds)
     
     analysis.save_analysis()
 
+    if args.print:
+        if args.method.startswith('mrtm'):
+            print(f"BP      : {analysis.analysis_props['BP']:<.7f}")
+            print(f"k2_prime: {analysis.analysis_props['k2Prime']:<.7f}")
+        else:
+            _pretty_print_results(vals=analysis.analysis_props["FitValues"],
+                                  errs=analysis.analysis_props["FitStdErr"])
+    
 
 if __name__ == '__main__':
     main()
