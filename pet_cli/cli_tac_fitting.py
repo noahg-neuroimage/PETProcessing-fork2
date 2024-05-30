@@ -5,11 +5,12 @@ import numpy as np
 import argparse
 from . import tac_fitting as pet_fit
 
-_EXAMPLE_ = ('Fitting a TAC to the serial 2TCM:\n\t'
+_EXAMPLE_ = ('Fitting a TAC to the serial 2TCM using the F18 decay constant (lambda=ln(2)/t_half_in_mins):\n\t'
              'pet-cli-tcm-fit -i "input_tac.txt"'
              ' -r "2tcm_tac.txt" '
              '-m "serial-2tcm" '
              '-o "./" -p "cli_" -t 35.0 '
+             '-w 0.0063 '
              '-g 0.1 0.1 0.1 0.1 0.1 '
              '-l 0.0 0.0 0.0 0.0 0.0 '
              '-u 5.0 5.0 5.0 5.0 5.0 '
