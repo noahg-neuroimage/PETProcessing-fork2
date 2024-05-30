@@ -46,6 +46,7 @@ def _generate_args() -> argparse.Namespace:
 def _generate_bounds(initial: list, lower: list, upper: list) -> np.ndarray:
     return np.asarray(np.asarray([initial, lower, upper]).T)
 
+
 def main():
     args = _generate_args()
     
