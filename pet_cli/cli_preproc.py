@@ -44,6 +44,7 @@ See Also:
 """
 import os
 import argparse
+from typing import Union
 from . import image_operations_4d, preproc
 
 
@@ -125,14 +126,18 @@ def _generate_args() -> argparse.Namespace:
     _add_common_args(parser_reg)
     parser_reg.add_argument('-a', '--anatomical', required=True, help='Path to 3D anatomical image (T1w or T2w).',
                             type=str)
-    parser_reg.add_argument('-t', '--motion-target', default=None,
+    parser_reg.add_argument('-t', '--motion-target', default=None, nargs='+',
                             help='Motion target option. Can be an image path, or a tuple. See (ref).') # TODO: fix reference
+    parser_reg.add_argument('-l', '--half-life', help='Half life of radioisotope in seconds.',
+                            type=float)
 
     # create parser for the "motion-correct" command
     parser_moco = subparsers.add_parser('motion-corr', help='Motion correction for 4D PET using ANTS')
     _add_common_args(parser_moco)
-    parser_moco.add_argument('-t', '--motion-target', default=None,
+    parser_moco.add_argument('-t', '--motion-target', default=None, nargs='+',
                             help='Motion target option. Can be an image path, or a tuple. See (ref).') # TODO: fix reference
+    parser_moco.add_argument('-l', '--half-life', help='Half life of radioisotope in seconds.',
+                            type=float)
 
     # create parser for the "write-tacs" command
     parser_tac = subparsers.add_parser('write-tacs', help='Write ROI TACs from 4D PET using segmentation masks.')
@@ -180,7 +185,6 @@ def main():
     subject = preproc.PreProc(output_directory=os.path.abspath(args.out_dir),
                               output_filename_prefix=args.prefix)
     
-    print(args.__dict__)
     preproc_props = {
         'FilePathWSSInput': args.pet,
         'FilePathMocoInp': args.pet,
@@ -193,7 +197,7 @@ def main():
     }
 
     if 'anatomical' in args.__dict__.keys():
-        preproc_props['FilePathAnat'] = args.anatomical,
+        preproc_props['FilePathAnat'] = args.anatomical
     if 'segmentation' in args.__dict__.keys():
         preproc_props['FilePathSeg'] = args.segmentation
     if 'label_map_path' in args.__dict__.keys():
@@ -203,13 +207,19 @@ def main():
     if 'half_life' in args.__dict__.keys():
         preproc_props['HalfLife'] = args.half_life
     if 'motion_target' in args.__dict__.keys():
-        preproc_props['MotionTarget'] = args.motion_target
+        if len(args.motion_target)==1:
+            preproc_props['MotionTarget'] = args.motion_target[0]
+        else:
+            preproc_props['MotionTarget'] = args.motion_target
     if 'blur_size_mm' in args.__dict__.keys():
         preproc_props['BlurSize'] = args.blur_size_mm
     if 'time_frame_keyword' in args.__dict__.keys():
         preproc_props['TimeFrameKeyword'] = args.time_frame_keyword
 
     command = str(args.command).replace('-','_')
+
+    if args.verbose:
+        print(f"Running {command} with parameters: {preproc_props}")
 
     subject.update_props(new_preproc_props=preproc_props)
     subject.run_preproc(method_name=command)
