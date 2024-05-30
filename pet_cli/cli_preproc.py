@@ -18,46 +18,48 @@ Examples:
     
         .. code-block:: bash
     
-            pet-cli-preproc weighted-sum --pet /path/to/pet.nii --out-dir /path/to/output --half-life 6600.0
+            pet-cli-preproc weighted-sum --out-dir /path/to/output --prefix sub_001 --pet /path/to/pet.nii --half-life 6586.26
     
     * Image Registration:
     
         .. code-block:: bash
     
-            pet-cli-preproc register --pet /path/to/pet.nii --anatomical /path/to/mri.nii --pet-reference /path/to/pet_sum.nii --out-dir /path/to/output
+            pet-cli-preproc register --out-dir /path/to/output --prefix sub_001 --pet /path/to/pet.nii --anatomical /path/to/mri.nii --motion-target /path/to/pet/reference.nii
             
     * Motion Correction:
     
         .. code-block:: bash
             
-            pet-cli-preproc motion-correct --pet /path/to/pet.nii --pet-reference /path/to/sum.nii --out-dir /path/to/output
+            pet-cli-preproc motion-correct --out-dir /path/to/output --prefix sub_001 --pet /path/to/pet.nii --pet-reference /path/to/sum.nii
             
     * Extracting TACs Using A Mask And Color-Table:
     
         .. code-block:: bash
             
-            pet-cli-preproc write-tacs --pet /path/to/pet.nii --segmentation /path/to/seg_masks.nii --color-table-path /path/to/color_table.json --out-dir /path/to/output
+            pet-cli-preproc write-tacs --out-dir /path/to/output --pet /path/to/pet.nii --segmentation /path/to/seg_masks.nii --label-map-path /path/to/dseg.tsv
 
 See Also:
-    * :mod:`pet_cli.image_operations_4d` - module used to preprocess PET imaging data.
+    * :mod:`pet_cli.image_operations_4d` - module used for operations on 4D images.
+    * :mod:`pet_cli.motion_corr` - module for motion correction tools.
+    * :mod:`pet_cli.register` - module for MRI and atlas registration.
+    * :mod:`pet_cli.preproc` - module to implement preprocessing tools.
 
 """
 import os
 import argparse
-from typing import Union
-from . import image_operations_4d, preproc
+from . import preproc
 
 
 _PREPROC_EXAMPLES_ = (r"""
 Examples:
   - Weighted Sum:
-    pet-cli-preproc weighted-sum --pet /path/to/pet.nii --out-dir /path/to/output --half-life 6600.0
+    pet-cli-preproc weighted-sum --out-dir /path/to/output --prefix sub_001 --pet /path/to/pet.nii --half-life 6586.26
   - Registration:
-    pet-cli-preproc register-pet --pet /path/to/pet.nii --anatomical /path/to/mri.nii --pet-reference /path/to/pet_sum.nii --out-dir /path/to/output
+    pet-cli-preproc register --out-dir /path/to/output --prefix sub_001 --pet /path/to/pet.nii --anatomical /path/to/mri.nii --motion-target /path/to/pet/reference.nii
   - Motion Correction:
-    pet-cli-preproc motion-correct --pet /path/to/pet.nii --pet-reference /path/to/sum.nii --out-dir /path/to/output
+    pet-cli-preproc motion-correct --out-dir /path/to/output --prefix sub_001 --pet /path/to/pet.nii --pet-reference /path/to/sum.nii
   - Writing TACs From Segmentation Masks:
-    pet-cli-preproc write-tacs --pet /path/to/pet.nii --segmentation /path/to/seg_masks.nii --color-table-path /path/to/color_table.json --out-dir /path/to/output
+    pet-cli-preproc write-tacs --out-dir /path/to/output --pet /path/to/pet.nii --segmentation /path/to/seg_masks.nii --label-map-path /path/to/dseg.tsv
   - Verbose:
     pet-cli-preproc -v [sub-command] [arguments]
 """)
@@ -92,7 +94,7 @@ def _add_common_args(parser: argparse.ArgumentParser) -> None:
             print(args.pet)
             print(args.out_dir)
             print(args.prefix)
-            
+
     """
     parser.add_argument('-o', '--out-dir', default='./', help='Output directory')
     parser.add_argument('-f', '--prefix', default="sub_XXXX", help='Output file prefix')
@@ -111,35 +113,32 @@ def _generate_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(prog='pet-cli-preproc',
                                      description='Command line interface for running PET pre-processing steps.',
                                      epilog=_PREPROC_EXAMPLES_, formatter_class=argparse.RawTextHelpFormatter)
-    
-    # create subparsers
+
     subparsers = parser.add_subparsers(dest="command", help="Sub-command help.")
 
-    # create parser for "weighted-sum" command
     parser_wss = subparsers.add_parser('weighted-series-sum', help='Half-life weighted sum of 4D PET series.')
     _add_common_args(parser_wss)
     parser_wss.add_argument('-l', '--half-life', required=True, help='Half life of radioisotope in seconds.',
                             type=float)
 
-    # create parser for "register" command
     parser_reg = subparsers.add_parser('register-pet', help='Register 4D PET to MRI anatomical space.')
     _add_common_args(parser_reg)
     parser_reg.add_argument('-a', '--anatomical', required=True, help='Path to 3D anatomical image (T1w or T2w).',
                             type=str)
     parser_reg.add_argument('-t', '--motion-target', default=None, nargs='+',
-                            help='Motion target option. Can be an image path, or a tuple. See (ref).') # TODO: fix reference
+                            help="Motion target option. Can be an image path, "
+                                 "'weighted_series_sum' or a tuple.")
     parser_reg.add_argument('-l', '--half-life', help='Half life of radioisotope in seconds.',
                             type=float)
 
-    # create parser for the "motion-correct" command
     parser_moco = subparsers.add_parser('motion-corr', help='Motion correction for 4D PET using ANTS')
     _add_common_args(parser_moco)
     parser_moco.add_argument('-t', '--motion-target', default=None, nargs='+',
-                            help='Motion target option. Can be an image path, or a tuple. See (ref).') # TODO: fix reference
+                            help="Motion target option. Can be an image path, "
+                                 "'weighted_series_sum' or a tuple.")
     parser_moco.add_argument('-l', '--half-life', help='Half life of radioisotope in seconds.',
                             type=float)
 
-    # create parser for the "write-tacs" command
     parser_tac = subparsers.add_parser('write-tacs', help='Write ROI TACs from 4D PET using segmentation masks.')
     _add_common_args(parser_tac)
     parser_tac.add_argument('-s', '--segmentation', required=True,
@@ -184,7 +183,7 @@ def main():
 
     subject = preproc.PreProc(output_directory=os.path.abspath(args.out_dir),
                               output_filename_prefix=args.prefix)
-    
+
     preproc_props = {
         'FilePathWSSInput': args.pet,
         'FilePathMocoInp': args.pet,
