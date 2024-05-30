@@ -1,3 +1,48 @@
+r"""
+Command-line interface (CLI) for fitting Tissue Compartment Models (TCM) to PET Time-Activity Curves (TACs).
+
+This module provides a CLI to interact with the tac_fitting module. It utilizes argparse to handle command-line
+arguments.
+
+The user must provide:
+    * Input TAC file path
+    * Region of Interest (ROI) TAC file path
+    * Compartment model name for fitting. Supported models are '1tcm', '2tcm-k4zero', or 'serial-2tcm'.
+    * Filename prefix for the output files
+    * Output directory where the analysis results will be saved
+    * Whether to ignore blood volume contributions while fitting
+    * Threshold in minutes (input fitting threshold)
+
+User can optionally provide:
+    * Initial guesses for the fitting parameters
+    * Lower and upper bounds for the fitting parameters
+    * Maximum number of function iterations
+    * Decay constant (in minutes) for per-frame weighting
+
+This script utilizes the :class:`FitTCMToTAC<pet_cli.tac_fitting.FitTCMToTAC>` class to perform the TAC fitting and save
+ the results accordingly.
+
+Example:
+    In the proceeding example, we assume that we have an input TAC named 'input_tac.txt', and an ROI TAC named
+    'roi_tac.txt`. We want to try fitting a serial 2TCM to the ROI tac.
+    
+    .. code-block:: bash
+
+        pet-cli-tcm-fit -i "input_tac.txt"\
+        -r "roi_tac.txt"\
+        -m "serial-2tcm"\
+        -o "./" -p "cli_"\
+        -t 35.0 -w 0.0063
+        -g 0.1 0.1 0.1 0.1 0.1\
+        -l 0.0 0.0 0.0 0.0 0.0\
+        -u 5.0 5.0 5.0 5.0 5.0\
+        -f 1000 -n 512 -b --print
+
+See Also:
+    :mod:`pet_cli.tac_fitting` - module for fitting TACs with TCMs.
+
+"""
+
 from typing import Union
 import numpy as np
 import argparse

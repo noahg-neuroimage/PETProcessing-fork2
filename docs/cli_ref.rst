@@ -8,5 +8,6 @@ CLI Reference
    pet_cli.cli_tac_interpolation
    pet_cli.cli_graphical_analysis
    pet_cli.cli_graphical_plots
+   pet_cli.cli_tac_fitting
    pet_cli.cli_parametric_images
    pet_cli.cli_bids
