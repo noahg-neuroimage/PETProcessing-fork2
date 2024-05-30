@@ -57,8 +57,12 @@ def _generate_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def _generate_bounds(initial: list, lower: list, upper: list) -> Union[np.ndarray, None]:
+def _generate_bounds(initial: Union[list, None],
+                     lower: Union[list, None],
+                     upper: Union[list, None]) -> Union[np.ndarray, None]:
     if initial is not None:
+        if (len(initial) != len(lower)) or (len(initial) != len(upper)) or (len(upper) != len(lower)):
+            raise ValueError("The number of initial guesses, lower bounds and upper bounds must be the same.")
         return np.asarray(np.asarray([initial, lower, upper]).T)
     else:
         return None
