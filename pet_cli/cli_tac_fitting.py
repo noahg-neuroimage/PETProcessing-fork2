@@ -1,6 +1,4 @@
-import os
 from typing import Union
-
 import numpy as np
 import argparse
 from . import tac_fitting as pet_fit
@@ -17,12 +15,12 @@ _EXAMPLE_ = ('Fitting a TAC to the serial 2TCM using the F18 decay constant (lam
              '-f 1000 -n 512 -b '
              '--print')
 
+
 def _generate_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(prog='pet-cli-tcm-fit',
                                      description='Command line interface for fitting Tissue Compartment Models (TCM) '
                                                  'to PET Time Activity Curves (TACs).',
-                                     formatter_class=argparse.RawTextHelpFormatter,
-                                     epilog=_EXAMPLE_)
+                                     formatter_class=argparse.RawTextHelpFormatter, epilog=_EXAMPLE_)
     
     # IO group
     grp_io = parser.add_argument_group('IO Paths and Prefixes')
@@ -76,13 +74,11 @@ def main():
                                       output_directory=args.output_directory,
                                       output_filename_prefix=args.output_filename_prefix,
                                       compartment_model=args.model,
-                                      parameter_bounds=bounds,
-                                      weights=None,
+                                      parameter_bounds=bounds, weights=None,
                                       resample_num=args.resample_num,
                                       aif_fit_thresh_in_mins=args.input_fitting_threshold_in_mins,
                                       max_func_iters=args.max_fit_iterations,
-                                      ignore_blood_volume=args.ignore_blood_volume
-                                      )
+                                      ignore_blood_volume=args.ignore_blood_volume)
     tac_fitting.run_analysis()
     tac_fitting.save_analysis()
     
@@ -90,16 +86,15 @@ def main():
         title_str = f"{'Param':<5} {'FitVal':<6}    {'StdErr':<6} ({'%Err':>6})|"
         print("-" * len(title_str))
         print(title_str)
-        print("-"*len(title_str))
+        print("-" * len(title_str))
         vals = tac_fitting.analysis_props["FitProperties"]["FitValues"]
         errs = tac_fitting.analysis_props["FitProperties"]["FitStdErr"]
         for param_name in vals:
             val = vals[param_name]
             err = errs[param_name]
-            print(f"{param_name:<5} {val:<6.4f} +- {err:<6.4f} ({err/val*100:>5.2f}%)|")
+            print(f"{param_name:<5} {val:<6.4f} +- {err:<6.4f} ({err / val * 100:>5.2f}%)|")
     print("-" * len(title_str))
-    
-    
+
+
 if __name__ == "__main__":
     main()
-    
