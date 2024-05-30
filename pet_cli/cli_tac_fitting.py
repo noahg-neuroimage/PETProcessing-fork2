@@ -32,22 +32,24 @@ def _generate_args() -> argparse.Namespace:
     
     # Analysis group
     grp_analysis = parser.add_argument_group('Analysis Parameters')
-    grp_analysis.add_argument("-t", "--input-fitting-threshold-in-mins", required=True, type=float,
-                              help="Threshold in minutes for fitting the later half of the input function.")
     grp_analysis.add_argument("-m", "--model", required=True, choices=['1tcm', '2tcm-k4zero', 'serial-2tcm'],
                               help="Analysis method to be used.")
+    grp_analysis.add_argument("-t", "--input-fitting-threshold-in-mins", required=True, type=float,
+                              help="Threshold in minutes for fitting the later half of the input function.")
+    grp_analysis.add_argument("-b", "--ignore-blood-volume", required=False, default=False, action='store_true',
+                              help="Whether to ignore any blood volume contributions while fitting.")
     grp_analysis.add_argument("-g", "--initial-guesses", required=False, nargs='+', type=float,
                               help="Initial guesses for each fitting parameter.")
     grp_analysis.add_argument("-l", "--lower-bounds", required=False, nargs='+', type=float,
                               help="Lower bounds for each fitting parameter.")
+    grp_analysis.add_argument("-w", "--weighting-decay-constant", required=False, type=float, default=None,
+                              help="Decay constant for computing per-frame weighting for fits.")
     grp_analysis.add_argument("-u", "--upper-bounds", required=False, nargs='+', type=float,
                               help="Upper bounds for each fitting parameter.")
     grp_analysis.add_argument("-f", "--max-fit-iterations", required=False, default=2500, type=int,
                               help="Maximum number of function iterations")
     grp_analysis.add_argument("-n", "--resample-num", required=False, default=512, type=int,
                               help="Number of samples for linear interpolation of provided TACs.")
-    grp_analysis.add_argument("-b", "--ignore-blood-volume", required=False, default=False, action='store_true',
-                              help="Whether to ignore any blood volume contributions while fitting")
     
     # Printing arguments
     grp_verbose = parser.add_argument_group('Additional Options')
@@ -95,6 +97,7 @@ def main():
             err = errs[param_name]
             print(f"{param_name:<5} {val:<6.4f} +- {err:<6.4f} ({err/val*100:>5.2f}%)|")
     print("-" * len(title_str))
+    
     
 if __name__ == "__main__":
     main()
