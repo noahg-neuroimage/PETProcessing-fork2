@@ -21,6 +21,7 @@ See Also:
     
 """
 import inspect
+import json
 from typing import Callable, Union
 import numpy as np
 from scipy.optimize import curve_fit as sp_cv_fit
@@ -33,9 +34,10 @@ def _get_fitting_params_for_tcm_func(f: Callable) -> list:
     r"""
     Fetches the parameter names from the function signature of a given Tissue Compartment Model (TCM) function. The
     functions can be one of the following:
-        * :func:`generate_tac_1tcm_c1_from_tac<pet_cli.tcms_as_convolutions.generate_tac_1tcm_c1_from_tac>`
-        * :func:`generate_tac_2tcm_with_k4zero_cpet_from_tac<pet_cli.tcms_as_convolutions.generate_tac_2tcm_with_k4zero_cpet_from_tac>`
-        * :func:`generate_tac_serial_2tcm_cpet_from_tac<pet_cli.tcms_as_convolutions.generate_tac_serial_2tcm_cpet_from_tac>`
+    
+    * :func:`generate_tac_1tcm_c1_from_tac<pet_cli.tcms_as_convolutions.generate_tac_1tcm_c1_from_tac>`
+    * :func:`generate_tac_2tcm_with_k4zero_cpet_from_tac<pet_cli.tcms_as_convolutions.generate_tac_2tcm_with_k4zero_cpet_from_tac>`
+    * :func:`generate_tac_serial_2tcm_cpet_from_tac<pet_cli.tcms_as_convolutions.generate_tac_serial_2tcm_cpet_from_tac>`
 
     Args:
         f (Callable): TCM function.
@@ -51,9 +53,10 @@ def _get_number_of_fit_params_for_tcm_func(f: Callable) -> int:
     r"""
     Counts the number of fitting parameters for a given Tissue Compartment Model (TCM) function. The
     functions can be one of the following:
-        * :func:`generate_tac_1tcm_c1_from_tac<pet_cli.tcms_as_convolutions.generate_tac_1tcm_c1_from_tac>`
-        * :func:`generate_tac_2tcm_with_k4zero_cpet_from_tac<pet_cli.tcms_as_convolutions.generate_tac_2tcm_with_k4zero_cpet_from_tac>`
-        * :func:`generate_tac_serial_2tcm_cpet_from_tac<pet_cli.tcms_as_convolutions.generate_tac_serial_2tcm_cpet_from_tac>`
+    
+    * :func:`generate_tac_1tcm_c1_from_tac<pet_cli.tcms_as_convolutions.generate_tac_1tcm_c1_from_tac>`
+    * :func:`generate_tac_2tcm_with_k4zero_cpet_from_tac<pet_cli.tcms_as_convolutions.generate_tac_2tcm_with_k4zero_cpet_from_tac>`
+    * :func:`generate_tac_serial_2tcm_cpet_from_tac<pet_cli.tcms_as_convolutions.generate_tac_serial_2tcm_cpet_from_tac>`
 
     Args:
         f (Callable): TCM function.
@@ -362,9 +365,10 @@ class TACFitter(object):
         r"""
         Analyzes the provided tissue compartment model (TCM) function, sets it for the current instance, and extracts
         related property information. The ``tcm_func`` should be one of the following:
-            * :func:`generate_tac_1tcm_c1_from_tac<pet_cli.tcms_as_convolutions.generate_tac_1tcm_c1_from_tac>`
-            * :func:`generate_tac_2tcm_with_k4zero_cpet_from_tac<pet_cli.tcms_as_convolutions.generate_tac_2tcm_with_k4zero_cpet_from_tac>`
-            * :func:`generate_tac_serial_2tcm_cpet_from_tac<pet_cli.tcms_as_convolutions.generate_tac_serial_2tcm_cpet_from_tac>`
+        
+        * :func:`generate_tac_1tcm_c1_from_tac<pet_cli.tcms_as_convolutions.generate_tac_1tcm_c1_from_tac>`
+        * :func:`generate_tac_2tcm_with_k4zero_cpet_from_tac<pet_cli.tcms_as_convolutions.generate_tac_2tcm_with_k4zero_cpet_from_tac>`
+        * :func:`generate_tac_serial_2tcm_cpet_from_tac<pet_cli.tcms_as_convolutions.generate_tac_serial_2tcm_cpet_from_tac>`
 
         The function extracts fitting parameter names and their count from the function signature and sets them in the
         current instance for later usage.
@@ -552,9 +556,10 @@ class TACFitterWithoutBloodVolume(TACFitter):
         Overridden method to define a TCM function excluding blood volume.
         
         The ``tcm_func`` should be one of the following:
-            * :func:`generate_tac_1tcm_c1_from_tac<pet_cli.tcms_as_convolutions.generate_tac_1tcm_c1_from_tac>`
-            * :func:`generate_tac_2tcm_with_k4zero_cpet_from_tac<pet_cli.tcms_as_convolutions.generate_tac_2tcm_with_k4zero_cpet_from_tac>`
-            * :func:`generate_tac_serial_2tcm_cpet_from_tac<pet_cli.tcms_as_convolutions.generate_tac_serial_2tcm_cpet_from_tac>`
+        
+        * :func:`generate_tac_1tcm_c1_from_tac<pet_cli.tcms_as_convolutions.generate_tac_1tcm_c1_from_tac>`
+        * :func:`generate_tac_2tcm_with_k4zero_cpet_from_tac<pet_cli.tcms_as_convolutions.generate_tac_2tcm_with_k4zero_cpet_from_tac>`
+        * :func:`generate_tac_serial_2tcm_cpet_from_tac<pet_cli.tcms_as_convolutions.generate_tac_serial_2tcm_cpet_from_tac>`
 
         Args:
             tcm_func: The chosen TCM function model.
@@ -618,3 +623,344 @@ class TACFitterWithoutBloodVolume(TACFitter):
             with blood volume (``vb``) set to 0.
         """
         return self.tcm_func(x, self.p_tac_vals, *params, vb=0.0)[1]
+
+
+# TODO: Use the safe loading of TACs function from an IO module when it is implemented
+def _safe_load_tac(filename: str, **kwargs) -> np.ndarray:
+    """
+    Loads time-activity curves (TAC) from a file.
+
+    Tries to read a TAC from specified file and raises an exception if unable to do so. We assume that the file has two
+    columns, the first corresponding to time and second corresponding to activity.
+
+    Args:
+        filename (str): The name of the file to be loaded.
+
+    Returns:
+        np.ndarray: A numpy array containing the loaded TAC. The first index corresponds to the times, and the second
+        corresponds to the activity.
+
+    Raises:
+        Exception: An error occurred loading the TAC.
+    """
+    try:
+        return np.array(np.loadtxt(filename).T, dtype=float, order='C', **kwargs)
+    except Exception as e:
+        print(f"Couldn't read file {filename}. Error: {e}")
+        raise e
+
+
+class FitTCMToTAC(object):
+    r"""
+    A class dedicated to perform Tissue Compartment Model (TCM) fitting to time-activity curves (TACs).
+
+    This class consolidates all related TAC fitting functionalities. It first initializes relevant fitting parameters
+    and paths to TAC data from input arguments. After initialization, an analysis with methods like `run_analysis()`
+    and `save_analysis()` can be performed. The results, including fit parameters and properties, can be
+    accessed after the analysis.
+
+    Example:
+        In the proceeding example, we assume that we have two tacs: an input function tac, and a region of interest
+        (ROI) tac named 'input_tac.txt' and 'roi_tac.txt', respectively. Here, we are trying to fit the ROI tac to
+        a standard serial 2TCM. Note that we are not fitting any time delay or dispersion corrections.
+        
+        .. code-block:: python
+            
+            import pet_cli.tac_fitting as pet_fit
+            
+            fit_obj = pet_fit.FitTCMToTAC(input_tac_path='./input_tac.txt',
+                                          roi_tac_path='./roi_tac.txt',
+                                          output_directory='./',
+                                          output_filename_prefix='fit',
+                                          compartment_model='serial-2tcm',
+                                          weights=None,
+                                          parameter_bounds=np.asarray([[0.1, 0.0, 1.0],
+                                                                       [0.1, 0.0, 1.0],
+                                                                       [0.1, 0.0, 1.0],
+                                                                       [0.1, 0.0, 1.0],
+                                                                       [0.1, 0.0, 1.0]]),
+                                          resample_num=512
+                              )
+            fit_obj.run_analysis()
+            fit_obj.save_analysis()
+    
+    See Also:
+        * :class:`TACFitter`
+        * :class:`TACFitterWithoutBloodVolume`
+    
+    """
+    def __init__(self,
+                 input_tac_path: str,
+                 roi_tac_path: str,
+                 output_directory: str,
+                 output_filename_prefix: str,
+                 compartment_model: str,
+                 parameter_bounds: Union[None, np.ndarray] = None,
+                 weights: Union[float, None, np.ndarray] = None,
+                 resample_num: int = 512,
+                 aif_fit_thresh_in_mins: float = 40.0,
+                 max_func_iters: int = 2500,
+                 ignore_blood_volume: bool = False):
+        r"""
+        Initializes an instance of the FitTCMToTAC class.
+
+        The initialization follows these steps:
+            1. Saves absolute paths of the TAC files and output directory.
+            2. Validates and stores the compartment model and the corresponding fitting function.
+            3. Stores the other fitting parameters passed as arguments.
+            4. Initializes the appropriate fitting object, depending on whether blood volume is considered or not.
+            5. Initializes the analysis properties structure.
+
+        After initialization, you can directly run and save the analysis using bundled methods :meth:`run_analysis` and
+        :meth:`save_analysis`, respectively.
+        
+        See Also:
+            * :meth:`validated_tcm`
+            
+        """
+        self.input_tac_path: str = os.path.abspath(input_tac_path)
+        self.roi_tac_path: str = os.path.abspath(roi_tac_path)
+        self.output_directory: str = os.path.abspath(output_directory)
+        self.output_filename_prefix: str = output_filename_prefix
+        self.compartment_model: str = self.validated_tcm(compartment_model)
+        self._tcm_func: Callable = self._get_tcm_function(self.compartment_model)
+        self.bounds: Union[None, np.ndarray] = parameter_bounds
+        self.tac_resample_num: int = resample_num
+        self.input_tac_fitting_thresh_in_mins: float = aif_fit_thresh_in_mins
+        self.max_func_iters: int = max_func_iters
+        self.ignore_blood_volume = ignore_blood_volume
+        self.weights: Union[float, None, np.ndarray] = weights
+        if self.ignore_blood_volume:
+            self.fitting_obj = TACFitterWithoutBloodVolume
+        else:
+            self.fitting_obj = TACFitter
+        self.analysis_props: dict = self.init_analysis_props()
+        self.fit_results: Union[None, tuple[np.ndarray, np.ndarray]] = None
+        self._has_analysis_been_run: bool = False
+        
+    def init_analysis_props(self):
+        r"""
+        Initialize the structure of the analysis properties dictionary. This dictionary can be saved as a JSON file for
+        parsing the results.
+
+        The dictionary structure is as follows:
+
+            FilePathPTAC -> path of the input TAC file
+            FilePathTTAC -> path of the ROI TAC file
+            TissueCompartmentModel -> type of tissue compartment model used
+            IgnoreBloodVolume -> flag indicating whether blood volume is being considered or not
+            PTACFittingThresholdTime -> threshold time for the AIF fitting
+            FitProperties -> an inner dictionary with empty lists/arrays as placeholders
+                            for FitValues, FitStdErr and Bounds. Also contains ResampleNum and MaxIterations.
+
+        FitProperties will be updated during the analysis process.
+
+        Returns:
+            dict: Initialized dictionary with analysis properties structure.
+            
+        See Also:
+            * :meth:`calculate_fit_properties`
+            
+        """
+        props = {
+            'FilePathPTAC': self.input_tac_path,
+            'FilePathTTAC': self.roi_tac_path,
+            'TissueCompartmentModel': self.compartment_model,
+            'IgnoreBloodVolume': self.ignore_blood_volume,
+            'PTACFittingThresholdTime': self.input_tac_fitting_thresh_in_mins,
+            'FitProperties': {
+                'FitValues': [],
+                'FitStdErr': [],
+                'Bounds': [],
+                'ResampleNum': self.tac_resample_num,
+                'MaxIterations': self.max_func_iters,
+                }
+            }
+        
+        return props
+    
+    @staticmethod
+    def validated_tcm(compartment_model: str) -> str:
+        r"""
+        Validates the type of tissue compartment model.
+
+        This method checks that the provided compartment model is one of the pre-defined options '1tcm', '2tcm-k4zero'
+        or 'serial-2tcm'. The input is transformed to lowercase and spaces are replaced with hyphens before checking
+        validity.
+
+        Args:
+            compartment_model (str): The name of the compartment model.
+
+        Returns:
+            str: The transformed name of the validated compartment model if it was valid.
+
+        Raises:
+            ValueError: If the provided compartment model is not one of '1tcm', '2tcm-k4zero' or 'serial-2tcm'
+            
+        """
+        tcm = compartment_model.lower().replace(' ', '-')
+        if tcm not in ['1tcm', '2tcm-k4zero', 'serial-2tcm']:
+            raise ValueError("compartment_model must be one of '1tcm', '2tcm-k4zero', or 'serial-2tcm'")
+        return tcm
+    
+    @staticmethod
+    def _get_tcm_function(compartment_model: str) -> Callable:
+        """
+        Returns the corresponding function for the provided tissue compartment model used for the fitting class
+
+        Args:
+            compartment_model: The name of the tissue compartment model.
+
+        Returns:
+            function: The corresponding function for the tissue compartment model.
+
+        Raises:
+            KeyError: If the provided tissue compartment model name does not correspond to any known models.
+        
+        See Also:
+            * :func:`generate_tac_1tcm_c1_from_tac<pet_cli.tcms_as_convolutions.generate_tac_1tcm_c1_from_tac>`
+            * :func:`generate_tac_2tcm_with_k4zero_cpet_from_tac<pet_cli.tcms_as_convolutions.generate_tac_2tcm_with_k4zero_cpet_from_tac>`
+            * :func:`generate_tac_serial_2tcm_cpet_from_tac<pet_cli.tcms_as_convolutions.generate_tac_serial_2tcm_cpet_from_tac>`
+            * :class:`TACFitter`
+            * :class:`TACFitterWithoutBloodVolume`
+        
+        """
+        tcm_funcs = {
+                   '1tcm': pet_tcms.generate_tac_1tcm_c1_from_tac,
+                   '2tcm-k4zero': pet_tcms.generate_tac_2tcm_with_k4zero_cpet_from_tac,
+                   'serial-2tcm': pet_tcms.generate_tac_serial_2tcm_cpet_from_tac
+                    }
+        
+        return tcm_funcs[compartment_model]
+    
+    def run_analysis(self):
+        r"""
+        Runs the fitting analysis given the file-paths and method.
+        
+        :meth:`calculate_fit` and :meth:`calculate_fit_properties` are run, and the analysis-has-been-fun flag is set to
+        true.
+
+        This method first calculates the fit, then updates the analysis properties with the
+        fit results and finally sets the flag denoting that analysis has been successfully run.
+        
+        
+        """
+        self.calculate_fit()
+        self.calculate_fit_properties()
+        self._has_analysis_been_run = True
+    
+    def save_analysis(self):
+        r"""
+        Saves the analysis properties to a json file in the prescribed output directory.
+
+        The saved filename is constructed as a combination of the output directory, filename prefix,
+        "analysis", and the used TissueCompartmentModel.
+        If the analysis has not been run before calling this method, a RuntimeError is raised.
+
+        Raises:
+            RuntimeError: If the method is called before the analysis has been run.
+        """
+        if not self._has_analysis_been_run:
+            raise RuntimeError("'run_analysis' method must be run before running this method.")
+        
+        file_name_prefix = os.path.join(self.output_directory,
+                                        f"{self.output_filename_prefix}_analysis"
+                                        f"-{self.analysis_props['TissueCompartmentModel']}")
+        analysis_props_file = f"{file_name_prefix}_props.json"
+        with open(analysis_props_file, 'w') as f:
+            json.dump(obj=self.analysis_props, fp=f, indent=4)
+    
+    def calculate_fit_properties(self):
+        r"""
+        Calculates the fit properties and updates the analysis properties.
+
+        This method retrieves the fitting parameters and their standard errors from the fitting
+        results, formats them for readability, and stores them in the analysis properties dictionary.
+        Bounds to the fitting parameters are also formatted and stored.
+        """
+        fit_params, fit_covariances = self.fit_results
+        fit_stderr = np.sqrt(np.diagonal(fit_covariances))
+        format_func = self._generate_pretty_params
+        
+        self.analysis_props["FitProperties"]["FitValues"] = format_func(fit_params.round(5))
+        self.analysis_props["FitProperties"]["FitStdErr"] = format_func(fit_stderr.round(5))
+        
+        format_func = self._generate_pretty_bounds
+        self.analysis_props["FitProperties"]["Bounds"] = format_func(self.bounds.round(5))
+    
+    def calculate_fit(self):
+        r"""
+        Performs the fit and stores results to the instance.
+
+        This method has a series of actions which it performs in the following order:
+            1. Loads TAC files using the :func:`_safe_load_tac` method, specific to the paths stored in instance
+               variables.
+            2. Creates a fitting object with the relevant parameters and TACs.
+            3. Runs the fit using the fitting object's ``run_fit`` method.
+            4. Stores the results of the fit in the ``fit_results`` instance variable.
+
+        As a result of this method, ``fit_results`` instance variable will hold the results of the fit, that
+        can be used for further analysis or calculations.
+        
+        See Also:
+            * :class:`TACFitter`
+            * :class:`TACFitterWithoutBloodVolume`
+        
+        """
+        p_tac = _safe_load_tac(self.input_tac_path)
+        t_tac = _safe_load_tac(self.roi_tac_path)
+        self.fitting_obj = self.fitting_obj(pTAC=p_tac, tTAC=t_tac,
+                                            weights=self.weights,
+                                            tcm_func=self._tcm_func,
+                                            fit_bounds=self.bounds,
+                                            max_iters=self.max_func_iters,
+                                            aif_fit_thresh_in_mins=self.input_tac_fitting_thresh_in_mins,
+                                            resample_num=self.tac_resample_num)
+        self.fitting_obj.run_fit()
+        self.fit_results = self.fitting_obj.fit_results
+    
+    def _generate_pretty_params(self, results: np.ndarray) -> dict:
+        r"""
+        Transforms array of results into a formatted dictionary.
+
+        This method formats the fitting results into a more human-readable form.
+        If the fitting was done without blood volume, it formats all values as 'k_i': value.
+        Otherwise it formats all but the last as 'k_i': value and the last as 'vb': value.
+
+        Args:
+            results (np.ndarray): The array of fitting results.
+
+        Returns:
+            dict: The formatted fitting results as {param: value} pairs. In the case of
+                  TACFitterWithBloodVolume, the last parameter will be named 'vb', others 'k_i'.
+                  In the case of TACFitterWithoutBloodVolume, parameters will be named 'k_i'.
+        """
+        if isinstance(self.fitting_obj, TACFitterWithoutBloodVolume):
+            k_vals = {f'k_{n + 1}': val for n, val in enumerate(results)}
+            return k_vals
+        else:
+            k_vals = {f'k_{n + 1}': val for n, val in enumerate(results[:-1])}
+            vb = {f'vb': results[-1]}
+            return {**k_vals, **vb}
+    
+    def _generate_pretty_bounds(self, bounds: np.ndarray) -> dict:
+        r"""
+        Transforms array of bounds into a formatted dictionary.
+
+        This method creates a dictionary of the fitting parameters and their corresponding
+        initial values and lower and upper bounds. The keys of the dictionary are the names
+        of the fitting parameters from :meth:`_generate_pretty_params` method.
+
+        Args:
+            bounds (np.ndarray): The array of parameter bounds.
+
+        Returns:
+            dict: The fitting parameters with their corresponding initial values, and lower and
+                  upper bounds, in the following format: {param: {'initial': val, 'lo': lo, 'hi': hi}}
+        """
+        param_names = list(self._generate_pretty_params(bounds).keys())
+        param_bounds = {f'{param}': {'initial': val[0],
+                                     'lo': val[1],
+                                     'hi': val[2]} for param, val in
+                        zip(param_names, bounds)}
+        return param_bounds
