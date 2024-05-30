@@ -5,6 +5,22 @@ from .reference_tissue_models import RTMAnalysis
 
 
 def add_common_args(parser):
+    r"""
+    Adds common arguments to an ArgumentParser object.
+
+    This function modifies the passed ArgumentParser object by adding five arguments commonly used for the command line
+    scripts. It uses the add_argument method of the ArgumentParser class. After running this function, the parser will
+    be able to accept and parse these additional arguments from the command line when run.
+
+    Args:
+        parser (argparse.ArgumentParser): The argument parser object to which the arguments will be added.
+
+    Raises:
+        argparse.ArgumentError: If a duplicate argument is added.
+
+    Side Effects:
+        The ArgumentParser object is modified by adding new arguments.
+    """
     parser.add_argument('-e', '--ref-tac-path', required=True, type=str,
                         help='Absolute path for reference TAC')
     parser.add_argument('-i', '--roi-tac-path', required=True, type=str,
@@ -18,6 +34,25 @@ def add_common_args(parser):
 
 
 def parse_args():
+    """
+    Defines and parses command-line arguments.
+
+    This function creates an ArgumentParser object, defines command-line arguments using that object,
+    and then calls its parse_args method and returns the results.
+
+    The function defines a set of sub-commands (srtm, frtm, mrtm, mrtm2, mrtm-original), each of which has a different
+    set of requiring arguments. Each sub-command represents a different analysis method and requires different inputs.
+
+    Returns:
+        argparse.Namespace: An object representing the command-line arguments. The object's attributes are the
+        various command-line arguments, where the attribute name matches the option string.
+
+    Raises:
+        argparse.ArgumentError: If the argument is already defined.
+        argparse.ArgumentTypeError: If the argument type conversion function raises this exception.
+        SystemExit: If invalid arguments are passed or `-h`/`--help` is chosen.
+
+    """
     parser = argparse.ArgumentParser(prog='pet-cli-rtms',
                                      description='Command line interface for running RTMAnalysis.',
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -85,6 +120,26 @@ def _generate_bounds(initial: Union[list, None],
 
 
 def _pretty_print_results(vals: dict, errs: dict) -> None:
+    r"""
+    Formats and prints the analysis results to the console.
+
+    This helper function creates a pretty, human-readable formatted string of the parameter names,
+    their fitted values, standard errors, and percentage errors, and then prints this
+    formatted string to the console.
+
+    Args:
+        vals (dict): A dictionary where the keys are the parameter names and the values are fitted values.
+        errs (dict): A dictionary where the keys are the parameter names and the values are standard errors.
+
+    Returns:
+        None
+
+    Side Effects:
+        Prints the formatted result string to the console.
+
+    Raises:
+        KeyError: If the keys of 'vals' and 'errs' do not match.
+    """
     title_str = f"{'Param':<5} {'FitVal':<6}    {'StdErr':<6} ({'%Err':>6})|"
     print("-" * len(title_str))
     print(title_str)
