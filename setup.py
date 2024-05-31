@@ -19,4 +19,5 @@ setup(name='pet_cli', version='0.0.1', packages=find_packages(),
                                         'pet-cli-graph-plot = pet_cli.cli_graphical_plots:main',
                                         'pet-cli-graph-analysis = pet_cli.cli_graphical_analysis:main',
                                         'pet-cli-parametric-image = pet_cli.cli_parametric_images:main',
-                                        'pet-cli-tcm-fit = pet_cli.cli_tac_fitting:main'], }, )
+                                        'pet-cli-tcm-fit = pet_cli.cli_tac_fitting:main'],
+                                        'pet-cli-rtms = pet_cli.cli_reference_tissue_models:main'], }, )

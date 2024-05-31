@@ -10,4 +10,6 @@ CLI Reference
    pet_cli.cli_graphical_plots
    pet_cli.cli_tac_fitting
    pet_cli.cli_parametric_images
+   pet_cli.cli_reference_tissue_models
    pet_cli.cli_bids
+

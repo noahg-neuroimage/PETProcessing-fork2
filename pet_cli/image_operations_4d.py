@@ -72,11 +72,10 @@ def weighted_series_sum(input_image_4d_path: str,
             calculation begins. Must be used with ``end_time``. Default value 0.
         end_time (float): Time, relative to scan start in seconds, at which
             calculation ends. Use value ``-1`` to use all frames in image series.
-            If equal to ``start_time`, one frame at start_time is used. Default value -1.
+            If equal to ``start_time``, one frame at start_time is used. Default value -1.
 
     Returns:
-        summed_image (np.ndarray): 3D image array, in the same space as the input,
-            with the weighted sum calculation applied.
+        np.ndarray: 3D image array, in the same space as the input, with the weighted sum calculation applied.
 
     Raises:
         ValueError: If ``half_life`` is zero or negative.
@@ -136,6 +135,11 @@ def weighted_series_sum(input_image_4d_path: str,
     nibabel.save(pet_sum_image, out_image_path)
     if verbose:
         print(f"(ImageOps4d): weighted sum image saved to {out_image_path}")
+
+    copy_meta_path = re.sub('.nii.gz|.nii', '.json', out_image_path)
+    meta_data_dict = image_io.ImageIO.load_metadata_for_nifty_with_same_filename(input_image_4d_path)
+    image_io.write_dict_to_json(meta_data_dict=meta_data_dict, out_path=copy_meta_path)
+
     return pet_sum_image
 
 
@@ -242,14 +246,21 @@ def suvr(input_image_path: str,
         out_image_path (str): Path to output image file which is written to.
         verbose (bool): Set to ``True`` to output processing information.
     """
-    ref_region_avg = extract_tac_from_nifty_using_mask(input_image_4d_path=input_image_path,
-                                                         segmentation_image_path=segmentation_image_path,
-                                                         region=ref_region,
-                                                         verbose=verbose)
-
     pet_nibabel = nibabel.load(filename=input_image_path)
     pet_image = pet_nibabel.get_fdata()
-    suvr_image = pet_image / ref_region_avg,
+    seg_nibabel = nibabel.load(filename=segmentation_image_path)
+    seg_image = seg_nibabel.get_fdata()
+
+    if len(pet_image.shape)!=3:
+        raise ValueError("SUVR input image is not 3D. If your image is dynamic"
+                         ", try running 'weighted_series_sum' first.")
+
+    ref_region_avg = extract_tac_from_nifty_using_mask(input_image_4d_numpy=pet_image,
+                                                       segmentation_image_numpy=seg_image,
+                                                       region=ref_region,
+                                                       verbose=verbose)
+
+    suvr_image = pet_image / ref_region_avg[0]
 
     out_image = nibabel.nifti1.Nifti1Image(dataobj=suvr_image,
                                            affine=pet_nibabel.affine,
@@ -301,6 +312,39 @@ def gauss_blur(input_image_path: str,
     image_io.write_dict_to_json(meta_data_dict=meta_data_dict, out_path=copy_meta_path)
 
     return out_image
+
+
+def roi_tac(input_image_4d_path: str,
+            roi_image_path: str,
+            region: int,
+            out_tac_path: str,
+            verbose: bool,
+            time_frame_keyword: str = 'FrameReferenceTime'):
+    """
+    Function to write Tissue Activity Curves for a single region, given a mask,
+    4D PET image, and region mapping. Computes the average of the PET image 
+    within each region. Writes a tsv table with region name, frame start time,
+    and mean value within region.
+    """
+
+    if time_frame_keyword not in ['FrameReferenceTime', 'FrameTimesStart']:
+        raise ValueError("'time_frame_keyword' must be one of "
+                         "'FrameReferenceTime' or 'FrameTimesStart'")
+
+    pet_meta = image_io.ImageIO.load_metadata_for_nifty_with_same_filename(input_image_4d_path)
+    tac_extraction_func = extract_tac_from_nifty_using_mask
+    pet_numpy = nibabel.load(input_image_4d_path).get_fdata()
+    seg_numpy = nibabel.load(roi_image_path).get_fdata()
+
+
+    extracted_tac = tac_extraction_func(input_image_4d_numpy=pet_numpy,
+                                        segmentation_image_numpy=seg_numpy,
+                                        region=region,
+                                        verbose=verbose)
+    region_tac_file = np.array([pet_meta[time_frame_keyword],extracted_tac]).T
+    header_text = f'mean_activity'
+    np.savetxt(out_tac_path,region_tac_file,delimiter='\t',header=header_text,comments='')
+
 
 def write_tacs(input_image_4d_path: str,
                label_map_path: str,
