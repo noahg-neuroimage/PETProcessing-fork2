@@ -82,7 +82,7 @@ class PreProc():
         -`output_filename_prefix`: Prefix appended to beginning of written
          files.
         -`preproc_props`: Properties dictionary used to set parameters for PET
-         preprocessing.
+         preprocessing. See :meth:`_init_preproc_props` for further details.
 
     Example:
 
@@ -100,7 +100,7 @@ class PreProc():
             'FilePathTACInput': '/path/to/registered/pet.nii.gz',
             'FilePathLabelMap': '/path/to/label/map.tsv',
             'FilePathSeg': '/path/to/segmentation.nii.gz',
-            'TimeFrameKeyword': 'FrameTimesStart'  # using start time or midpoint reference time
+            'TimeFrameKeyword': 'FrameTimesStart',  # using start time or midpoint reference time
             'Verbose': True,
         }
         sub_01.update_props(params)
@@ -117,6 +117,14 @@ class PreProc():
     def __init__(self,
                  output_directory: str,
                  output_filename_prefix: str) -> None:
+        """
+        Initialize PreProc class.
+
+        Args:
+            output_directory (str): Directory to which output images are saved.
+            output_filename_prefix (str): Prefix appended to beginning of saved
+                files. Typically subject ID.
+        """
         self.output_directory = os.path.abspath(output_directory)
         os.makedirs(self.output_directory,exist_ok=True)
         self.output_filename_prefix = output_filename_prefix
@@ -250,7 +258,7 @@ class PreProc():
         Args:
             method_short (str): Abbreviation of the method to generate outfile.
             extension (str): File type extension to return. Defaults to
-            'nii.gz'.
+                'nii.gz'.
         """
         output_file_name = f'{self.output_filename_prefix}_{method_short}.{extension}'
         return os.path.join(self.output_directory,output_file_name)
