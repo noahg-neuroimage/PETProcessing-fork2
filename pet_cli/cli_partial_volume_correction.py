@@ -46,7 +46,8 @@ def main():
     parser.add_argument("--method", required=True, help="PVC method to use (SGTM or PETPVC method).")
     parser.add_argument("--pet-path", required=True, help="Path to the PET image file.")
     parser.add_argument("--roi-path", required=True, help="Path to the ROI image file.")
-    parser.add_argument("--fwhm", required=True, type=float, help="Full Width at Half Maximum for Gaussian blurring.")
+    parser.add_argument("--fwhm", required=True, type=float,
+                        help="Full Width at Half Maximum for Gaussian blurring (Tuple or single float).")
     parser.add_argument("--output-path", help="Path to the output image file (for PETPVC method).")
     parser.add_argument("--verbose", action="store_true", help="Print additional information.")
     parser.add_argument("--mask-path", help="Path to the mask image file (optional, for PETPVC method).")
@@ -64,7 +65,7 @@ def main():
         Args:
             pet_img (nib.Nifti1Image): The 3D PET image.
             roi_img (nib.Nifti1Image): The 3D ROI image.
-            fwhm (float): Full Width at Half Maximum for Gaussian blurring.
+            fwhm (float or Tuple): Full Width at Half Maximum for Gaussian blurring.
 
         Returns:
             Tuple[np.ndarray, np.ndarray, float]: Labels, corrected PET values, and condition number of the omega matrix.
@@ -81,7 +82,7 @@ def main():
         Args:
             pet_img (nib.Nifti1Image): The 3D PET image.
             roi_img (nib.Nifti1Image): The 3D ROI image.
-            fwhm (float): Full Width at Half Maximum for Gaussian blurring.
+            fwhm (float or Tuple): Full Width at Half Maximum for Gaussian blurring.
             output_path (str): The path where the output image will be saved.
             mask_path (str, optional): The path to the mask image.
             debug (bool, optional): Enable debug mode for detailed logs.
