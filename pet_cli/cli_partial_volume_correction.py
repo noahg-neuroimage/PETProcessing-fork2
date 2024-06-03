@@ -89,6 +89,9 @@ def main():
             verbose (bool, optional): Print additional information.
 
         """
+        if not args.output_path:
+            raise ValueError("The --output-path argument is required for the PETPVC method.")
+
         petpvc_handler = PetPvc()
         petpvc_handler.run_petpvc(
             pet_4d_filepath=args.pet_path,
