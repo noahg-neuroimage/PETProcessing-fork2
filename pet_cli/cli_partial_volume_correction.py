@@ -15,7 +15,7 @@ Example usage:
     Using SGTM method:
         .. code-block:: bash
 
-            pvc_cli.py --method SGTM --pet-path /path/to/pet_image.nii --roi-path /path/to/roi_image.nii --fwhm 8.0
+            pvc_cli.py --method SGTM --pet-path /path/to/pet_image.nii --roi-path /path/to/roi_image.nii --fwhm (8.0, 7.0, 7.0)
 
     Using PETPVC method:
         .. code-block:: bash
@@ -24,6 +24,8 @@ Example usage:
 
 See Also:
     SGTM and PETPVC methods implementation modules.
+    :mod:`SGTM <pet_cli.symmetric_geometric_transfer_matrix>` - module for performing symmetric Geometric Transfer Matrix PVC.
+    :mod:`PETPVC <pet_cli.partial_volume_corrections>` - wrapper for PETPVC package.
 
 """
 
