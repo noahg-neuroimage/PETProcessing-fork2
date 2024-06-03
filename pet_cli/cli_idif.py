@@ -28,7 +28,7 @@ See Also:
 import argparse
 import numpy as np
 import nibabel as nib
-from idif_necktangle import (
+from .idif_necktangle import (
     single_threshold_idif_from_4d_pet_with_necktangle,
     double_threshold_idif_from_4d_pet_necktangle,
     get_frame_time_midpoints
