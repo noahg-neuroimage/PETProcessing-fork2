@@ -21,7 +21,7 @@ Example usage:
             python idif_necktangle_cli.py double --necktangle-filepath /path/to/necktangle.npy --percentile 90 --frame-start-times-filepath /path/to/start_times.npy --frame-duration-times-filepath /path/to/duration_times.npy
 
 See Also:
-    :mod:`idif_necktangle` - Module for calculating IDIF using necktangle methods.
+    :mod:`pet_cli.idif_necktangle` - Module for calculating IDIF using necktangle methods.
 
 """
 
