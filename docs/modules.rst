@@ -20,6 +20,7 @@ Modules
    pet_cli.bids_utils
    pet_cli.partial_volume_corrections
    pet_cli.idif_necktangle
+   pet_cli.symmetric_geometric_transfer_matrix
 
 
 
