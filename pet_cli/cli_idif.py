@@ -1,11 +1,12 @@
 import argparse
 import numpy as np
+import nibabel as nib
 from .idif_necktangle import (
     single_threshold_idif_from_4d_pet_with_necktangle,
     double_threshold_idif_from_4d_pet_necktangle,
-    get_frame_time_midpoints,
-    load_fslmeants_to_numpy_3d
+    get_frame_time_midpoints
 )
+
 
 def main():
     parser = argparse.ArgumentParser(description="Calculate IDIF using necktangle methods.")
@@ -13,24 +14,25 @@ def main():
 
     # Single threshold sub-command
     single_parser = subparsers.add_parser("single", help="Use single threshold method")
-    single_parser.add_argument("pet_4d_filepath", type=str, help="Path to the input 4D PET image file (numpy format).")
-    single_parser.add_argument("carotid_necktangle_mask_3d_filepath", type=str, help="Path to the carotid mask file (numpy format).")
-    single_parser.add_argument("percentile", type=float, help="Percentile for threshold value.")
+    single_parser.add_argument("--pet-4d-filepath", type=str, help="Path to the input 4D PET image file.")
+    single_parser.add_argument("--carotid-necktangle-mask-3d-filepath", type=str, help="Path to the carotid mask file.")
+    single_parser.add_argument("--percentile", type=float, help="Percentile for threshold value.")
     single_parser.add_argument("--bolus_start_frame", type=int, default=3, help="Bolus start frame (default: 3).")
     single_parser.add_argument("--bolus_end_frame", type=int, default=7, help="Bolus end frame (default: 7).")
 
     # Double threshold sub-command
     double_parser = subparsers.add_parser("double", help="Use double threshold method")
-    double_parser.add_argument("necktangle_filepath", type=str, help="Path to the 4D PET necktangle matrix file (numpy format).")
-    double_parser.add_argument("percentile", type=float, help="Percentile for manual threshold value.")
-    double_parser.add_argument("frame_start_times_filepath", type=str, help="Path to the frame start times file (numpy format).")
-    double_parser.add_argument("frame_duration_times_filepath", type=str, help="Path to the frame duration times file (numpy format).")
+    double_parser.add_argument("--necktangle-filepath", type=str, help="Path to the 4D PET necktangle matrix file.")
+    double_parser.add_argument("--percentile", type=float, help="Percentile for manual threshold value.")
+    double_parser.add_argument("--frame-start-times-filepath", type=str, help="Path to the frame start times file.")
+    double_parser.add_argument("--frame-duration-times-filepath", type=str,
+                               help="Path to the frame duration times file.")
 
     args = parser.parse_args()
 
     if args.command == "single":
-        pet_4d_data = np.load(args.pet_4d_filepath)
-        carotid_necktangle_mask_3d_data = np.load(args.carotid_necktangle_mask_3d_filepath)
+        pet_4d_data = nib.load(args.pet_4d_filepath).get_fdata()
+        carotid_necktangle_mask_3d_data = nib.load(args.carotid_necktangle_mask_3d_filepath).get_fdata()
         tac = single_threshold_idif_from_4d_pet_with_necktangle(
             pet_4d_data=pet_4d_data,
             carotid_necktangle_mask_3d_data=carotid_necktangle_mask_3d_data,
@@ -53,6 +55,7 @@ def main():
         )
         np.savetxt("double_threshold_tac.csv", tac, delimiter=",")
         print("Double threshold IDIF calculation complete. TAC saved to double_threshold_tac.csv")
+
 
 if __name__ == "__main__":
     main()
