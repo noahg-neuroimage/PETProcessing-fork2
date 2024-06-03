@@ -29,8 +29,8 @@ See Also:
 
 import argparse
 import nibabel as nib
-from symmetric_geometric_transfer_matrix import sgtm
-from partial_volume_corrections import PetPvc
+from .symmetric_geometric_transfer_matrix import sgtm
+from .partial_volume_corrections import PetPvc
 
 
 def main():
