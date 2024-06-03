@@ -40,7 +40,7 @@ def main():
     parser = argparse.ArgumentParser(
         prog="PVC CLI",
         description="Apply Partial Volume Correction (PVC) to PET images using SGTM or PETPVC methods.",
-        epilog="Example of usage: pvc_cli.py --method SGTM --pet-path /path/to/pet_image.nii --roi-path /path/to/roi_image.nii --fwhm 8.0"
+        epilog="Example of usage: pet-cli-pvc --method SGTM --pet-path /path/to/pet_image.nii --roi-path /path/to/roi_image.nii --fwhm 8.0"
     )
 
     parser.add_argument("--method", required=True, help="PVC method to use (SGTM or PETPVC method).")
