@@ -21,6 +21,7 @@ setup(name='pet_cli', version='0.0.1', packages=find_packages(),
                                         'pet-cli-parametric-image = pet_cli.cli_parametric_images:main',
                                         'pet-cli-tcm-fit = pet_cli.cli_tac_fitting:main',
                                         'pet-cli-rtms = pet_cli.cli_reference_tissue_models:main',
-                                        'pet-cli-pvc = pet_cli.cli_partial_volume_correction:main']
+                                        'pet-cli-pvc = pet_cli.cli_partial_volume_correction:main',
+                                        'pet-cli-idif = pet_cli.cli_idif:main']
                     }
       )
