@@ -17,9 +17,7 @@ from nibabel import Nifti1Image
 from . import graphical_analysis
 import os
 import warnings
-from . import image_io
 
-load_tac = image_io.load_tac
 
 @numba.njit()
 def apply_linearized_analysis_to_all_voxels(pTAC_times: np.ndarray,
@@ -117,6 +115,30 @@ def generate_parametric_images_with_graphical_method(pTAC_times: np.ndarray,
                                                                        analysis_func=analysis_func)
     
     return slope_img, intercept_img
+
+
+def _safe_load_tac(filename: str) -> np.ndarray:
+    """
+    Loads time-activity curves (TAC) from a file.
+
+    Tries to read a TAC from specified file and raises an exception if unable to do so. We assume that the file has two
+    columns, the first corresponding to time and second corresponding to activity.
+
+    Args:
+        filename (str): The name of the file to be loaded.
+
+    Returns:
+        np.ndarray: A numpy array containing the loaded TAC. The first index corresponds to the times, and the second
+        corresponds to the activity.
+
+    Raises:
+        Exception: An error occurred loading the TAC.
+    """
+    try:
+        return np.array(np.loadtxt(filename).T, dtype=float, order='C')
+    except Exception as e:
+        print(f"Couldn't read file {filename}. Error: {e}")
+        raise e
 
 
 def _safe_load_4dpet_nifty(filename: str) -> Nifti1Image:
@@ -310,12 +332,12 @@ class GraphicalAnalysisParametricImage:
             t_thresh_in_mins (float): The threshold time (in minutes) used in the fitting process.
 
         Note:
-            This method relies on the :func:`load_tac` function to load time-activity curve (TAC) data from the
+            This method relies on the :func:`_safe_load_tac` function to load time-activity curve (TAC) data from the
             file at ``self.input_tac_path``, and the :func:`pet_cli.graphical_analysis.get_index_from_threshold`
             function to get the index from the threshold time.
 
         See also:
-            * :func:`load_tac`: Function to safely load TAC data from a file.
+            * :func:`_safe_load_tac`: Function to safely load TAC data from a file.
             * :func:`pet_cli.graphical_analysis.get_index_from_threshold`: Function to get the index from the threshold time.
 
         Returns:
@@ -324,7 +346,7 @@ class GraphicalAnalysisParametricImage:
         self.analysis_props['ThresholdTime'] = t_thresh_in_mins
         self.analysis_props['MethodName'] = method_name
         
-        p_tac_times, _ = load_tac(filename=self.input_tac_path)
+        p_tac_times, _ = _safe_load_tac(filename=self.input_tac_path)
         t_thresh_index = graphical_analysis.get_index_from_threshold(times_in_minutes=p_tac_times,
                                                                      t_thresh_in_minutes=t_thresh_in_mins)
         self.analysis_props['StartFrameTime'] = p_tac_times[t_thresh_index]
@@ -428,7 +450,7 @@ class GraphicalAnalysisParametricImage:
         Notes:
             The conversion to Bq/cc is hard-coded, and could be changed in later versions of the module.
         """
-        p_tac_times, p_tac_vals = load_tac(self.input_tac_path)
+        p_tac_times, p_tac_vals = _safe_load_tac(self.input_tac_path)
         nifty_pet4d_img = _safe_load_4dpet_nifty(filename=self.pet4D_img_path)
         warnings.warn("PET image values are being divided by 37000 for unit conversion to Bq/cc.", UserWarning)
         self.slope_image, self.intercept_image = generate_parametric_images_with_graphical_method(
