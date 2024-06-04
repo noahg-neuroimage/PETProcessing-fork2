@@ -87,6 +87,7 @@ class PreProc():
     Example:
 
     .. code-block:: python
+
         output_directory = '/path/to/processing'
         output_filename_prefix = 'sub-01'
         sub_01 = pet_cli.preproc.PreProc(output_directory,output_filename_prefix)
@@ -138,30 +139,30 @@ class PreProc():
 
         The available fields in the preproc properties dictionary are described
         as follows:
-            * FilePathWSSInput (str): Path to file on which to compute weighted series sum.
-            * FilePathMocoInp (str): Path to PET file to be motion corrected.
-            * FilePathRegInp (str): Path to PET file to be registered to anatomical data.
-            * FilePathAnat (str): Path to anatomical image to which ``FilePathRegInp`` is registered.
-            * FilePathTACInput (str): Path to PET file with which TACs are computed.
-            * FilePathSeg (str): Path to a segmentation image in anatomical space.
-            * FilePathLabelMap (str): Path to a label map file, indexing segmentation values to ROIs.
-            * FilePathAtlas (str): Path to atlas image, e.g. MNI152 T1 atlas.
-            * FilePathSUVRInput (str): Path to summed or parametric image on which to normalize to SUVR.
-            * FilePathBlurInput (str): Path to image to blur with a gaussian kernal.
-            * FilePathFSLPremat (str): Path to initial affine transform matrix in FSL format, used for FSL type warping.
-            * FilePathFSLPostmat (str): Path to post-warp affine transform matrix in FSL format, used for FSL type warping.
-            * FilePathWarpRef (str): Path to reference used to compute warp to atlas space. Typically anatomical scan.
-            * FilePathAntsXfm (str): Path to list of Ants transforms used to apply ANTs type warping.
-            * HalfLife (float): Half life of radioisotope. Used for a number of tools.
-            * MotionTarget (str | tuple): Target for transformation methods. See :meth:`determine_motion_target`.
-            * MocoPars (keyword arguments): Keyword arguments fed into the method call :meth:`ants.motion_correction`.
-            * RegPars (keyword arguments): Keyword arguments fed into the method call :meth:`ants.registration` while performing PET to anat registration.
-            * WarpPars (keyword arguments): Keyword arguments fed into the method call :meth:`ants.registration` while performing PET to atlas registration. 
-            * RefRegion (int): Reference region used to normalize SUVR.
-            * BlurSize (float): Size of gaussian kernal used to blur image.
-            * RegionExtract (int): Region index in the segmentation image to extract TAC from, if running TAC on a single ROI.
-            * TimeFrameKeyword (str): Keyword in metadata file corresponding to frame timing array to be used in analysis.
-            * Verbose (bool): Set to ``True`` to output processing information.
+        * FilePathWSSInput (str): Path to file on which to compute weighted series sum.
+        * FilePathMocoInp (str): Path to PET file to be motion corrected.
+        * FilePathRegInp (str): Path to PET file to be registered to anatomical data.
+        * FilePathAnat (str): Path to anatomical image to which ``FilePathRegInp`` is registered.
+        * FilePathTACInput (str): Path to PET file with which TACs are computed.
+        * FilePathSeg (str): Path to a segmentation image in anatomical space.
+        * FilePathLabelMap (str): Path to a label map file, indexing segmentation values to ROIs.
+        * FilePathAtlas (str): Path to atlas image, e.g. MNI152 T1 atlas.
+        * FilePathSUVRInput (str): Path to summed or parametric image on which to normalize to SUVR.
+        * FilePathBlurInput (str): Path to image to blur with a gaussian kernal.
+        * FilePathFSLPremat (str): Path to initial affine transform matrix in FSL format, used for FSL type warping.
+        * FilePathFSLPostmat (str): Path to post-warp affine transform matrix in FSL format, used for FSL type warping.
+        * FilePathWarpRef (str): Path to reference used to compute warp to atlas space. Typically anatomical scan.
+        * FilePathAntsXfm (str): Path to list of Ants transforms used to apply ANTs type warping.
+        * HalfLife (float): Half life of radioisotope. Used for a number of tools.
+        * MotionTarget (str | tuple): Target for transformation methods. See :meth:`determine_motion_target`.
+        * MocoPars (keyword arguments): Keyword arguments fed into the method call :meth:`ants.motion_correction`.
+        * RegPars (keyword arguments): Keyword arguments fed into the method call :meth:`ants.registration` while performing PET to anat registration.
+        * WarpPars (keyword arguments): Keyword arguments fed into the method call :meth:`ants.registration` while performing PET to atlas registration. 
+        * RefRegion (int): Reference region used to normalize SUVR.
+        * BlurSize (float): Size of gaussian kernal used to blur image.
+        * RegionExtract (int): Region index in the segmentation image to extract TAC from, if running TAC on a single ROI.
+        * TimeFrameKeyword (str): Keyword in metadata file corresponding to frame timing array to be used in analysis.
+        * Verbose (bool): Set to ``True`` to output processing information.
 
         """
         return _PREPROC_PROPS_

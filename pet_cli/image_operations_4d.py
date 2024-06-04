@@ -58,7 +58,7 @@ def weighted_series_sum(input_image_4d_path: str,
     indicates the total quantity computed over all frames, and :math:`S(f)` is the final weighted
     sum image.
 
-    
+
     Args:
         input_image_4d_path (str): Path to a .nii or .nii.gz file containing a 4D
             PET image on which the weighted sum is calculated. Assume a metadata
