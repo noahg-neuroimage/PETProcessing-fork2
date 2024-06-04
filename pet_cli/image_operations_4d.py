@@ -75,8 +75,7 @@ def weighted_series_sum(input_image_4d_path: str,
             If equal to ``start_time``, one frame at start_time is used. Default value -1.
 
     Returns:
-        summed_image (np.ndarray): 3D image array, in the same space as the input,
-            with the weighted sum calculation applied.
+        np.ndarray: 3D image array, in the same space as the input, with the weighted sum calculation applied.
 
     Raises:
         ValueError: If ``half_life`` is zero or negative.
