@@ -27,7 +27,7 @@ See Also:
 """
 
 import argparse
-import petpal.graphical_analysis as pet_ga
+from .. import graphical_analysis as pet_ga
 
 
 def main():
