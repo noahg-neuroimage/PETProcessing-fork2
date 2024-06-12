@@ -1,6 +1,7 @@
 def main():
-    print("PETPAL - Pre-processing")
+    print("PETPAL - Input Functions")
 
 
 if __name__ == "__main__":
     main()
+    
