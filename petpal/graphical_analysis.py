@@ -446,8 +446,8 @@ def get_graphical_analysis_method(method_name: str) -> Callable:
     Example:
         .. code-block:: python
             
-            from src.graphical_analysis import get_graphical_analysis_method as get_method
-            from src.graphical_analysis import _safe_load_tac as load_tac
+            from petpal.graphical_analysis import get_graphical_analysis_method as get_method
+            from petpal.graphical_analysis import _safe_load_tac as load_tac
             
             selected_func = get_method('logan')
             input_tac_values, tac_times_in_minutes = load_tac("PATH/TO/PLASMA/TAC.tsv")
@@ -493,8 +493,8 @@ def get_graphical_analysis_method_with_rsquared(method_name: str) -> Callable:
     Example:
         .. code-block:: python
             
-            from src.graphical_analysis import get_graphical_analysis_method_with_rsquared as get_method
-            from src.graphical_analysis import _safe_load_tac as load_tac
+            from petpal.graphical_analysis import get_graphical_analysis_method_with_rsquared as get_method
+            from petpal.graphical_analysis import _safe_load_tac as load_tac
             
             selected_func = get_method('logan')
             input_tac_values, tac_times_in_minutes = load_tac("PATH/TO/PLASMA/TAC.tsv")

@@ -13,7 +13,7 @@ The user must provide:
 
 An optional filename prefix for the output files can also be supplied.
 
-This script utilizes the :class:`src.graphical_analysis.GraphicalAnalysis` class to perform the graphical analysis
+This script utilizes the :class:`petpal.graphical_analysis.GraphicalAnalysis` class to perform the graphical analysis
 and save the results accordingly.
 
 Example:
@@ -22,12 +22,12 @@ Example:
         pet-cli-graph-analysis --input-tac-path /path/to/input.tac --roi-tac-path /path/to/roi.tac --threshold-in-mins 30.0 --method-name patlak --output-directory ./analysis --output-filename-prefix analysis
 
 See Also:
-    :mod:`src.graphical_analysis` - module responsible for conducting and saving graphical analysis of PET TACs.
+    :mod:`petpal.graphical_analysis` - module responsible for conducting and saving graphical analysis of PET TACs.
 
 """
 
 import argparse
-import src.graphical_analysis as pet_ga
+import petpal.graphical_analysis as pet_ga
 
 
 def main():

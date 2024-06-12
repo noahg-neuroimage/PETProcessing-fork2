@@ -333,12 +333,12 @@ class GraphicalAnalysisParametricImage:
 
         Note:
             This method relies on the :func:`_safe_load_tac` function to load time-activity curve (TAC) data from the
-            file at ``self.input_tac_path``, and the :func:`src.graphical_analysis.get_index_from_threshold`
+            file at ``self.input_tac_path``, and the :func:`petpal.graphical_analysis.get_index_from_threshold`
             function to get the index from the threshold time.
 
         See also:
             * :func:`_safe_load_tac`: Function to safely load TAC data from a file.
-            * :func:`src.graphical_analysis.get_index_from_threshold`: Function to get the index from the threshold time.
+            * :func:`petpal.graphical_analysis.get_index_from_threshold`: Function to get the index from the threshold time.
 
         Returns:
             None. The results are stored within the instance's ``analysis_props`` variable.
@@ -443,9 +443,9 @@ class GraphicalAnalysisParametricImage:
             
         See Also:
             * :func:`generate_parametric_images_with_graphical_method`
-            * :func:`src.graphical_analysis.patlak_analysis`
-            * :func:`src.graphical_analysis.logan_analysis`
-            * :func:`src.graphical_analysis.alternative_logan_analysis`
+            * :func:`petpal.graphical_analysis.patlak_analysis`
+            * :func:`petpal.graphical_analysis.logan_analysis`
+            * :func:`petpal.graphical_analysis.alternative_logan_analysis`
             
         Notes:
             The conversion to Bq/cc is hard-coded, and could be changed in later versions of the module.

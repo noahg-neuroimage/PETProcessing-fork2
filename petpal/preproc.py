@@ -89,7 +89,7 @@ class PreProc():
     .. code-block:: python
         output_directory = '/path/to/processing'
         output_filename_prefix = 'sub-01'
-        sub_01 = src.preproc.PreProc(output_directory,output_filename_prefix)
+        sub_01 = petpal.preproc.PreProc(output_directory,output_filename_prefix)
         params = {
             'FilePathWSSInput': '/path/to/pet.nii.gz',
             'FilePathAnat': '/path/to/mri.nii.gz',

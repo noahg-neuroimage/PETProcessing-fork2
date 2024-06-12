@@ -39,10 +39,10 @@ Examples:
             pet-cli-preproc write-tacs --out-dir /path/to/output --pet /path/to/pet.nii --segmentation /path/to/seg_masks.nii --label-map-path /path/to/dseg.tsv
 
 See Also:
-    * :mod:`src.image_operations_4d` - module used for operations on 4D images.
-    * :mod:`src.motion_corr` - module for motion correction tools.
-    * :mod:`src.register` - module for MRI and atlas registration.
-    * :mod:`src.preproc` - module to implement preprocessing tools.
+    * :mod:`petpal.image_operations_4d` - module used for operations on 4D images.
+    * :mod:`petpal.motion_corr` - module for motion correction tools.
+    * :mod:`petpal.register` - module for MRI and atlas registration.
+    * :mod:`petpal.preproc` - module to implement preprocessing tools.
 
 """
 import os

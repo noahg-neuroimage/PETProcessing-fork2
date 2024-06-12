@@ -52,7 +52,7 @@ class NiftiGifCreator:
 
         .. code-block:: python
 
-            import src.image_visualization as pet_vis
+            import petpal.image_visualization as pet_vis
 
             gif_creator = pet_vis.NiftiGifCreator(path_to_image="./input.nii.gz",
                                                   view="axial",
