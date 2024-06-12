@@ -19,5 +19,5 @@ setup(name='src', version='0.0.1', packages=find_packages(),
                                         'pet-cli-graph-plot = src.cli_graphical_plots:main',
                                         'pet-cli-graph-analysis = src.cli_graphical_analysis:main',
                                         'pet-cli-parametric-image = src.cli_parametric_images:main',
-                                        'pet-cli-tcm-fit = src.cli_tac_fitting:main'],
+                                        'pet-cli-tcm-fit = src.cli_tac_fitting:main',
                                         'pet-cli-rtms = src.cli_reference_tissue_models:main'], }, )
