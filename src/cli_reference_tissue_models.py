@@ -7,7 +7,7 @@ are supported, each with its associated arguments.
 
 The primary function in the module is `main()`, which is responsible for parsing command-line
 arguments, running the selected analysis, and handling the results. The analysis is performed
-using the :class:`RTMAnalysis<pet_cli.reference_tissue_models.RTMAnalysis>` class.
+using the :class:`RTMAnalysis<src.reference_tissue_models.RTMAnalysis>` class.
 
 Example:
     Assuming that the package has been installed, we have:
@@ -47,7 +47,7 @@ Example:
     
 
 See Also:
-    * :mod:`pet_cli.reference_tissue_models`
+    * :mod:`src.reference_tissue_models`
     
 """
 

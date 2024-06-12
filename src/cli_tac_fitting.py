@@ -19,7 +19,7 @@ User can optionally provide:
     * Maximum number of function iterations
     * Decay constant (in minutes) for per-frame weighting
 
-This script utilizes the :class:`FitTCMToTAC<pet_cli.tac_fitting.FitTCMToTAC>` class to perform the TAC fitting and save
+This script utilizes the :class:`FitTCMToTAC<src.tac_fitting.FitTCMToTAC>` class to perform the TAC fitting and save
  the results accordingly.
 
 Example:
@@ -39,7 +39,7 @@ Example:
         -f 1000 -n 512 -b --print
 
 See Also:
-    :mod:`pet_cli.tac_fitting` - module for fitting TACs with TCMs.
+    :mod:`src.tac_fitting` - module for fitting TACs with TCMs.
 
 """
 

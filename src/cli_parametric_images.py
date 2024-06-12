@@ -12,7 +12,7 @@ The user must provide:
 
 An optional filename prefix for the output files can also be supplied.
 
-This script uses the :class:'pet_cli.parametric_images.GraphicalAnalysisParametricImage' class to calculate and save
+This script uses the :class:'src.parametric_images.GraphicalAnalysisParametricImage' class to calculate and save
 the images.
 
 Example:
@@ -21,7 +21,7 @@ Example:
          pet-cli-parametric-image --input-tac-path /path/to/input.tac --pet4D-img-path /path/to/pet4D.img --threshold-in-mins 30.0 --method-name patlak --output-directory ./images --output-filename-prefix image
 
 See Also:
-    :mod:`pet_cli.parametric_images` - module for initiating and saving the graphical analysis of PET parametric images.
+    :mod:`src.parametric_images` - module for initiating and saving the graphical analysis of PET parametric images.
 
 """
 

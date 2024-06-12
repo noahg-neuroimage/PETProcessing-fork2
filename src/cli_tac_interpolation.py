@@ -9,25 +9,25 @@ The user must provide:
     * Interpolation interval in minutes
     * Output TAC file path
 
-This script uses functionalities from :mod:'pet_cli.tac_interpolation' module to interpolate the TAC based on the
+This script uses functionalities from :mod:'src.tac_interpolation' module to interpolate the TAC based on the
 specified interval, or number of samples before the maximum value, and save the interpolated TAC to a specified output
 file.
 
 An option to print the interpolated TAC to screen is also provided for visual inspection of the results.
 
 Example usage:
-    Using :class:`pet_cli.cli_tac_interpolation.EvenlyInterpolate`:
+    Using :class:`src.cli_tac_interpolation.EvenlyInterpolate`:
         .. code-block:: bash
         
             pet-cli-tac-interpolation --input-tac-path /path/to/input.tac --output-tac-path /path/to/output.tac --delta-time 0.1
     
-    Using :class:`pet_cli.cli_tac_interpolation.EvenlyInterpolateWithMax`:
+    Using :class:`src.cli_tac_interpolation.EvenlyInterpolateWithMax`:
         .. code-block:: bash
             
             pet-cli-tac-interpolation --input-tac-path /path/to/input.tac --output-tac-path /path/to/output.tac --samples-before-max 4
     
 See Also:
-    :mod:`tac_interpolation <pet_cli.tac_interpolation>` - module for performing interpolation on PET TACs.
+    :mod:`tac_interpolation <src.tac_interpolation>` - module for performing interpolation on PET TACs.
 
 TODO:
     * Refactor the reading and writing of TACs when IO module is mature.

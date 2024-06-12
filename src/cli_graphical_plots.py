@@ -20,7 +20,7 @@ Example:
         pet-cli-graph-plot --input-tac-path /path/to/input.tac --roi-tac-path /path/to/roi.tac --threshold-in-mins 30.0 --method-name patlak --output-directory ./plots --output-filename-prefix plot
 
 See Also:
-    :mod:`pet_cli.graphical_plots` - module for creating and saving graphical analysis plots of PET TACs.
+    :mod:`src.graphical_plots` - module for creating and saving graphical analysis plots of PET TACs.
     
 """
 

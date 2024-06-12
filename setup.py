@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
 
-setup(name='pet_cli', version='0.0.1', packages=find_packages(),
+setup(name='src', version='0.0.1', packages=find_packages(),
       install_requires=['docker',
                         'numpy',
                         'scipy',
@@ -13,11 +13,11 @@ setup(name='pet_cli', version='0.0.1', packages=find_packages(),
                         'sphinx',
                         'pydata-sphinx-theme',
                         'bids_validator'],
-      entry_points={'console_scripts': ['pet-cli-preproc = pet_cli.cli_preproc:main',
-                                        'pet-cli-bids = pet_cli.cli_bids:main',
-                                        'pet-cli-tac-interpolate = pet_cli.cli_tac_interpolation:main',
-                                        'pet-cli-graph-plot = pet_cli.cli_graphical_plots:main',
-                                        'pet-cli-graph-analysis = pet_cli.cli_graphical_analysis:main',
-                                        'pet-cli-parametric-image = pet_cli.cli_parametric_images:main',
-                                        'pet-cli-tcm-fit = pet_cli.cli_tac_fitting:main'],
-                                        'pet-cli-rtms = pet_cli.cli_reference_tissue_models:main'], }, )
+      entry_points={'console_scripts': ['pet-cli-preproc = src.cli_preproc:main',
+                                        'pet-cli-bids = src.cli_bids:main',
+                                        'pet-cli-tac-interpolate = src.cli_tac_interpolation:main',
+                                        'pet-cli-graph-plot = src.cli_graphical_plots:main',
+                                        'pet-cli-graph-analysis = src.cli_graphical_analysis:main',
+                                        'pet-cli-parametric-image = src.cli_parametric_images:main',
+                                        'pet-cli-tcm-fit = src.cli_tac_fitting:main'],
+                                        'pet-cli-rtms = src.cli_reference_tissue_models:main'], }, )

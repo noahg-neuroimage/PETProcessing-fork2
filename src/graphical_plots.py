@@ -321,7 +321,7 @@ class GraphicalAnalysisPlot(ABC):
 
         See Also:
             * :func:`calculate_valid_indicies_and_x_and_y`: Method used to generate the x and y values.
-            * :func:`pet_cli.graphical_analysis.fit_line_to_data_using_lls_with_rsquared`: Method used to fit a line to
+            * :func:`src.graphical_analysis.fit_line_to_data_using_lls_with_rsquared`: Method used to fit a line to
               data points using Least Square fitting with R-squared value.
             
         """
@@ -429,7 +429,7 @@ class PatlakPlot(GraphicalAnalysisPlot):
         
         .. code-block:: python
         
-            from pet_cli.graphical_plots import PatlakPlot
+            from src.graphical_plots import PatlakPlot
             patlak_plot = PatlakPlot(tTAC=tTAC, pTAC=pTAC, t_thresh_in_mins=45.0)
             patlak_plot.generate_figure()
             plt.show() # Or use plt.savefig() to save the figure.
@@ -438,7 +438,7 @@ class PatlakPlot(GraphicalAnalysisPlot):
         
         .. code-block:: python
         
-            from pet_cli.graphical_plots import PatlakPlot
+            from src.graphical_plots import PatlakPlot
             patlak_plot = PatlakPlot(tTAC=tTAC, pTAC=pTAC, t_thresh_in_mins=45.0)
             patlak_plot.generate_figure(line_kwargs=dict(lw=2, alpha=0.95, color='red', label=patlak_plot.generate_label_from_fit_params()),
                                         shading_kwargs=dict(color='palegreen', alpha=0.2),
@@ -570,7 +570,7 @@ class LoganPlot(GraphicalAnalysisPlot):
         
         .. code-block:: python
         
-            from pet_cli.graphical_plots import LoganPlot
+            from src.graphical_plots import LoganPlot
             logan_plot = LoganPlot(tTAC=tTAC, pTAC=pTAC, t_thresh_in_mins=45.0)
             logan_plot.generate_figure()
             plt.show() # Or use plt.savefig() to save the figure.
@@ -579,7 +579,7 @@ class LoganPlot(GraphicalAnalysisPlot):
         
         .. code-block:: python
         
-            from pet_cli.graphical_plots import LoganPlot
+            from src.graphical_plots import LoganPlot
             logan_plot = LoganPlot(tTAC=tTAC, pTAC=pTAC, t_thresh_in_mins=45.0)
             logan_plot.generate_figure(line_kwargs=dict(lw=2, alpha=0.95, color='red', label=patlak_plot.generate_label_from_fit_params()),
                                         shading_kwargs=dict(color='palegreen', alpha=0.2),
@@ -709,7 +709,7 @@ class AltLoganPlot(GraphicalAnalysisPlot):
 
         .. code-block:: python
 
-            from pet_cli.graphical_plots import AltLoganPlot
+            from src.graphical_plots import AltLoganPlot
             alt_logan_plot = AltLoganPlot(tTAC=tTAC, pTAC=pTAC, t_thresh_in_mins=45.0)
             alt_logan_plot.generate_figure()
             plt.show() # Or use plt.savefig() to save the figure.
@@ -718,7 +718,7 @@ class AltLoganPlot(GraphicalAnalysisPlot):
 
         .. code-block:: python
 
-            from pet_cli.graphical_plots import AltLoganPlot
+            from src.graphical_plots import AltLoganPlot
             alt_logan_plot = AltLoganPlot(tTAC=tTAC, pTAC=pTAC, t_thresh_in_mins=45.0)
             alt_logan_plot.generate_figure(line_kwargs=dict(lw=2, alpha=0.95, color='red', label=patlak_plot.generate_label_from_fit_params()),
                                         shading_kwargs=dict(color='palegreen', alpha=0.2),
@@ -872,7 +872,7 @@ class Plot:
         
         .. code-block:: python
         
-            import pet_cli.graphical_plots as pet_plt
+            import src.graphical_plots as pet_plt
             # ptac_path points to a plasma TAC (or input TAC)
             # ttac_path points to a ROI TAC.
             grph_plot = pet_plt.Plot(input_tac_path=ptac_path,

@@ -21,7 +21,7 @@ Example:
                 time-step. Therefore, we can explicitly include the maximum value by modifying the time-step.
             
             import numpy as np
-            from pet_cli.tac_interpolation import EvenlyInterpolate, EvenlyInterpolateWithMax
+            from src.tac_interpolation import EvenlyInterpolate, EvenlyInterpolateWithMax
             import matplotlib.pyplot as plt
             
             # define some dummy TAC times and values
