@@ -26,7 +26,7 @@ See Also:
 """
 
 import argparse
-from . import parametric_images as pet_pim
+from ..kinetic_modeling import parametric_images as pet_pim
 
 
 def main():

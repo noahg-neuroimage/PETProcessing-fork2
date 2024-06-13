@@ -46,7 +46,7 @@ See Also:
 from typing import Union
 import numpy as np
 import argparse
-from . import tac_fitting as pet_fit
+from ..kinetic_modeling import tac_fitting as pet_fit
 
 _EXAMPLE_ = ('Fitting a TAC to the serial 2TCM using the F18 decay constant (lambda=ln(2)/t_half_in_mins):\n\t'
              'pet-cli-tcm-fit -i "input_tac.txt"'

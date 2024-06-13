@@ -47,7 +47,7 @@ See Also:
 """
 import os
 import argparse
-from . import preproc
+from ..preproc import preproc
 
 
 _PREPROC_EXAMPLES_ = (r"""

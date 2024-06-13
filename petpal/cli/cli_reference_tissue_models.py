@@ -54,7 +54,7 @@ See Also:
 import argparse
 import numpy as np
 from typing import Union
-from .reference_tissue_models import RTMAnalysis
+from ..kinetic_modeling.reference_tissue_models import RTMAnalysis
 
 
 _RTM_EXAMPLES_ = (r"""

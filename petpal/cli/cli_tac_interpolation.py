@@ -37,7 +37,7 @@ TODO:
 
 import argparse
 import numpy as np
-from . import tac_interpolation as tac_intp
+from ..kinetic_modeling import tac_interpolation as tac_intp
 import os
 
 
