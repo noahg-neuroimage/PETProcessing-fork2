@@ -11,7 +11,8 @@ from typing import Union
 import ants
 import nibabel
 import numpy as np
-from . import image_io, image_operations_4d
+from ..utils import image_io
+from . import image_operations_4d
 
 weighted_series_sum = image_operations_4d.weighted_series_sum
 

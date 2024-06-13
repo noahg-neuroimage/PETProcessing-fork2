@@ -23,7 +23,7 @@ from scipy.ndimage import gaussian_filter
 import nibabel
 from nibabel import processing
 import numpy as np
-from . import image_io, math_lib
+from ..utils import image_io, math_lib
 
 def weighted_series_sum(input_image_4d_path: str,
                         out_image_path: str,

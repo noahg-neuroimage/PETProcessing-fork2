@@ -9,7 +9,8 @@ TODO:
 """
 import os
 import json
-from . import qc_plots, register, image_operations_4d, motion_corr
+from . import register, image_operations_4d, motion_corr
+from ..visualizations import qc_plots
 
 weighted_series_sum = image_operations_4d.weighted_series_sum
 write_tacs = image_operations_4d.write_tacs
