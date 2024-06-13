@@ -739,8 +739,8 @@ class FitTACWithRTMs:
         .. code-block:: python
 
             import numpy as np
-            import petpal.tcms_as_convolutions as pet_tcm
-            import petpal.reference_tissue_models as pet_rtms
+            import petpal.kinetic_modeling.tcms_as_convolutions as pet_tcm
+            import petpal.kinetic_modeling.reference_tissue_models as pet_rtms
             
             # loading the input tac to generate a reference region tac
             input_tac_times, input_tac_vals = np.asarray(np.loadtxt("../../data/tcm_tacs/fdg_plasma_clamp_evenly_resampled.txt").T,
@@ -1013,7 +1013,7 @@ class RTMAnalysis:
         .. code-block:: python
             
             import numpy as np
-            from petpal.reference_tissue_models as pet_rtms
+            from petpal.kinetic_modeling.reference_tissue_models as pet_rtms
             
             file_rtm = pet_rtms.RTMAnalysis(ref_tac_path="ref_tac.txt",
                                             roi_tac_path="roi_tac.txt",

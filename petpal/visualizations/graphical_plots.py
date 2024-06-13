@@ -25,7 +25,7 @@ import numpy as np
 from abc import ABC, abstractmethod
 import os
 from typing import Dict, Union, Type
-from . import graphical_analysis as pet_grph
+from ..kinetic_modeling import graphical_analysis as pet_grph
 
 
 class GraphicalAnalysisPlot(ABC):

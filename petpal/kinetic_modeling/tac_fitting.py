@@ -16,8 +16,8 @@ of the fitting process.
 Please refer to the documentation of each class for more detailed information.
 
 See Also:
-    * :mod:`petpal.tcms_as_convolutions`
-    * :mod:`petpal.blood_input`
+    * :mod:`petpal.kinetic_modeling.tcms_as_convolutions`
+    * :mod:`petpal.input_function.blood_input`
     
 """
 import inspect
@@ -111,8 +111,8 @@ class TACFitter(object):
         
         .. code-block:: python
         
-            import petpal.tcms_as_convolutions as pet_tcm
-            import petpal.tac_fitting as pet_fit
+            import petpal.kinetic_modeling.tcms_as_convolutions as pet_tcm
+            import petpal.kinetic_modeling.tac_fitting as pet_fit
             import numpy as np
             
             tcm_func = pet_tcm.generate_tac_serial_2tcm_cpet_from_tac
@@ -129,10 +129,10 @@ class TACFitter(object):
             :caption: Fitting a noisy simulated 1TCM TAC.
             
             import numpy as np
-            import petpal.tcms_as_convolutions as pet_tcm
-            import petpal.tac_fitting as pet_fit
+            import petpal.kinetic_modeling.tcms_as_convolutions as pet_tcm
+            import petpal.kinetic_modeling.tac_fitting as pet_fit
             import matplotlib.pyplot as plt
-            import petpal.testing_utils as pet_tst
+            import petpal.utils.testing_utils as pet_tst
             
             tcm_func = pet_tcm.generate_tac_1tcm_c1_from_tac
             pTAC = np.asarray(np.loadtxt("../data/tcm_tacs/fdg_plasma_clamp_evenly_resampled.txt").T)
@@ -522,6 +522,7 @@ class TACFitterWithoutBloodVolume(TACFitter):
 
         This ``__init__`` method, in comparison to TACFitter's ``__init__``, executes the same initial operations but
         disregards the blood volume parameter. The significant steps are:
+        
             1. Calls the TACFitter's __init__ with the provided arguments.
             2. Sets the TCM function properties while eliminating blood volume.
             3. Sets the fitting bounds and initial guesses, again excluding blood volume.
@@ -539,7 +540,7 @@ class TACFitterWithoutBloodVolume(TACFitter):
             max_iters (int, optional): Maximum number of function evaluations (iterations) for the optimization process.
                 Defaults to 2500.
 
-        Side-effect:
+        Side Effect:
             Sets the TCM function properties and initial bounds while disregarding the blood volume parameter.
             
         See Also
@@ -557,12 +558,12 @@ class TACFitterWithoutBloodVolume(TACFitter):
         
         The ``tcm_func`` should be one of the following:
         
-        * :func:`generate_tac_1tcm_c1_from_tac<petpal.tcms_as_convolutions.generate_tac_1tcm_c1_from_tac>`
-        * :func:`generate_tac_2tcm_with_k4zero_cpet_from_tac<petpal.tcms_as_convolutions.generate_tac_2tcm_with_k4zero_cpet_from_tac>`
-        * :func:`generate_tac_serial_2tcm_cpet_from_tac<petpal.tcms_as_convolutions.generate_tac_serial_2tcm_cpet_from_tac>`
+            * :func:`generate_tac_1tcm_c1_from_tac<petpal.tcms_as_convolutions.generate_tac_1tcm_c1_from_tac>`
+            * :func:`generate_tac_2tcm_with_k4zero_cpet_from_tac<petpal.tcms_as_convolutions.generate_tac_2tcm_with_k4zero_cpet_from_tac>`
+            * :func:`generate_tac_serial_2tcm_cpet_from_tac<petpal.tcms_as_convolutions.generate_tac_serial_2tcm_cpet_from_tac>`
 
         Args:
-            tcm_func: The chosen TCM function model.
+            tcm_func (Callable): The chosen TCM function model.
 
         Side-effect:
             Sets ``tcm_func``, ``fit_param_names``, and ``fit_param_number`` attributes.
@@ -586,7 +587,7 @@ class TACFitterWithoutBloodVolume(TACFitter):
         Args:
             fit_bounds: The input bounds for fitting parameters.
 
-        Side-effect:
+        Side Effect:
             - Sets ``initial_guesses``, ``bounds_lo``, ``bounds_hi``, and ``bounds``, ignoring the last parameter
               (blood volume).
               
@@ -666,7 +667,7 @@ class FitTCMToTAC(object):
         
         .. code-block:: python
             
-            import petpal.tac_fitting as pet_fit
+            import petpal.kinetic_modeling.tac_fitting as pet_fit
             
             fit_obj = pet_fit.FitTCMToTAC(input_tac_path='./input_tac.txt',
                                           roi_tac_path='./roi_tac.txt',
@@ -742,19 +743,18 @@ class FitTCMToTAC(object):
         r"""
         Initialize the structure of the analysis properties dictionary. This dictionary can be saved as a JSON file for
         parsing the results.
-
+    
         The dictionary structure is as follows:
-
-            FilePathPTAC -> path of the input TAC file
-            FilePathTTAC -> path of the ROI TAC file
-            TissueCompartmentModel -> type of tissue compartment model used
-            IgnoreBloodVolume -> flag indicating whether blood volume is being considered or not
-            PTACFittingThresholdTime -> threshold time for the AIF fitting
-            FitProperties -> an inner dictionary with empty lists/arrays as placeholders
-                            for FitValues, FitStdErr and Bounds. Also contains ResampleNum and MaxIterations.
-
+            - FilePathPTAC -> path of the input TAC file
+            - FilePathTTAC -> path of the ROI TAC file
+            - TissueCompartmentModel -> type of tissue compartment model used
+            - IgnoreBloodVolume -> flag indicating whether blood volume is being considered or not
+            - PTACFittingThresholdTime -> threshold time for the AIF fitting
+            - FitProperties -> an inner dictionary with empty lists/arrays as placeholders
+              for FitValues, FitStdErr and Bounds. Also contains ResampleNum and MaxIterations.
+    
         FitProperties will be updated during the analysis process.
-
+    
         Returns:
             dict: Initialized dictionary with analysis properties structure.
             
@@ -818,7 +818,7 @@ class FitTCMToTAC(object):
             KeyError: If the provided tissue compartment model name does not correspond to any known models.
         
         See Also:
-            * :func:`generate_tac_1tcm_c1_from_tac<petpal.tcms_as_convolutions.generate_tac_1tcm_c1_from_tac>`
+            * :func:`generate_tac_1tcm_c1_from_tac<pet pal.tcms_as_convolutions.generate_tac_1tcm_c1_from_tac>`
             * :func:`generate_tac_2tcm_with_k4zero_cpet_from_tac<petpal.tcms_as_convolutions.generate_tac_2tcm_with_k4zero_cpet_from_tac>`
             * :func:`generate_tac_serial_2tcm_cpet_from_tac<petpal.tcms_as_convolutions.generate_tac_serial_2tcm_cpet_from_tac>`
             * :class:`TACFitter`

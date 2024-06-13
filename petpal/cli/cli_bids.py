@@ -1,4 +1,6 @@
 """
+.. currentmodule:: petpal.cli.cli_bids
+
 Command-line interface (CLI) for importing PET and MR images into a `Brain Imaging Data Structure (BIDS) <https://bids.neuroimaging.io/>`_ format.
 
 This module provides a CLI for interacting with the BIDS utilities module. It uses argparse to handle command-line arguments.
@@ -22,7 +24,7 @@ The user can optionally provide:
     * File path for 3D T2-weighted MR sidecar file (JSON containing image metadata)
     * T2w image label (E.g. 'T2w', 'FLAIR')
 
-This script uses the :class:`petpal.bids_utils.BidsInstance` class to set up the internal BIDS architecture.
+This script uses the :class:`petpal.utils.bids_utils.BidsInstance` class to set up the internal BIDS architecture.
 
 Example:
     .. code-block:: bash
@@ -30,7 +32,7 @@ Example:
          pet-cli-bids --project-path /path/to/output/ --subject "SUBJECT-ID" --session "SESSION-ID" --PET-image /path/to/PET.nii --PET-sidecar /path/to/PET.json --PET-label "FDG"
 
 See Also:
-    :mod:`petpal.bids_utils` - module for initiating, saving, and dynamically managing BIDS elements.
+    :mod:`petpal.utils.bids_utils` - module for initiating, saving, and dynamically managing BIDS elements.
 
 """
 import argparse
