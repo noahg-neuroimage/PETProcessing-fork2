@@ -34,7 +34,7 @@ See Also:
 
 """
 import argparse
-from .. import bids_utils
+from ..utils import bids_utils
 
 
 def main():

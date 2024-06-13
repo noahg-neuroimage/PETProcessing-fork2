@@ -27,7 +27,7 @@ See Also:
 """
 
 import argparse
-from .. import graphical_analysis as pet_ga
+from ..kinetic_modeling import graphical_analysis as pet_ga
 
 
 def main():
