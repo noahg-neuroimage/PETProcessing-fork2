@@ -16,7 +16,6 @@ TODO:
 
 import numba
 import numpy as np
-from scipy.optimize import curve_fit as sp_fit
 
 
 def calc_convolution_with_check(f: np.ndarray, g: np.ndarray, dt: float) -> np.ndarray:
