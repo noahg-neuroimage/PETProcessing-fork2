@@ -1,5 +1,5 @@
 def main():
-    print("PETPAL - Pre-processing")
+    print("PETPAL - Pre-processin")
 
 
 if __name__ == "__main__":
