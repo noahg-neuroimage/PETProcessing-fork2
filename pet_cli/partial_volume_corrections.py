@@ -13,7 +13,7 @@ Requires:
 
 import os
 import docker
-from docker.errors import ImageNotFound, APIError
+from docker.errors import ImageNotFound, APIError, ContainerError
 from typing import Union, Tuple
 
 
@@ -81,25 +81,61 @@ class PetPvc:
             docker.errors.ImageNotFound: If the Docker image is not available.
             docker.errors.APIError: If the Docker client encounters an API error.
         """
-        common_path = os.path.commonpath([pet_4d_filepath, output_filepath])
-        docker_pet_input = "/data/" + pet_4d_filepath.replace(common_path, "").lstrip(os.sep).replace(os.sep, '/')
-        docker_output = "/data/" + output_filepath.replace(common_path, "").lstrip(os.sep).replace(os.sep, '/')
-        docker_volumes = {common_path: {'bind': '/data', 'mode': 'rw'}}
-        command = f"petpvc --input {docker_pet_input} --output {docker_output} --pvc {pvc_method}"
-        if mask_filepath is not None:
-            docker_mask_input = "/data/" + mask_filepath.replace(common_path, "").lstrip(os.sep).replace(os.sep, '/')
-            command = command + f" --mask {docker_mask_input}"
-        if isinstance(psf_dimensions, tuple):
-            command = command + f" -x {psf_dimensions[0]} -y {psf_dimensions[1]} -z {psf_dimensions[2]}"
+        pet_4d_filepath = os.path.abspath(pet_4d_filepath)
+        output_filepath = os.path.abspath(output_filepath)
+        if mask_filepath:
+            mask_filepath = os.path.abspath(mask_filepath)
+
+        # Determine the common path
+        common_path = os.path.commonpath(
+            [pet_4d_filepath, output_filepath, mask_filepath]) if mask_filepath else os.path.commonpath(
+            [pet_4d_filepath, output_filepath])
+        if not common_path:
+            common_path = os.path.dirname(pet_4d_filepath)
+        if common_path == "/":
+            docker_pet_input = f"/data/{pet_4d_filepath}"
+            docker_output = f"/data/{output_filepath}"
+            if mask_filepath:
+                docker_mask_input = f"/data/{mask_filepath}"
         else:
-            command = command + f" -x {psf_dimensions} -y {psf_dimensions} -z {psf_dimensions}"
+            common_path = common_path.rstrip(os.sep)
+            docker_pet_input = f"/data/{pet_4d_filepath.replace(common_path, '').lstrip(os.sep).replace(os.sep, '/')}"
+            docker_output = f"/data/{output_filepath.replace(common_path, '').lstrip(os.sep).replace(os.sep, '/')}"
+            if mask_filepath:
+                docker_mask_input = f"/data/{mask_filepath.replace(common_path, '').lstrip(os.sep).replace(os.sep, '/')}"
+
+        docker_volumes = {common_path: {'bind': '/data', 'mode': 'rw'}}
+
+        command = f"petpvc --input {docker_pet_input} --output {docker_output} --pvc {pvc_method}"
+        if mask_filepath:
+            command += f" --mask {docker_mask_input}"
+        if isinstance(psf_dimensions, tuple):
+            command += f" -x {psf_dimensions[0]} -y {psf_dimensions[1]} -z {psf_dimensions[2]}"
+        else:
+            command += f" -x {psf_dimensions} -y {psf_dimensions} -z {psf_dimensions}"
         if debug:
-            command = command + f" --debug"
-        container = self.client.containers.run(self.image_name, command, volumes=docker_volumes, detach=False,
-                                               stream=True, auto_remove=True)
-        if verbose:
-            for line in container:
+            command += f" --debug"
+
+        print(f"Running Docker command: {command}")
+        print(f"Volume bindings: {docker_volumes}")
+
+        try:
+            container = self.client.containers.run(self.image_name, command, volumes=docker_volumes, detach=False,
+                                                   stream=True, auto_remove=False)
+            if verbose:
+                for line in container:
+                    print(line.decode('utf-8').strip())
+        except ContainerError as e:
+            print(f"ContainerError: {e}")
+            container_id = e.container.id
+            logs = self.client.containers.get(container_id).logs(stream=True)
+            for line in logs:
                 print(line.decode('utf-8').strip())
+            self.client.containers.get(container_id).remove()
+            raise
+        except APIError as e:
+            print(f"APIError: {e}")
+            raise
 
     def _pull_image_if_not_exists(self) -> None:
         """
@@ -108,9 +144,9 @@ class PetPvc:
         try:
             self.client.images.get(self.image_name)
             print(f"Image {self.image_name} is already available locally.")
-        except docker.errors.ImageNotFound:
+        except ImageNotFound:
             print(f"Image {self.image_name} not found locally. Pulling from Docker Hub...")
             self.client.images.pull(self.image_name)
             print(f"Successfully pulled {self.image_name}.")
-        except docker.errors.APIError as error:
+        except APIError as error:
             print(f"Failed to pull image due to API error: {error}")

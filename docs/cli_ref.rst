@@ -12,4 +12,6 @@ CLI Reference
    pet_cli.cli_parametric_images
    pet_cli.cli_reference_tissue_models
    pet_cli.cli_bids
+   pet_cli.cli_partial_volume_correction
+   pet_cli.cli_idif
 
