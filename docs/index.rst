@@ -12,6 +12,7 @@ PET Processing Module Documentation
    :caption: API Reference:
 
    petpal
+   petpal.cli
 
 
 
