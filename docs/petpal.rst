@@ -10,6 +10,7 @@ Subpackages
    petpal.kinetic_modeling
    petpal.input_function
    petpal.visualizations
+   petpal.utils
 
 Module contents
 ---------------
