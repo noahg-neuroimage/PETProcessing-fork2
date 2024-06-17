@@ -7,6 +7,7 @@ Subpackages
 .. toctree::
    :maxdepth: 2
 
+   petpal.preproc
    petpal.kinetic_modeling
    petpal.input_function
    petpal.visualizations

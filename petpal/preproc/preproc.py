@@ -1,7 +1,7 @@
 """
 Introduces class :class:`PreProc` which handles preprocessing of PET and other
 neuroimaging data for a PET study. Acts as a wrapper for other tools supplied
-in ``PPM``.
+in ``PETPAL``.
 
 TODO:
     * Check if input files exist, throw error if no
@@ -79,15 +79,15 @@ class PreProc():
           dictionary ``preproc_props``.
 
     Attributes:
-        -`output_directory`: Directory in which files are written to.
-        -`output_filename_prefix`: Prefix appended to beginning of written
-         files.
-        -`preproc_props`: Properties dictionary used to set parameters for PET
-         preprocessing. See :meth:`_init_preproc_props` for further details.
+        output_directory (str): Directory in which files are written to.
+        output_filename_prefix (str)`: Prefix appended to beginning of written files.
+        preproc_props (dict): Properties dictionary used to set parameters for PET preprocessing.
+            See :meth:`_init_preproc_props` for further details.
 
     Example:
 
     .. code-block:: python
+    
         output_directory = '/path/to/processing'
         output_filename_prefix = 'sub-01'
         sub_01 = petpal.preproc.PreProc(output_directory,output_filename_prefix)

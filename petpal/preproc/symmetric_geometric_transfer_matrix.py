@@ -37,17 +37,12 @@ def sgtm(pet_nifti: nib.Nifti1Image,
             roi_nifti = nib.load('path_to_roi_image.nii')
             fwhm = (8.0, 8.0, 8.0)  # or fwhm = 8.0
             labels, corrected_values, cond_number = sgtm(pet_nifti, roi_nifti, fwhm)
-            labels.shape
-            (3,)
-            corrected_values.shape
-            (3,)
-            type(cond_number)
-            <class 'float'>
 
     Notes:
         The SGTM method uses the matrix :math:`\Omega` (omega), defined as:
 
         .. math::
+        
             \Omega = V^T V
 
         where :math:`V` is the matrix obtained by applying Gaussian filtering to each ROI, converting each ROI into a
@@ -57,12 +52,14 @@ def sgtm(pet_nifti: nib.Nifti1Image,
         The vector :math:`t` is calculated as:
 
         .. math::
+        
             t = V^T p
 
         where :math:`p` is the vectorized PET image. The corrected values, :math:`t_{corrected}`, are then obtained
         by solving the linear system:
 
         .. math::
+        
             \Omega t_{corrected} = t
 
         This provides the estimated activity concentrations corrected for partial volume effects in each ROI.

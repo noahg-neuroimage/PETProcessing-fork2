@@ -7,7 +7,7 @@ Note:
     hosted on `DockerHub <https://hub.docker.com/r/benthomas1984/petpvc>`_. The Docker image is Linux-based.
 
 Requires:
-    The module relies on the :doc:`docker <docker:index>` module.
+    The module relies on the :mod:`docker` module.
 
 """
 
@@ -44,6 +44,7 @@ class PetPvc:
                 psf_dimensions=(6.0, 6.0, 6.0),
                 mask_filepath="/path/to/input/brain_mask.nii",
                 verbose=True)
+                
     """
 
     def __init__(self):
