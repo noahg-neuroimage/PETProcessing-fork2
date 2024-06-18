@@ -19,12 +19,12 @@ Example usage:
     Using :class:`petpal.cli_tac_interpolation.EvenlyInterpolate`:
         .. code-block:: bash
         
-            pet-cli-tac-interpolation --input-tac-path /path/to/input.tac --output-tac-path /path/to/output.tac --delta-time 0.1
+            petpal-tac-interpolation --input-tac-path /path/to/input.tac --output-tac-path /path/to/output.tac --delta-time 0.1
     
     Using :class:`petpal.cli_tac_interpolation.EvenlyInterpolateWithMax`:
         .. code-block:: bash
             
-            pet-cli-tac-interpolation --input-tac-path /path/to/input.tac --output-tac-path /path/to/output.tac --samples-before-max 4
+            petpal-tac-interpolation --input-tac-path /path/to/input.tac --output-tac-path /path/to/output.tac --samples-before-max 4
     
 See Also:
     :mod:`tac_interpolation <petpal.tac_interpolation>` - module for performing interpolation on PET TACs.
@@ -107,7 +107,7 @@ def _print_tac_to_screen(tac_times: np.ndarray, tac_values: np.ndarray):
 
 def main():
     parser = argparse.ArgumentParser(prog="TAC Interpolation", description="Evenly resample TACs.",
-                                     epilog="Example of usage: pet-cli-tac-interpolate -i /path/to/input/file.txt -o "
+                                     epilog="Example of usage: petpal-tac-interpolate -i /path/to/input/file.txt -o "
                                             "/path/to/output/file.txt --delta-time 0.1")
     
     io_grp = parser.add_argument_group("I/O")

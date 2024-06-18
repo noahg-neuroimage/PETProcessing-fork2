@@ -29,7 +29,7 @@ This script uses the :class:`petpal.utils.bids_utils.BidsInstance` class to set 
 Example:
     .. code-block:: bash
 
-         pet-cli-bids --project-path /path/to/output/ --subject "SUBJECT-ID" --session "SESSION-ID" --PET-image /path/to/PET.nii --PET-sidecar /path/to/PET.json --PET-label "FDG"
+         petpal-bids --project-path /path/to/output/ --subject "SUBJECT-ID" --session "SESSION-ID" --PET-image /path/to/PET.nii --PET-sidecar /path/to/PET.json --PET-label "FDG"
 
 See Also:
     :mod:`petpal.utils.bids_utils` - module for initiating, saving, and dynamically managing BIDS elements.

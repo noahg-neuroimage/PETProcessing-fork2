@@ -28,7 +28,7 @@ Example:
     
     .. code-block:: bash
 
-        pet-cli-tcm-fit -i "input_tac.txt"\
+        petpal-tcm-fit -i "input_tac.txt"\
         -r "roi_tac.txt"\
         -m "serial-2tcm"\
         -o "./" -p "cli_"\
@@ -49,7 +49,7 @@ import argparse
 from ..kinetic_modeling import tac_fitting as pet_fit
 
 _EXAMPLE_ = ('Fitting a TAC to the serial 2TCM using the F18 decay constant (lambda=ln(2)/t_half_in_mins):\n\t'
-             'pet-cli-tcm-fit -i "input_tac.txt"'
+             'petpal-tcm-fit -i "input_tac.txt"'
              ' -r "2tcm_tac.txt" '
              '-m "serial-2tcm" '
              '-o "./" -p "cli_" -t 35.0 '
@@ -73,7 +73,7 @@ def _generate_args() -> argparse.Namespace:
     Raises:
         argparse.ArgumentError: If necessary arguments are missing or invalid arguments are provided.
     """
-    parser = argparse.ArgumentParser(prog='pet-cli-tcm-fit',
+    parser = argparse.ArgumentParser(prog='petpal-tcm-fit',
                                      description='Command line interface for fitting Tissue Compartment Models (TCM) '
                                                  'to PET Time Activity Curves (TACs).',
                                      formatter_class=argparse.RawTextHelpFormatter, epilog=_EXAMPLE_)

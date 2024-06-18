@@ -18,7 +18,7 @@ the images.
 Example:
     .. code-block:: bash
     
-         pet-cli-parametric-image --input-tac-path /path/to/input.tac --pet4D-img-path /path/to/pet4D.img --threshold-in-mins 30.0 --method-name patlak --output-directory ./images --output-filename-prefix image
+         petpal-parametric-image --input-tac-path /path/to/input.tac --pet4D-img-path /path/to/pet4D.img --threshold-in-mins 30.0 --method-name patlak --output-directory ./images --output-filename-prefix image
 
 See Also:
     :mod:`petpal.parametric_images` - module for initiating and saving the graphical analysis of PET parametric images.
@@ -32,7 +32,7 @@ from ..kinetic_modeling import parametric_images as pet_pim
 def main():
     parser = argparse.ArgumentParser(prog="Parametric Images With Graphical Analyses",
                                      description="Generate parametric images using graphical analysis on PET TACs.",
-                                     epilog="Example usage: pet-cli-parametric-image "
+                                     epilog="Example usage: petpal-parametric-image "
                                             "--input-tac-path /path/to/input.tac "
                                             "--pet4D-img-path /path/to/image4D.pet "
                                             "--output-directory /path/to/output --output-filename-prefix param_image "

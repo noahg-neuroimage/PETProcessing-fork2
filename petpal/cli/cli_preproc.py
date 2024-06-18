@@ -18,25 +18,25 @@ Examples:
     
         .. code-block:: bash
     
-            pet-cli-preproc weighted-sum --out-dir /path/to/output --prefix sub_001 --pet /path/to/pet.nii --half-life 6586.26
+            petpal-preproc weighted-sum --out-dir /path/to/output --prefix sub_001 --pet /path/to/pet.nii --half-life 6586.26
     
     * Image Registration:
     
         .. code-block:: bash
     
-            pet-cli-preproc register --out-dir /path/to/output --prefix sub_001 --pet /path/to/pet.nii --anatomical /path/to/mri.nii --motion-target /path/to/pet/reference.nii
+            petpal-preproc register --out-dir /path/to/output --prefix sub_001 --pet /path/to/pet.nii --anatomical /path/to/mri.nii --motion-target /path/to/pet/reference.nii
             
     * Motion Correction:
     
         .. code-block:: bash
             
-            pet-cli-preproc motion-correct --out-dir /path/to/output --prefix sub_001 --pet /path/to/pet.nii --pet-reference /path/to/sum.nii
+            petpal-preproc motion-correct --out-dir /path/to/output --prefix sub_001 --pet /path/to/pet.nii --pet-reference /path/to/sum.nii
             
     * Extracting TACs Using A Mask And Color-Table:
     
         .. code-block:: bash
             
-            pet-cli-preproc write-tacs --out-dir /path/to/output --pet /path/to/pet.nii --segmentation /path/to/seg_masks.nii --label-map-path /path/to/dseg.tsv
+            petpal-preproc write-tacs --out-dir /path/to/output --pet /path/to/pet.nii --segmentation /path/to/seg_masks.nii --label-map-path /path/to/dseg.tsv
 
 See Also:
     * :mod:`petpal.image_operations_4d` - module used for operations on 4D images.
@@ -53,15 +53,15 @@ from ..preproc import preproc
 _PREPROC_EXAMPLES_ = (r"""
 Examples:
   - Weighted Sum:
-    pet-cli-preproc weighted-sum --out-dir /path/to/output --prefix sub_001 --pet /path/to/pet.nii --half-life 6586.26
+    petpal-preproc weighted-sum --out-dir /path/to/output --prefix sub_001 --pet /path/to/pet.nii --half-life 6586.26
   - Registration:
-    pet-cli-preproc register --out-dir /path/to/output --prefix sub_001 --pet /path/to/pet.nii --anatomical /path/to/mri.nii --motion-target /path/to/pet/reference.nii
+    petpal-preproc register --out-dir /path/to/output --prefix sub_001 --pet /path/to/pet.nii --anatomical /path/to/mri.nii --motion-target /path/to/pet/reference.nii
   - Motion Correction:
-    pet-cli-preproc motion-correct --out-dir /path/to/output --prefix sub_001 --pet /path/to/pet.nii --pet-reference /path/to/sum.nii
+    petpal-preproc motion-correct --out-dir /path/to/output --prefix sub_001 --pet /path/to/pet.nii --pet-reference /path/to/sum.nii
   - Writing TACs From Segmentation Masks:
-    pet-cli-preproc write-tacs --out-dir /path/to/output --pet /path/to/pet.nii --segmentation /path/to/seg_masks.nii --label-map-path /path/to/dseg.tsv
+    petpal-preproc write-tacs --out-dir /path/to/output --pet /path/to/pet.nii --segmentation /path/to/seg_masks.nii --label-map-path /path/to/dseg.tsv
   - Verbose:
-    pet-cli-preproc -v [sub-command] [arguments]
+    petpal-preproc -v [sub-command] [arguments]
 """)
 
 
@@ -110,7 +110,7 @@ def _generate_args() -> argparse.Namespace:
     Returns:
         args (argparse.Namespace): Arguments used in the command line and their corresponding values.
     """
-    parser = argparse.ArgumentParser(prog='pet-cli-preproc',
+    parser = argparse.ArgumentParser(prog='petpal-preproc',
                                      description='Command line interface for running PET pre-processing steps.',
                                      epilog=_PREPROC_EXAMPLES_, formatter_class=argparse.RawTextHelpFormatter)
 

@@ -17,7 +17,7 @@ This script uses the 'Plot' class from the 'graphical_plots' module to generate 
 Example:
     .. code-block:: bash
     
-        pet-cli-graph-plot --input-tac-path /path/to/input.tac --roi-tac-path /path/to/roi.tac --threshold-in-mins 30.0 --method-name patlak --output-directory ./plots --output-filename-prefix plot
+        petpal-graph-plot --input-tac-path /path/to/input.tac --roi-tac-path /path/to/roi.tac --threshold-in-mins 30.0 --method-name patlak --output-directory ./plots --output-filename-prefix plot
 
 See Also:
     :mod:`petpal.visualization.graphical_plots` - module for creating and saving graphical analysis plots of PET TACs.
@@ -31,7 +31,7 @@ from ..visualizations import graphical_plots as pet_plt
 def main():
     parser = argparse.ArgumentParser(prog="Graphical Analysis Plots",
                                      description="Generate graphical analysis plots of PET TACs.",
-                                     epilog="Example: pet-cli-graph-plot "
+                                     epilog="Example: petpal-graph-plot "
                                             "--input-tac-path /path/to/input.tac --roi-tac-path "
                                             "/path/to/roi.tac --threshold-in-mins 30.0 --method-name patlak "
                                             "--output-directory /path/to/output --output-filename-prefix plot")

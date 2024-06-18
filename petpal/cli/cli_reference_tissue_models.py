@@ -16,32 +16,32 @@ Example:
     
     .. code-block:: bash
     
-        pet-cli-rtms frtm --ref-tac-path /path/to/ref/tac --roi-tac-path /path/to/roi/tac --prefix sub_001 --print --initial-guesses 0.1 0.1 0.1 0.1 0.1 --lower-bounds 0.0 0.0 0.0 0.0 0.0 --upper-bounds 5.0 5.0 5.0 5.0 5.0
+        petpal-rtms frtm --ref-tac-path /path/to/ref/tac --roi-tac-path /path/to/roi/tac --prefix sub_001 --print --initial-guesses 0.1 0.1 0.1 0.1 0.1 --lower-bounds 0.0 0.0 0.0 0.0 0.0 --upper-bounds 5.0 5.0 5.0 5.0 5.0
     
     For running an SRTM analysis:
     
     .. code-block:: bash
     
-        pet-cli-rtms srtm --ref-tac-path /path/to/ref/tac --roi-tac-path /path/to/roi/tac --prefix sub_001 --print --initial-guesses 0.1 0.1 0.1 0.1 0.1 --lower-bounds 0.0 0.0 0.0 0.0 0.0 --upper-bounds 5.0 5.0 5.0 5.0 5.0
+        petpal-rtms srtm --ref-tac-path /path/to/ref/tac --roi-tac-path /path/to/roi/tac --prefix sub_001 --print --initial-guesses 0.1 0.1 0.1 0.1 0.1 --lower-bounds 0.0 0.0 0.0 0.0 0.0 --upper-bounds 5.0 5.0 5.0 5.0 5.0
     
     For running an MRTM analysis:
     
     .. code-block:: bash
     
-        pet-cli-rtms mrtm --ref-tac-path /path/to/ref/tac --roi-tac-path /path/to/roi/tac --prefix sub_001 --print --t-thresh-in-mins 30.0
+        petpal-rtms mrtm --ref-tac-path /path/to/ref/tac --roi-tac-path /path/to/roi/tac --prefix sub_001 --print --t-thresh-in-mins 30.0
     
     For running an MRTM2 analysis:
     
     .. code-block:: bash
     
-        pet-cli-rtms mrtm2 --ref-tac-path /path/to/ref/tac --roi-tac-path /path/to/roi/tac --prefix sub_001 --print --t-thresh-in-mins 30.0 --k2-prime 0.1
+        petpal-rtms mrtm2 --ref-tac-path /path/to/ref/tac --roi-tac-path /path/to/roi/tac --prefix sub_001 --print --t-thresh-in-mins 30.0 --k2-prime 0.1
     
     
     For running the original MRTM analysis:
     
     .. code-block:: bash
     
-        pet-cli-rtms mrtm-original --ref-tac-path /path/to/ref/tac --roi-tac-path /path/to/roi/tac --prefix sub_001 --print --t-thresh-in-mins 30.0
+        petpal-rtms mrtm-original --ref-tac-path /path/to/ref/tac --roi-tac-path /path/to/roi/tac --prefix sub_001 --print --t-thresh-in-mins 30.0
     
     
     
@@ -60,15 +60,15 @@ from ..kinetic_modeling.reference_tissue_models import RTMAnalysis
 _RTM_EXAMPLES_ = (r"""
 Examples:
   - FRTM (4 parameters: R1, k2, k3, k4):
-    pet-cli-rtms frtm --ref-tac-path /path/to/ref/tac --roi-tac-path /path/to/roi/tac --prefix sub_001 --print --initial-guesses 0.1 0.1 0.1 0.1 0.1 --lower-bounds 0.0 0.0 0.0 0.0 0.0 --upper-bounds 5.0 5.0 5.0 5.0 5.0
+    petpal-rtms frtm --ref-tac-path /path/to/ref/tac --roi-tac-path /path/to/roi/tac --prefix sub_001 --print --initial-guesses 0.1 0.1 0.1 0.1 0.1 --lower-bounds 0.0 0.0 0.0 0.0 0.0 --upper-bounds 5.0 5.0 5.0 5.0 5.0
   - SRTM (3 parameters: R1, k2, BP):
-    pet-cli-rtms srtm --ref-tac-path /path/to/ref/tac --roi-tac-path /path/to/roi/tac --prefix sub_001 --print --initial-guesses 0.1 0.1 0.1 0.1 0.1 --lower-bounds 0.0 0.0 0.0 0.0 0.0 --upper-bounds 5.0 5.0 5.0 5.0 5.0
+    petpal-rtms srtm --ref-tac-path /path/to/ref/tac --roi-tac-path /path/to/roi/tac --prefix sub_001 --print --initial-guesses 0.1 0.1 0.1 0.1 0.1 --lower-bounds 0.0 0.0 0.0 0.0 0.0 --upper-bounds 5.0 5.0 5.0 5.0 5.0
   - MRTM (2 parameters: BP, k2_prime):
-    pet-cli-rtms mrtm --ref-tac-path /path/to/ref/tac --roi-tac-path /path/to/roi/tac --prefix sub_001 --print --t-thresh-in-mins 30.0
+    petpal-rtms mrtm --ref-tac-path /path/to/ref/tac --roi-tac-path /path/to/roi/tac --prefix sub_001 --print --t-thresh-in-mins 30.0
   - MRTM2 (2 parameters: BP):
-    pet-cli-rtms mrtm2 --ref-tac-path /path/to/ref/tac --roi-tac-path /path/to/roi/tac --prefix sub_001 --print --t-thresh-in-mins 30.0 --k2-prime 0.1
+    petpal-rtms mrtm2 --ref-tac-path /path/to/ref/tac --roi-tac-path /path/to/roi/tac --prefix sub_001 --print --t-thresh-in-mins 30.0 --k2-prime 0.1
   - MRTM (Original) (2 parameters: BP, k2_prime):
-    pet-cli-rtms mrtm-original --ref-tac-path /path/to/ref/tac --roi-tac-path /path/to/roi/tac --prefix sub_001 --print --t-thresh-in-mins 30.0
+    petpal-rtms mrtm-original --ref-tac-path /path/to/ref/tac --roi-tac-path /path/to/roi/tac --prefix sub_001 --print --t-thresh-in-mins 30.0
 """)
 
 
@@ -121,7 +121,7 @@ def parse_args():
         SystemExit: If invalid arguments are passed or `-h`/`--help` is chosen.
 
     """
-    parser = argparse.ArgumentParser(prog='pet-cli-rtms',
+    parser = argparse.ArgumentParser(prog='petpal-rtms',
                                      description='Command line interface for running RTM analyses on TACs',
                                      epilog=_RTM_EXAMPLES_,
                                      formatter_class=argparse.RawTextHelpFormatter)
