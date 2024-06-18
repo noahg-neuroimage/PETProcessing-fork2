@@ -5,15 +5,8 @@ from . import utils
 from . import visualizations
 
 
-# from .kinetic_modeling import *
-# from .input_function import *
-# from .preproc import *
-# from .utils import *
-# from .visualizations import *
-
-
 def main():
-    print("PET Processing Module")
+    print("PET-PAL (Positron Emission Tomography Processing and Analysis Library)")
     
 if __name__ == "__main__":
     main()
