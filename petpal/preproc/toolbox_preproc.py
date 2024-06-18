@@ -6,9 +6,9 @@ from . import preproc
 _PREPROC_EXAMPLES_ = (r"""
 Examples:
   - Create a blank params file:
-    pet-cli-preproc -p path_to_new_params.json
+    petpal-preproc -p path_to_new_params.json
   - Run one or more preprocessing methods in order:
-    pet-cli-preproc -p path_to_existing_params.json -o /path/to/processing/dir -f sub-PETSTUDY001 -m [method1] [method2] ...
+    petpal-preproc -p path_to_existing_params.json -o /path/to/processing/dir -f sub-PETSTUDY001 -m [method1] [method2] ...
 """)
 
 
@@ -25,7 +25,7 @@ def main():
     order. If the output directory is blank, default to current directory. If
     the filename prefix is blank, default to 'sub-001'.
     """
-    parser = argparse.ArgumentParser(prog='pet-cli-preproc',
+    parser = argparse.ArgumentParser(prog='petpal-preproc',
                                      description='Preprocessing command line interface',
                                      epilog=_PREPROC_EXAMPLES_,
                                      formatter_class=argparse.RawTextHelpFormatter)
