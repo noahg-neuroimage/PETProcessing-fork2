@@ -12,9 +12,7 @@ import ants
 import nibabel
 import numpy as np
 from ..utils import image_io
-from . import image_operations_4d
-
-weighted_series_sum = image_operations_4d.weighted_series_sum
+from ..preproc.image_operations_4d import weighted_series_sum
 
 
 def determine_motion_target(motion_target_option: Union[str,tuple,list],
