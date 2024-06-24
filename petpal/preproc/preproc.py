@@ -43,6 +43,8 @@ _PREPROC_PROPS_ = {'FilePathWSSInput': None,
                    'FilePathAntsXfms': None,
                    'FreeSurferSubjectDir': None, 
                    'HalfLife': None,
+                   'StartTimeWSS': 0,
+                   'EndTimeWSS': -1,
                    'MotionTarget': None,
                    'MocoPars': None,
                    'RegPars': None,
@@ -232,16 +234,12 @@ class PreProc():
         """
         preproc_props = self.preproc_props
         existing_keys = [*preproc_props]
+        accepted_keys = [*_REQUIRED_KEYS_]
 
         try:
             required_keys = _REQUIRED_KEYS_[method_name]
         except KeyError as e:
-            raise KeyError("Invalid method_name! Must be either "
-                           "'weighted_series_sum', 'motion_corr', "
-                           "'register_pet', 'resample_segmentation', "
-                           "'roi_tac', "
-                           "'warp_pet_atlas', 'suvr', 'gauss_blur' or "
-                           f"'write_tacs'. Got {method_name}")
+            raise KeyError(f"Invalid method_name! Must be one of: {accepted_keys} . Got '{method_name}'")
 
         for key in required_keys:
             if preproc_props[key] is None:
@@ -286,6 +284,8 @@ class PreProc():
             weighted_series_sum(input_image_4d_path=preproc_props['FilePathWSSInput'],
                                 out_image_path=outfile,
                                 half_life=preproc_props['HalfLife'],
+                                start_time=preproc_props['StartTimeWSS'],
+                                end_time=preproc_props['EndTimeWSS'],
                                 verbose=preproc_props['Verbose'])
 
         elif method_name=='motion_corr':
