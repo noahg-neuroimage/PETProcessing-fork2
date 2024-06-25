@@ -185,7 +185,7 @@ def extract_tac_from_nifty_using_mask(input_image_4d_numpy: np.ndarray,
     tac_out = np.zeros(num_frames, float)
     if verbose:
         print(f'Running TAC for region index {region}')
-    masked_voxels = seg_image == region
+    masked_voxels = (seg_image > region - 0.1) & (seg_image < region + 0.1)
     masked_image = pet_image_4d[masked_voxels].reshape((-1, num_frames))
     tac_out = np.mean(masked_image, axis=0)
     return tac_out
@@ -286,9 +286,7 @@ def gauss_blur(input_image_path: str,
                                            header=input_nibabel.header)
     nibabel.save(img=out_image,filename=out_image_path)
 
-    copy_meta_path = re.sub('.nii.gz|.nii', '.json', out_image_path)
-    meta_data_dict = image_io.load_metadata_for_nifty_with_same_filename(input_image_path)
-    image_io.write_dict_to_json(meta_data_dict=meta_data_dict, out_path=copy_meta_path)
+    image_io.safe_copy_meta(input_image_path=input_image_path,out_image_path=out_image_path)
 
     return out_image
 

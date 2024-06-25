@@ -313,5 +313,4 @@ def vat_wm_region_merge(wmparc_segmentation_path: str,
     out_file = nibabel.nifti1.Nifti1Image(dataobj=wmparc_bs_wmref,
                                           header=wmparc.header,
                                           affine=wmparc.affine)
-    nibabel.save(out_file,
-                 out_image_path)
+    nibabel.save(out_file,out_image_path)
