@@ -109,7 +109,7 @@ def response_function_serial_2tcm_c1(t: np.ndarray, k1: float, k2: float, k3: fl
     
     .. math::
     
-        f(t) = \frac{k_{1}}{a} \left[ (k_{4}-\alpha_{1})e^{-\alpha_{1}t} + (\alpha_{2}-k_{4})e^{-\alpha_{2}t}\right]
+        f(t) = \frac{k_{1}}{\Delta \alpha} \left[ (k_{4}-\alpha_{1})e^{-\alpha_{1}t} + (\alpha_{2}-k_{4})e^{-\alpha_{2}t}\right]
     
     where
     
@@ -117,7 +117,8 @@ def response_function_serial_2tcm_c1(t: np.ndarray, k1: float, k2: float, k3: fl
     
         a&= k_{2}+k_{3}+k_{4}\\
         \alpha_{1}&=\frac{a-\sqrt{a^{2}-4k_{2}k_{4}}}{2}\\
-        \alpha_{1}&=\frac{a+\sqrt{a^{2}-4k_{2}k_{4}}}{2}
+        \alpha_{1}&=\frac{a+\sqrt{a^{2}-4k_{2}k_{4}}}{2}\\
+        \Delta \alpha&=\alpha_2 - \alpha_1
     
     Args:
         t (np.ndarray): Array containing time-points where :math:`t\geq0`.
@@ -137,8 +138,9 @@ def response_function_serial_2tcm_c1(t: np.ndarray, k1: float, k2: float, k3: fl
     a = k2 + k3 + k4
     alpha_1 = (a - np.sqrt((a ** 2.) - 4.0 * k2 * k4)) / 2.0
     alpha_2 = (a + np.sqrt((a ** 2.) - 4.0 * k2 * k4)) / 2.0
+    delta_a = alpha_2 - alpha_1
     
-    return (k1 / a) * ((k4 - alpha_1) * np.exp(-alpha_1 * t) + (alpha_2 - k4) * np.exp(-alpha_2 * t))
+    return (k1 / delta_a) * ((k4 - alpha_1) * np.exp(-alpha_1 * t) + (alpha_2 - k4) * np.exp(-alpha_2 * t))
 
 
 @numba.njit()
@@ -155,7 +157,8 @@ def response_function_serial_2tcm_c2(t: np.ndarray, k1: float, k2: float, k3: fl
     
         a&= k_{2}+k_{3}+k_{4}\\
         \alpha_{1}&=\frac{a-\sqrt{a^{2}-4k_{2}k_{4}}}{2}\\
-        \alpha_{1}&=\frac{a+\sqrt{a^{2}-4k_{2}k_{4}}}{2}
+        \alpha_{1}&=\frac{a+\sqrt{a^{2}-4k_{2}k_{4}}}{2}\\
+        \Delta \alpha&=\alpha_2 - \alpha_1
 
     Args:
         t (np.ndarray): Array containing time-points where :math:`t\geq0`.
@@ -175,8 +178,9 @@ def response_function_serial_2tcm_c2(t: np.ndarray, k1: float, k2: float, k3: fl
     a = k2 + k3 + k4
     alpha_1 = (a - np.sqrt((a ** 2.) - 4.0 * k2 * k4)) / 2.0
     alpha_2 = (a + np.sqrt((a ** 2.) - 4.0 * k2 * k4)) / 2.0
+    delta_a = alpha_2 - alpha_1
     
-    return (k1 * k3 / a) * (np.exp(-alpha_1 * t) - np.exp(-alpha_2 * t))
+    return (k1 * k3 / delta_a) * (np.exp(-alpha_1 * t) - np.exp(-alpha_2 * t))
 
 
 def generate_tac_1tcm_c1_from_tac(tac_times: np.ndarray,
