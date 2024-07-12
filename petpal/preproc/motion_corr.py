@@ -12,9 +12,7 @@ import ants
 import nibabel
 import numpy as np
 from ..utils import image_io
-from . import image_operations_4d
-
-weighted_series_sum = image_operations_4d.weighted_series_sum
+from ..preproc.image_operations_4d import weighted_series_sum
 
 
 def determine_motion_target(motion_target_option: Union[str,tuple,list],
@@ -155,10 +153,7 @@ def motion_corr(input_image_4d_path: str,
     pet_moco_np = pet_moco_ants.numpy()
     pet_moco_nibabel = ants.to_nibabel(pet_moco_ants)
 
-    copy_meta_path = re.sub('.nii.gz|.nii', '.json', out_image_path)
-    meta_data_dict = image_io.ImageIO.load_metadata_for_nifty_with_same_filename(
-        input_image_4d_path)
-    image_io.write_dict_to_json(meta_data_dict=meta_data_dict, out_path=copy_meta_path)
+    image_io.safe_copy_meta(input_image_path=input_image_4d_path,out_image_path=out_image_path)
 
     nibabel.save(pet_moco_nibabel, out_image_path)
     if verbose:

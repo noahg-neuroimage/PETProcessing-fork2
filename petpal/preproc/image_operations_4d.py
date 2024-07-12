@@ -19,9 +19,7 @@ TODOs:
 import os
 import re
 from scipy.interpolate import interp1d
-from scipy.ndimage import gaussian_filter
 import nibabel
-from nibabel import processing
 import numpy as np
 from ..utils import image_io, math_lib
 
@@ -82,7 +80,7 @@ def weighted_series_sum(input_image_4d_path: str,
     """
     if half_life <= 0:
         raise ValueError('(ImageOps4d): Radioisotope half life is zero or negative.')
-    pet_meta = image_io.ImageIO.load_metadata_for_nifty_with_same_filename(input_image_4d_path)
+    pet_meta = image_io.load_metadata_for_nifty_with_same_filename(input_image_4d_path)
     pet_image = nibabel.load(input_image_4d_path)
     pet_series = pet_image.get_fdata()
     frame_start = pet_meta['FrameTimesStart']
@@ -136,47 +134,14 @@ def weighted_series_sum(input_image_4d_path: str,
     if verbose:
         print(f"(ImageOps4d): weighted sum image saved to {out_image_path}")
 
-    copy_meta_path = re.sub('.nii.gz|.nii', '.json', out_image_path)
-    meta_data_dict = image_io.ImageIO.load_metadata_for_nifty_with_same_filename(input_image_4d_path)
-    image_io.write_dict_to_json(meta_data_dict=meta_data_dict, out_path=copy_meta_path)
+    image_io.safe_copy_meta(input_image_path=input_image_4d_path,
+                            out_image_path=out_image_path)
 
     return pet_sum_image
 
 
-def resample_segmentation(input_image_4d_path: str,
-                          segmentation_image_path: str,
-                          out_seg_path: str,
-                          verbose: bool):
-    """
-    Resamples a segmentation image to the resolution of a 4D PET series image. Takes the affine 
-    information stored in the PET image, and the shape of the image frame data, as well as the 
-    segmentation image, and applies NiBabel's ``resample_from_to`` to resample the segmentation to
-    the resolution of the PET image. This is used for extracting TACs from PET imaging where the 
-    PET and ROI data are registered to the same space, but have different resolutions.
-
-    Args:
-        input_image_4d_path (str): Path to a .nii or .nii.gz file containing a 4D
-            PET image, registered to anatomical space, to which the segmentation file is resampled.
-        segmentation_image_path (str): Path to a .nii or .nii.gz file containing a 3D segmentation
-            image, where integer indices label specific regions.
-        out_seg_path (str): Path to a .nii or .nii.gz file to which the resampled segmentation
-            image is written.
-        verbose (bool): Set to ``True`` to output processing information.
-    """
-    pet_image = nibabel.load(input_image_4d_path)
-    seg_image = nibabel.load(segmentation_image_path)
-    pet_series = pet_image.get_fdata()
-    image_first_frame = pet_series[:, :, :, 0]
-    seg_resampled = processing.resample_from_to(from_img=seg_image,
-                                                to_vox_map=(image_first_frame.shape, pet_image.affine),
-                                                order=0)
-    nibabel.save(seg_resampled, out_seg_path)
-    if verbose:
-        print(f'Resampled segmentation saved to {out_seg_path}')
-
-
-def extract_tac_from_nifty_using_mask(input_image_4d_numpy: str,
-                                      segmentation_image_numpy: str,
+def extract_tac_from_nifty_using_mask(input_image_4d_numpy: np.ndarray,
+                                      segmentation_image_numpy: np.ndarray,
                                       region: int,
                                       verbose: bool) -> np.ndarray:
     """
@@ -220,10 +185,22 @@ def extract_tac_from_nifty_using_mask(input_image_4d_numpy: str,
     tac_out = np.zeros(num_frames, float)
     if verbose:
         print(f'Running TAC for region index {region}')
-    masked_voxels = seg_image == region
+    masked_voxels = (seg_image > region - 0.1) & (seg_image < region + 0.1)
     masked_image = pet_image_4d[masked_voxels].reshape((-1, num_frames))
     tac_out = np.mean(masked_image, axis=0)
     return tac_out
+
+
+def threshold(input_image_numpy: np.ndarray,
+              lower_bound: float=-np.inf,
+              upper_bound: float=np.inf):
+    """
+    Threshold an image above and/or below a pair of values.
+    """
+    bounded_image = np.zeros(input_image_numpy.shape)
+    bounded_image_where = (input_image_numpy > lower_bound) & (input_image_numpy < upper_bound)
+    bounded_image[bounded_image_where] = input_image_numpy[bounded_image_where]
+    return bounded_image
 
 
 def suvr(input_image_path: str,
@@ -267,9 +244,8 @@ def suvr(input_image_path: str,
                                            header=pet_nibabel.header)
     nibabel.save(img=out_image,filename=out_image_path)
 
-    copy_meta_path = re.sub('.nii.gz|.nii', '.json', out_image_path)
-    meta_data_dict = image_io.ImageIO.load_metadata_for_nifty_with_same_filename(input_image_path)
-    image_io.write_dict_to_json(meta_data_dict=meta_data_dict, out_path=copy_meta_path)
+    image_io.safe_copy_meta(input_image_path=input_image_path,
+                            out_image_path=out_image_path)
 
     return out_image
 
@@ -277,15 +253,21 @@ def suvr(input_image_path: str,
 def gauss_blur(input_image_path: str,
                blur_size_mm: float,
                out_image_path: str,
-               verbose: bool):
+               verbose: bool,
+               use_FWHM: bool=True):
     """
-    Blur an image with a 3D Gaussian kernal of a provided size in mm.
-
+    Blur an image with a 3D Gaussian kernal of a provided size in mm. Extracts
+    Gaussian sigma from provided blur size, and voxel sizes in the image
+    header. :py:func:`scipy.ndimage.gaussian_filter` is used to apply blurring.
+    Uses wrapper around :meth:`gauss_blur_computation`.
+    
     Args:
         input_image_path (str): Path to 3D or 4D input image to be blurred.
-        blur_size_mm (float): Size of the Gaussian kernal in mm.
+        blur_size_mm (float): Sigma of the Gaussian kernal in mm.
         out_image_path (str): Path to save the blurred output image.
         verbose (bool): Set to ``True`` to output processing information.
+        use_FWHM (bool): If ``True``, ``blur_size_mm`` is interpreted as the
+            FWHM of the Gaussian kernal, rather than the standard deviation.
 
     Returns:
         out_image (nibabel.nifti1.Nifti1Image): Blurred image in nibabel format.
@@ -294,22 +276,17 @@ def gauss_blur(input_image_path: str,
     input_image = input_nibabel.get_fdata()
     input_zooms = input_nibabel.header.get_zooms()
 
-    sigma_x = blur_size_mm / input_zooms[0]
-    sigma_y = blur_size_mm / input_zooms[1]
-    sigma_z = blur_size_mm / input_zooms[2]
-
-    blur_image = gaussian_filter(input=input_image,
-                                 sigma=(sigma_x,sigma_y,sigma_z),
-                                 axes=(0,1,2))
+    blur_image = math_lib.gauss_blur_computation(input_image=input_image,
+                                                 blur_size_mm=blur_size_mm,
+                                                 input_zooms=input_zooms,
+                                                 use_FWHM=use_FWHM)
 
     out_image = nibabel.nifti1.Nifti1Image(dataobj=blur_image,
                                            affine=input_nibabel.affine,
                                            header=input_nibabel.header)
     nibabel.save(img=out_image,filename=out_image_path)
 
-    copy_meta_path = re.sub('.nii.gz|.nii', '.json', out_image_path)
-    meta_data_dict = image_io.ImageIO.load_metadata_for_nifty_with_same_filename(input_image_path)
-    image_io.write_dict_to_json(meta_data_dict=meta_data_dict, out_path=copy_meta_path)
+    image_io.safe_copy_meta(input_image_path=input_image_path,out_image_path=out_image_path)
 
     return out_image
 
@@ -331,7 +308,7 @@ def roi_tac(input_image_4d_path: str,
         raise ValueError("'time_frame_keyword' must be one of "
                          "'FrameReferenceTime' or 'FrameTimesStart'")
 
-    pet_meta = image_io.ImageIO.load_metadata_for_nifty_with_same_filename(input_image_4d_path)
+    pet_meta = image_io.load_metadata_for_nifty_with_same_filename(input_image_4d_path)
     tac_extraction_func = extract_tac_from_nifty_using_mask
     pet_numpy = nibabel.load(input_image_4d_path).get_fdata()
     seg_numpy = nibabel.load(roi_image_path).get_fdata()
@@ -342,7 +319,7 @@ def roi_tac(input_image_4d_path: str,
                                         region=region,
                                         verbose=verbose)
     region_tac_file = np.array([pet_meta[time_frame_keyword],extracted_tac]).T
-    header_text = f'mean_activity'
+    header_text = 'mean_activity'
     np.savetxt(out_tac_path,region_tac_file,delimiter='\t',header=header_text,comments='')
 
 
@@ -363,7 +340,7 @@ def write_tacs(input_image_4d_path: str,
         raise ValueError("'time_frame_keyword' must be one of "
                          "'FrameReferenceTime' or 'FrameTimesStart'")
 
-    pet_meta = image_io.ImageIO.load_metadata_for_nifty_with_same_filename(input_image_4d_path)
+    pet_meta = image_io.load_metadata_for_nifty_with_same_filename(input_image_4d_path)
     label_map = image_io.ImageIO.read_label_map_tsv(label_map_file=label_map_path)
     regions_abrev = label_map['abbreviation']
     regions_map = label_map['mapping']

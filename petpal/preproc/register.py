@@ -70,9 +70,7 @@ def register_pet(input_reg_image_path: str,
     if verbose:
         print(f'Transformed image saved to {out_image_path}')
 
-    copy_meta_path = re.sub('.nii.gz|.nii', '.json', out_image_path)
-    meta_data_dict = image_io.ImageIO.load_metadata_for_nifty_with_same_filename(input_reg_image_path)
-    image_io.write_dict_to_json(meta_data_dict=meta_data_dict, out_path=copy_meta_path)
+    image_io.safe_copy_meta(input_image_path=input_reg_image_path,out_image_path=out_image_path)
 
 
 def warp_pet_atlas(input_image_path: str,
@@ -128,9 +126,7 @@ def warp_pet_atlas(input_image_path: str,
         print('Computed transform, saving to file.')
     ants.image_write(pet_atlas_xfm,out_image_path)
 
-    copy_meta_path = re.sub('.nii.gz|.nii', '.json', out_image_path)
-    meta_data_dict = image_io.ImageIO.load_metadata_for_nifty_with_same_filename(input_image_path)
-    image_io.write_dict_to_json(meta_data_dict=meta_data_dict, out_path=copy_meta_path)
+    image_io.safe_copy_meta(input_image_path=input_image_path,out_image_path=out_image_path)
 
     return xfm_to_apply
 
@@ -165,9 +161,7 @@ def apply_xfm_ants(input_image_path: str,
 
     ants.image_write(xfm_image,out_image_path)
 
-    copy_meta_path = re.sub('.nii.gz|.nii', '.json', out_image_path)
-    meta_data_dict = image_io.ImageIO.load_metadata_for_nifty_with_same_filename(input_image_path)
-    image_io.write_dict_to_json(meta_data_dict=meta_data_dict, out_path=copy_meta_path)
+    image_io.safe_copy_meta(input_image_path=input_image_path,out_image_path=out_image_path)
 
 
 def apply_xfm_fsl(input_image_path: str,
@@ -204,6 +198,4 @@ def apply_xfm_fsl(input_image_path: str,
                            postmat=postmat_path,
                            **kwargs)
 
-    copy_meta_path = re.sub('.nii.gz|.nii', '.json', out_image_path)
-    meta_data_dict = image_io.ImageIO.load_metadata_for_nifty_with_same_filename(input_image_path)
-    image_io.write_dict_to_json(meta_data_dict=meta_data_dict, out_path=copy_meta_path)
+    image_io.safe_copy_meta(input_image_path=input_image_path,out_image_path=out_image_path)

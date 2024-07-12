@@ -4,18 +4,19 @@ neuroimaging data for a PET study. Acts as a wrapper for other tools supplied
 in ``PETPAL``.
 
 TODO:
-    * Check if input files exist, throw error if no
+    * Check if input files exist, throw error if no.
+    * Verify images have the same shape and orientation.
 
 """
 import os
 import json
-from . import register, image_operations_4d, motion_corr
 from ..visualizations import qc_plots
+from . import register, image_operations_4d, motion_corr, segmentation_tools
 
 weighted_series_sum = image_operations_4d.weighted_series_sum
 write_tacs = image_operations_4d.write_tacs
 roi_tac = image_operations_4d.roi_tac
-resample_segmentation = image_operations_4d.resample_segmentation
+resample_segmentation = segmentation_tools.resample_segmentation
 suvr = image_operations_4d.suvr
 gauss_blur = image_operations_4d.gauss_blur
 register_pet = register.register_pet
@@ -40,7 +41,10 @@ _PREPROC_PROPS_ = {'FilePathWSSInput': None,
                    'FilePathWarpRef': None,
                    'FilePathWarp': None,
                    'FilePathAntsXfms': None,
+                   'FreeSurferSubjectDir': None, 
                    'HalfLife': None,
+                   'StartTimeWSS': 0,
+                   'EndTimeWSS': -1,
                    'MotionTarget': None,
                    'MocoPars': None,
                    'RegPars': None,
@@ -61,7 +65,8 @@ _REQUIRED_KEYS_ = {
     'suvr': ['FilePathSUVRInput','FilePathSeg','RefRegion','Verbose'],
     'gauss_blur': ['FilePathBlurInput','BlurSize','Verbose'],
     'apply_xfm_ants': ['FilePathWarpInput','FilePathWarpRef','FilePathAntsXfms','Verbose'],
-    'apply_xfm_fsl': ['FilePathWarpInput','FilePathWarpRef','FilePathWarp','FilePathFSLPremat','FilePathFSLPostmat','Verbose']
+    'apply_xfm_fsl': ['FilePathWarpInput','FilePathWarpRef','FilePathWarp','FilePathFSLPremat','FilePathFSLPostmat','Verbose'],
+    'vat_wm_ref_region': ['FreeSurferSubjectDir']
 }
 
 
@@ -79,18 +84,19 @@ class PreProc():
           dictionary ``preproc_props``.
 
     Attributes:
-        output_directory (str): Directory in which files are written to.
-        output_filename_prefix (str)`: Prefix appended to beginning of written files.
-        preproc_props (dict): Properties dictionary used to set parameters for PET preprocessing.
-            See :meth:`_init_preproc_props` for further details.
+        -`output_directory`: Directory in which files are written to.
+        -`output_filename_prefix`: Prefix appended to beginning of written
+         files.
+        -`preproc_props`: Properties dictionary used to set parameters for PET
+         preprocessing. See :meth:`_init_preproc_props` for further details.
 
     Example:
 
     .. code-block:: python
-    
+
         output_directory = '/path/to/processing'
         output_filename_prefix = 'sub-01'
-        sub_01 = petpal.preproc.PreProc(output_directory,output_filename_prefix)
+        sub_01 = pet_cli.preproc.PreProc(output_directory,output_filename_prefix)
         params = {
             'FilePathWSSInput': '/path/to/pet.nii.gz',
             'FilePathAnat': '/path/to/mri.nii.gz',
@@ -139,30 +145,30 @@ class PreProc():
 
         The available fields in the preproc properties dictionary are described
         as follows:
-            * FilePathWSSInput (str): Path to file on which to compute weighted series sum.
-            * FilePathMocoInp (str): Path to PET file to be motion corrected.
-            * FilePathRegInp (str): Path to PET file to be registered to anatomical data.
-            * FilePathAnat (str): Path to anatomical image to which ``FilePathRegInp`` is registered.
-            * FilePathTACInput (str): Path to PET file with which TACs are computed.
-            * FilePathSeg (str): Path to a segmentation image in anatomical space.
-            * FilePathLabelMap (str): Path to a label map file, indexing segmentation values to ROIs.
-            * FilePathAtlas (str): Path to atlas image, e.g. MNI152 T1 atlas.
-            * FilePathSUVRInput (str): Path to summed or parametric image on which to normalize to SUVR.
-            * FilePathBlurInput (str): Path to image to blur with a gaussian kernal.
-            * FilePathFSLPremat (str): Path to initial affine transform matrix in FSL format, used for FSL type warping.
-            * FilePathFSLPostmat (str): Path to post-warp affine transform matrix in FSL format, used for FSL type warping.
-            * FilePathWarpRef (str): Path to reference used to compute warp to atlas space. Typically anatomical scan.
-            * FilePathAntsXfm (str): Path to list of Ants transforms used to apply ANTs type warping.
-            * HalfLife (float): Half life of radioisotope. Used for a number of tools.
-            * MotionTarget (str | tuple): Target for transformation methods. See :meth:`determine_motion_target`.
-            * MocoPars (keyword arguments): Keyword arguments fed into the method call :meth:`ants.motion_correction`.
-            * RegPars (keyword arguments): Keyword arguments fed into the method call :meth:`ants.registration` while performing PET to anat registration.
-            * WarpPars (keyword arguments): Keyword arguments fed into the method call :meth:`ants.registration` while performing PET to atlas registration. 
-            * RefRegion (int): Reference region used to normalize SUVR.
-            * BlurSize (float): Size of gaussian kernal used to blur image.
-            * RegionExtract (int): Region index in the segmentation image to extract TAC from, if running TAC on a single ROI.
-            * TimeFrameKeyword (str): Keyword in metadata file corresponding to frame timing array to be used in analysis.
-            * Verbose (bool): Set to ``True`` to output processing information.
+        * FilePathWSSInput (str): Path to file on which to compute weighted series sum.
+        * FilePathMocoInp (str): Path to PET file to be motion corrected.
+        * FilePathRegInp (str): Path to PET file to be registered to anatomical data.
+        * FilePathAnat (str): Path to anatomical image to which ``FilePathRegInp`` is registered.
+        * FilePathTACInput (str): Path to PET file with which TACs are computed.
+        * FilePathSeg (str): Path to a segmentation image in anatomical space.
+        * FilePathLabelMap (str): Path to a label map file, indexing segmentation values to ROIs.
+        * FilePathAtlas (str): Path to atlas image, e.g. MNI152 T1 atlas.
+        * FilePathSUVRInput (str): Path to summed or parametric image on which to normalize to SUVR.
+        * FilePathBlurInput (str): Path to image to blur with a gaussian kernal.
+        * FilePathFSLPremat (str): Path to initial affine transform matrix in FSL format, used for FSL type warping.
+        * FilePathFSLPostmat (str): Path to post-warp affine transform matrix in FSL format, used for FSL type warping.
+        * FilePathWarpRef (str): Path to reference used to compute warp to atlas space. Typically anatomical scan.
+        * FilePathAntsXfm (str): Path to list of Ants transforms used to apply ANTs type warping.
+        * HalfLife (float): Half life of radioisotope. Used for a number of tools.
+        * MotionTarget (str | tuple): Target for transformation methods. See :meth:`determine_motion_target`.
+        * MocoPars (keyword arguments): Keyword arguments fed into the method call :meth:`ants.motion_correction`.
+        * RegPars (keyword arguments): Keyword arguments fed into the method call :meth:`ants.registration` while performing PET to anat registration.
+        * WarpPars (keyword arguments): Keyword arguments fed into the method call :meth:`ants.registration` while performing PET to atlas registration. 
+        * RefRegion (int): Reference region used to normalize SUVR.
+        * BlurSize (float): Size of gaussian kernal used to blur image.
+        * RegionExtract (int): Region index in the segmentation image to extract TAC from, if running TAC on a single ROI.
+        * TimeFrameKeyword (str): Keyword in metadata file corresponding to frame timing array to be used in analysis.
+        * Verbose (bool): Set to ``True`` to output processing information.
 
         """
         return _PREPROC_PROPS_
@@ -228,16 +234,12 @@ class PreProc():
         """
         preproc_props = self.preproc_props
         existing_keys = [*preproc_props]
+        accepted_keys = [*_REQUIRED_KEYS_]
 
         try:
             required_keys = _REQUIRED_KEYS_[method_name]
         except KeyError as e:
-            raise KeyError("Invalid method_name! Must be either "
-                           "'weighted_series_sum', 'motion_corr', "
-                           "'register_pet', 'resample_segmentation', "
-                           "'roi_tac', "
-                           "'warp_pet_atlas', 'suvr', 'gauss_blur' or "
-                           f"'write_tacs'. Got {method_name}")
+            raise KeyError(f"Invalid method_name! Must be one of: {accepted_keys} . Got '{method_name}'")
 
         for key in required_keys:
             if preproc_props[key] is None:
@@ -282,6 +284,8 @@ class PreProc():
             weighted_series_sum(input_image_4d_path=preproc_props['FilePathWSSInput'],
                                 out_image_path=outfile,
                                 half_life=preproc_props['HalfLife'],
+                                start_time=preproc_props['StartTimeWSS'],
+                                end_time=preproc_props['EndTimeWSS'],
                                 verbose=preproc_props['Verbose'])
 
         elif method_name=='motion_corr':
@@ -374,5 +378,19 @@ class PreProc():
                        blur_size_mm=preproc_props['BlurSize'],
                        out_image_path=outfile,
                        verbose=preproc_props['Verbose'])
+            
+        elif method_name=='vat_wm_ref_region':
+            out_ref_region = self._generate_outfile_path(method_short='wm-ref')
+            segmentation_tools.vat_wm_ref_region(
+                input_segmentation_path=f"{preproc_props['FreeSurferSubjectDir']}/aparc+aseg.mgz",
+                out_segmentation_path=out_ref_region
+            )
+            outfile = self._generate_outfile_path(method_short='wm-merged')
+            segmentation_tools.vat_wm_region_merge(
+                wmparc_segmentation_path=f"{preproc_props['FreeSurferSubjectDir']}/aparc+aseg.mgz",
+                bs_segmentation_path=f"{preproc_props['FreeSurferSubjectDir']}/brainstemSsLabels.v13.FSvoxelSpace.mgz",
+                wm_ref_segmentation_path=out_ref_region,
+                out_image_path=outfile
+            )
 
         return None
