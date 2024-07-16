@@ -72,9 +72,9 @@ from ..kinetic_modeling.reference_tissue_models import RTMAnalysis
 _RTM_EXAMPLES_ = (r"""
 Examples:
   - FRTM (4 parameters: R1, k2, k3, k4):
-    petpal-rtms frtm --ref-tac-path /path/to/ref/tac --roi-tac-path /path/to/roi/tac --prefix sub_001 --print --initial-guesses 0.1 0.1 0.1 0.1 0.1 --lower-bounds 0.0 0.0 0.0 0.0 0.0 --upper-bounds 5.0 5.0 5.0 5.0 5.0
+    petpal-rtms frtm --ref-tac-path /path/to/ref/tac --roi-tac-path /path/to/roi/tac --prefix sub_001 --print --initial-guesses 0.1 0.1 0.1 0.1 --lower-bounds 0.0 0.0 0.0 0.0 --upper-bounds 5.0 5.0 5.0 5.0
   - SRTM (3 parameters: R1, k2, BP):
-    petpal-rtms srtm --ref-tac-path /path/to/ref/tac --roi-tac-path /path/to/roi/tac --prefix sub_001 --print --initial-guesses 0.1 0.1 0.1 0.1 0.1 --lower-bounds 0.0 0.0 0.0 0.0 --upper-bounds 5.0 5.0 5.0 5.0
+    petpal-rtms srtm --ref-tac-path /path/to/ref/tac --roi-tac-path /path/to/roi/tac --prefix sub_001 --print --initial-guesses 0.1 0.1 0.1 --lower-bounds 0.0 0.0 0.0 --upper-bounds 5.0 5.0 5.0
   - FRTM2 (3 parameters: R1, k3, k4):
     petpal-rtms frtm2 --ref-tac-path /path/to/ref/tac --roi-tac-path /path/to/roi/tac --k2-prime 0.5 --prefix sub_001 --print --initial-guesses 0.1 0.1 0.1 0.1 --lower-bounds 0.0 0.0 0.0 0.0 --upper-bounds 5.0 5.0 5.0 5.0
   - SRTM2 (2 parameters: R1, BP):
@@ -159,6 +159,10 @@ def parse_args():
     
     for a_parser in parser_list[:]:
         add_common_args(a_parser)
+        if a_parser.prog.endswith('2'):
+            a_parser.add_argument('-k', '--k2-prime', required=True, type=float,
+                                  help='k2_prime value for the reduced RTM analysis.')
+            
         if 'mrtm' in a_parser.prog:
             a_parser.add_argument('-t', '--t-thresh-in-mins', required=True, type=float,
                                   help='Threshold time in minutes for the MRTM analyses.')
@@ -169,9 +173,6 @@ def parse_args():
                                       help="Lower bounds for each fitting parameter.")
             a_parser.add_argument("-u", "--upper-bounds", required=False, nargs='+', type=float,
                                       help="Upper bounds for each fitting parameter.")
-        if a_parser.prog.endswith('2'):
-            a_parser.add_argument('-k', '--k2-prime', required=True, type=float,
-                                  help='k2_prime value for the reduced RTM analysis.')
 
     return parser.parse_args()
 
@@ -258,7 +259,10 @@ def main():
                               k2_prime=getattr(args, 'k2_prime', None))
     else:
         bounds = _generate_bounds(initial=args.initial_guesses, lower=args.lower_bounds, upper=args.upper_bounds)
-        analysis.run_analysis(bounds=bounds)
+        if args.method.endswith('2'):
+            analysis.run_analysis(bounds=bounds, k2_prime=getattr(args, 'k2_prime', None))
+        else:
+            analysis.run_analysis(bounds=bounds)
     
     analysis.save_analysis()
 
