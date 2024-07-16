@@ -1513,12 +1513,16 @@ class RTMAnalysis:
             format_func =  self._get_pretty_srtm_fit_param_vals
         else:
             format_func = self._get_pretty_frtm_fit_param_vals
-            
-        self.analysis_props["FitValues"] = format_func(fit_params.round(5))
-        self.analysis_props["FitStdErr"] = format_func(fit_stderr.round(5))
+        
+        if self.method.endswith('2'):
+            self.analysis_props["FitValues"] = format_func(fit_params.round(5), True)
+            self.analysis_props["FitStdErr"] = format_func(fit_stderr.round(5), True)
+        else:
+            self.analysis_props["FitValues"] = format_func(fit_params.round(5), False)
+            self.analysis_props["FitStdErr"] = format_func(fit_stderr.round(5), False)
     
     @staticmethod
-    def _get_pretty_srtm_fit_param_vals(param_fits: np.ndarray) -> dict:
+    def _get_pretty_srtm_fit_param_vals(param_fits: np.ndarray, reduced: bool = False) -> dict:
         r"""
         Utility function to get nicely formatted fit parameters for 'srtm' analysis.
 
@@ -1530,10 +1534,13 @@ class RTMAnalysis:
         Returns:
             dict: Dictionary of fit parameters and their corresponding values.
         """
-        return {name: val for name, val in zip(['R1', 'k2', 'BP'], param_fits)}
+        if reduced:
+            return {name: val for name, val in zip(['R1', 'BP'], param_fits)}
+        else:
+            return {name: val for name, val in zip(['R1', 'k2', 'BP'], param_fits)}
     
     @staticmethod
-    def _get_pretty_frtm_fit_param_vals(param_fits: np.ndarray) -> dict:
+    def _get_pretty_frtm_fit_param_vals(param_fits: np.ndarray, reduced: bool = False) -> dict:
         r"""
         Utility function to get nicely formatted fit parameters for 'frtm' analysis.
 
@@ -1545,4 +1552,7 @@ class RTMAnalysis:
         Returns:
             dict: Dictionary of fit parameters and their corresponding values.
         """
-        return {name: val for name, val in zip(['R1', 'k2', 'k3', 'k4'], param_fits)}
+        if reduced:
+            return {name: val for name, val in zip(['R1', 'k3', 'k4'], param_fits)}
+        else:
+            return {name: val for name, val in zip(['R1', 'k2', 'k3', 'k4'], param_fits)}
