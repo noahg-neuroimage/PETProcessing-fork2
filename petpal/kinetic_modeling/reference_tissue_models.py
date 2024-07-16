@@ -452,6 +452,51 @@ def fit_frtm_to_tac(tgt_tac_vals: np.ndarray,
     return sp_fit(f=_fitting_frtm, xdata=ref_tac_times, ydata=tgt_tac_vals, p0=starting_values)
 
 
+def fit_frtm_to_tac(tgt_tac_vals: np.ndarray,
+                    ref_tac_times: np.ndarray,
+                    ref_tac_vals: np.ndarray,
+                    k2_prime: float = 0.5,
+                    r1_start: float = 0.5,
+                    k3_start: float = 0.5,
+                    k4_start: float = 0.5) -> tuple:
+    r"""
+    Fit FRTM2 to the provided target Time Activity Curve (TAC), given the reference TAC, times, and starting guesses for
+    the kinetic parameters.
+
+    .. important::
+        This function assumes that the reference TAC is uniformly sampled with respect to time since we perform
+        convolutions.
+
+    This is a simple wrapper around :func:`scipy.optimize.curve_fit` and does not use any bounds for the different
+    parameters.
+
+    Args:
+        tgt_tac_vals (np.ndarray): Target TAC to fit with the SRTM.
+        ref_tac_times (np.ndarray): Reference TAC values.
+        ref_tac_vals (np.ndarray): Reference (and Target) TAC times.
+        k2_prime (float): Value for the :math:`k_2^\prime` parameter. Defaults to 0.5.
+        r1_start (float): Starting guess for the :math:`R_1\equiv\frac{k_1^\prime}{k_1}` parameter.
+        k3_start (float): Starting guess for :math:`k_3` parameter.
+        k4_start (float): Starting guess for :math:`k_4` parameter.
+
+    Returns:
+        tuple: (``fit_parameters``, ``fit_covariance``). Output from :func:`scipy.optimize.curve_fit`
+
+    Raises:
+        AssertionError: If the reference TAC and times are different dimensions.
+
+    See Also:
+        * :func:`calc_frtm_tac`
+
+    """
+    
+    def _fitting_frtm(tac_times, r1, k3, k4):
+        return calc_frtm_tac(tac_times=tac_times, ref_tac_vals=ref_tac_vals, r1=r1, k2=k2_prime, k3=k3, k4=k4)
+    
+    starting_values = (r1_start, k3_start, k4_start)
+    return sp_fit(f=_fitting_frtm, xdata=ref_tac_times, ydata=tgt_tac_vals, p0=starting_values)
+
+
 def fit_frtm_to_tac_with_bounds(tgt_tac_vals: np.ndarray,
                                 ref_tac_times: np.ndarray,
                                 ref_tac_vals: np.ndarray,
@@ -500,6 +545,55 @@ def fit_frtm_to_tac_with_bounds(tgt_tac_vals: np.ndarray,
     return sp_fit(f=_fitting_frtm, xdata=ref_tac_times, ydata=tgt_tac_vals,
                   p0=st_values, bounds=[lo_values, hi_values])
 
+
+def fit_frtm2_to_tac_with_bounds(tgt_tac_vals: np.ndarray,
+                                 ref_tac_times: np.ndarray,
+                                 ref_tac_vals: np.ndarray,
+                                 k2_prime: np.ndarray = 0.5,
+                                 r1_bounds: np.ndarray = np.asarray([0.5, 0.0, 10.0]),
+                                 k3_bounds: np.ndarray = np.asarray([0.5, 0.0, 10.0]),
+                                 k4_bounds: np.ndarray = np.asarray([0.5, 0.0, 10.0])) -> tuple:
+    r"""
+    Fit FRTM2 to the provided target Time Activity Curve (TAC), given the reference TAC, times, and bounds for
+    the kinetic parameters.
+
+    .. important::
+        This function assumes that the reference TAC is uniformly sampled with respect to time since we perform
+        convolutions.
+
+    This function is a wrapper around `scipy.optimize.curve_fit` and uses parameter bounds during optimization. The
+    bounds for each parameter are formatted as: ``(starting_value, lo_bound, hi_bound)``.
+
+    Args:
+        tgt_tac_vals (np.ndarray): Target TAC to fit with the SRTM.
+        ref_tac_times (np.ndarray): Times of the reference TAC data.
+        ref_tac_vals (np.ndarray): Reference TAC values.
+        k2_prime (float): The value for the :math:`k_2^\prime` parameter. Defaults to 0.5.
+        r1_bounds (np.ndarray): The bounds for the :math:`R_1\equiv\frac{k_1^\prime}{k_1}` parameter.
+        Defaults to [0.5, 0.0, 10.0].
+        k3_bounds (np.ndarray): The bounds for :math:`k_3` parameter. Defaults to [0.5, 0.0, 10.0].
+        k4_bounds (np.ndarray): The bounds for :math:`k_4` parameter. Defaults to [0.5, 0.0, 10.0].
+
+    Returns:
+        tuple: (``fit_parameters``, ``fit_covariance``). Output from `scipy.optimize.curve_fit`.
+
+    Raises:
+        AssertionError: If the target TAC and times are different dimensions.
+
+    See Also:
+        * :func:`calc_frtm_tac`
+        * :func:`fit_frtm2_to_tac`
+
+    """
+    
+    def _fitting_frtm(tac_times, r1, k3, k4):
+        return calc_frtm_tac(tac_times=tac_times, ref_tac_vals=ref_tac_vals, r1=r1, k2=k2_prime, k3=k3, k4=k4)
+    
+    st_values = (r1_bounds[0], k3_bounds[0], k4_bounds[0])
+    lo_values = (r1_bounds[1], k3_bounds[1], k4_bounds[1])
+    hi_values = (r1_bounds[2], k3_bounds[2], k4_bounds[2])
+    
+    return sp_fit(f=_fitting_frtm, xdata=ref_tac_times, ydata=tgt_tac_vals, p0=st_values, bounds=[lo_values, hi_values])
 
 @numba.njit(fastmath=True)
 def fit_mrtm_original_to_tac(tgt_tac_vals: np.ndarray,
