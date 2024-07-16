@@ -1327,7 +1327,8 @@ class RTMAnalysis:
                 **common_props
                 }
         else:
-            raise ValueError(f"Invalid method! Must be either 'srtm', 'frtm', 'mrtm-original', 'mrtm' or 'mrtm2'")
+            raise ValueError(f"Invalid method! Must be either 'srtm', 'frtm', 'srtm2', 'frtm2', "
+                             f"'mrtm-original', 'mrtm' or 'mrtm2'")
         return props
     
     def run_analysis(self,
@@ -1525,7 +1526,7 @@ class RTMAnalysis:
     @staticmethod
     def _get_pretty_srtm_fit_param_vals(param_fits: np.ndarray, reduced: bool = False) -> dict:
         r"""
-        Utility function to get nicely formatted fit parameters for 'srtm' analysis.
+        Utility function to get nicely formatted fit parameters for 'srtm(2)' analysis.
 
         Returns a dictionary with keys: 'R1', 'k2', and 'BP' and the corresponding values from ``param_fits``.
 
@@ -1543,7 +1544,7 @@ class RTMAnalysis:
     @staticmethod
     def _get_pretty_frtm_fit_param_vals(param_fits: np.ndarray, reduced: bool = False) -> dict:
         r"""
-        Utility function to get nicely formatted fit parameters for 'frtm' analysis.
+        Utility function to get nicely formatted fit parameters for 'frtm(2)' analysis.
 
         Returns a dictionary with keys: 'R1', 'k2', 'k3', and 'k4' and the corresponding values from ``param_fits``.
 
