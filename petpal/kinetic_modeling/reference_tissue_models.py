@@ -1438,7 +1438,7 @@ class RTMAnalysis:
             None
         """
         if self.method.startswith("frtm") or self.method.startswith("srtm"):
-            self._calc_frtm_or_srtm_fit_props(fit_results=fit_results)
+            self._calc_frtm_or_srtm_fit_props(fit_results=fit_results, k2_prime=k2_prime)
         else:
             self._calc_mrtm_fit_props(fit_results=fit_results,
                                       k2_prime=k2_prime,
@@ -1495,7 +1495,7 @@ class RTMAnalysis:
         self.analysis_props['EndFrameTime'] = ref_tac_times[-1]
         self.analysis_props['NumberOfPointsFit'] = len(ref_tac_times[t_thresh_index:])
     
-    def _calc_frtm_or_srtm_fit_props(self, fit_results: tuple[np.ndarray, np.ndarray]):
+    def _calc_frtm_or_srtm_fit_props(self, fit_results: tuple[np.ndarray, np.ndarray], k2_prime: float):
         r"""
         Internal function used to calculate additional fitting properties for 'frtm' and 'srtm' type analyses.
 
@@ -1515,6 +1515,7 @@ class RTMAnalysis:
             format_func = self._get_pretty_frtm_fit_param_vals
         
         if self.method.endswith('2'):
+            self.analysis_props["k2Prime"] = k2_prime
             self.analysis_props["FitValues"] = format_func(fit_params.round(5), True)
             self.analysis_props["FitStdErr"] = format_func(fit_stderr.round(5), True)
         else:
