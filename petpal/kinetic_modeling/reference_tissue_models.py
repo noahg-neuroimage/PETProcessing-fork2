@@ -266,6 +266,52 @@ def fit_srtm_to_tac(tgt_tac_vals: np.ndarray,
     return sp_fit(f=_fitting_srtm, xdata=ref_tac_times, ydata=tgt_tac_vals, p0=starting_values)
 
 
+def fit_srtm2_to_tac(tgt_tac_vals: np.ndarray,
+                     ref_tac_times: np.ndarray,
+                     ref_tac_vals: np.ndarray,
+                     k2_prime: float = 0.5,
+                     r1_start: float = 0.5,
+                     bp_start: float = 0.5) -> tuple:
+    r"""
+    Fit SRTM to the provided target Time Activity Curve (TAC), given the reference TAC, times, and starting guesses for
+    the kinetic parameters.
+
+    .. important::
+        This function assumes that the reference TAC is uniformly sampled with respect to time since we perform
+        convolutions.
+
+    This is a simple wrapper around :func:`scipy.optimize.curve_fit` and does not use any bounds for the different
+    parameters.
+
+    Args:
+        tgt_tac_vals (np.ndarray): Target TAC to fit with the SRTM.
+        ref_tac_times (np.ndarray): Reference TAC values.
+        ref_tac_vals (np.ndarray): Reference (and Target) TAC times.
+        k2_prime (float): The :math:`k_2^\prime` value.`
+        r1_start (float): Starting guess for the :math:`R_1\equiv\frac{k_1^\prime}{k_1}` parameter.
+        bp_start (float): Starting guess for the binding potential.
+
+    Returns:
+        tuple: (``fit_parameters``, ``fit_covariance``). Output from :func:`scipy.optimize.curve_fit`
+
+    Raises:
+        AssertionError: If the reference TAC and times are different dimensions.
+
+    See Also:
+        * :func:`calc_srtm_tac`
+        * :func:`fit_srtm_to_tac`
+
+    """
+    
+    def _fitting_srtm(tac_times, r1, bp):
+        return calc_srtm_tac(tac_times=tac_times, ref_tac_vals=ref_tac_vals, r1=r1, k2=k2_prime, bp=bp)
+    
+    starting_values = [r1_start, bp_start]
+    
+    return sp_fit(f=_fitting_srtm, xdata=ref_tac_times, ydata=tgt_tac_vals, p0=starting_values)
+
+
+
 def fit_srtm_to_tac_with_bounds(tgt_tac_vals: np.ndarray,
                                 ref_tac_times: np.ndarray,
                                 ref_tac_vals: np.ndarray,
