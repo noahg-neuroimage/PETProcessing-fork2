@@ -150,8 +150,8 @@ def parse_args():
             a_parser.add_argument("-u", "--upper-bounds", required=False, nargs='+', type=float,
                                       help="Upper bounds for each fitting parameter.")
         if a_parser.prog.endswith('2'):
-            parser_mrtm_2.add_argument('-k', '--k2-prime', required=True, type=float,
-                                       help='k2_prime value for the reduced RTM analysis.')
+            a_parser.add_argument('-k', '--k2-prime', required=True, type=float,
+                                  help='k2_prime value for the reduced RTM analysis.')
 
     return parser.parse_args()
 

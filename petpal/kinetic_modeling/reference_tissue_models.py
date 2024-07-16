@@ -1156,12 +1156,12 @@ class FitTACWithRTMs:
         elif self.method == "frtm2":
             if self.bounds is not None:
                 self.fit_results = fit_frtm2_to_tac_with_bounds(tgt_tac_vals=self.target_tac_vals,
-                                                               ref_tac_times=self.reference_tac_times,
-                                                               ref_tac_vals=self.reference_tac_vals,
-                                                               k2_prime=self.k2_prime,
-                                                               r1_bounds=self.bounds[0],
-                                                               k3_bounds=self.bounds[1],
-                                                               k4_bounds=self.bounds[2])
+                                                                ref_tac_times=self.reference_tac_times,
+                                                                ref_tac_vals=self.reference_tac_vals,
+                                                                k2_prime=self.k2_prime,
+                                                                r1_bounds=self.bounds[0],
+                                                                k3_bounds=self.bounds[1],
+                                                                k4_bounds=self.bounds[2])
             else:
                 self.fit_results = fit_frtm2_to_tac(tgt_tac_vals=self.target_tac_vals,
                                                     ref_tac_times=self.reference_tac_times,
