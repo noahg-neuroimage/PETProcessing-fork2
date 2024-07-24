@@ -266,6 +266,52 @@ def fit_srtm_to_tac(tgt_tac_vals: np.ndarray,
     return sp_fit(f=_fitting_srtm, xdata=ref_tac_times, ydata=tgt_tac_vals, p0=starting_values)
 
 
+def fit_srtm2_to_tac(tgt_tac_vals: np.ndarray,
+                     ref_tac_times: np.ndarray,
+                     ref_tac_vals: np.ndarray,
+                     k2_prime: float = 0.5,
+                     r1_start: float = 0.5,
+                     bp_start: float = 0.5) -> tuple:
+    r"""
+    Fit SRTM2 to the provided target Time Activity Curve (TAC), given the reference TAC, times, and starting guesses for
+    the kinetic parameters.
+
+    .. important::
+        This function assumes that the reference TAC is uniformly sampled with respect to time since we perform
+        convolutions.
+
+    This is a simple wrapper around :func:`scipy.optimize.curve_fit` and does not use any bounds for the different
+    parameters.
+
+    Args:
+        tgt_tac_vals (np.ndarray): Target TAC to fit with the SRTM2.
+        ref_tac_times (np.ndarray): Reference TAC values.
+        ref_tac_vals (np.ndarray): Reference (and Target) TAC times.
+        k2_prime (float): The :math:`k_2^\prime` value.` Defaults to 0.5.
+        r1_start (float): Starting guess for the :math:`R_1\equiv\frac{k_1^\prime}{k_1}` parameter.
+        bp_start (float): Starting guess for the binding potential.
+
+    Returns:
+        tuple: (``fit_parameters``, ``fit_covariance``). Output from :func:`scipy.optimize.curve_fit`
+
+    Raises:
+        AssertionError: If the reference TAC and times are different dimensions.
+
+    See Also:
+        * :func:`calc_srtm_tac`
+        * :func:`fit_srtm_to_tac`
+
+    """
+    
+    def _fitting_srtm(tac_times, r1, bp):
+        return calc_srtm_tac(tac_times=tac_times, ref_tac_vals=ref_tac_vals, r1=r1, k2=k2_prime, bp=bp)
+    
+    starting_values = [r1_start, bp_start]
+    
+    return sp_fit(f=_fitting_srtm, xdata=ref_tac_times, ydata=tgt_tac_vals, p0=starting_values)
+
+
+
 def fit_srtm_to_tac_with_bounds(tgt_tac_vals: np.ndarray,
                                 ref_tac_times: np.ndarray,
                                 ref_tac_vals: np.ndarray,
@@ -313,6 +359,55 @@ def fit_srtm_to_tac_with_bounds(tgt_tac_vals: np.ndarray,
                   p0=st_values, bounds=[lo_values, hi_values])
 
 
+def fit_srtm2_to_tac_with_bounds(tgt_tac_vals: np.ndarray,
+                                 ref_tac_times: np.ndarray,
+                                 ref_tac_vals: np.ndarray,
+                                 k2_prime: float = 0.5,
+                                 r1_bounds: np.ndarray = np.asarray([0.5, 0.0, 10.0]),
+                                 bp_bounds: np.ndarray = np.asarray([0.5, 0.0, 10.0])) -> tuple:
+    r"""
+    Fit SRTM2 to the provided target Time Activity Curve (TAC), given the reference TAC, times, and bounds for
+    the kinetic parameters.
+
+    .. important::
+        This function assumes that the reference TAC is uniformly sampled with respect to time since we perform
+        convolutions.
+
+    This function is a wrapper around `scipy.optimize.curve_fit` and uses parameter bounds during optimization. The
+    bounds for each parameter are formatted as: ``(starting_value, lo_bound, hi_bound)``.
+
+    Args:
+        tgt_tac_vals (np.ndarray): Target TAC to fit with the SRTM2.
+        ref_tac_times (np.ndarray): Times of the reference TAC data.
+        ref_tac_vals (np.ndarray): Reference TAC values.
+        k2_prime (int): The value for :math:`k_2^\prime`. Defaults to 0.5.
+        r1_bounds (np.ndarray): The bounds for the :math:`R_1\equiv\frac{k_1^\prime}{k_1}` parameter.
+        Defaults to [0.5, 0.0, 10.0].
+        bp_bounds (np.ndarray): The bounds for the binding potential parameter. Defaults to [0.5, 0.0, 10.0].
+
+    Returns:
+        tuple: (``fit_parameters``, ``fit_covariance``). Output from `scipy.optimize.curve_fit`.
+
+    Raises:
+        AssertionError: If the target TAC and times are different dimensions.
+
+    See Also:
+        * :func:`calc_srtm_tac`
+        * :func:`fit_srtm2_tac`
+        * :func:`fit_srtm_to_tac_with_bounds`
+
+    """
+    
+    def _fitting_srtm(tac_times, r1, bp):
+        return calc_srtm_tac(tac_times=tac_times, ref_tac_vals=ref_tac_vals, r1=r1, k2=k2_prime, bp=bp)
+    
+    st_values = (r1_bounds[0], bp_bounds[0])
+    lo_values = (r1_bounds[1], bp_bounds[1])
+    hi_values = (r1_bounds[2], bp_bounds[2])
+    
+    return sp_fit(f=_fitting_srtm, xdata=ref_tac_times, ydata=tgt_tac_vals, p0=st_values, bounds=[lo_values, hi_values])
+
+
 def fit_frtm_to_tac(tgt_tac_vals: np.ndarray,
                     ref_tac_times: np.ndarray,
                     ref_tac_vals: np.ndarray,
@@ -354,6 +449,51 @@ def fit_frtm_to_tac(tgt_tac_vals: np.ndarray,
         return calc_frtm_tac(tac_times=tac_times, ref_tac_vals=ref_tac_vals, r1=r1, k2=k2, k3=k3, k4=k4)
 
     starting_values = (r1_start, k2_start, k3_start, k4_start)
+    return sp_fit(f=_fitting_frtm, xdata=ref_tac_times, ydata=tgt_tac_vals, p0=starting_values)
+
+
+def fit_frtm2_to_tac(tgt_tac_vals: np.ndarray,
+                    ref_tac_times: np.ndarray,
+                    ref_tac_vals: np.ndarray,
+                    k2_prime: float = 0.5,
+                    r1_start: float = 0.5,
+                    k3_start: float = 0.5,
+                    k4_start: float = 0.5) -> tuple:
+    r"""
+    Fit FRTM2 to the provided target Time Activity Curve (TAC), given the reference TAC, times, and starting guesses for
+    the kinetic parameters.
+
+    .. important::
+        This function assumes that the reference TAC is uniformly sampled with respect to time since we perform
+        convolutions.
+
+    This is a simple wrapper around :func:`scipy.optimize.curve_fit` and does not use any bounds for the different
+    parameters.
+
+    Args:
+        tgt_tac_vals (np.ndarray): Target TAC to fit with the SRTM.
+        ref_tac_times (np.ndarray): Reference TAC values.
+        ref_tac_vals (np.ndarray): Reference (and Target) TAC times.
+        k2_prime (float): Value for the :math:`k_2^\prime` parameter. Defaults to 0.5.
+        r1_start (float): Starting guess for the :math:`R_1\equiv\frac{k_1^\prime}{k_1}` parameter.
+        k3_start (float): Starting guess for :math:`k_3` parameter.
+        k4_start (float): Starting guess for :math:`k_4` parameter.
+
+    Returns:
+        tuple: (``fit_parameters``, ``fit_covariance``). Output from :func:`scipy.optimize.curve_fit`
+
+    Raises:
+        AssertionError: If the reference TAC and times are different dimensions.
+
+    See Also:
+        * :func:`calc_frtm_tac`
+
+    """
+    
+    def _fitting_frtm(tac_times, r1, k3, k4):
+        return calc_frtm_tac(tac_times=tac_times, ref_tac_vals=ref_tac_vals, r1=r1, k2=k2_prime, k3=k3, k4=k4)
+    
+    starting_values = (r1_start, k3_start, k4_start)
     return sp_fit(f=_fitting_frtm, xdata=ref_tac_times, ydata=tgt_tac_vals, p0=starting_values)
 
 
@@ -405,6 +545,55 @@ def fit_frtm_to_tac_with_bounds(tgt_tac_vals: np.ndarray,
     return sp_fit(f=_fitting_frtm, xdata=ref_tac_times, ydata=tgt_tac_vals,
                   p0=st_values, bounds=[lo_values, hi_values])
 
+
+def fit_frtm2_to_tac_with_bounds(tgt_tac_vals: np.ndarray,
+                                 ref_tac_times: np.ndarray,
+                                 ref_tac_vals: np.ndarray,
+                                 k2_prime: float = 0.5,
+                                 r1_bounds: np.ndarray = np.asarray([0.5, 0.0, 10.0]),
+                                 k3_bounds: np.ndarray = np.asarray([0.5, 0.0, 10.0]),
+                                 k4_bounds: np.ndarray = np.asarray([0.5, 0.0, 10.0])) -> tuple:
+    r"""
+    Fit FRTM2 to the provided target Time Activity Curve (TAC), given the reference TAC, times, and bounds for
+    the kinetic parameters.
+
+    .. important::
+        This function assumes that the reference TAC is uniformly sampled with respect to time since we perform
+        convolutions.
+
+    This function is a wrapper around `scipy.optimize.curve_fit` and uses parameter bounds during optimization. The
+    bounds for each parameter are formatted as: ``(starting_value, lo_bound, hi_bound)``.
+
+    Args:
+        tgt_tac_vals (np.ndarray): Target TAC to fit with the SRTM.
+        ref_tac_times (np.ndarray): Times of the reference TAC data.
+        ref_tac_vals (np.ndarray): Reference TAC values.
+        k2_prime (float): The value for the :math:`k_2^\prime` parameter. Defaults to 0.5.
+        r1_bounds (np.ndarray): The bounds for the :math:`R_1\equiv\frac{k_1^\prime}{k_1}` parameter.
+        Defaults to [0.5, 0.0, 10.0].
+        k3_bounds (np.ndarray): The bounds for :math:`k_3` parameter. Defaults to [0.5, 0.0, 10.0].
+        k4_bounds (np.ndarray): The bounds for :math:`k_4` parameter. Defaults to [0.5, 0.0, 10.0].
+
+    Returns:
+        tuple: (``fit_parameters``, ``fit_covariance``). Output from `scipy.optimize.curve_fit`.
+
+    Raises:
+        AssertionError: If the target TAC and times are different dimensions.
+
+    See Also:
+        * :func:`calc_frtm_tac`
+        * :func:`fit_frtm2_to_tac`
+
+    """
+    
+    def _fitting_frtm(tac_times, r1, k3, k4):
+        return calc_frtm_tac(tac_times=tac_times, ref_tac_vals=ref_tac_vals, r1=r1, k2=k2_prime, k3=k3, k4=k4)
+    
+    st_values = (r1_bounds[0], k3_bounds[0], k4_bounds[0])
+    lo_values = (r1_bounds[1], k3_bounds[1], k4_bounds[1])
+    hi_values = (r1_bounds[2], k3_bounds[2], k4_bounds[2])
+    
+    return sp_fit(f=_fitting_frtm, xdata=ref_tac_times, ydata=tgt_tac_vals, p0=st_values, bounds=[lo_values, hi_values])
 
 @numba.njit(fastmath=True)
 def fit_mrtm_original_to_tac(tgt_tac_vals: np.ndarray,
@@ -884,8 +1073,18 @@ class FitTACWithRTMs:
                 assert num_params == 4 and num_vals == 3, (
                     "The bounds have the wrong shape. Bounds must be (start, lo, hi) "
                     "for each of the fitting parameters: r1, k2, k3, k4")
+                
+            elif self.method == "srtm2":
+                assert num_params == 2 and num_vals == 3, ("The bounds have the wrong shape. Bounds must "
+                                                           "be (start, lo, hi) for each of the fitting "
+                                                           "parameters: r1, bp")
+            elif self.method == "frtm2":
+                assert num_params == 3 and num_vals == 3, (
+                    "The bounds have the wrong shape. Bounds must be (start, lo, hi) "
+                    "for each of the fitting parameters: r1, k3, k4")
             else:
-                raise ValueError(f"Invalid method! Must be either 'srtm' or 'frtm' if bounds are provided.")
+                raise ValueError(f"Invalid method! Must be either 'srtm', 'frtm', 'srtm2' or 'frtm2' if bounds are "
+                                 f"provided.")
     
     def fit_tac_to_model(self):
         r"""Fits TAC vals to model
@@ -905,6 +1104,10 @@ class FitTACWithRTMs:
             * :func:`fit_srtm_to_tac`
             * :func:`fit_frtm_to_tac_with_bounds`
             * :func:`fit_frtm_to_tac`
+            * :func:`fit_srtm2_to_tac_with_bounds`
+            * :func:`fit_srtm2_to_tac`
+            * :func:`fit_frtm2_to_tac_with_bounds`
+            * :func:`fit_frtm2_to_tac`
             * :func:`fit_mrtm_original_to_tac`
             * :func:`fit_mrtm_2003_to_tac`
             * :func:`fit_mrtm2_2003_to_tac`
@@ -922,7 +1125,20 @@ class FitTACWithRTMs:
                 self.fit_results = fit_srtm_to_tac(tgt_tac_vals=self.target_tac_vals,
                                                    ref_tac_times=self.reference_tac_times,
                                                    ref_tac_vals=self.reference_tac_vals)
-        
+            
+        elif self.method == "srtm2":
+            if self.bounds is not None:
+                self.fit_results = fit_srtm2_to_tac_with_bounds(tgt_tac_vals=self.target_tac_vals,
+                                                                ref_tac_times=self.reference_tac_times,
+                                                                ref_tac_vals=self.reference_tac_vals,
+                                                                k2_prime=self.k2_prime,
+                                                                r1_bounds=self.bounds[0],
+                                                                bp_bounds=self.bounds[1])
+            else:
+                self.fit_results = fit_srtm2_to_tac(tgt_tac_vals=self.target_tac_vals,
+                                                    ref_tac_times=self.reference_tac_times,
+                                                    ref_tac_vals=self.reference_tac_vals,
+                                                    k2_prime=self.k2_prime)
         elif self.method == "frtm":
             if self.bounds is not None:
                 self.fit_results = fit_frtm_to_tac_with_bounds(tgt_tac_vals=self.target_tac_vals,
@@ -936,6 +1152,21 @@ class FitTACWithRTMs:
                 self.fit_results = fit_frtm_to_tac(tgt_tac_vals=self.target_tac_vals,
                                                    ref_tac_times=self.reference_tac_times,
                                                    ref_tac_vals=self.reference_tac_vals)
+                
+        elif self.method == "frtm2":
+            if self.bounds is not None:
+                self.fit_results = fit_frtm2_to_tac_with_bounds(tgt_tac_vals=self.target_tac_vals,
+                                                                ref_tac_times=self.reference_tac_times,
+                                                                ref_tac_vals=self.reference_tac_vals,
+                                                                k2_prime=self.k2_prime,
+                                                                r1_bounds=self.bounds[0],
+                                                                k3_bounds=self.bounds[1],
+                                                                k4_bounds=self.bounds[2])
+            else:
+                self.fit_results = fit_frtm2_to_tac(tgt_tac_vals=self.target_tac_vals,
+                                                    ref_tac_times=self.reference_tac_times,
+                                                    ref_tac_vals=self.reference_tac_vals,
+                                                    k2_prime=self.k2_prime)
         
         elif self.method == "mrtm-original":
             self.fit_results = fit_mrtm_original_to_tac(tgt_tac_vals=self.target_tac_vals,
@@ -1096,7 +1327,8 @@ class RTMAnalysis:
                 **common_props
                 }
         else:
-            raise ValueError(f"Invalid method! Must be either 'srtm', 'frtm', 'mrtm-original', 'mrtm' or 'mrtm2'")
+            raise ValueError(f"Invalid method! Must be either 'srtm', 'frtm', 'srtm2', 'frtm2', "
+                             f"'mrtm-original', 'mrtm' or 'mrtm2'")
         return props
     
     def run_analysis(self,
@@ -1207,7 +1439,7 @@ class RTMAnalysis:
             None
         """
         if self.method.startswith("frtm") or self.method.startswith("srtm"):
-            self._calc_frtm_or_srtm_fit_props(fit_results=fit_results)
+            self._calc_frtm_or_srtm_fit_props(fit_results=fit_results, k2_prime=k2_prime)
         else:
             self._calc_mrtm_fit_props(fit_results=fit_results,
                                       k2_prime=k2_prime,
@@ -1264,7 +1496,7 @@ class RTMAnalysis:
         self.analysis_props['EndFrameTime'] = ref_tac_times[-1]
         self.analysis_props['NumberOfPointsFit'] = len(ref_tac_times[t_thresh_index:])
     
-    def _calc_frtm_or_srtm_fit_props(self, fit_results: tuple[np.ndarray, np.ndarray]):
+    def _calc_frtm_or_srtm_fit_props(self, fit_results: tuple[np.ndarray, np.ndarray], k2_prime: float):
         r"""
         Internal function used to calculate additional fitting properties for 'frtm' and 'srtm' type analyses.
 
@@ -1282,14 +1514,19 @@ class RTMAnalysis:
             format_func =  self._get_pretty_srtm_fit_param_vals
         else:
             format_func = self._get_pretty_frtm_fit_param_vals
-            
-        self.analysis_props["FitValues"] = format_func(fit_params.round(5))
-        self.analysis_props["FitStdErr"] = format_func(fit_stderr.round(5))
+        
+        if self.method.endswith('2'):
+            self.analysis_props["k2Prime"] = k2_prime
+            self.analysis_props["FitValues"] = format_func(fit_params.round(5), True)
+            self.analysis_props["FitStdErr"] = format_func(fit_stderr.round(5), True)
+        else:
+            self.analysis_props["FitValues"] = format_func(fit_params.round(5), False)
+            self.analysis_props["FitStdErr"] = format_func(fit_stderr.round(5), False)
     
     @staticmethod
-    def _get_pretty_srtm_fit_param_vals(param_fits: np.ndarray) -> dict:
+    def _get_pretty_srtm_fit_param_vals(param_fits: np.ndarray, reduced: bool = False) -> dict:
         r"""
-        Utility function to get nicely formatted fit parameters for 'srtm' analysis.
+        Utility function to get nicely formatted fit parameters for 'srtm(2)' analysis.
 
         Returns a dictionary with keys: 'R1', 'k2', and 'BP' and the corresponding values from ``param_fits``.
 
@@ -1299,12 +1536,15 @@ class RTMAnalysis:
         Returns:
             dict: Dictionary of fit parameters and their corresponding values.
         """
-        return {name: val for name, val in zip(['R1', 'k2', 'BP'], param_fits)}
+        if reduced:
+            return {name: val for name, val in zip(['R1', 'BP'], param_fits)}
+        else:
+            return {name: val for name, val in zip(['R1', 'k2', 'BP'], param_fits)}
     
     @staticmethod
-    def _get_pretty_frtm_fit_param_vals(param_fits: np.ndarray) -> dict:
+    def _get_pretty_frtm_fit_param_vals(param_fits: np.ndarray, reduced: bool = False) -> dict:
         r"""
-        Utility function to get nicely formatted fit parameters for 'frtm' analysis.
+        Utility function to get nicely formatted fit parameters for 'frtm(2)' analysis.
 
         Returns a dictionary with keys: 'R1', 'k2', 'k3', and 'k4' and the corresponding values from ``param_fits``.
 
@@ -1314,4 +1554,7 @@ class RTMAnalysis:
         Returns:
             dict: Dictionary of fit parameters and their corresponding values.
         """
-        return {name: val for name, val in zip(['R1', 'k2', 'k3', 'k4'], param_fits)}
+        if reduced:
+            return {name: val for name, val in zip(['R1', 'k3', 'k4'], param_fits)}
+        else:
+            return {name: val for name, val in zip(['R1', 'k2', 'k3', 'k4'], param_fits)}

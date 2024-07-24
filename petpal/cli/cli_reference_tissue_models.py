@@ -23,6 +23,18 @@ Example:
     .. code-block:: bash
     
         petpal-rtms srtm --ref-tac-path /path/to/ref/tac --roi-tac-path /path/to/roi/tac --prefix sub_001 --print --initial-guesses 0.1 0.1 0.1 0.1 0.1 --lower-bounds 0.0 0.0 0.0 0.0 0.0 --upper-bounds 5.0 5.0 5.0 5.0 5.0
+        
+    For running an FRTM2 analysis:
+    
+    .. code-block:: bash
+    
+        petpal-rtms frtm2 --ref-tac-path /path/to/ref/tac --roi-tac-path /path/to/roi/tac --k2-prime 0.5 --prefix sub_001 --print --initial-guesses 0.1 0.1 0.1 --lower-bounds 0.0 0.0 0.0 --upper-bounds 5.0 5.0 5.0
+    
+    For running an SRTM2 analysis:
+    
+    .. code-block:: bash
+    
+        petpal-rtms srtm2 --ref-tac-path /path/to/ref/tac --roi-tac-path /path/to/roi/tac --k2-prime 0.5 --prefix sub_001 --print --initial-guesses 0.1 0.1 --lower-bounds 0.0 0.0 0.0 --upper-bounds 5.0 5.0
     
     For running an MRTM analysis:
     
@@ -60,9 +72,13 @@ from ..kinetic_modeling.reference_tissue_models import RTMAnalysis
 _RTM_EXAMPLES_ = (r"""
 Examples:
   - FRTM (4 parameters: R1, k2, k3, k4):
-    petpal-rtms frtm --ref-tac-path /path/to/ref/tac --roi-tac-path /path/to/roi/tac --prefix sub_001 --print --initial-guesses 0.1 0.1 0.1 0.1 0.1 --lower-bounds 0.0 0.0 0.0 0.0 0.0 --upper-bounds 5.0 5.0 5.0 5.0 5.0
+    petpal-rtms frtm --ref-tac-path /path/to/ref/tac --roi-tac-path /path/to/roi/tac --prefix sub_001 --print --initial-guesses 0.1 0.1 0.1 0.1 --lower-bounds 0.0 0.0 0.0 0.0 --upper-bounds 5.0 5.0 5.0 5.0
   - SRTM (3 parameters: R1, k2, BP):
-    petpal-rtms srtm --ref-tac-path /path/to/ref/tac --roi-tac-path /path/to/roi/tac --prefix sub_001 --print --initial-guesses 0.1 0.1 0.1 0.1 0.1 --lower-bounds 0.0 0.0 0.0 0.0 0.0 --upper-bounds 5.0 5.0 5.0 5.0 5.0
+    petpal-rtms srtm --ref-tac-path /path/to/ref/tac --roi-tac-path /path/to/roi/tac --prefix sub_001 --print --initial-guesses 0.1 0.1 0.1 --lower-bounds 0.0 0.0 0.0 --upper-bounds 5.0 5.0 5.0
+  - FRTM2 (3 parameters: R1, k3, k4):
+    petpal-rtms frtm2 --ref-tac-path /path/to/ref/tac --roi-tac-path /path/to/roi/tac --k2-prime 0.5 --prefix sub_001 --print --initial-guesses 0.1 0.1 0.1 0.1 --lower-bounds 0.0 0.0 0.0 0.0 --upper-bounds 5.0 5.0 5.0 5.0
+  - SRTM2 (2 parameters: R1, BP):
+    petpal-rtms srtm2 --ref-tac-path /path/to/ref/tac --roi-tac-path /path/to/roi/tac --k2-prime 0.5 --prefix sub_001 --print --initial-guesses 0.1 0.1 0.1 0.1 --lower-bounds 0.0 0.0 0.0 --upper-bounds 5.0 5.0
   - MRTM (2 parameters: BP, k2_prime):
     petpal-rtms mrtm --ref-tac-path /path/to/ref/tac --roi-tac-path /path/to/roi/tac --prefix sub_001 --print --t-thresh-in-mins 30.0
   - MRTM2 (2 parameters: BP):
@@ -128,17 +144,25 @@ def parse_args():
     subparsers = parser.add_subparsers(dest="method", help="Analysis method")
 
     parser_srtm = subparsers.add_parser('srtm', help='Perform SRTM analysis')
-    parser_frtm = subparsers.add_parser('frtm', help='Perform SRTM analysis')
+    parser_frtm = subparsers.add_parser('frtm', help='Perform FRTM analysis')
+    parser_srtm_2 = subparsers.add_parser('srtm2', help='Perform SRTM2 analysis')
+    parser_frtm_2 = subparsers.add_parser('frtm2', help='Perform FRTM2 analysis')
+    
     parser_mrtm = subparsers.add_parser('mrtm',
                                         help='Perform Ichise\'s MRTM (2003) analysis')
     parser_mrtm_2 = subparsers.add_parser('mrtm2',
                                           help='Perform Ichise\'s MRTM2 (2003) analysis')
     parser_mrtm_original = subparsers.add_parser('mrtm-original',
                                                  help='Perform Ichise\'s original MRTM (1996) analysis')
-    parser_list = [parser_srtm, parser_frtm, parser_mrtm, parser_mrtm_2, parser_mrtm_original]
+    parser_list = [parser_srtm, parser_frtm, parser_srtm_2, parser_frtm_2,
+                   parser_mrtm, parser_mrtm_2, parser_mrtm_original]
     
     for a_parser in parser_list[:]:
         add_common_args(a_parser)
+        if a_parser.prog.endswith('2'):
+            a_parser.add_argument('-k', '--k2-prime', required=True, type=float,
+                                  help='k2_prime value for the reduced RTM analysis.')
+            
         if 'mrtm' in a_parser.prog:
             a_parser.add_argument('-t', '--t-thresh-in-mins', required=True, type=float,
                                   help='Threshold time in minutes for the MRTM analyses.')
@@ -149,9 +173,6 @@ def parse_args():
                                       help="Lower bounds for each fitting parameter.")
             a_parser.add_argument("-u", "--upper-bounds", required=False, nargs='+', type=float,
                                       help="Upper bounds for each fitting parameter.")
-        if a_parser.prog.endswith('2'):
-            parser_mrtm_2.add_argument('-k', '--k2-prime', required=True, type=float,
-                                       help='k2_prime value for the reduced RTM analysis.')
 
     return parser.parse_args()
 
@@ -238,7 +259,10 @@ def main():
                               k2_prime=getattr(args, 'k2_prime', None))
     else:
         bounds = _generate_bounds(initial=args.initial_guesses, lower=args.lower_bounds, upper=args.upper_bounds)
-        analysis.run_analysis(bounds=bounds)
+        if args.method.endswith('2'):
+            analysis.run_analysis(bounds=bounds, k2_prime=getattr(args, 'k2_prime', None))
+        else:
+            analysis.run_analysis(bounds=bounds)
     
     analysis.save_analysis()
 
