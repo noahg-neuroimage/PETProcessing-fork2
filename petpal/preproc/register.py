@@ -2,10 +2,12 @@
 Provides tools to register PET images to anatomical or atlas space. Wrapper for
 ANTs and FSL registration software.
 """
-import re
 from typing import Union
+import numpy as np
 import fsl.wrappers
 import ants
+import nibabel
+from nibabel.processing import resample_from_to
 from ..utils import image_io
 from . import motion_corr
 
@@ -199,3 +201,31 @@ def apply_xfm_fsl(input_image_path: str,
                            **kwargs)
 
     image_io.safe_copy_meta(input_image_path=input_image_path,out_image_path=out_image_path)
+
+def resample_pet_mpr(input_image_path: str,
+                     resampled_image_path: str,
+                     mpr_image_path: str,
+                     out_image_path: str):
+    """
+    Resample and rearrange a 3D PET image to mpr space. This function mimics the functionality
+    of converting an image from Nifti to 4dfp and back into Nifti, without using 4dfp tools. This
+    is necessary for backwards compatibility of some pipelines to work alongside older tools.
+
+    Args:
+        input_image_path (str): Path to PET image on which transform is applied.
+        resampled_image (str): Path to image with sampling needed for output. Often `rawavg.mgz` in FreeSurfer directory.
+        mpr_image_path (str): Path to mpr (MPRAGE) image the PET will be transformed to.
+    """
+    input_image_resampled = resample_from_to(
+        from_img=input_image_path,
+        to_vox_map=(resampled_image_path.shape[:3],resampled_image_path.affine)
+    )
+    image_resampled_array = input_image_resampled.get_fdata()
+    resampled_swapped = np.swapaxes(np.swapaxes(image_resampled_array,0,2),1,2)
+    resampled_swapped_flipped = np.flip(np.flip(np.flip(resampled_swapped,1),2),0)
+    input_on_mpr = nibabel.nifti1.Nifti1Image(
+        dataobj=resampled_swapped_flipped,
+        affine=mpr_image_path.affine,
+        header=mpr_image_path.header
+    )
+    nibabel.save(input_on_mpr,out_image_path)
