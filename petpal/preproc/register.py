@@ -229,3 +229,4 @@ def resample_pet_mpr(input_image_path: str,
         header=mpr_image_path.header
     )
     nibabel.save(input_on_mpr,out_image_path)
+    image_io.safe_copy_meta(input_image_path=input_image_path,out_image_path=out_image_path)
