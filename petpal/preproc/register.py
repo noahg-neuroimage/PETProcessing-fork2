@@ -216,17 +216,20 @@ def resample_pet_mpr(input_image_path: str,
         resampled_image (str): Path to image with sampling needed for output. Often `rawavg.mgz` in FreeSurfer directory.
         mpr_image_path (str): Path to mpr (MPRAGE) image the PET will be transformed to.
     """
+    input_image = nibabel.load(input_image_path)
+    resampled_image = nibabel.load(resampled_image_path)
+    mpr_image = nibabel.load(mpr_image_path)
     input_image_resampled = resample_from_to(
-        from_img=input_image_path,
-        to_vox_map=(resampled_image_path.shape[:3],resampled_image_path.affine)
+        from_img=input_image,
+        to_vox_map=(resampled_image.shape[:3],resampled_image.affine)
     )
     image_resampled_array = input_image_resampled.get_fdata()
     resampled_swapped = np.swapaxes(np.swapaxes(image_resampled_array,0,2),1,2)
     resampled_swapped_flipped = np.flip(np.flip(np.flip(resampled_swapped,1),2),0)
     input_on_mpr = nibabel.nifti1.Nifti1Image(
         dataobj=resampled_swapped_flipped,
-        affine=mpr_image_path.affine,
-        header=mpr_image_path.header
+        affine=mpr_image.affine,
+        header=mpr_image.header
     )
     nibabel.save(input_on_mpr,out_image_path)
     image_io.safe_copy_meta(input_image_path=input_image_path,out_image_path=out_image_path)
