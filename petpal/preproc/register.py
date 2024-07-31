@@ -2,6 +2,7 @@
 Provides tools to register PET images to anatomical or atlas space. Wrapper for
 ANTs and FSL registration software.
 """
+import os
 from typing import Union
 import numpy as np
 import fsl.wrappers
@@ -170,8 +171,8 @@ def apply_xfm_fsl(input_image_path: str,
                   ref_image_path: str,
                   out_image_path: str,
                   warp_path: str=None,
-                  premat_path: str=None,
-                  postmat_path: str=None,
+                  premat_path: str='',
+                  postmat_path: str='',
                   **kwargs):
     """
     Applies existing transforms in FSL format to an input image, onto a
@@ -192,13 +193,34 @@ def apply_xfm_fsl(input_image_path: str,
         kwargs (keyword arguments): Additional arguments passed to
             :py:func:`fsl.wrappers.applywarp`.
     """
-    fsl.wrappers.applywarp(src=input_image_path,
-                           ref=ref_image_path,
-                           out=out_image_path,
-                           warp=warp_path,
-                           premat=premat_path,
-                           postmat=postmat_path,
-                           **kwargs)
+    if premat_path=='' and postmat_path=='':
+        fsl.wrappers.applywarp(src=input_image_path,
+                               ref=ref_image_path,
+                               out=out_image_path,
+                               warp=warp_path,
+                               **kwargs)
+    elif premat_path=='' and postmat_path!='':
+        fsl.wrappers.applywarp(src=input_image_path,
+                               ref=ref_image_path,
+                               out=out_image_path,
+                               warp=warp_path,
+                               postmat=postmat_path,
+                               **kwargs)
+    elif premat_path!='' and postmat_path=='':
+        fsl.wrappers.applywarp(src=input_image_path,
+                               ref=ref_image_path,
+                               out=out_image_path,
+                               warp=warp_path,
+                               premat=premat_path,
+                               **kwargs)
+    else:
+        fsl.wrappers.applywarp(src=input_image_path,
+                               ref=ref_image_path,
+                               out=out_image_path,
+                               warp=warp_path,
+                               premat=premat_path,
+                               postmat=postmat_path,
+                               **kwargs)
 
     image_io.safe_copy_meta(input_image_path=input_image_path,out_image_path=out_image_path)
 

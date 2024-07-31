@@ -207,8 +207,9 @@ class PreProc():
         Write current class properties to json params file. 
         """
         json_path = os.path.join(self.output_directory,f"{self.output_filename_prefix}-params.json")
-        with open(json_path,'w+') as f:
-            json.dumps(self.preproc_props,f,indent=4)
+        with open(json_path,'w+',encoding='utf-8') as f:
+            print(f)  # TODO: make this correct
+            # json.dumps(self.preproc_props,f,indent=4)
 
 
     def _read_params_json(self) -> dict:
@@ -216,9 +217,9 @@ class PreProc():
         Read a json params file and set the class properties to the saved params.
         """
         json_path = os.path.join(self.output_directory,f"{self.output_filename_prefix}-params.json")
-        with open(json_path,'r') as f:
+        with open(json_path,'r',encoding='utf-8') as f:
             preproc_props = json.load(f)
-        
+
         self.update_props(preproc_props)
         return preproc_props
 
@@ -239,7 +240,7 @@ class PreProc():
         try:
             required_keys = _REQUIRED_KEYS_[method_name]
         except KeyError as e:
-            raise KeyError(f"Invalid method_name! Must be one of: {accepted_keys} . Got '{method_name}'")
+            raise KeyError(f"Invalid method_name! Must be one of: {accepted_keys} . Got '{method_name}'") from e
 
         for key in required_keys:
             if preproc_props[key] is None:
