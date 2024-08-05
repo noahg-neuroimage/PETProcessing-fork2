@@ -5,3 +5,5 @@ petpal/__pycache__/
 ./pet_cli.egg-info/
 ./docs/_build/
 ./doc/
+./dist/
+./petpal.egg-info/
