@@ -7,7 +7,7 @@ Todo:
 """
 import json
 import os.path
-from typing import Union
+from typing import Union, Tuple
 
 import numpy as np
 from scipy.optimize import curve_fit as sp_fit
@@ -120,7 +120,7 @@ def _calc_simplified_frtm_tac(tac_times: np.ndarray,
 def _calc_frtm_params_from_kinetic_params(r1: float,
                                           k2: float,
                                           k3: float,
-                                          k4: float) -> tuple[float, float, float, float, float]:
+                                          k4: float) -> Tuple[float, float, float, float, float]:
     r"""
     Calculates the parameters (coefficients) for the simplified FRTM function (:func:`_calc_simplified_frtm_tac`) given
     the kinetic constants.
@@ -1420,7 +1420,7 @@ class RTMAnalysis:
         
         return analysis_obj.fit_results
     
-    def calculate_fit_properties(self, fit_results: Union[np.ndarray, tuple[np.ndarray, np.ndarray]],
+    def calculate_fit_properties(self, fit_results: Union[np.ndarray, Tuple[np.ndarray, np.ndarray]],
                                  t_thresh_in_mins: float = None,
                                  k2_prime: float = None):
         r"""
@@ -1496,7 +1496,7 @@ class RTMAnalysis:
         self.analysis_props['EndFrameTime'] = ref_tac_times[-1]
         self.analysis_props['NumberOfPointsFit'] = len(ref_tac_times[t_thresh_index:])
     
-    def _calc_frtm_or_srtm_fit_props(self, fit_results: tuple[np.ndarray, np.ndarray], k2_prime: float):
+    def _calc_frtm_or_srtm_fit_props(self, fit_results: Tuple[np.ndarray, np.ndarray], k2_prime: float):
         r"""
         Internal function used to calculate additional fitting properties for 'frtm' and 'srtm' type analyses.
 

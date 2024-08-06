@@ -3,7 +3,7 @@ Provides tools to register PET images to anatomical or atlas space. Wrapper for
 ANTs and FSL registration software.
 """
 import re
-from typing import Union
+from typing import Union, List
 import fsl.wrappers
 import ants
 from ..utils import image_io
@@ -136,7 +136,7 @@ def warp_pet_atlas(input_image_path: str,
 def apply_xfm_ants(input_image_path: str,
                    ref_image_path: str,
                    out_image_path: str,
-                   xfm_paths: list[str]):
+                   xfm_paths: List[str]):
     """
     Applies existing transforms in ANTs or ITK format to an input image, onto
     a reference image. This is useful for applying the same transform on

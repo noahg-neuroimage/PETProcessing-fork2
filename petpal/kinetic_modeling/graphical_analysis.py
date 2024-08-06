@@ -288,7 +288,7 @@ def logan_analysis(input_tac_values: np.ndarray,
 def logan_analysis_with_rsquared(input_tac_values: np.ndarray,
                                  region_tac_values: np.ndarray,
                                  tac_times_in_minutes: np.ndarray,
-                                 t_thresh_in_minutes: float) -> tuple[float, float, float]:
+                                 t_thresh_in_minutes: float) -> Tuple[float, float, float]:
     """
     Performs Logan analysis on given input TAC, regional TAC, times and threshold.
 
@@ -382,7 +382,7 @@ def alternative_logan_analysis(input_tac_values: np.ndarray,
 def alternative_logan_analysis_with_rsquared(input_tac_values: np.ndarray,
                                              region_tac_values: np.ndarray,
                                              tac_times_in_minutes: np.ndarray,
-                                             t_thresh_in_minutes: float) -> tuple[float, float, float]:
+                                             t_thresh_in_minutes: float) -> Tuple[float, float, float]:
     """Performs alternative logan analysis on given input TAC, regional TAC, times and threshold.
 
     Args:
