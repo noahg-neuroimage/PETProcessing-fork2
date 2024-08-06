@@ -2,7 +2,6 @@
 Provides tools to register PET images to anatomical or atlas space. Wrapper for
 ANTs and FSL registration software.
 """
-import os
 from typing import Union
 import numpy as np
 import fsl.wrappers
@@ -230,8 +229,14 @@ def resample_pet_mpr(input_image_path: str,
                      out_image_path: str):
     """
     Resample and rearrange a 3D PET image to mpr space. This function mimics the functionality
-    of converting an image from Nifti to 4dfp and back into Nifti, without using 4dfp tools. This
-    is necessary for backwards compatibility of some pipelines to work alongside older tools.
+    of converting an image from Nifti to 4dfp and back into Nifti, without using 4dfp tools.
+
+    The typical use case would be for multi-modal studies where getting PET data aligned using
+    exactly the same transformation procedures as BOLD data is critical. If, say, transformations
+    have been computed from MPRAGE to atlas space using 4dfp tools, but the MPRAGE has been
+    modified by converting from Nifti to 4dfp and back into Nifti, then the same conversion must be
+    applied to the PET data aligned to anatomical space. This function accurately replicates that
+    conversion.
 
     Args:
         input_image_path (str): Path to PET image on which transform is applied.
