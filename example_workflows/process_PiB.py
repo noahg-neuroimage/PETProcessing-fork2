@@ -1,9 +1,11 @@
 """ Provides overall workflow for example PiB dataset, from 4D-PET to SUVR Parametric Images """
-
+import fnmatch
+import glob
 import os
 import petpal as pp
 import argparse
-import glob
+import re
+from typing import List
 
 """ Argparse Configuration """
 
@@ -15,13 +17,13 @@ def options():
     # TODO: Ideally, this script can run on an entire BIDS project, correctly finding the relevant data.
     parser.add_argument('-ib', '--input_bids', required=True, help='Path to the top-level BIDS directory')
 
-    parser.add_argument('-ip', '--input_pet', required=True, help='Path to the input PET image (.nii.gz)')
-    parser.add_argument('-o', '--output_path', required=True,
-                        help='Folder where all output and intermediate data will be stored')
-    parser.add_argument('-im', '--input_mri', required=True, help='Path to the input mri image')
-    parser.add_argument('-is', '--input_segmentation', required=True, help='Path to segmentation file (.nii.gz) '
-                                                                           'containing all ROIs')
-    parser.add_argument('-d', '--input_dseg')
+    # parser.add_argument('-ip', '--input_pet', required=True, help='Path to the input PET image (.nii.gz)')
+    # parser.add_argument('-o', '--output_path', required=True,
+    #                     help='Folder where all output and intermediate data will be stored')
+    # parser.add_argument('-im', '--input_mri', required=True, help='Path to the input mri image')
+    # parser.add_argument('-is', '--input_segmentation', required=True, help='Path to segmentation file (.nii.gz) '
+    #                                                                        'containing all ROIs')
+    parser.add_argument('-d', '--input_dseg', required=True, help='Path to dseg.tsv file containing LUT info')
     parser.add_argument('-v', '--verbose', help='Display more information while running', action='store_true')
 
     args = parser.parse_args()
@@ -32,41 +34,64 @@ def options():
 def main():
     # Unpack command line arguments
     args = options()
-    if os.path.exists(args.input_pet):
-        path_to_pet = args.input_pet
-    else:
-        raise FileNotFoundError(f'No PET file found at {args.input_pet}')
-
-    if os.path.exists(args.input_mri):
-        path_to_mri = args.input_mri
-    else:
-        raise FileNotFoundError(f'No MRI file found at {args.input_mri}')
-
-    if os.path.exists(args.input_segmentation):
-        path_to_segmentation = args.input_segmentation
-    else:
-        raise FileNotFoundError(f'No segmentation file found at {args.input_segmentation}')
-
+    # if os.path.exists(args.input_pet):
+    #     path_to_pet = args.input_pet
+    # else:
+    #     raise FileNotFoundError(f'No PET file found at {args.input_pet}')
+    #
+    # if os.path.exists(args.input_mri):
+    #     path_to_mri = args.input_mri
+    # else:
+    #     raise FileNotFoundError(f'No MRI file found at {args.input_mri}')
+    #
+    # if os.path.exists(args.input_segmentation):
+    #     path_to_segmentation = args.input_segmentation
+    # else:
+    #     raise FileNotFoundError(f'No segmentation file found at {args.input_segmentation}')
+    #
     if os.path.exists(args.input_dseg):
         path_to_dseg = args.input_dseg
     else:
         raise FileNotFoundError(f'No dseg.tsv file found at {args.input_segmentation}')
-
-    if not (os.path.exists(args.output_path)):
-        os.mkdir(args.output_path)
-        if args.verbose:
-            print(f"Creating output directory at {args.output_path}")
+    #
+    # if not (os.path.exists(args.output_path)):
+    #     os.mkdir(args.output_path)
+    #     if args.verbose:
+    #         print(f"Creating output directory at {args.output_path}")
 
     if not (os.path.exists(args.input_bids)):
         raise FileNotFoundError(f'No such directory {args.input_bids}')
 
     # Parse through BIDS directory to define input and output paths
     bids_dir = args.input_bids
-    subjects_list = glob.glob('sub-*')
+    subjects_pattern = re.compile(r'sub-(\d{3})')
+    # Create list (of dicts) for each subject's inputs' paths to be stored
+    subject_inputs = []
 
+    for root, dirs, _ in os.walk(bids_dir):
+        subject_dirs = fnmatch.filter(dirs, 'sub-[0-9][0-9][0-9]')
+        for subject_dir in subject_dirs:
+            match = subjects_pattern.match(subject_dir)
+            if match:
+                subject_id = match.group(1)
+                if args.verbose:
+                    print(f'Gathering inputs for subject {subject_id}')
+                subject_dict = {
+                    'pet': glob.glob('**/pet/*_pet.nii.gz', root_dir=os.path.join(root, subject_dir)),
+                    'mri': glob.glob('**/anat/*_T1w.nii.gz', root_dir=os.path.join(root, subject_dir)),
+                    'segmentation': glob.glob(f'sub-{subject_id}/aparc+aseg.nii.gz',
+                                              root_dir=os.path.join(root, 'derivatives')),
+                    'output': os.path.join(root, 'derivatives', f'sub-{subject_id}')
+                }
+                subject_inputs.append(subject_dict)
 
-    # mri_list = glob.glob('sub-*/*/anat/*T1w.nii.gz')
-    # pet_list = glob.glob('sub-*/*/pet/*pet.nii.gz')
+    response = ''
+    while response not in ('y', 'n'):
+        response = input(
+            f'Found {len(subject_inputs)} subject directories. Do you want to begin processing? (y/n)').strip()
+    if response == 'n':
+        return
+
 
     pib_half_life = 1221.84
     path_to_output = args.output_path
