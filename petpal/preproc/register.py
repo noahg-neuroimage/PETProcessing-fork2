@@ -223,10 +223,10 @@ def apply_xfm_fsl(input_image_path: str,
 
     image_io.safe_copy_meta(input_image_path=input_image_path,out_image_path=out_image_path)
 
-def resample_pet_mpr(input_image_path: str,
-                     resampled_image_path: str,
-                     mpr_image_path: str,
-                     out_image_path: str):
+def resample_nii_4dfp(input_image_path: str,
+                      resampled_image_path: str,
+                      mpr_image_path: str,
+                      out_image_path: str):
     """
     Resample and rearrange a 3D PET image to mpr space. This function mimics the functionality
     of converting an image from Nifti to 4dfp and back into Nifti, without using 4dfp tools.
