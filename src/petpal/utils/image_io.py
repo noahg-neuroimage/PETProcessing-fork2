@@ -4,6 +4,7 @@ Image IO
 import json
 import re
 import os
+from typing import List
 import ants
 import nibabel
 from nibabel.filebasedimages import FileBasedHeader, FileBasedImage
@@ -25,7 +26,7 @@ def write_dict_to_json(meta_data_dict: dict, out_path: str):
 
 def convert_ctab_to_dseg(ctab_path: str,
                          dseg_path: str,
-                         column_names: list[str]=['mapping','name','r','g','b','a','ttype']):
+                         column_names: List[str] = ['mapping', 'name', 'r', 'g', 'b', 'a', 'ttype']):
     """
     Convert a FreeSurfer compatible color table into a BIDS compatible label
     map ``dseg.tsv``.
@@ -94,12 +95,12 @@ def load_metadata_for_nifty_with_same_filename(image_path) -> dict:
     """
     if not os.path.exists(image_path):
         raise FileNotFoundError(f"Image file {image_path} not found")
-    
+
     meta_path = re.sub(r'\.nii\.gz$|\.nii$', '.json', image_path)
-    
+
     if not os.path.exists(meta_path):
         raise FileNotFoundError(f"Metadata file {meta_path} not found. Does it have a different path?")
-    
+
     with open(meta_path, 'r', encoding='utf-8') as meta_file:
         image_meta = json.load(meta_file)
     return image_meta
@@ -164,12 +165,12 @@ class ImageIO():
         """
         if not os.path.exists(image_path):
             raise FileNotFoundError(f"Image file {image_path} not found")
-        
+
         if not re.search(r'\.nii\.gz$|\.nii$', image_path):
             raise OSError(f"{image_path} does not have the extension .nii or .nii.gz")
-        
+
         image = nibabel.load(image_path)
-        
+
         if self.verbose:
             print(f"(ImageIO): {image_path} loaded")
 
@@ -260,7 +261,7 @@ class ImageIO():
 
         return spacing, origin, direction
 
-    def extract_np_to_ants(self, image_array: np.ndarray, affine: np.ndarray) -> ants.ANTsImage:
+    def extract_np_to_ants(self, image_array: np.ndarray, affine: np.ndarray) -> ants.core.ants_image:
         """
         Wrapper to convert an image array into ants object.
         Note header info is lost as ANTs does not carry this metadata.

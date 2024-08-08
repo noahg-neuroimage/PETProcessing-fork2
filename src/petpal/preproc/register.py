@@ -3,7 +3,7 @@ Provides tools to register PET images to anatomical or atlas space. Wrapper for
 ANTs and FSL registration software.
 """
 import re
-from typing import Union
+from typing import Union, List
 import fsl.wrappers
 import ants
 from ..utils import image_io
@@ -17,7 +17,7 @@ def register_pet(input_reg_image_path: str,
                  out_image_path: str,
                  verbose: bool,
                  type_of_transform: str='DenseRigid',
-                 half_life: str=None,
+                 half_life: float=None,
                  **kwargs):
     """
     Computes and runs rigid registration of 4D PET image series to 3D anatomical image, typically
@@ -36,6 +36,9 @@ def register_pet(input_reg_image_path: str,
             >6 degrees of freedom is not recommended, use with caution. See :py:func:`ants.registration`.
         out_image_path (str): Path to a .nii or .nii.gz file to which the registered PET series
             is written.
+        half_life (float): Half life of the radiotracer used in the image
+            located at ``input_image_4d_path``. Only used if a calculation is
+            performed.
         verbose (bool): Set to ``True`` to output processing information.
         kwargs (keyword arguments): Additional arguments passed to :py:func:`ants.registration`.
     """
@@ -133,7 +136,7 @@ def warp_pet_atlas(input_image_path: str,
 def apply_xfm_ants(input_image_path: str,
                    ref_image_path: str,
                    out_image_path: str,
-                   xfm_paths: list[str]):
+                   xfm_paths: List[str]):
     """
     Applies existing transforms in ANTs or ITK format to an input image, onto
     a reference image. This is useful for applying the same transform on

@@ -2,6 +2,7 @@
 Module to handle abstracted functionalities
 """
 import os
+from typing import List
 
 FULL_NAME = [
     'Background',
@@ -37,7 +38,7 @@ SHORT_NAME = [
 ]
 
 
-def make_path(paths: list[str]):
+def make_path(paths: List[str]):
     """
     Creates a new path in local system by joining paths, and making any new directories, if
     necessary.
@@ -71,7 +72,7 @@ def abbreviate_region(region_name: str):
     return name_out
 
 
-def build_label_map(region_names: list[str]):
+def build_label_map(region_names: List[str]):
     """
     Builds a BIDS compliant label map. Loop through CTAB and convert names to
     abbreviations using :meth:`abbreviate_region`

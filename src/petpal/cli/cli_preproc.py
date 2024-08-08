@@ -30,7 +30,7 @@ Examples:
     
         .. code-block:: bash
             
-            petpal-preproc motion-correct --out-dir /path/to/output --prefix sub_001 --pet /path/to/pet.nii --pet-reference /path/to/sum.nii
+            petpal-preproc motion-corr --out-dir /path/to/output --prefix sub_001 --pet /path/to/pet.nii --pet-reference /path/to/sum.nii
             
     * Extracting TACs Using A Mask And Color-Table:
     
@@ -57,7 +57,7 @@ Examples:
   - Registration:
     petpal-preproc register --out-dir /path/to/output --prefix sub_001 --pet /path/to/pet.nii --anatomical /path/to/mri.nii --motion-target /path/to/pet/reference.nii
   - Motion Correction:
-    petpal-preproc motion-correct --out-dir /path/to/output --prefix sub_001 --pet /path/to/pet.nii --pet-reference /path/to/sum.nii
+    petpal-preproc motion-corr --out-dir /path/to/output --prefix sub_001 --pet /path/to/pet.nii --pet-reference /path/to/sum.nii
   - Writing TACs From Segmentation Masks:
     petpal-preproc write-tacs --out-dir /path/to/output --pet /path/to/pet.nii --segmentation /path/to/seg_masks.nii --label-map-path /path/to/dseg.tsv
   - Verbose:
