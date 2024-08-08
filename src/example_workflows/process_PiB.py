@@ -2,11 +2,9 @@
 import fnmatch
 import glob
 import os
-import petpal as pp
 import argparse
 import re
-from petpal.preproc.preproc import segmentation_tools
-from typing import List
+from src.petpal.preproc import segmentation_tools
 
 """ Argparse Configuration """
 
@@ -33,16 +31,6 @@ def options():
     return args
 
 
-""" Process one subject using the following steps: 
-    1. Motion Correct PET
-    2. Register MoCo'd PET to MRI
-    3. Extract TACs from each Freesurfer ROI
-    4. Generate SUVR Parametric Image
-    5. Perform Partial Volume Correction (PVC) on SUVR Image
-    
-"""
-
-
 def process_single_subject(path_to_output: str,
                            path_to_segmentation: str,
                            path_to_pet: str,
@@ -51,6 +39,14 @@ def process_single_subject(path_to_output: str,
                            verbose: bool,
                            dry_run: bool,
                            half_life: float) -> None:
+    """ Process one subject using the following steps:
+        1. Motion Correct PET
+        2. Register MoCo'd PET to MRI
+        3. Extract TACs from each Freesurfer ROI
+        4. Generate SUVR Parametric Image
+        5. Perform Partial Volume Correction (PVC) on SUVR Image
+
+    """
     # Step 1: Run Motion Correction on 4DPET image
     if verbose:
         print(f'Starting Motion Correction Process for {path_to_pet}')
@@ -59,7 +55,7 @@ def process_single_subject(path_to_output: str,
 
         if not os.path.exists(path_to_moco_pet):
             try:
-                moco_4d_pet, params, _ = pp.preproc.motion_corr.motion_corr(
+                moco_4d_pet, params, _ = src.petpal.preproc.motion_corr.motion_corr(
                     input_image_4d_path=path_to_pet,
                     motion_target_option=(0, 600),
                     out_image_path=path_to_moco_pet,
@@ -83,12 +79,12 @@ def process_single_subject(path_to_output: str,
         path_to_registered_pet = os.path.join(path_to_output, "registered_pet.nii.gz")
 
         if not os.path.exists(path_to_registered_pet):
-            registered_pet = pp.preproc.register.register_pet(input_reg_image_path=path_to_moco_pet,
-                                                              reference_image_path=path_to_mri,
-                                                              motion_target_option=(0, 600),
-                                                              out_image_path=path_to_registered_pet,
-                                                              verbose=verbose,
-                                                              half_life=half_life)
+            registered_pet = src.petpal.preproc.register.register_pet(input_reg_image_path=path_to_moco_pet,
+                                                                      reference_image_path=path_to_mri,
+                                                                      motion_target_option=(0, 600),
+                                                                      out_image_path=path_to_registered_pet,
+                                                                      verbose=verbose,
+                                                                      half_life=half_life)
         else:
             print(f'registered_pet.nii.gz already exists in output dir {path_to_output}. Continuing...')
 
@@ -105,11 +101,11 @@ def process_single_subject(path_to_output: str,
 
             # TODO: Ensure that segmentation has the same image dimensions as MRI space
             try:
-                tacs = pp.preproc.image_operations_4d.write_tacs(input_image_4d_path=path_to_registered_pet,
-                                                                 label_map_path=path_to_dseg,
-                                                                 segmentation_image_path=path_to_segmentation,
-                                                                 out_tac_dir=path_to_tacs,
-                                                                 verbose=verbose)
+                tacs = src.petpal.preproc.image_operations_4d.write_tacs(input_image_4d_path=path_to_registered_pet,
+                                                                         label_map_path=path_to_dseg,
+                                                                         segmentation_image_path=path_to_segmentation,
+                                                                         out_tac_dir=path_to_tacs,
+                                                                         verbose=verbose)
             except ValueError as e:
                 print(e)
                 print(f'Resampling Segmentation {path_to_segmentation} to Registered PET Space')
@@ -119,11 +115,11 @@ def process_single_subject(path_to_output: str,
                                                                                    'aparc+aseg_resampled.nii.gz'),
                                                          verbose=verbose)
                 path_to_segmentation = os.path.join(path_to_output, 'aparc+aseg_resampled.nii.gz')
-                tacs = pp.preproc.image_operations_4d.write_tacs(input_image_4d_path=path_to_registered_pet,
-                                                                 label_map_path=path_to_dseg,
-                                                                 segmentation_image_path=path_to_segmentation,
-                                                                 out_tac_dir=path_to_tacs,
-                                                                 verbose=verbose)
+                tacs = src.petpal.preproc.image_operations_4d.write_tacs(input_image_4d_path=path_to_registered_pet,
+                                                                         label_map_path=path_to_dseg,
+                                                                         segmentation_image_path=path_to_segmentation,
+                                                                         out_tac_dir=path_to_tacs,
+                                                                         verbose=verbose)
         else:  # tacs directory already exists
             print(f'tacs/ dir already exists in output dir {path_to_output}. Continuing...')
 
@@ -133,21 +129,21 @@ def process_single_subject(path_to_output: str,
     if not dry_run:
         if not os.path.exists(os.path.join(path_to_output, 'wss.nii.gz')):
             path_to_weighted_sum = os.path.join(path_to_output, 'wss.nii.gz')
-            pp.preproc.image_operations_4d.weighted_series_sum(input_image_4d_path=path_to_registered_pet,
-                                                               out_image_path=path_to_weighted_sum,
-                                                               half_life=half_life,
-                                                               verbose=verbose)
+            src.petpal.preproc.image_operations_4d.weighted_series_sum(input_image_4d_path=path_to_registered_pet,
+                                                                       out_image_path=path_to_weighted_sum,
+                                                                       half_life=half_life,
+                                                                       verbose=verbose)
         else:
             print(f'weighted_series_sum file already exists in output dir {path_to_output}. Continuing...')
 
         if not os.path.exists(os.path.join(path_to_output, 'suvr.nii.gz')):
             path_to_suvr = os.path.join(path_to_output, 'suvr.nii.gz')
-            pp.preproc.image_operations_4d.suvr(input_image_path=path_to_weighted_sum,
-                                                segmentation_image_path=path_to_segmentation,
-                                                ref_region=8,  # This is just the right cerebellar cortex. Could also
-                                                # be 47 or, ideally, combine the two into one mask label.
-                                                out_image_path=path_to_suvr,
-                                                verbose=verbose)
+            src.petpal.preproc.image_operations_4d.suvr(input_image_path=path_to_weighted_sum,
+                                                        segmentation_image_path=path_to_segmentation,
+                                                        ref_region=8,  # This is just the right cerebellar cortex. Could also
+                                                        # be 47 or, ideally, combine the two into one mask label.
+                                                        out_image_path=path_to_suvr,
+                                                        verbose=verbose)
         else:
             print(f'suvr image already exists in output dir {path_to_output}. Continuing...')
 

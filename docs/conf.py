@@ -1,7 +1,7 @@
 # Configuration file for the Sphinx documentation builder.
 import os
 import sys
-sys.path.insert(0, os.path.abspath('../petpal'))
+sys.path.insert(0, os.path.abspath('../src/petpal'))
 
 project = 'PET Processing Module'
 copyright = '2024, Furqan Dar, Bradley Judge, Noah Goldman'
