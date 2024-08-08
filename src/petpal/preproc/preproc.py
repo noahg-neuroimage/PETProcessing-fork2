@@ -9,7 +9,6 @@ TODO:
 
 """
 import os
-import json
 from ..visualizations import qc_plots
 from . import register, image_operations_4d, motion_corr, segmentation_tools
 
@@ -202,26 +201,6 @@ class PreProc():
         return updated_props
 
 
-    def _write_params_json(self):
-        """
-        Write current class properties to json params file. 
-        """
-        json_path = os.path.join(self.output_directory,f"{self.output_filename_prefix}-params.json")
-        with open(json_path,'w+') as f:
-            json.dumps(self.preproc_props,f,indent=4)
-
-
-    def _read_params_json(self) -> dict:
-        """
-        Read a json params file and set the class properties to the saved params.
-        """
-        json_path = os.path.join(self.output_directory,f"{self.output_filename_prefix}-params.json")
-        with open(json_path,'r') as f:
-            preproc_props = json.load(f)
-        
-        self.update_props(preproc_props)
-        return preproc_props
-
     def _check_method_props_exist(self,
                                   method_name: str) -> None:
         """
@@ -239,7 +218,7 @@ class PreProc():
         try:
             required_keys = _REQUIRED_KEYS_[method_name]
         except KeyError as e:
-            raise KeyError(f"Invalid method_name! Must be one of: {accepted_keys} . Got '{method_name}'")
+            raise KeyError(f"Invalid method_name! Must be one of: {accepted_keys} . Got '{method_name}'") from e
 
         for key in required_keys:
             if preproc_props[key] is None:
@@ -363,7 +342,7 @@ class PreProc():
                           warp_path=preproc_props['FilePathWarp'],
                           premat_path=preproc_props['FilePathFSLPremat'],
                           postmat_path=preproc_props['FilePathFSLPostmat'])
-            
+
         elif method_name=='suvr':
             outfile = self._generate_outfile_path(method_short='suvr')
             suvr(input_image_path=preproc_props['FilePathSUVRInput'],
@@ -378,7 +357,7 @@ class PreProc():
                        blur_size_mm=preproc_props['BlurSize'],
                        out_image_path=outfile,
                        verbose=preproc_props['Verbose'])
-            
+
         elif method_name=='vat_wm_ref_region':
             out_ref_region = self._generate_outfile_path(method_short='wm-ref')
             segmentation_tools.vat_wm_ref_region(

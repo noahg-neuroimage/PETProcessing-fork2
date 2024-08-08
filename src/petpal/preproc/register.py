@@ -2,10 +2,12 @@
 Provides tools to register PET images to anatomical or atlas space. Wrapper for
 ANTs and FSL registration software.
 """
-import re
-from typing import Union, List
+from typing import Union
+import numpy as np
 import fsl.wrappers
 import ants
+import nibabel
+from nibabel.processing import resample_from_to
 from ..utils import image_io
 from . import motion_corr
 
@@ -36,9 +38,6 @@ def register_pet(input_reg_image_path: str,
             >6 degrees of freedom is not recommended, use with caution. See :py:func:`ants.registration`.
         out_image_path (str): Path to a .nii or .nii.gz file to which the registered PET series
             is written.
-        half_life (float): Half life of the radiotracer used in the image
-            located at ``input_image_4d_path``. Only used if a calculation is
-            performed.
         verbose (bool): Set to ``True`` to output processing information.
         kwargs (keyword arguments): Additional arguments passed to :py:func:`ants.registration`.
     """
@@ -136,7 +135,7 @@ def warp_pet_atlas(input_image_path: str,
 def apply_xfm_ants(input_image_path: str,
                    ref_image_path: str,
                    out_image_path: str,
-                   xfm_paths: List[str]):
+                   xfm_paths: list[str]):
     """
     Applies existing transforms in ANTs or ITK format to an input image, onto
     a reference image. This is useful for applying the same transform on
@@ -171,8 +170,8 @@ def apply_xfm_fsl(input_image_path: str,
                   ref_image_path: str,
                   out_image_path: str,
                   warp_path: str=None,
-                  premat_path: str=None,
-                  postmat_path: str=None,
+                  premat_path: str='',
+                  postmat_path: str='',
                   **kwargs):
     """
     Applies existing transforms in FSL format to an input image, onto a
@@ -193,12 +192,71 @@ def apply_xfm_fsl(input_image_path: str,
         kwargs (keyword arguments): Additional arguments passed to
             :py:func:`fsl.wrappers.applywarp`.
     """
-    fsl.wrappers.applywarp(src=input_image_path,
-                           ref=ref_image_path,
-                           out=out_image_path,
-                           warp=warp_path,
-                           premat=premat_path,
-                           postmat=postmat_path,
-                           **kwargs)
+    if premat_path=='' and postmat_path=='':
+        fsl.wrappers.applywarp(src=input_image_path,
+                               ref=ref_image_path,
+                               out=out_image_path,
+                               warp=warp_path,
+                               **kwargs)
+    elif premat_path=='' and postmat_path!='':
+        fsl.wrappers.applywarp(src=input_image_path,
+                               ref=ref_image_path,
+                               out=out_image_path,
+                               warp=warp_path,
+                               postmat=postmat_path,
+                               **kwargs)
+    elif premat_path!='' and postmat_path=='':
+        fsl.wrappers.applywarp(src=input_image_path,
+                               ref=ref_image_path,
+                               out=out_image_path,
+                               warp=warp_path,
+                               premat=premat_path,
+                               **kwargs)
+    else:
+        fsl.wrappers.applywarp(src=input_image_path,
+                               ref=ref_image_path,
+                               out=out_image_path,
+                               warp=warp_path,
+                               premat=premat_path,
+                               postmat=postmat_path,
+                               **kwargs)
 
+    image_io.safe_copy_meta(input_image_path=input_image_path,out_image_path=out_image_path)
+
+def resample_nii_4dfp(input_image_path: str,
+                      resampled_image_path: str,
+                      mpr_image_path: str,
+                      out_image_path: str):
+    """
+    Resample and rearrange a 3D PET image to mpr space. This function mimics the functionality
+    of converting an image from Nifti to 4dfp and back into Nifti, without using 4dfp tools.
+
+    The typical use case would be for multi-modal studies where getting PET data aligned using
+    exactly the same transformation procedures as BOLD data is critical. If, say, transformations
+    have been computed from MPRAGE to atlas space using 4dfp tools, but the MPRAGE has been
+    modified by converting from Nifti to 4dfp and back into Nifti, then the same conversion must be
+    applied to the PET data aligned to anatomical space. This function accurately replicates that
+    conversion.
+
+    Args:
+        input_image_path (str): Path to PET image on which transform is applied.
+        resampled_image (str): Path to image with sampling needed for output. Often `rawavg.mgz` in FreeSurfer directory.
+        mpr_image_path (str): Path to mpr (MPRAGE) image the PET will be transformed to.
+    """
+    input_image = nibabel.load(input_image_path)
+    resampled_image = nibabel.load(resampled_image_path)
+    mpr_image = nibabel.load(mpr_image_path)
+    input_image_resampled = resample_from_to(
+        from_img=input_image,
+        to_vox_map=(resampled_image.shape[:3],resampled_image.affine)
+    )
+    image_resampled_array = input_image_resampled.get_fdata()
+    resampled_swapped = np.swapaxes(np.swapaxes(image_resampled_array,0,2),1,2)
+    resampled_swapped_flipped = np.flip(np.flip(np.flip(resampled_swapped,1),2),0)
+    input_on_mpr = nibabel.nifti1.Nifti1Image(
+        dataobj=resampled_swapped_flipped,
+        affine=mpr_image.affine,
+        header=mpr_image.header
+    )
+    nibabel.save(input_on_mpr,out_image_path)
     image_io.safe_copy_meta(input_image_path=input_image_path,out_image_path=out_image_path)
