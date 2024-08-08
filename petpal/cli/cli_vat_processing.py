@@ -18,12 +18,14 @@ Example:
 def vat_protocol(subjstring: str,
                  out_dir: str,
                  pet_dir: str,
-                 fs_dir: str,
                  reg_dir: str):
     sub, ses = rename_subs(subjstring)
     preproc_props = {
         'FilePathLabelMap': '/data/jsp/human2/goldmann/dseg.tsv',
         'FilePathAtlas': '/data/petsun43/data1/atlas/MNI152/MNI152_T1_1mm.nii',
+        'FilePathWarpRef': '/data/petsun43/data1/atlas/MNI152/MNI152_T1_2mm.nii',
+        'FilePathPremat': '',
+        'FilePathPostmat': '',
         'HalfLife': 6586.2,
         'StartTimeWSS': 1800,
         'EndTimeWSS': 7200,
@@ -40,14 +42,16 @@ def vat_protocol(subjstring: str,
         preproc_props['FilePathMocoInp'] = f'{pet_dir}/{sub}/pet/{sub}_pet.nii.gz'
         preproc_props['FilePathSeg'] = f'{reg_dir}/{sub}/aparc+aseg.nii'
         preproc_props['FilePathAnat'] = f'{reg_dir}/{sub}/{sub}_mpr.nii'
-        preproc_props['FreeSurferSubjectDir'] = f'{fs_dir}/{subjstring}/mri/'
+        preproc_props['FreeSurferSubjectDir'] = f'{reg_dir}/{sub}/mri/'
+        preproc_props['FilePathWarp'] = f'{reg_dir}/{sub}/MNI152_6mmres_FNIRT/{sub}_to_MNI152_T1_2mm_6mmwarpres_FSLwarp.nii'
     else:
         out_folder = f'{out_dir}/{sub}_{ses}'
         out_prefix = f'{sub}_{ses}_pet'
         preproc_props['FilePathMocoInp'] = f'{pet_dir}/{sub}/{ses}/pet/{sub}_{ses}_trc-18FVAT_pet.nii.gz'
         preproc_props['FilePathSeg'] = f'{reg_dir}/{sub}_{ses}/aparc+aseg.nii'
         preproc_props['FilePathAnat'] = f'{reg_dir}/{sub}_{ses}/{sub}_{ses}_mpr.nii'
-        preproc_props['FreeSurferSubjectDir'] = f'{fs_dir}/{subjstring}_Bay3prisma/mri/'
+        preproc_props['FreeSurferSubjectDir'] = f'{reg_dir}/{sub}_{ses}/'
+        preproc_props['FilePathWarp'] = f'{reg_dir}/{sub}_{ses}/MNI152_6mmres_FNIRT/{sub}_{ses}_to_MNI152_T1_2mm_6mmwarpres_FSLwarp.nii'
     sub_vat = preproc.PreProc(
         output_directory=out_folder,
         output_filename_prefix=out_prefix
@@ -79,6 +83,11 @@ def vat_protocol(subjstring: str,
     sub_vat.run_preproc('write_tacs')
     sub_vat.run_preproc('weighted_series_sum')
     sub_vat.run_preproc('suvr')
+    preproc_props['FilePathWarpInp'] = sub_vat._generate_outfile_path(method_short='suvr')
+    preproc_props['FilePathBlurInp'] = sub_vat._generate_outfile_path(method_short='space-atlas')
+    sub_vat.update_props(preproc_props)
+    sub_vat.run_preproc('apply_xfm_fsl')
+    sub_vat.run_preproc('gauss_blur')
     return None
 
 
@@ -110,7 +119,10 @@ def main():
     parser = argparse.ArgumentParser(prog='vat-cli',
                             description='Command line interface for running VAT processing.',
                             epilog=_VAT_EXAMPLE_, formatter_class=argparse.RawTextHelpFormatter)
-    parser.add_argument('-p','--participants',required=True,help='Path to participants.tsv')
+    parser.add_argument('-s','--subjects',required=True,help='Path to participants.tsv')
+    parser.add_argument('-o','--out-dir',required=True,help='Output directory analyses are saved to.')
+    parser.add_argument('-p','--pet-dir',required=True,help='Path to parent directory of PET imaging data.')
+    parser.add_argument('-r','--reg-dir',required=True,help='Path to parent directory of registrations computed from MPR to atlas space.')
     args = parser.parse_args()
 
     if args.command is None:
