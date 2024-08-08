@@ -4,7 +4,7 @@ import glob
 import os
 import argparse
 import re
-from src.petpal.preproc import segmentation_tools
+import petpal.preproc
 
 """ Argparse Configuration """
 
@@ -55,7 +55,7 @@ def process_single_subject(path_to_output: str,
 
         if not os.path.exists(path_to_moco_pet):
             try:
-                moco_4d_pet, params, _ = src.petpal.preproc.motion_corr.motion_corr(
+                moco_4d_pet, params, _ = petpal.preproc.motion_corr.motion_corr(
                     input_image_4d_path=path_to_pet,
                     motion_target_option=(0, 600),
                     out_image_path=path_to_moco_pet,
@@ -79,7 +79,7 @@ def process_single_subject(path_to_output: str,
         path_to_registered_pet = os.path.join(path_to_output, "registered_pet.nii.gz")
 
         if not os.path.exists(path_to_registered_pet):
-            registered_pet = src.petpal.preproc.register.register_pet(input_reg_image_path=path_to_moco_pet,
+            registered_pet = petpal.preproc.register.register_pet(input_reg_image_path=path_to_moco_pet,
                                                                       reference_image_path=path_to_mri,
                                                                       motion_target_option=(0, 600),
                                                                       out_image_path=path_to_registered_pet,
@@ -101,7 +101,7 @@ def process_single_subject(path_to_output: str,
 
             # TODO: Ensure that segmentation has the same image dimensions as MRI space
             try:
-                tacs = src.petpal.preproc.image_operations_4d.write_tacs(input_image_4d_path=path_to_registered_pet,
+                tacs = petpal.preproc.image_operations_4d.write_tacs(input_image_4d_path=path_to_registered_pet,
                                                                          label_map_path=path_to_dseg,
                                                                          segmentation_image_path=path_to_segmentation,
                                                                          out_tac_dir=path_to_tacs,
@@ -109,13 +109,13 @@ def process_single_subject(path_to_output: str,
             except ValueError as e:
                 print(e)
                 print(f'Resampling Segmentation {path_to_segmentation} to Registered PET Space')
-                segmentation_tools.resample_segmentation(input_image_4d_path=path_to_registered_pet,
+                petpal.preproc.segmentation_tools.resample_segmentation(input_image_4d_path=path_to_registered_pet,
                                                          segmentation_image_path=path_to_segmentation,
                                                          out_seg_path=os.path.join(path_to_output,
                                                                                    'aparc+aseg_resampled.nii.gz'),
                                                          verbose=verbose)
                 path_to_segmentation = os.path.join(path_to_output, 'aparc+aseg_resampled.nii.gz')
-                tacs = src.petpal.preproc.image_operations_4d.write_tacs(input_image_4d_path=path_to_registered_pet,
+                tacs = petpal.preproc.image_operations_4d.write_tacs(input_image_4d_path=path_to_registered_pet,
                                                                          label_map_path=path_to_dseg,
                                                                          segmentation_image_path=path_to_segmentation,
                                                                          out_tac_dir=path_to_tacs,
@@ -129,7 +129,7 @@ def process_single_subject(path_to_output: str,
     if not dry_run:
         if not os.path.exists(os.path.join(path_to_output, 'wss.nii.gz')):
             path_to_weighted_sum = os.path.join(path_to_output, 'wss.nii.gz')
-            src.petpal.preproc.image_operations_4d.weighted_series_sum(input_image_4d_path=path_to_registered_pet,
+            petpal.preproc.image_operations_4d.weighted_series_sum(input_image_4d_path=path_to_registered_pet,
                                                                        out_image_path=path_to_weighted_sum,
                                                                        half_life=half_life,
                                                                        verbose=verbose)
@@ -138,7 +138,7 @@ def process_single_subject(path_to_output: str,
 
         if not os.path.exists(os.path.join(path_to_output, 'suvr.nii.gz')):
             path_to_suvr = os.path.join(path_to_output, 'suvr.nii.gz')
-            src.petpal.preproc.image_operations_4d.suvr(input_image_path=path_to_weighted_sum,
+            petpal.preproc.image_operations_4d.suvr(input_image_path=path_to_weighted_sum,
                                                         segmentation_image_path=path_to_segmentation,
                                                         ref_region=8,  # This is just the right cerebellar cortex. Could also
                                                         # be 47 or, ideally, combine the two into one mask label.
