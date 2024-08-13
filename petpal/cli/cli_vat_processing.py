@@ -7,12 +7,8 @@ from petpal.preproc import preproc
 
 _VAT_EXAMPLE_ = (r"""
 Example:
-  - Running one subject:
-    petpal-vat-proc --sub sub-001_ses-01 --out-dir /path/to/output --pet /path/to/pet.nii --fs-dir /path/to/subject/FreeSurfer/
-  - Running all subjects:
-    petpal-vat-proc --participants participants.tsv --out-dir /path/to/output --pet-dir /path/to/pet/folder/ --pet-postfix _pet.nii.gz --fs-dir /path/to/subject/FreeSurfer/
-  - Verbose:
-    petpal-vat-proc -v [sub-command] [arguments]
+  - Running many subjects:
+    petpal-vat-proc --subjects participants.tsv --out-dir /path/to/output --pet-dir /path/to/pet/folder/ --reg-dir /path/to/subject/Registrations/
 """)
 
 
@@ -124,10 +120,6 @@ def main():
     parser.add_argument('-p','--pet-dir',required=True,help='Path to parent directory of PET imaging data.')
     parser.add_argument('-r','--reg-dir',required=True,help='Path to parent directory of registrations computed from MPR to atlas space.')
     args = parser.parse_args()
-
-    #if args.command is None:
-    #    parser.print_help()
-    #    raise SystemExit('Exiting without command')
 
     subs_sheet = pd.read_csv(args.subjects,sep='\t')
     subs = subs_sheet['participant_id']
