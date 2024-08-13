@@ -65,7 +65,7 @@ _REQUIRED_KEYS_ = {
     'gauss_blur': ['FilePathBlurInput','BlurSize','Verbose'],
     'apply_xfm_ants': ['FilePathWarpInput','FilePathWarpRef','FilePathAntsXfms','Verbose'],
     'apply_xfm_fsl': ['FilePathWarpInput','FilePathWarpRef','FilePathWarp','FilePathFSLPremat','FilePathFSLPostmat','Verbose'],
-    'vat_wm_ref_region': ['FreeSurferSubjectDir']
+    'vat_wm_ref_region': ['FilePathBSseg','FilePathSeg']
 }
 
 
