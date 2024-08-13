@@ -21,4 +21,5 @@ setup(name='petpal', version='0.0.1', packages=find_packages(),
                                         'petpal-graph-analysis = petpal.cli.cli_graphical_analysis:main',
                                         'petpal-parametric-image = petpal.cli.cli_parametric_images:main',
                                         'petpal-tcm-fit = petpal.cli.cli_tac_fitting:main',
-                                        'petpal-rtms = petpal.cli.cli_reference_tissue_models:main'], }, )
+                                        'petpal-vat-proc = petpal.cli.cli_vat_processing:main',
+					'petpal-rtms = petpal.cli.cli_reference_tissue_models:main'], }, )
