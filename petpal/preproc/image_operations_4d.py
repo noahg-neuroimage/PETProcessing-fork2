@@ -17,7 +17,6 @@ TODOs:
 
 """
 import os
-import re
 from scipy.interpolate import interp1d
 import nibabel
 import numpy as np
@@ -176,7 +175,7 @@ def extract_tac_from_nifty_using_mask(input_image_4d_numpy: np.ndarray,
         num_frames = 1
     seg_image = segmentation_image_numpy
 
-    if seg_image.shape!=pet_image_4d.shape[:3]:
+    if seg_image.shape[:3]!=pet_image_4d.shape[:3]:
         raise ValueError('Mis-match in image shape of segmentation image '
                          f'({seg_image.shape}) and PET image '
                          f'({pet_image_4d.shape[:3]}). Consider resampling '
@@ -287,6 +286,9 @@ def gauss_blur(input_image_path: str,
     nibabel.save(img=out_image,filename=out_image_path)
 
     image_io.safe_copy_meta(input_image_path=input_image_path,out_image_path=out_image_path)
+
+    if verbose:
+        print(f'Blurred image saved to {out_image_path}.')
 
     return out_image
 

@@ -40,7 +40,7 @@ _PREPROC_PROPS_ = {'FilePathWSSInput': None,
                    'FilePathWarpRef': None,
                    'FilePathWarp': None,
                    'FilePathAntsXfms': None,
-                   'FreeSurferSubjectDir': None, 
+                   'FilePathBSseg': None, 
                    'HalfLife': None,
                    'StartTimeWSS': 0,
                    'EndTimeWSS': -1,
@@ -65,7 +65,7 @@ _REQUIRED_KEYS_ = {
     'gauss_blur': ['FilePathBlurInput','BlurSize','Verbose'],
     'apply_xfm_ants': ['FilePathWarpInput','FilePathWarpRef','FilePathAntsXfms','Verbose'],
     'apply_xfm_fsl': ['FilePathWarpInput','FilePathWarpRef','FilePathWarp','FilePathFSLPremat','FilePathFSLPostmat','Verbose'],
-    'vat_wm_ref_region': ['FreeSurferSubjectDir']
+    'vat_wm_ref_region': ['FilePathBSseg','FilePathSeg']
 }
 
 
@@ -319,7 +319,7 @@ class PreProc():
                        time_frame_keyword=preproc_props['TimeFrameKeyword'])
 
         elif method_name=='warp_pet_atlas':
-            outfile = self._generate_outfile_path(method_short='reg-atlas')
+            outfile = self._generate_outfile_path(method_short='space-atlas')
             warp_pet_atlas(input_image_path=preproc_props['FilePathWarpInput'],
                            anat_image_path=preproc_props['FilePathAnat'],
                            atlas_image_path=preproc_props['FilePathAtlas'],
@@ -328,14 +328,14 @@ class PreProc():
                            kwargs=preproc_props['WarpPars'])
 
         elif method_name=='apply_xfm_ants':
-            outfile = self._generate_outfile_path(method_short='reg-ants')
+            outfile = self._generate_outfile_path(method_short='space-atlas')
             apply_xfm_ants(input_image_path=preproc_props['FilePathWarpInput'],
                            ref_image_path=preproc_props['FilePathWarpRef'],
                            out_image_path=outfile,
                            xfm_paths=preproc_props['FilePathAntsXfms'])
 
         elif method_name=='apply_xfm_fsl':
-            outfile = self._generate_outfile_path(method_short='reg-fsl')
+            outfile = self._generate_outfile_path(method_short='space-atlas')
             apply_xfm_fsl(input_image_path=preproc_props['FilePathWarpInput'],
                           ref_image_path=preproc_props['FilePathWarpRef'],
                           out_image_path=outfile,
@@ -361,13 +361,13 @@ class PreProc():
         elif method_name=='vat_wm_ref_region':
             out_ref_region = self._generate_outfile_path(method_short='wm-ref')
             segmentation_tools.vat_wm_ref_region(
-                input_segmentation_path=f"{preproc_props['FreeSurferSubjectDir']}/aparc+aseg.mgz",
+                input_segmentation_path=f"{preproc_props['FilePathSeg']}",
                 out_segmentation_path=out_ref_region
             )
             outfile = self._generate_outfile_path(method_short='wm-merged')
             segmentation_tools.vat_wm_region_merge(
-                wmparc_segmentation_path=f"{preproc_props['FreeSurferSubjectDir']}/aparc+aseg.mgz",
-                bs_segmentation_path=f"{preproc_props['FreeSurferSubjectDir']}/brainstemSsLabels.v13.FSvoxelSpace.mgz",
+                wmparc_segmentation_path=f"{preproc_props['FilePathSeg']}",
+                bs_segmentation_path=f"{preproc_props['FilePathBSseg']}",
                 wm_ref_segmentation_path=out_ref_region,
                 out_image_path=outfile
             )
