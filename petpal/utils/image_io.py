@@ -11,7 +11,6 @@ import numpy as np
 import pandas as pd
 from . import useful_functions
 
-
 def write_dict_to_json(meta_data_dict: dict, out_path: str):
     """
     Save a metadata file in python to a directory.
@@ -26,7 +25,7 @@ def write_dict_to_json(meta_data_dict: dict, out_path: str):
 
 def convert_ctab_to_dseg(ctab_path: str,
                          dseg_path: str,
-                         column_names: list[str] = ['mapping', 'name', 'r', 'g', 'b', 'a', 'ttype']):
+                         column_names: list[str]=['mapping','name','r','g','b','a','ttype']):
     """
     Convert a FreeSurfer compatible color table into a BIDS compatible label
     map ``dseg.tsv``.
@@ -42,12 +41,12 @@ def convert_ctab_to_dseg(ctab_path: str,
                           header=None,
                           comment='#',
                           names=column_names)
-    label_map = pd.DataFrame(columns=['name', 'abbreviation', 'mapping']).rename_axis('index')
+    label_map = pd.DataFrame(columns=['name','abbreviation','mapping']).rename_axis('index')
     label_map['name'] = fs_ctab['name']
     label_map['mapping'] = fs_ctab['mapping']
     label_map['abbreviation'] = useful_functions.build_label_map(fs_ctab['name'])
     label_map = label_map.sort_values(by=['mapping'])
-    label_map.to_csv(dseg_path, sep='\t')
+    label_map.to_csv(dseg_path,sep='\t')
     return label_map
 
 
@@ -72,11 +71,10 @@ def load_tac(filename: str) -> np.ndarray:
     try:
         return np.array(np.loadtxt(filename).T, dtype=float, order='C')
     except ValueError as e:
-        return np.array(np.loadtxt(filename, skiprows=1).T, dtype=float, order='C')
+        return np.array(np.loadtxt(filename,skiprows=1).T, dtype=float, order='C')
     except Exception as e:
         print(f"Couldn't read file {filename}. Error: {e}")
         raise e
-
 
 def load_metadata_for_nifty_with_same_filename(image_path) -> dict:
     """
@@ -121,6 +119,7 @@ def safe_copy_meta(input_image_path: str,
     copy_meta_path = re.sub('.nii.gz|.nii', '.json', out_image_path)
     meta_data_dict = load_metadata_for_nifty_with_same_filename(input_image_path)
     write_dict_to_json(meta_data_dict=meta_data_dict, out_path=copy_meta_path)
+
 
 
 class ImageIO():
@@ -296,6 +295,6 @@ class ImageIO():
         if not os.path.exists(label_map_file):
             raise FileNotFoundError(f"Image file {label_map_file} not found")
 
-        label_map = pd.read_csv(label_map_file, sep='\t')
+        label_map = pd.read_csv(label_map_file,sep='\t')
 
         return label_map

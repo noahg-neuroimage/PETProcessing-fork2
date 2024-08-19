@@ -19,7 +19,6 @@ plots.
 Please refer to the documentation of each class for more detailed information.
 """
 
-
 from matplotlib import pyplot as plt
 import numpy as np
 from abc import ABC, abstractmethod
@@ -59,6 +58,7 @@ class GraphicalAnalysisPlot(ABC):
             * :func:`add_figure_axes_labels_and_legend`
 
     """
+
     def __init__(self, pTAC: np.ndarray, tTAC: np.ndarray, t_thresh_in_mins: float, figObj: plt.Figure = None):
         """
         Initialize an instance of the GraphicalAnalysisPlot class.
@@ -216,7 +216,7 @@ class GraphicalAnalysisPlot(ABC):
                         zorder=3, label=self.generate_label_from_fit_params())
         else:
             for ax in self.ax_list:
-                ax.plot(self.x, y,  **pl_kwargs)
+                ax.plot(self.x, y, **pl_kwargs)
 
     def add_plots(self,
                   plot_data: bool = True,
@@ -332,7 +332,7 @@ class GraphicalAnalysisPlot(ABC):
             'slope': fit_params[0],
             'intercept': fit_params[1],
             'r_squared': fit_params[2]
-            }
+        }
         self.fit_params = fit_params
 
     @abstractmethod
@@ -449,6 +449,7 @@ class PatlakPlot(GraphicalAnalysisPlot):
             * :class:`AltLoganPlot`
 
     """
+
     def calculate_valid_indicies_and_x_and_y(self) -> None:
         r"""
         Calculates the valid indices along with :math:`x` and :math:`y` for Patlak plot analysis.
@@ -590,6 +591,7 @@ class LoganPlot(GraphicalAnalysisPlot):
         * :class:`AltLoganPlot`
 
     """
+
     def calculate_valid_indicies_and_x_and_y(self) -> None:
         r"""Calculates the valid indices along with :math:`x` and :math:`y` for Logan plot analysis.
 
@@ -729,6 +731,7 @@ class AltLoganPlot(GraphicalAnalysisPlot):
             * :class:`LoganPlot`
 
     """
+
     def calculate_valid_indicies_and_x_and_y(self) -> None:
         r"""Calculates the valid indices along with :math:`x` and :math:`y` for Alt-Logan plot analysis.
 
