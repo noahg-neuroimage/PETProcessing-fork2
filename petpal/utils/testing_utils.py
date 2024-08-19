@@ -1,5 +1,4 @@
 import numpy as np
-from typing import Union, List
 import matplotlib.pyplot as plt
 from scipy.stats import linregress
 
@@ -143,7 +142,7 @@ def add_gaussian_noise_to_tac_based_on_max(tac_vals: np.ndarray, scale: float = 
 def scatter_with_regression_figure(axes,
                                    fit_values: np.ndarray,
                                    true_values: np.ndarray,
-                                   ax_titles: List[str],
+                                   ax_titles: list[str],
                                    sca_kwargs: dict = None,
                                    reg_kwargs: dict = None):
     r"""
@@ -188,7 +187,7 @@ def scatter_with_regression_figure(axes,
 def bland_atlman_figure(axes,
                         fit_values: np.ndarray,
                         true_values: np.ndarray,
-                        ax_titles: List[str],
+                        ax_titles: list[str],
                         sca_kwargs: dict = None,
                         bland_kwargs: dict = None):
     r"""
@@ -238,7 +237,7 @@ def bland_atlman_figure(axes,
 def ratio_bland_atlman_figure(axes,
                               fit_values: np.ndarray,
                               true_values: np.ndarray,
-                              ax_titles: List[str],
+                              ax_titles: list[str],
                               sca_kwargs: dict = None,
                               bland_kwargs: dict = None):
     r"""

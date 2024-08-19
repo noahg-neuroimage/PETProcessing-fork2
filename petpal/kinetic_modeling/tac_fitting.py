@@ -22,7 +22,7 @@ See Also:
 """
 import inspect
 import json
-from typing import Callable, Union, Tuple
+from typing import Callable, Union
 import numpy as np
 from scipy.optimize import curve_fit as sp_cv_fit
 from . import tcms_as_convolutions as pet_tcms
@@ -736,7 +736,7 @@ class FitTCMToTAC(object):
         else:
             self.fitting_obj = TACFitter
         self.analysis_props: dict = self.init_analysis_props()
-        self.fit_results: Union[None, Tuple[np.ndarray, np.ndarray]] = None
+        self.fit_results: Union[None, tuple[np.ndarray, np.ndarray]] = None
         self._has_analysis_been_run: bool = False
         
     def init_analysis_props(self):

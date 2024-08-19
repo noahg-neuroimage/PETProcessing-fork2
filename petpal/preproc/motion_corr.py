@@ -7,7 +7,7 @@ registration.
 import os
 import re
 import tempfile
-from typing import Union, Tuple, List
+from typing import Union
 import ants
 import nibabel
 import numpy as np
@@ -102,7 +102,7 @@ def motion_corr(input_image_4d_path: str,
                 verbose: bool,
                 type_of_transform: str='DenseRigid',
                 half_life: float=None,
-                **kwargs) -> Tuple[np.ndarray, List[str], List[float]]:
+                **kwargs) -> tuple[np.ndarray, list[str], list[float]]:
     """
     Correct PET image series for inter-frame motion. Runs rigid motion
     correction module from Advanced Normalisation Tools (ANTs) with default

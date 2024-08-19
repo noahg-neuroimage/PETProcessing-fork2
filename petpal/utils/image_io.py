@@ -4,13 +4,13 @@ Image IO
 import json
 import re
 import os
-from typing import List
 import ants
 import nibabel
 from nibabel.filebasedimages import FileBasedHeader, FileBasedImage
 import numpy as np
 import pandas as pd
 from . import useful_functions
+
 
 def write_dict_to_json(meta_data_dict: dict, out_path: str):
     """
@@ -26,7 +26,7 @@ def write_dict_to_json(meta_data_dict: dict, out_path: str):
 
 def convert_ctab_to_dseg(ctab_path: str,
                          dseg_path: str,
-                         column_names: List[str] = ['mapping', 'name', 'r', 'g', 'b', 'a', 'ttype']):
+                         column_names: list[str] = ['mapping', 'name', 'r', 'g', 'b', 'a', 'ttype']):
     """
     Convert a FreeSurfer compatible color table into a BIDS compatible label
     map ``dseg.tsv``.
@@ -42,12 +42,12 @@ def convert_ctab_to_dseg(ctab_path: str,
                           header=None,
                           comment='#',
                           names=column_names)
-    label_map = pd.DataFrame(columns=['name','abbreviation','mapping']).rename_axis('index')
+    label_map = pd.DataFrame(columns=['name', 'abbreviation', 'mapping']).rename_axis('index')
     label_map['name'] = fs_ctab['name']
     label_map['mapping'] = fs_ctab['mapping']
     label_map['abbreviation'] = useful_functions.build_label_map(fs_ctab['name'])
     label_map = label_map.sort_values(by=['mapping'])
-    label_map.to_csv(dseg_path,sep='\t')
+    label_map.to_csv(dseg_path, sep='\t')
     return label_map
 
 
@@ -72,10 +72,11 @@ def load_tac(filename: str) -> np.ndarray:
     try:
         return np.array(np.loadtxt(filename).T, dtype=float, order='C')
     except ValueError as e:
-        return np.array(np.loadtxt(filename,skiprows=1).T, dtype=float, order='C')
+        return np.array(np.loadtxt(filename, skiprows=1).T, dtype=float, order='C')
     except Exception as e:
         print(f"Couldn't read file {filename}. Error: {e}")
         raise e
+
 
 def load_metadata_for_nifty_with_same_filename(image_path) -> dict:
     """
@@ -88,9 +89,9 @@ def load_metadata_for_nifty_with_same_filename(image_path) -> dict:
     Returns:
         image_meta (dict): Dictionary where keys are fields in the image
             metadata file and values correspond to values in those fields.
-    
+
     Raises:
-        FileNotFoundError: If the provided image path cannot be found in the directory. 
+        FileNotFoundError: If the provided image path cannot be found in the directory.
         Additionally, occurs if the metadata .json file cannot be found.
     """
     if not os.path.exists(image_path):
@@ -120,7 +121,6 @@ def safe_copy_meta(input_image_path: str,
     copy_meta_path = re.sub('.nii.gz|.nii', '.json', out_image_path)
     meta_data_dict = load_metadata_for_nifty_with_same_filename(input_image_path)
     write_dict_to_json(meta_data_dict=meta_data_dict, out_path=copy_meta_path)
-
 
 
 class ImageIO():
@@ -155,7 +155,7 @@ class ImageIO():
 
         Args:
             image_path (str): Path to a .nii or .nii.gz file.
-        
+
         Returns:
             The nifti FileBasedImage.
 
@@ -207,7 +207,7 @@ class ImageIO():
 
     def extract_header_from_nii(self, image: nibabel.nifti1.Nifti1Image) -> FileBasedHeader:
         """
-        Convenient wrapper to extract header information from a .nii or .nii.gz 
+        Convenient wrapper to extract header information from a .nii or .nii.gz
         file as a nibabel file-based header.
 
         Args:
@@ -236,7 +236,7 @@ class ImageIO():
             affine (np.ndarray): Affine information we need to keep when rewriting image.
 
         Returns:
-            image_nibabel (nibabel.nifti1.Nifti1Image): Image stored in nifti-like nibabel format. 
+            image_nibabel (nibabel.nifti1.Nifti1Image): Image stored in nifti-like nibabel format.
         """
         image_nibabel = nibabel.nifti1.Nifti1Image(image_array, affine, header)
         return image_nibabel
@@ -261,7 +261,7 @@ class ImageIO():
 
         return spacing, origin, direction
 
-    def extract_np_to_ants(self, image_array: np.ndarray, affine: np.ndarray) -> ants.core.ants_image:
+    def extract_np_to_ants(self, image_array: np.ndarray, affine: np.ndarray) -> ants.ANTsImage:
         """
         Wrapper to convert an image array into ants object.
         Note header info is lost as ANTs does not carry this metadata.
@@ -271,7 +271,7 @@ class ImageIO():
             affine (np.ndarray): Affine information we need to keep when rewriting image.
 
         Returns:
-            image_ants (ants.ANTsImage): Image stored in nifti-like nibabel format. 
+            image_ants (ants.ANTsImage): Image stored in nifti-like nibabel format.
         """
         origin, spacing, direction = self.affine_parse(affine)
         image_ants = ants.from_numpy(data=image_array, spacing=spacing, origin=origin, direction=direction)
@@ -280,7 +280,7 @@ class ImageIO():
     @staticmethod
     def read_label_map_tsv(label_map_file: str) -> dict:
         """
-        Static method to read a label map, translating region indices to region names, 
+        Static method to read a label map, translating region indices to region names,
         as a dictionary. Assumes tsv format.
 
         Args:
@@ -296,6 +296,6 @@ class ImageIO():
         if not os.path.exists(label_map_file):
             raise FileNotFoundError(f"Image file {label_map_file} not found")
 
-        label_map = pd.read_csv(label_map_file,sep='\t')
+        label_map = pd.read_csv(label_map_file, sep='\t')
 
         return label_map
