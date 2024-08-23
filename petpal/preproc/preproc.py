@@ -24,7 +24,8 @@ apply_xfm_ants = register.apply_xfm_ants
 apply_xfm_fsl = register.apply_xfm_fsl
 
 
-_PREPROC_PROPS_ = {'FilePathWSSInput': None,
+_PREPROC_PROPS_ = {'FilePathCropInput': None,
+                   'FilePathWSSInput': None,
                    'FilePathMocoInp': None,
                    'FilePathRegInp': None,
                    'FilePathAnat': None,
@@ -35,8 +36,8 @@ _PREPROC_PROPS_ = {'FilePathWSSInput': None,
                    'FilePathAtlas': None,
                    'FilePathSUVRInput': None,
                    'FilePathBlurInput': None,
-                   'FilePathFSLPostmat': None,
-                   'FilePathFSLPremat': None,
+                   'FilePathFSLPostmat': '',
+                   'FilePathFSLPremat': '',
                    'FilePathWarpRef': None,
                    'FilePathWarp': None,
                    'FilePathAntsXfms': None,
@@ -44,6 +45,8 @@ _PREPROC_PROPS_ = {'FilePathWSSInput': None,
                    'HalfLife': None,
                    'StartTimeWSS': 0,
                    'EndTimeWSS': -1,
+                   'CropXdim': None,
+                   'CropYdim': None,
                    'MotionTarget': None,
                    'MocoPars': None,
                    'RegPars': None,
@@ -65,7 +68,8 @@ _REQUIRED_KEYS_ = {
     'gauss_blur': ['FilePathBlurInput','BlurSize','Verbose'],
     'apply_xfm_ants': ['FilePathWarpInput','FilePathWarpRef','FilePathAntsXfms','Verbose'],
     'apply_xfm_fsl': ['FilePathWarpInput','FilePathWarpRef','FilePathWarp','FilePathFSLPremat','FilePathFSLPostmat','Verbose'],
-    'vat_wm_ref_region': ['FilePathBSseg','FilePathSeg']
+    'vat_wm_ref_region': ['FilePathBSseg','FilePathSeg'],
+    'crop_image': ['FilePathCropInput','CropXdim','CropYdim']
 }
 
 
@@ -370,6 +374,15 @@ class PreProc():
                 bs_segmentation_path=f"{preproc_props['FilePathBSseg']}",
                 wm_ref_segmentation_path=out_ref_region,
                 out_image_path=outfile
+            )
+
+        elif method_name=='crop_image':
+            outfile = self._generate_outfile_path(method_short='crop')
+            image_operations_4d.crop_image(
+                input_image_path=preproc_props['FilePathCropInput'],
+                out_image_path=outfile,
+                x_dim=preproc_props['CropXdim'],
+                y_dim=preproc_props['CropYdim']
             )
 
         return None
