@@ -260,28 +260,3 @@ def resample_nii_4dfp(input_image_path: str,
     )
     nibabel.save(input_on_mpr,out_image_path)
     image_io.safe_copy_meta(input_image_path=input_image_path,out_image_path=out_image_path)
-
-
-def crop_brain(input_image_path: str,
-               out_image_path: str,
-               crop_z: bool=False):
-    """
-    Method to crop a PET scan to a box closest to the brain.
-
-    Useful for images where the FOV is much larger than necessary. Cropping the image saves
-    computation time.
-
-    Args:
-        input_image_path (str): Path to 4D PET image to be cropped
-        out_image_path (str): Path to cropped PET image
-        crop_z (bool): If False, will not crop image in the Z axis (S/I). Default False.
-    """
-    input_image = ants.image_read(input_image_path)
-    default_direction = np.array([[-1,0,0],[0,-1,0],[0,0,1]])
-    mean_image = ants.from_numpy(data=input_image.mean(axis=3),origin=input_image.origin[:3],spacing=input_image.spacing[:3],direction=default_direction)
-    smooth_image = ants.smooth_image(mean_image,sigma=6,FWHM=True)
-    imean = ants.weingarten_image_curvature(smooth_image)
-    mask_image = ants.get_mask(smooth_image,low_thresh=0.1*imean)
-    return mask_image
-
-
