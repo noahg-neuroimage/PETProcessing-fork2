@@ -8,7 +8,7 @@ def sgtm(pet_nifti: nib.Nifti1Image,
          roi_nifti: nib.Nifti1Image,
          fwhm: Union[float, Tuple[float, float, float]],
          zeroth_roi: bool = False) -> Tuple[np.ndarray, np.ndarray, float]:
-    """
+    r"""
     Apply Symmetric Geometric Transfer Matrix (SGTM) method for Partial Volume Correction (PVC) to PET images based
     on ROI labels.
 

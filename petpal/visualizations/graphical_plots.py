@@ -19,7 +19,6 @@ plots.
 Please refer to the documentation of each class for more detailed information.
 """
 
-
 from matplotlib import pyplot as plt
 import numpy as np
 from abc import ABC, abstractmethod
@@ -52,13 +51,14 @@ class GraphicalAnalysisPlot(ABC):
             'r_squared' (calculated in specific implementations).
 
     .. important::
-    
+
         This is an abstract class and should be inherited by a concrete class that implements the following methods:
             * :func:`calculate_valid_indicies_and_x_and_y`
             * :func:`generate_label_from_fit_params`
             * :func:`add_figure_axes_labels_and_legend`
-        
+
     """
+
     def __init__(self, pTAC: np.ndarray, tTAC: np.ndarray, t_thresh_in_mins: float, figObj: plt.Figure = None):
         """
         Initialize an instance of the GraphicalAnalysisPlot class.
@@ -91,7 +91,7 @@ class GraphicalAnalysisPlot(ABC):
         self.fit_params: Dict = None
         self.calculate_valid_indicies_and_x_and_y()
         self.calculate_fit_params()
-        
+
     @staticmethod
     def generate_figure_and_axes(figObj: plt.Figure = None):
         """
@@ -144,7 +144,7 @@ class GraphicalAnalysisPlot(ABC):
         else:
             for ax in self.ax_list:
                 ax.plot(self.x, self.y, **pl_kwargs)
-                
+
     def add_shading_plots(self, pl_kwargs: dict = None):
         """
         Add shaded regions to the Axes in the instance's Axes list.
@@ -168,7 +168,7 @@ class GraphicalAnalysisPlot(ABC):
         else:
             for ax in self.ax_list:
                 ax.axvspan(x_lo, x_hi, **pl_kwargs)
-                
+
     def add_fit_points(self, pl_kwargs: dict = None):
         """
         Add fit points to the Axes in the instance's Axes list.
@@ -192,7 +192,7 @@ class GraphicalAnalysisPlot(ABC):
         else:
             for ax in self.ax_list:
                 ax.plot(self.x[t_thresh:], self.y[t_thresh:], **pl_kwargs)
-                
+
     def add_fit_lines(self, pl_kwargs: dict = None):
         """
         Add line of best fit to the Axes in the instance's Axes list.
@@ -216,8 +216,8 @@ class GraphicalAnalysisPlot(ABC):
                         zorder=3, label=self.generate_label_from_fit_params())
         else:
             for ax in self.ax_list:
-                ax.plot(self.x, y,  **pl_kwargs)
-    
+                ax.plot(self.x, y, **pl_kwargs)
+
     def add_plots(self,
                   plot_data: bool = True,
                   plot_fit_points: bool = True,
@@ -253,7 +253,7 @@ class GraphicalAnalysisPlot(ABC):
             * :meth:`add_fit_points`: Method used to plot the fit points.
             * :meth:`add_fit_lines`: Method used to plot the line of best fit.
             * :meth:`add_shading_plots`: Method used to add shading to the plots.
-            
+
         """
         if plot_data:
             self.add_data_plots(pl_kwargs=data_kwargs)
@@ -263,7 +263,7 @@ class GraphicalAnalysisPlot(ABC):
             self.add_fit_lines(pl_kwargs=line_kwargs)
         if fit_shading:
             self.add_shading_plots(pl_kwargs=shading_kwargs)
-    
+
     def generate_figure(self,
                         plot_data: bool = True,
                         plot_fit_points: bool = True,
@@ -296,7 +296,7 @@ class GraphicalAnalysisPlot(ABC):
             * :func:`add_plots`: Composite function that adds different types of plots.
             * :func:`add_figure_axes_labels_and_legend`: Adds labels and a legend to the figure.
               (To be implemented in a specific class)
-            
+
         """
         self.add_plots(plot_data=plot_data,
                        plot_fit_points=plot_fit_points,
@@ -309,9 +309,9 @@ class GraphicalAnalysisPlot(ABC):
         self.add_figure_axes_labels_and_legend()
         self.ax_list[0].set_title("Linear Plot")
         self.ax_list[1].set_title("LogLog Plot")
-        
+
         self.ax_list[1].set(yscale='log', xscale='log')
-    
+
     def calculate_fit_params(self):
         """
         Calculates the parameters (slope, intercept, r_squared) for line fitting.
@@ -323,16 +323,16 @@ class GraphicalAnalysisPlot(ABC):
             * :func:`calculate_valid_indicies_and_x_and_y`: Method used to generate the x and y values.
             * :func:`petpal.graphical_analysis.fit_line_to_data_using_lls_with_rsquared`: Method used to fit a line to
               data points using Least Square fitting with R-squared value.
-            
+
         """
         t_thresh = self.t_thresh_idx
         fit_params = pet_grph.fit_line_to_data_using_lls_with_rsquared(xdata=self.x[t_thresh:], ydata=self.y[t_thresh:])
-        
+
         fit_params = {
             'slope': fit_params[0],
             'intercept': fit_params[1],
             'r_squared': fit_params[2]
-            }
+        }
         self.fit_params = fit_params
 
     @abstractmethod
@@ -345,24 +345,24 @@ class GraphicalAnalysisPlot(ABC):
         1. Calculates valid x and y values derived from the analysis where each concrete class represents a different
         method. Valid points are those where the denominator (which varies by analysis type) is non-zero.
         2. Saves the indices of the non-zero valid values and the indices that correspond to the given t_thresh_in_mins.
-        
+
         .. important::
             This abstract method must be implemented in each subclass representing a different analysis method.
-        
+
         Note:
             The implementation of this function in subclasses MUST calculate and assign values to ``x``, ``y``,
             ``t_thresh_idx``, and ``non_zero_idx`` attributes.
-        
+
         Raises:
             NotImplementedError: This method needs to be implemented in a subclass.
-            
+
         Example Implementation:
             :meth:`PatlakPlot.calculate_valid_indicies_and_x_and_y`: This class provides an example implementation of
             this method in a concrete subclass.
-            
+
         """
         raise NotImplementedError("This method must be implemented in a concrete class.")
-    
+
     @abstractmethod
     def generate_label_from_fit_params(self) -> str:
         """
@@ -380,10 +380,10 @@ class GraphicalAnalysisPlot(ABC):
         Example Implementation:
             :meth:`PatlakPlot.generate_label_from_fit_params`: This method provides an example implementation of this
             abstract method in a concrete subclass. Similarly, :meth:`LoganPlot.generate_label_from_fit_params`.
-            
+
         """
         raise NotImplementedError("This method must be implemented in a concrete class.")
-    
+
     @abstractmethod
     def add_figure_axes_labels_and_legend(self):
         """
@@ -401,7 +401,7 @@ class GraphicalAnalysisPlot(ABC):
 
         """
         raise NotImplementedError("This method must be implemented in a concrete class.")
-    
+
 
 class PatlakPlot(GraphicalAnalysisPlot):
     r"""
@@ -422,33 +422,34 @@ class PatlakPlot(GraphicalAnalysisPlot):
 
     Example:
         In the proceeding examples, ``pTAC`` represent the plasma TAC (or input TAC) and ``tTAC`` represents the tissue TAC.
-        
+
         For the quickest way to generate the Patlak Plot, we just instantiate the class and run the :meth:`generate_figure`
         method. This will generate 2 plots in a row. The first one having a linear-linear scale, and the second one
         having a log-log scale.
-        
+
         .. code-block:: python
-        
+
             from petpal.graphical_plots import PatlakPlot
             patlak_plot = PatlakPlot(tTAC=tTAC, pTAC=pTAC, t_thresh_in_mins=45.0)
             patlak_plot.generate_figure()
             plt.show() # Or use plt.savefig() to save the figure.
-        
+
         If the default styling needs to be changed, we can pass keyword arguments to each of the plotting methods:
-        
+
         .. code-block:: python
-        
+
             from petpal.graphical_plots import PatlakPlot
             patlak_plot = PatlakPlot(tTAC=tTAC, pTAC=pTAC, t_thresh_in_mins=45.0)
             patlak_plot.generate_figure(line_kwargs=dict(lw=2, alpha=0.95, color='red', label=patlak_plot.generate_label_from_fit_params()),
                                         shading_kwargs=dict(color='palegreen', alpha=0.2),
                                         data_kwargs=dict(alpha=0.85, color='k', marker='.'))
-                                           
+
     See Also:
             * :class:`LoganPlot`
             * :class:`AltLoganPlot`
-            
+
     """
+
     def calculate_valid_indicies_and_x_and_y(self) -> None:
         r"""
         Calculates the valid indices along with :math:`x` and :math:`y` for Patlak plot analysis.
@@ -457,9 +458,9 @@ class PatlakPlot(GraphicalAnalysisPlot):
         It further calculates the values of :math:`x` and :math:`y` used in Patlak analysis based on these non-zero
         indices. This is done to avoid singularities caused by zero denominators. The Patlak :math:`x` and :math:`y`
         values are:
-        
+
         .. math::
-        
+
             y&= \frac{R(t)}{C_\mathrm{P}(t)}\\
             x&= \frac{\int_{0}^{t}C_\mathrm{P}(s)\mathrm{d}s}{C_\mathrm{P}(t)},
 
@@ -474,17 +475,17 @@ class PatlakPlot(GraphicalAnalysisPlot):
         non_zero_indices = np.argwhere(self.pTAC[1] != 0.0).T[0]
         t_thresh = pet_grph.get_index_from_threshold(times_in_minutes=self.pTAC[0][non_zero_indices],
                                                      t_thresh_in_minutes=self.t_thresh_in_mins)
-        
+
         x = pet_grph.cumulative_trapezoidal_integral(xdata=self.pTAC[0], ydata=self.pTAC[1])
         x = x[non_zero_indices] / self.pTAC[1][non_zero_indices]
         y = self.tTAC[1][non_zero_indices] / self.pTAC[1][non_zero_indices]
-        
+
         self.x = x[:]
         self.y = y[:]
         self.non_zero_idx = non_zero_indices[:]
         self.t_thresh_idx = t_thresh
         return None
-    
+
     def generate_label_from_fit_params(self) -> str:
         r"""
         Creates a label string from the fit parameters for graphical presentation.
@@ -492,20 +493,20 @@ class PatlakPlot(GraphicalAnalysisPlot):
         This method retrieves slope, intercept, and R-squared values from the instance's
         fit parameters, and then formats these values into a string that is LaTeX compatible
         for later rendering inside a plot's label. For example:
-        
+
         .. math::
-        
+
             K_{1}&=0.1\\
             V_{\mathrm{T}}&=0.2\\
             R^{2}&=0.95
-            
+
         Returns:
             str: The created label. Each parameter is formatted as a separate line.
         """
         slope = self.fit_params['slope']
         intercept = self.fit_params['intercept']
         r_sq = self.fit_params['r_squared']
-        
+
         return f"$K_1=${slope:<5.3f}\n$V_\mathrm{{T}}=${intercept:<5.3f}\n$R^2=${r_sq:<5.3f}"
 
     def add_figure_axes_labels_and_legend(self):
@@ -526,10 +527,10 @@ class PatlakPlot(GraphicalAnalysisPlot):
 
         where :math:`C_\mathrm{P}` is the input function and :math:`R(t)` is PET activity in the particular region of
         interest.
-        
+
         See Also:
             * :meth:`calculate_valid_indicies_and_x_and_y` for the calculation implementation.
-        
+
         """
         x_label = r"$\frac{\int_{0}^{t}C_\mathrm{P}(s)\mathrm{d}s}{C_\mathrm{P}(t)}$"
         y_label = r"$\frac{R(t)}{C_\mathrm{P}(t)}$"
@@ -563,51 +564,52 @@ class LoganPlot(GraphicalAnalysisPlot):
     Example:
         In the proceeding examples, ``pTAC`` represent the plasma TAC (or input TAC) and ``tTAC`` represents the tissue
         TAC.
-        
+
         For the quickest way to generate the Logan Plot, we just instantiate the class and run the :meth:`generate_figure`
         method. This will generate 2 plots in a row. The first one having a linear-linear scale, and the second one
         having a log-log scale.
-        
+
         .. code-block:: python
-        
+
             from petpal.graphical_plots import LoganPlot
             logan_plot = LoganPlot(tTAC=tTAC, pTAC=pTAC, t_thresh_in_mins=45.0)
             logan_plot.generate_figure()
             plt.show() # Or use plt.savefig() to save the figure.
-        
+
         If the default styling needs to be changed, we can pass keyword arguments to each of the plotting methods:
-        
+
         .. code-block:: python
-        
+
             from petpal.graphical_plots import LoganPlot
             logan_plot = LoganPlot(tTAC=tTAC, pTAC=pTAC, t_thresh_in_mins=45.0)
             logan_plot.generate_figure(line_kwargs=dict(lw=2, alpha=0.95, color='red', label=patlak_plot.generate_label_from_fit_params()),
                                         shading_kwargs=dict(color='palegreen', alpha=0.2),
                                         data_kwargs=dict(alpha=0.85, color='k', marker='.'))
-                                        
+
     See Also:
         * :class:`PatlakPlot`
         * :class:`AltLoganPlot`
-            
+
     """
+
     def calculate_valid_indicies_and_x_and_y(self) -> None:
         r"""Calculates the valid indices along with :math:`x` and :math:`y` for Logan plot analysis.
-        
+
         This method performs the computation for the non-zero indices in the provided region time-activity curve (tTAC).
         It further calculates the values of :math:`x` and :math:`y` used in Logan analysis based on these non-zero
         indices. This is done to avoid singularities caused by zero denominators. The Logan :math:`x` and :math:`y`
         values are:
-    
+
         .. math::
-        
+
             y&= \frac{\int_{0}^{t}R(s)\mathrm{d}s}{R(t)}\\
             x&= \frac{\int_{0}^{t}C_\mathrm{P}(s)\mathrm{d}s}{R(t)},
 
         where :math:`C_\mathrm{P}` is the input function and :math:`R(t)` is PET activity in the particular region of
         interest.
-    
+
         The method updates the instance variables ``x``, ``y``, ``non_zero_idx``, and ``t_thresh_idx``.
-        
+
         Returns:
             None
 
@@ -615,19 +617,19 @@ class LoganPlot(GraphicalAnalysisPlot):
         non_zero_indices = np.argwhere(self.tTAC[1] != 0.0).T[0]
         t_thresh = pet_grph.get_index_from_threshold(times_in_minutes=self.pTAC[0][non_zero_indices],
                                                      t_thresh_in_minutes=self.t_thresh_in_mins)
-        
+
         x = pet_grph.cumulative_trapezoidal_integral(xdata=self.pTAC[0], ydata=self.pTAC[1])
         y = pet_grph.cumulative_trapezoidal_integral(xdata=self.tTAC[0], ydata=self.tTAC[1])
-        
+
         x = x[non_zero_indices] / self.tTAC[1][non_zero_indices]
         y = y[non_zero_indices] / self.tTAC[1][non_zero_indices]
-        
+
         self.x = x[:]
         self.y = y[:]
         self.non_zero_idx = non_zero_indices[:]
         self.t_thresh_idx = t_thresh
         return None
-    
+
     def generate_label_from_fit_params(self) -> str:
         r"""
         Creates a label string from the fit parameters for graphical presentation.
@@ -637,7 +639,7 @@ class LoganPlot(GraphicalAnalysisPlot):
         For example:
 
         .. math::
-        
+
             V_\mathrm{T}&=0.1\\
             b&=0.2\\
             R^{2}&=0.95
@@ -648,9 +650,9 @@ class LoganPlot(GraphicalAnalysisPlot):
         slope = self.fit_params['slope']
         intercept = self.fit_params['intercept']
         r_sq = self.fit_params['r_squared']
-        
+
         return f"$V_\mathrm{{T}}=${slope:<5.3f}\n$b=${intercept:<5.3f}\n$R^2=${r_sq:<5.3f}"
-    
+
     def add_figure_axes_labels_and_legend(self):
         r"""
         Adds labels and a legend to the axes of the figure.
@@ -661,7 +663,7 @@ class LoganPlot(GraphicalAnalysisPlot):
         The labels are set to:
 
         .. math::
-        
+
             y&= \frac{\int_{0}^{t}R(s)\mathrm{d}s}{R(t)}\\
             x&= \frac{\int_{0}^{t}C_\mathrm{P}(s)\mathrm{d}s}{R(t)},
 
@@ -729,6 +731,7 @@ class AltLoganPlot(GraphicalAnalysisPlot):
             * :class:`LoganPlot`
 
     """
+
     def calculate_valid_indicies_and_x_and_y(self) -> None:
         r"""Calculates the valid indices along with :math:`x` and :math:`y` for Alt-Logan plot analysis.
 
@@ -754,19 +757,19 @@ class AltLoganPlot(GraphicalAnalysisPlot):
         non_zero_indices = np.argwhere(self.pTAC[1] != 0.0).T[0]
         t_thresh = pet_grph.get_index_from_threshold(times_in_minutes=self.pTAC[0][non_zero_indices],
                                                      t_thresh_in_minutes=self.t_thresh_in_mins)
-        
+
         x = pet_grph.cumulative_trapezoidal_integral(xdata=self.pTAC[0], ydata=self.pTAC[1])
         y = pet_grph.cumulative_trapezoidal_integral(xdata=self.tTAC[0], ydata=self.tTAC[1])
-        
+
         x = x[non_zero_indices] / self.pTAC[1][non_zero_indices]
         y = y[non_zero_indices] / self.pTAC[1][non_zero_indices]
-        
+
         self.x = x[:]
         self.y = y[:]
         self.non_zero_idx = non_zero_indices[:]
         self.t_thresh_idx = t_thresh
         return None
-    
+
     def generate_label_from_fit_params(self) -> str:
         r"""
         Creates a label string from the fit parameters for graphical presentation.
@@ -787,9 +790,9 @@ class AltLoganPlot(GraphicalAnalysisPlot):
         slope = self.fit_params['slope']
         intercept = self.fit_params['intercept']
         r_sq = self.fit_params['r_squared']
-        
+
         return f"$m=${slope:<5.3f}\n$b=${intercept:<5.3f}\n$R^2=${r_sq:<5.3f}"
-    
+
     def add_figure_axes_labels_and_legend(self):
         r"""
         Adds labels and a legend to the axes of the figure.
@@ -868,10 +871,10 @@ class Plot:
 
     Example:
         An example of how to use this class to save a Patlak graphical analysis plot:
-        
-        
+
+
         .. code-block:: python
-        
+
             import petpal.graphical_plots as pet_plt
             # ptac_path points to a plasma TAC (or input TAC)
             # ttac_path points to a ROI TAC.
@@ -905,10 +908,10 @@ class Plot:
             method_name (str): Name of the method to be used ('patlak', 'logan', or 'alt-logan').
             output_directory (str): Path to the directory where output files will be stored.
             output_filename_prefix (str, optional): Prefix to be appended to the output files. Defaults to an empty string.
-        
+
         Raises:
             ValueError: If any of the file paths or the directory path does not exist, or if the method name is invalid.
-        
+
         Note:
             This method does not return a value. It's an initializer of this class.
 
@@ -929,11 +932,11 @@ class Plot:
         self.thresh_in_mins = threshold_in_mins
         self.output_filename_prefix = output_filename_prefix
         self.fig_cls = self._select_fig_class_based_on_method(method_name=self.method_name)
-        
+
     def save_figure(self):
         """
         Creates and saves the figure in both PNG and PDF formats.
-        
+
         We first safely load the TACS. Then, this method generates the figure using the method selected during the
         initialization of the class. The figure is then saved inside the specified  output directory with a filename
         based on parameters provided at initialization.
@@ -944,24 +947,24 @@ class Plot:
         Note:
             This method does not return any value. It is responsible for saving the generated figure to the specified
             output directory in PNG and PDF formats.
-            
+
         Raises:
             Exception: An error occurred while loading the TACs from the input or ROI files.
-            
+
         """
         p_tac = _safe_load_tac(self.input_tac_path)
         t_tac = _safe_load_tac(self.roi_tac_path)
-        
+
         filename = f"{self.output_filename_prefix}_analysis-{self.method_name}"
         out_path = os.path.join(self.output_directory, filename)
-        
+
         with plt.rc_context(rc={'pdf.fonttype': 42, 'ps.fonttype': 42, 'text.usetex': True}):
             fig_cls = self.fig_cls(pTAC=p_tac, tTAC=t_tac, t_thresh_in_mins=self.thresh_in_mins)
             fig_cls.generate_figure()
             plt.savefig(f"{out_path}.png", bbox_inches='tight', dpi=150)
             plt.savefig(f"{out_path}.pdf", bbox_inches='tight', transparent=True)
             plt.close()
-    
+
     @staticmethod
     def _validate_filepath(filename: str) -> None:
         """
@@ -982,7 +985,7 @@ class Plot:
         """
         if not os.path.isfile(filename):
             raise ValueError(f"Invalid file path: {filename}")
-    
+
     @staticmethod
     def _validate_directory(directory: str) -> None:
         """
@@ -997,13 +1000,13 @@ class Plot:
 
         Raises:
             ValueError: if the provided directory path does not exist.
-        
+
         No return value.
 
         """
         if not os.path.isdir(directory):
             raise ValueError(f"Invalid directory: {directory}.")
-    
+
     @staticmethod
     def _select_fig_class_based_on_method(method_name: str) -> Union[
         Type[PatlakPlot], Type[LoganPlot], Type[AltLoganPlot]]:
@@ -1026,7 +1029,7 @@ class Plot:
             * :class:`PatlakPlot`
             * :class:`LoganPlot`
             * :class:`AltLoganPlot`
-        
+
         """
         if method_name == "patlak":
             return PatlakPlot
@@ -1036,4 +1039,3 @@ class Plot:
             return AltLoganPlot
         else:
             raise ValueError("Invalid method name. Please choose either 'patlak', 'logan', or 'alt-logan'.")
-        

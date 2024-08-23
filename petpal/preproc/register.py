@@ -19,7 +19,7 @@ def register_pet(input_reg_image_path: str,
                  out_image_path: str,
                  verbose: bool,
                  type_of_transform: str='DenseRigid',
-                 half_life: str=None,
+                 half_life: float=None,
                  **kwargs):
     """
     Computes and runs rigid registration of 4D PET image series to 3D anatomical image, typically
