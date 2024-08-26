@@ -360,7 +360,42 @@ def write_tacs(input_image_4d_path: str,
 
 
 class SimpleAutoImageCropper(object):
-    
+    r"""
+    Class for automatically cropping 3D or 4D medical images based on pixel intensity thresholds.
+
+    This class provides functionality to load a medical image, determine the meaningful regions
+    by thresholding, and crop the image to remove regions outside these boundaries.
+    It also supports copying metadata from the original image.
+
+    Attributes:
+        input_image_path (str): The file path to the input image.
+        out_image_path (str): The file path to save the cropped image.
+        thresh (float): The threshold value used to determine the boundaries.
+        verbose (bool): If True, prints information about image shapes.
+        input_img_obj (nibabel.Nifti1Image): The loaded input image object.
+        crop_img_obj (nibabel.Nifti1Image): The cropped image object.
+
+    Example:
+        ```python
+        from image_operations_4d import SimpleAutoImageCropper
+
+        cropper = SimpleAutoImageCropper(
+            input_image_path='path/to/input_image.nii',
+            out_image_path='path/to/output_image.nii',
+            thresh_val=0.01,
+            verbose=True,
+            copy_metadata=True
+        )
+        ```
+
+    See Also:
+        - :meth:`get_cropped_image`
+        - :meth:`get_index_pairs_for_all_dims`
+        - :meth:`get_left_and_right_boundary_indices_for_threshold`
+        - :meth:`gen_line_profile`
+        
+        
+    """
     def __init__(self,
                  input_image_path: str,
                  out_image_path: str,
@@ -368,6 +403,35 @@ class SimpleAutoImageCropper(object):
                  verbose: bool = True,
                  copy_metadata: bool = True
                  ):
+        r"""
+        Initializes the SimpleAutoImageCropper with input image path, output image path, and other parameters.
+
+        Loads the input image, generates the cropped image using the specified threshold, and saves it to the output path.
+
+        Args:
+            input_image_path (str): The file path to the input image.
+            out_image_path (str): The file path to save the cropped image.
+            thresh_val (float, optional): The threshold value used to determine the boundaries.
+                                          Must be less than 0.5. Defaults to 1e-2.
+            verbose (bool, optional): If True, prints information about image shapes. Defaults to True.
+            copy_metadata (bool, optional): If True, copies metadata from the original image to the cropped image. Defaults to True.
+
+        Raises:
+            AssertionError: If the `thresh_val` is not less than 0.5.
+
+        Example:
+            ```python
+            from image_operations_4d import SimpleAutoImageCropper
+
+            cropper = SimpleAutoImageCropper(
+                input_image_path='path/to/input_image.nii',
+                out_image_path='path/to/output_image.nii',
+                thresh_val=0.01,
+                verbose=True,
+                copy_metadata=True
+            )
+            ```
+        """
         self.input_image_path = input_image_path
         self.out_image_path = out_image_path
         self.thresh = thresh_val
