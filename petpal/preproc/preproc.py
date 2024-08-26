@@ -55,6 +55,7 @@ _PREPROC_PROPS_ = {'FilePathCropInput': None,
                    'BlurSize': None,
                    'RegionExtract': None,
                    'TimeFrameKeyword': None,
+                   'CropThresh': None,
                    'Verbose': False}
 _REQUIRED_KEYS_ = {
     'weighted_series_sum': ['FilePathWSSInput','HalfLife','Verbose'],
@@ -69,7 +70,7 @@ _REQUIRED_KEYS_ = {
     'apply_xfm_ants': ['FilePathWarpInput','FilePathWarpRef','FilePathAntsXfms','Verbose'],
     'apply_xfm_fsl': ['FilePathWarpInput','FilePathWarpRef','FilePathWarp','FilePathFSLPremat','FilePathFSLPostmat','Verbose'],
     'vat_wm_ref_region': ['FreeSurferSubjectDir'],
-    'thresh_crop': ['FilePathCropInput', 'FilePathCropOutput', 'CropThreshold', 'Verbose']
+    'thresh_crop': ['FilePathCropInput', 'CropThreshold', 'Verbose']
 }
 
 
@@ -395,5 +396,13 @@ class PreProc():
                 wm_ref_segmentation_path=out_ref_region,
                 out_image_path=outfile
             )
-
+        
+        elif method_name=='thresh_crop':
+            outfile = self._generate_outfile_path(method_short='threshcrop')
+            thresh_crop(input_image_path=preproc_props['FilePathCropInput'],
+                        out_image_path=outfile,
+                        thresh_val=preproc_props['CropThreshold'],
+                        verbose=preproc_props['Verbose'],
+                        copy_metadata=True)
+        
         return None
