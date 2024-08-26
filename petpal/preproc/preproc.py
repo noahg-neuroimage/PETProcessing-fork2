@@ -23,6 +23,7 @@ register_pet = register.register_pet
 warp_pet_atlas = register.warp_pet_atlas
 apply_xfm_ants = register.apply_xfm_ants
 apply_xfm_fsl = register.apply_xfm_fsl
+thresh_crop = image_operations_4d.SimpleAutoImageCropper
 
 
 _PREPROC_PROPS_ = {'FilePathCropInput': None,
@@ -67,7 +68,8 @@ _REQUIRED_KEYS_ = {
     'gauss_blur': ['FilePathBlurInput','BlurSize','Verbose'],
     'apply_xfm_ants': ['FilePathWarpInput','FilePathWarpRef','FilePathAntsXfms','Verbose'],
     'apply_xfm_fsl': ['FilePathWarpInput','FilePathWarpRef','FilePathWarp','FilePathFSLPremat','FilePathFSLPostmat','Verbose'],
-    'vat_wm_ref_region': ['FreeSurferSubjectDir']
+    'vat_wm_ref_region': ['FreeSurferSubjectDir'],
+    'thresh_crop': ['FilePathCropInput', 'FilePathCropOutput', 'CropThreshold', 'Verbose']
 }
 
 

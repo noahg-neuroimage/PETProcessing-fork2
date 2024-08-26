@@ -446,9 +446,9 @@ class SimpleAutoImageCropper(object):
             print(f"(info): Input image has shape: {self.input_img_obj.shape}")
             print(f"(info): Input image has shape: {self.crop_img_obj.shape}")
             
-        nibabel.save(self.out_image_path, self.crop_img_obj)
+        nibabel.save(filename=self.out_image_path, img=self.crop_img_obj)
         if copy_metadata:
-            image_io.safe_copy_meta(input_image_path=self.input_img_obj,
+            image_io.safe_copy_meta(input_image_path=self.input_image_path,
                                     out_image_path=self.out_image_path)
         
         
