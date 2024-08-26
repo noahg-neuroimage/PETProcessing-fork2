@@ -371,5 +371,14 @@ class SimpleAutoImageCropper(object):
         self.out_image_path = out_image_path
         self.threshold = thresh_val
         self.verbose = verbose
-        
-        
+    
+    @staticmethod
+    def gen_line_profile(img_arr: np.ndarray, dim: str = 'x'):
+        tmp_dim = dim.lower()
+        assert tmp_dim in ['x', 'y', 'z']
+        if tmp_dim == 'x':
+            return np.mean(img_arr, axis=(1, 2))
+        if tmp_dim == 'y':
+            return np.mean(img_arr, axis=(0, 2))
+        if tmp_dim == 'z':
+            return np.mean(img_arr, axis=(0, 1))
