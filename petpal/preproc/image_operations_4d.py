@@ -380,7 +380,8 @@ class SimpleAutoImageCropper(object):
             
         nibabel.save(self.out_image_path, self.crop_img_obj)
         if copy_metadata:
-            image_io.safe_copy_meta(self.input_img_obj, self.out_image_path)
+            image_io.safe_copy_meta(input_image_path=self.input_img_obj,
+                                    out_image_path=self.out_image_path)
         
         
     
