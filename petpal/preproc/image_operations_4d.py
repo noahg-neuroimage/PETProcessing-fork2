@@ -400,6 +400,32 @@ class SimpleAutoImageCropper(object):
     @staticmethod
     def get_left_and_right_boundary_indices_for_threshold(line_prof: np.ndarray,
                                                           thresh: float = 1e-2):
+        r"""
+        Determines the left and right boundary indices above a threshold in a line profile.
+
+        This function identifies the indices where the normalized line profile crosses the specified threshold value,
+        indicating the boundaries of the region of interest.
+
+        Args:
+            line_prof (np.ndarray): The input line profile as a 1D array.
+            thresh (float, optional): The threshold value for determining boundaries. Must be less than 0.5. Defaults to 1e-2.
+
+        Returns:
+            tuple: A tuple containing the left and right boundary indices (left_index, right_index).
+
+        Raises:
+            AssertionError: If the `thresh` value is not less than 0.5.
+
+        Example:
+            ```python
+            import numpy as np
+            from image_operations_4d import SimpleAutoImageCropper
+
+            line_prof = np.random.rand(100)  # Example normalized line profile
+            left_index, right_index = SimpleAutoImageCropper.get_left_and_right_boundary_indices_for_threshold(line_prof=line_prof, thresh=0.01)
+            print(left_index, right_index)
+            ```
+        """
         assert thresh < 0.5
         norm_prof = line_prof / np.max(line_prof)
         l_ind, r_ind = np.argwhere(norm_prof > thresh).T[0][[0, -1]]
