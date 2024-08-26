@@ -62,6 +62,8 @@ def crop_image(input_image_path: str,
 
     cropped_image = image.slicer[center[0]-x_half:center[0]+x_half,center[1]-y_half:center[1]+y_half]
     nibabel.save(cropped_image,out_image_path)
+    image_io.safe_copy_meta(input_image_path=input_image_path,
+                            out_image_path=out_image_path)
     return cropped_image
 
 
