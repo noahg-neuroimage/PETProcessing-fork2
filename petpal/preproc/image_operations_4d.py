@@ -358,3 +358,18 @@ def write_tacs(input_image_4d_path: str,
         header_text = f'{time_frame_keyword}\t{regions_abrev[i]}_mean_activity'
         out_tac_path = os.path.join(out_tac_dir, f'tac-{regions_abrev[i]}.tsv')
         np.savetxt(out_tac_path,region_tac_file,delimiter='\t',header=header_text,comments='')
+
+class SimpleAutoImageCropper(object):
+    
+    def __init__(self,
+                 input_image_path: str,
+                 out_image_path: str,
+                 thresh_val: float = 1.0e-2,
+                 verbose: bool = True
+                 ):
+        self.input_image_path = input_image_path
+        self.out_image_path = out_image_path
+        self.threshold = thresh_val
+        self.verbose = verbose
+        
+        
