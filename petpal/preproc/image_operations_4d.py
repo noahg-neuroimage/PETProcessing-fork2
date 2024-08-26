@@ -407,7 +407,39 @@ class SimpleAutoImageCropper(object):
 
     @staticmethod
     def get_index_pairs_for_all_dims(img_obj: nibabel.Nifti1Image, thresh: float = 1e-2):
-        
+        r"""
+        Gets the boundary indices for each dimension of the input image based on a threshold value.
+
+        This function computes the left and right boundary indices for all dimensions (x, y, z)
+        by generating line profiles and applying a threshold to identify meaningful regions.
+
+        Args:
+            img_obj (nibabel.Nifti1Image): The input NIfTI image object.
+            thresh (float, optional): The threshold value used to determine the boundaries.
+                                      Must be less than 0.5. Defaults to 1e-2.
+
+        Returns:
+            tuple: A tuple of boundary index pairs for each dimension, formatted as
+                   ((x_left, x_right), (y_left, y_right), (z_left, z_right)).
+
+        Raises:
+            AssertionError: If the `thresh` value is not less than 0.5.
+            
+        See Also:
+            - :meth:`get_index_pairs_for_all_dims`
+
+        Example:
+            ```python
+            import nibabel as nib
+            from image_operations_4d import SimpleAutoImageCropper
+
+            input_image_path = 'path/to/input_image.nii'
+            img_obj = nib.load(input_image_path)
+
+            boundaries = SimpleAutoImageCropper.get_index_pairs_for_all_dims(img_obj=img_obj, thresh=0.01)
+            print(boundaries)
+            ```
+        """
         if len(img_obj.shape) > 3:
             tmp_data = np.mean(img_obj.get_fdata(), axis=-1)
         else:
