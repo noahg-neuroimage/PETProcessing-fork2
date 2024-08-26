@@ -392,13 +392,12 @@ class SimpleAutoImageCropper(object):
         return l_ind, r_ind
 
     @staticmethod
-    def get_index_pairs_for_all_dims(image_path: str, thresh: float = 1e-2):
-        img_load = nibabel.load(image_path)
+    def get_index_pairs_for_all_dims(img_obj: nibabel.Nifti1Image, thresh: float = 1e-2):
         
-        if len(img_load.shape) > 3:
-            tmp_data = np.mean(img_load.get_fdata(), axis=-1)
+        if len(img_obj.shape) > 3:
+            tmp_data = np.mean(img_obj.get_fdata(), axis=-1)
         else:
-            tmp_data = img_load.get_fdata()
+            tmp_data = img_obj.get_fdata()
         
         prof_func = SimpleAutoImageCropper.gen_line_profile
         index_func = SimpleAutoImageCropper.get_left_and_right_boundary_indices_for_threshold
@@ -413,3 +412,13 @@ class SimpleAutoImageCropper(object):
         z_left, z_right = index_func(line_prof=z_line_prof, thresh=thresh)
         
         return (x_left, x_right), (y_left, y_right), (z_left, z_right)
+    
+    @staticmethod
+    def get_cropped_image(image_path: str, thresh: float = 1e-2):
+        tmp_img_load = nibabel.load(image_path)
+        
+        (x_left, x_right), (y_left, y_right), (z_left, z_right) = SimpleAutoImageCropper.get_index_pairs_for_all_dims(
+            img_obj=tmp_img_load, thresh=thresh)
+
+        return tmp_img_load.slicer[x_left:x_right, y_left:y_right, z_left:z_right, ...]
+    
