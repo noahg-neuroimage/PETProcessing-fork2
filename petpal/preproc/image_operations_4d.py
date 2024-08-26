@@ -369,8 +369,16 @@ class SimpleAutoImageCropper(object):
                  ):
         self.input_image_path = input_image_path
         self.out_image_path = out_image_path
-        self.threshold = thresh_val
+        self.thresh = thresh_val
         self.verbose = verbose
+        self.input_img_obj = nibabel.load(self.input_image_path)
+        self.crop_img_obj = self.get_cropped_image(img_obj=self.input_img_obj, thresh=self.thresh)
+        
+        if verbose:
+            print(f"(info): Input image has shape: {self.input_img_obj.shape}")
+            print(f"(info): Input image has shape: {self.crop_img_obj.shape}")
+            
+        
     
     @staticmethod
     def gen_line_profile(img_arr: np.ndarray, dim: str = 'x'):
@@ -414,10 +422,9 @@ class SimpleAutoImageCropper(object):
         return (x_left, x_right), (y_left, y_right), (z_left, z_right)
     
     @staticmethod
-    def get_cropped_image(image_path: str, thresh: float = 1e-2):
-        tmp_img_load = nibabel.load(image_path)
+    def get_cropped_image(img_obj: nibabel.Nifti1Image, thresh: float = 1e-2):
         
-        (x_l, x_r), (y_l, y_r), (z_l, z_r) = SimpleAutoImageCropper.get_index_pairs_for_all_dims(img_obj=tmp_img_load,
+        (x_l, x_r), (y_l, y_r), (z_l, z_r) = SimpleAutoImageCropper.get_index_pairs_for_all_dims(img_obj=img_obj,
                                                                                                  thresh=thresh)
         
-        return tmp_img_load.slicer[x_l:x_r, y_l:y_r, z_l:z_r, ...]
+        return img_obj.slicer[x_l:x_r, y_l:y_r, z_l:z_r, ...]
