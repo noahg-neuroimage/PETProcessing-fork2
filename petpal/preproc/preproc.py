@@ -25,7 +25,8 @@ apply_xfm_ants = register.apply_xfm_ants
 apply_xfm_fsl = register.apply_xfm_fsl
 
 
-_PREPROC_PROPS_ = {'FilePathWSSInput': None,
+_PREPROC_PROPS_ = {'FilePathCropInput': None,
+                   'FilePathWSSInput': None,
                    'FilePathMocoInp': None,
                    'FilePathRegInp': None,
                    'FilePathAnat': None,
