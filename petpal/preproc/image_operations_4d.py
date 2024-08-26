@@ -390,3 +390,26 @@ class SimpleAutoImageCropper(object):
         norm_prof = line_prof / np.max(line_prof)
         l_ind, r_ind = np.argwhere(norm_prof > thresh).T[0][[0, -1]]
         return l_ind, r_ind
+
+    @staticmethod
+    def get_index_pairs_for_all_dims(image_path: str, thresh: float = 1e-2):
+        img_load = nibabel.load(image_path)
+        
+        if len(img_load.shape) > 3:
+            tmp_data = np.mean(img_load.get_fdata(), axis=-1)
+        else:
+            tmp_data = img_load.get_fdata()
+        
+        prof_func = SimpleAutoImageCropper.gen_line_profile
+        index_func = SimpleAutoImageCropper.get_left_and_right_boundary_indices_for_threshold
+        
+        x_line_prof = prof_func(img_arr=tmp_data, dim='x')
+        x_left, x_right = index_func(line_prof=x_line_prof, thresh=thresh)
+        
+        y_line_prof = prof_func(img_arr=tmp_data, dim='y')
+        y_left, y_right = index_func(line_prof=y_line_prof, thresh=thresh)
+        
+        z_line_prof = prof_func(img_arr=tmp_data, dim='z')
+        z_left, z_right = index_func(line_prof=z_line_prof, thresh=thresh)
+        
+        return (x_left, x_right), (y_left, y_right), (z_left, z_right)
