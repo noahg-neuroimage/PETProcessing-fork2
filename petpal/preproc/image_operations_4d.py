@@ -382,3 +382,11 @@ class SimpleAutoImageCropper(object):
             return np.mean(img_arr, axis=(0, 2))
         if tmp_dim == 'z':
             return np.mean(img_arr, axis=(0, 1))
+    
+    @staticmethod
+    def get_left_and_right_boundary_indices_for_threshold(line_prof: np.ndarray,
+                                                          thresh: float = 1e-2):
+        assert thresh < 0.5
+        norm_prof = line_prof / np.max(line_prof)
+        l_ind, r_ind = np.argwhere(norm_prof > thresh).T[0][[0, -1]]
+        return l_ind, r_ind
