@@ -388,6 +388,33 @@ class SimpleAutoImageCropper(object):
     
     @staticmethod
     def gen_line_profile(img_arr: np.ndarray, dim: str = 'x'):
+        r"""
+        Generates a line profile by averaging the pixel intensities along specified dimensions.
+
+        This function computes the mean pixel intensities along a specified dimension (x, y, or z)
+        of a 3D or 4D image array.
+
+        Args:
+            img_arr (np.ndarray): The input image array.
+            dim (str, optional): The dimension along which to compute the line profile.
+                                 Must be one of 'x', 'y', or 'z'. Case-insensitive. Defaults to 'x'.
+
+        Returns:
+            np.ndarray: The computed line profile as a 1D array.
+
+        Raises:
+            AssertionError: If `dim` is not one of 'x', 'y', or 'z'.
+
+        Example:
+            ```python
+            import numpy as np
+            from image_operations_4d import SimpleAutoImageCropper
+
+            img_arr = np.random.rand(100, 100, 100)  # Example 3D array
+            x_profile = SimpleAutoImageCropper.gen_line_profile(img_arr=img_arr, dim='x')
+            print(x_profile)
+            ```
+        """
         tmp_dim = dim.lower()
         assert tmp_dim in ['x', 'y', 'z']
         if tmp_dim == 'x':
