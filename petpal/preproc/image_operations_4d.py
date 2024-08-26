@@ -358,6 +358,7 @@ def write_tacs(input_image_4d_path: str,
         out_tac_path = os.path.join(out_tac_dir, f'tac-{regions_abrev[i]}.tsv')
         np.savetxt(out_tac_path,region_tac_file,delimiter='\t',header=header_text,comments='')
 
+
 class SimpleAutoImageCropper(object):
     
     def __init__(self,
@@ -428,7 +429,40 @@ class SimpleAutoImageCropper(object):
     
     @staticmethod
     def get_cropped_image(img_obj: nibabel.Nifti1Image, thresh: float = 1e-2):
-        
+        r"""
+        Crops the input medical image based on a threshold value.
+
+        This function determines the boundaries of the meaningful regions in the input image
+        by thresholding and then crops the image to remove regions outside these boundaries.
+
+        Args:
+            img_obj (nibabel.Nifti1Image): The input NIfTI image object to be cropped.
+            thresh (float, optional): The threshold value used to determine the boundaries.
+                                      Must be less than 0.5. Defaults to 1e-2.
+
+        Returns:
+            nibabel.Nifti1Image: The cropped NIfTI image object.
+
+        Raises:
+            AssertionError: If the `thresh` value is not less than 0.5.
+            
+        See Also:
+            - :meth:`get_index_pairs_for_all_dims`
+            - :meth:`get_left_and_right_boundary_indices_for_threshold`
+            - :meth:`gen_line_profile`
+
+        Example:
+            ```python
+            import nibabel as nib
+            from image_operations_4d import SimpleAutoImageCropper
+
+            input_image_path = 'path/to/input_image.nii'
+            img_obj = nib.load(input_image_path)
+
+            cropped_img = SimpleAutoImageCropper.get_cropped_image(img_obj=img_obj, thresh=0.01)
+            nib.save(cropped_img, 'path/to/output_image.nii')
+            ```
+        """
         (x_l, x_r), (y_l, y_r), (z_l, z_r) = SimpleAutoImageCropper.get_index_pairs_for_all_dims(img_obj=img_obj,
                                                                                                  thresh=thresh)
         
