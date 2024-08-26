@@ -17,7 +17,6 @@ TODOs:
 
 """
 import os
-import re
 from scipy.interpolate import interp1d
 import nibabel
 import numpy as np
@@ -365,7 +364,8 @@ class SimpleAutoImageCropper(object):
                  input_image_path: str,
                  out_image_path: str,
                  thresh_val: float = 1.0e-2,
-                 verbose: bool = True
+                 verbose: bool = True,
+                 copy_metadata: bool = True
                  ):
         self.input_image_path = input_image_path
         self.out_image_path = out_image_path
@@ -378,6 +378,10 @@ class SimpleAutoImageCropper(object):
             print(f"(info): Input image has shape: {self.input_img_obj.shape}")
             print(f"(info): Input image has shape: {self.crop_img_obj.shape}")
             
+        nibabel.save(self.out_image_path, self.crop_img_obj)
+        if copy_metadata:
+            image_io.safe_copy_meta(self.input_img_obj, self.out_image_path)
+        
         
     
     @staticmethod
