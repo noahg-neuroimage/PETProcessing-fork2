@@ -376,17 +376,18 @@ class SimpleAutoImageCropper(object):
         crop_img_obj (nibabel.Nifti1Image): The cropped image object.
 
     Example:
-        ```python
-        from image_operations_4d import SimpleAutoImageCropper
-
-        cropper = SimpleAutoImageCropper(
-            input_image_path='path/to/input_image.nii',
-            out_image_path='path/to/output_image.nii',
-            thresh_val=0.01,
-            verbose=True,
-            copy_metadata=True
-        )
-        ```
+        
+        .. code-block:: python
+        
+            from petpal.preproc.image_operations_4d import SimpleAutoImageCropper
+    
+            cropper = SimpleAutoImageCropper(
+                input_image_path='path/to/input_image.nii',
+                out_image_path='path/to/output_image.nii',
+                thresh_val=0.01,
+                verbose=True,
+                copy_metadata=True
+            )
 
     See Also:
         - :meth:`get_cropped_image`
@@ -420,17 +421,19 @@ class SimpleAutoImageCropper(object):
             AssertionError: If the `thresh_val` is not less than 0.5.
 
         Example:
-            ```python
-            from image_operations_4d import SimpleAutoImageCropper
+            
+            .. code-block:: python
 
-            cropper = SimpleAutoImageCropper(
-                input_image_path='path/to/input_image.nii',
-                out_image_path='path/to/output_image.nii',
-                thresh_val=0.01,
-                verbose=True,
-                copy_metadata=True
-            )
-            ```
+                from petpal.preproc.image_operations_4d import SimpleAutoImageCropper
+    
+                cropper = SimpleAutoImageCropper(
+                    input_image_path='path/to/input_image.nii',
+                    out_image_path='path/to/output_image.nii',
+                    thresh_val=0.01,
+                    verbose=True,
+                    copy_metadata=True
+                )
+
         """
         self.input_image_path = input_image_path
         self.out_image_path = out_image_path
@@ -470,14 +473,16 @@ class SimpleAutoImageCropper(object):
             AssertionError: If `dim` is not one of 'x', 'y', or 'z'.
 
         Example:
-            ```python
-            import numpy as np
-            from image_operations_4d import SimpleAutoImageCropper
-
-            img_arr = np.random.rand(100, 100, 100)  # Example 3D array
-            x_profile = SimpleAutoImageCropper.gen_line_profile(img_arr=img_arr, dim='x')
-            print(x_profile)
-            ```
+            
+            .. code-block:: python
+            
+                import numpy as np
+                from petpal.preproc.image_operations_4d import SimpleAutoImageCropper
+    
+                img_arr = np.random.rand(100, 100, 100)  # Example 3D array
+                x_profile = SimpleAutoImageCropper.gen_line_profile(img_arr=img_arr, dim='x')
+                print(x_profile)
+        
         """
         tmp_dim = dim.lower()
         assert tmp_dim in ['x', 'y', 'z']
@@ -508,14 +513,16 @@ class SimpleAutoImageCropper(object):
             AssertionError: If the `thresh` value is not less than 0.5.
 
         Example:
-            ```python
-            import numpy as np
-            from image_operations_4d import SimpleAutoImageCropper
-
-            line_prof = np.random.rand(100)  # Example normalized line profile
-            left_index, right_index = SimpleAutoImageCropper.get_left_and_right_boundary_indices_for_threshold(line_prof=line_prof, thresh=0.01)
-            print(left_index, right_index)
-            ```
+            
+            .. code-block:: python
+            
+                import numpy as np
+                from petpal.preproc.image_operations_4d import SimpleAutoImageCropper
+    
+                line_prof = np.random.rand(100)  # Example normalized line profile
+                left_index, right_index = SimpleAutoImageCropper.get_left_and_right_boundary_indices_for_threshold(line_prof=line_prof, thresh=0.01)
+                print(left_index, right_index)
+        
         """
         assert thresh < 0.5
         norm_prof = line_prof / np.max(line_prof)
@@ -546,16 +553,18 @@ class SimpleAutoImageCropper(object):
             - :meth:`get_index_pairs_for_all_dims`
 
         Example:
-            ```python
-            import nibabel as nib
-            from image_operations_4d import SimpleAutoImageCropper
-
-            input_image_path = 'path/to/input_image.nii'
-            img_obj = nib.load(input_image_path)
-
-            boundaries = SimpleAutoImageCropper.get_index_pairs_for_all_dims(img_obj=img_obj, thresh=0.01)
-            print(boundaries)
-            ```
+            
+            .. code-block:: python
+            
+                import nibabel as nib
+                from petpal.preproc.image_operations_4d import SimpleAutoImageCropper
+    
+                input_image_path = 'path/to/input_image.nii'
+                img_obj = nib.load(input_image_path)
+    
+                boundaries = SimpleAutoImageCropper.get_index_pairs_for_all_dims(img_obj=img_obj, thresh=0.01)
+                print(boundaries)
+        
         """
         if len(img_obj.shape) > 3:
             tmp_data = np.mean(img_obj.get_fdata(), axis=-1)
@@ -601,16 +610,18 @@ class SimpleAutoImageCropper(object):
             - :meth:`gen_line_profile`
 
         Example:
-            ```python
-            import nibabel as nib
-            from image_operations_4d import SimpleAutoImageCropper
-
-            input_image_path = 'path/to/input_image.nii'
-            img_obj = nib.load(input_image_path)
-
-            cropped_img = SimpleAutoImageCropper.get_cropped_image(img_obj=img_obj, thresh=0.01)
-            nib.save(cropped_img, 'path/to/output_image.nii')
-            ```
+            
+            .. code-block:: python
+            
+                import nibabel as nib
+                from petpal.preproc.image_operations_4d import SimpleAutoImageCropper
+    
+                input_image_path = 'path/to/input_image.nii'
+                img_obj = nib.load(input_image_path)
+    
+                cropped_img = SimpleAutoImageCropper.get_cropped_image(img_obj=img_obj, thresh=0.01)
+                nib.save(cropped_img, 'path/to/output_image.nii')
+        
         """
         (x_l, x_r), (y_l, y_r), (z_l, z_r) = SimpleAutoImageCropper.get_index_pairs_for_all_dims(img_obj=img_obj,
                                                                                                  thresh=thresh)
