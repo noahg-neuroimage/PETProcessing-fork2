@@ -417,8 +417,7 @@ class SimpleAutoImageCropper(object):
     def get_cropped_image(image_path: str, thresh: float = 1e-2):
         tmp_img_load = nibabel.load(image_path)
         
-        (x_left, x_right), (y_left, y_right), (z_left, z_right) = SimpleAutoImageCropper.get_index_pairs_for_all_dims(
-            img_obj=tmp_img_load, thresh=thresh)
-
-        return tmp_img_load.slicer[x_left:x_right, y_left:y_right, z_left:z_right, ...]
-    
+        (x_l, x_r), (y_l, y_r), (z_l, z_r) = SimpleAutoImageCropper.get_index_pairs_for_all_dims(img_obj=tmp_img_load,
+                                                                                                 thresh=thresh)
+        
+        return tmp_img_load.slicer[x_l:x_r, y_l:y_r, z_l:z_r, ...]
