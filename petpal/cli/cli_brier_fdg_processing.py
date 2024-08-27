@@ -22,6 +22,7 @@ def fdg_protocol(sub_id: str,
         out_dir = os.path.abspath(out_dir_path)
     else:
         out_dir = os.path.join(BIDS_ROOT_DIR, "derivatives", f"{sub_id}", f"{ses_id}")
+        os.makedirs(out_dir, exist_ok=True)
     
     sub_path = os.path.join(f"{BIDS_ROOT_DIR}", f"sub-{sub_id}", f"ses-{ses_id}")
 
@@ -38,7 +39,6 @@ def fdg_protocol(sub_id: str,
     
     
     preproc_props = {
-        'FilePathLabelMap': '/data/brier/CMMS_BIDS/derivatives/ROI_mask/dseg_forCMMS.tsv',
         'HalfLife': 6586.2,
         'StartTimeWSS':0,
         'EndTimeWSS':600,
