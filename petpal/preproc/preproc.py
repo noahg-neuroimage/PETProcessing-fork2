@@ -9,7 +9,6 @@ TODO:
 
 """
 import os
-import json
 from ..visualizations import qc_plots
 from . import register, image_operations_4d, motion_corr, segmentation_tools
 
@@ -43,7 +42,7 @@ _PREPROC_PROPS_ = {'FilePathCropInput': None,
                    'FilePathWarpRef': None,
                    'FilePathWarp': None,
                    'FilePathAntsXfms': None,
-                   'FreeSurferSubjectDir': None, 
+                   'FilePathBSseg': None,
                    'HalfLife': None,
                    'StartTimeWSS': 0,
                    'EndTimeWSS': -1,
@@ -71,6 +70,7 @@ _REQUIRED_KEYS_ = {
     'apply_xfm_fsl': ['FilePathWarpInput','FilePathWarpRef','FilePathWarp','FilePathFSLPremat','FilePathFSLPostmat','Verbose'],
     'vat_wm_ref_region': ['FreeSurferSubjectDir'],
     'thresh_crop': ['FilePathCropInput', 'CropThreshold', 'Verbose']
+    'vat_wm_ref_region': ['FilePathBSseg','FilePathSeg']
 }
 
 
@@ -206,26 +206,6 @@ class PreProc():
         return updated_props
 
 
-    def _write_params_json(self):
-        """
-        Write current class properties to json params file. 
-        """
-        json_path = os.path.join(self.output_directory,f"{self.output_filename_prefix}-params.json")
-        with open(json_path,'w+') as f:
-            json.dumps(self.preproc_props,f,indent=4)
-
-
-    def _read_params_json(self) -> dict:
-        """
-        Read a json params file and set the class properties to the saved params.
-        """
-        json_path = os.path.join(self.output_directory,f"{self.output_filename_prefix}-params.json")
-        with open(json_path,'r') as f:
-            preproc_props = json.load(f)
-        
-        self.update_props(preproc_props)
-        return preproc_props
-
     def _check_method_props_exist(self,
                                   method_name: str) -> None:
         """
@@ -243,7 +223,7 @@ class PreProc():
         try:
             required_keys = _REQUIRED_KEYS_[method_name]
         except KeyError as e:
-            raise KeyError(f"Invalid method_name! Must be one of: {accepted_keys} . Got '{method_name}'")
+            raise KeyError(f"Invalid method_name! Must be one of: {accepted_keys} . Got '{method_name}'") from e
 
         for key in required_keys:
             if preproc_props[key] is None:
@@ -344,7 +324,7 @@ class PreProc():
                        time_frame_keyword=preproc_props['TimeFrameKeyword'])
 
         elif method_name=='warp_pet_atlas':
-            outfile = self._generate_outfile_path(method_short='reg-atlas')
+            outfile = self._generate_outfile_path(method_short='space-atlas')
             warp_pet_atlas(input_image_path=preproc_props['FilePathWarpInput'],
                            anat_image_path=preproc_props['FilePathAnat'],
                            atlas_image_path=preproc_props['FilePathAtlas'],
@@ -353,21 +333,21 @@ class PreProc():
                            kwargs=preproc_props['WarpPars'])
 
         elif method_name=='apply_xfm_ants':
-            outfile = self._generate_outfile_path(method_short='reg-ants')
+            outfile = self._generate_outfile_path(method_short='space-atlas')
             apply_xfm_ants(input_image_path=preproc_props['FilePathWarpInput'],
                            ref_image_path=preproc_props['FilePathWarpRef'],
                            out_image_path=outfile,
                            xfm_paths=preproc_props['FilePathAntsXfms'])
 
         elif method_name=='apply_xfm_fsl':
-            outfile = self._generate_outfile_path(method_short='reg-fsl')
+            outfile = self._generate_outfile_path(method_short='space-atlas')
             apply_xfm_fsl(input_image_path=preproc_props['FilePathWarpInput'],
                           ref_image_path=preproc_props['FilePathWarpRef'],
                           out_image_path=outfile,
                           warp_path=preproc_props['FilePathWarp'],
                           premat_path=preproc_props['FilePathFSLPremat'],
                           postmat_path=preproc_props['FilePathFSLPostmat'])
-            
+
         elif method_name=='suvr':
             outfile = self._generate_outfile_path(method_short='suvr')
             suvr(input_image_path=preproc_props['FilePathSUVRInput'],
@@ -382,17 +362,17 @@ class PreProc():
                        blur_size_mm=preproc_props['BlurSize'],
                        out_image_path=outfile,
                        verbose=preproc_props['Verbose'])
-            
+
         elif method_name=='vat_wm_ref_region':
             out_ref_region = self._generate_outfile_path(method_short='wm-ref')
             segmentation_tools.vat_wm_ref_region(
-                input_segmentation_path=f"{preproc_props['FreeSurferSubjectDir']}/aparc+aseg.mgz",
+                input_segmentation_path=f"{preproc_props['FilePathSeg']}",
                 out_segmentation_path=out_ref_region
             )
             outfile = self._generate_outfile_path(method_short='wm-merged')
             segmentation_tools.vat_wm_region_merge(
-                wmparc_segmentation_path=f"{preproc_props['FreeSurferSubjectDir']}/aparc+aseg.mgz",
-                bs_segmentation_path=f"{preproc_props['FreeSurferSubjectDir']}/brainstemSsLabels.v13.FSvoxelSpace.mgz",
+                wmparc_segmentation_path=f"{preproc_props['FilePathSeg']}",
+                bs_segmentation_path=f"{preproc_props['FilePathBSseg']}",
                 wm_ref_segmentation_path=out_ref_region,
                 out_image_path=outfile
             )

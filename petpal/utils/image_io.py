@@ -87,19 +87,19 @@ def load_metadata_for_nifty_with_same_filename(image_path) -> dict:
     Returns:
         image_meta (dict): Dictionary where keys are fields in the image
             metadata file and values correspond to values in those fields.
-    
+
     Raises:
-        FileNotFoundError: If the provided image path cannot be found in the directory. 
+        FileNotFoundError: If the provided image path cannot be found in the directory.
         Additionally, occurs if the metadata .json file cannot be found.
     """
     if not os.path.exists(image_path):
         raise FileNotFoundError(f"Image file {image_path} not found")
-    
+
     meta_path = re.sub(r'\.nii\.gz$|\.nii$', '.json', image_path)
-    
+
     if not os.path.exists(meta_path):
         raise FileNotFoundError(f"Metadata file {meta_path} not found. Does it have a different path?")
-    
+
     with open(meta_path, 'r', encoding='utf-8') as meta_file:
         image_meta = json.load(meta_file)
     return image_meta
@@ -154,7 +154,7 @@ class ImageIO():
 
         Args:
             image_path (str): Path to a .nii or .nii.gz file.
-        
+
         Returns:
             The nifti FileBasedImage.
 
@@ -164,12 +164,12 @@ class ImageIO():
         """
         if not os.path.exists(image_path):
             raise FileNotFoundError(f"Image file {image_path} not found")
-        
+
         if not re.search(r'\.nii\.gz$|\.nii$', image_path):
             raise OSError(f"{image_path} does not have the extension .nii or .nii.gz")
-        
+
         image = nibabel.load(image_path)
-        
+
         if self.verbose:
             print(f"(ImageIO): {image_path} loaded")
 
@@ -206,7 +206,7 @@ class ImageIO():
 
     def extract_header_from_nii(self, image: nibabel.nifti1.Nifti1Image) -> FileBasedHeader:
         """
-        Convenient wrapper to extract header information from a .nii or .nii.gz 
+        Convenient wrapper to extract header information from a .nii or .nii.gz
         file as a nibabel file-based header.
 
         Args:
@@ -235,7 +235,7 @@ class ImageIO():
             affine (np.ndarray): Affine information we need to keep when rewriting image.
 
         Returns:
-            image_nibabel (nibabel.nifti1.Nifti1Image): Image stored in nifti-like nibabel format. 
+            image_nibabel (nibabel.nifti1.Nifti1Image): Image stored in nifti-like nibabel format.
         """
         image_nibabel = nibabel.nifti1.Nifti1Image(image_array, affine, header)
         return image_nibabel
@@ -270,7 +270,7 @@ class ImageIO():
             affine (np.ndarray): Affine information we need to keep when rewriting image.
 
         Returns:
-            image_ants (ants.ANTsImage): Image stored in nifti-like nibabel format. 
+            image_ants (ants.ANTsImage): Image stored in nifti-like nibabel format.
         """
         origin, spacing, direction = self.affine_parse(affine)
         image_ants = ants.from_numpy(data=image_array, spacing=spacing, origin=origin, direction=direction)
@@ -279,7 +279,7 @@ class ImageIO():
     @staticmethod
     def read_label_map_tsv(label_map_file: str) -> dict:
         """
-        Static method to read a label map, translating region indices to region names, 
+        Static method to read a label map, translating region indices to region names,
         as a dictionary. Assumes tsv format.
 
         Args:

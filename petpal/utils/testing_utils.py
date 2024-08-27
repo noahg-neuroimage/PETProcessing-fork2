@@ -1,5 +1,4 @@
 import numpy as np
-from typing import Union
 import matplotlib.pyplot as plt
 from scipy.stats import linregress
 
