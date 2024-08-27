@@ -47,7 +47,7 @@ def fdg_protocol(sub_id: str,
         'EndTimeWSS':600,
         'MotionTarget': (0, 600),
         'RegPars': {'aff_metric': 'mattes', 'type_of_transform': 'DenseRigid'},
-        'TimeFrameKeyword': 'FrameTimeStart',
+        'TimeFrameKeyword': 'FrameReferenceTime',
         'Verbose': True,
         }
     
@@ -55,7 +55,15 @@ def fdg_protocol(sub_id: str,
                                   output_filename_prefix=sub_ses_prefix)
     sub_preproc.update_props(preproc_props)
     
-    sub_preproc.run_preproc('thresh_crop')
+    sub_preproc.run_preproc(method_name='thresh_crop', modality='pet')
+    preproc_props['FilePathMocoInp'] = sub_preproc._generate_outfile_path(method_short='threshcropped', modality='pet')
+    preproc_props['FilePathWSSInput'] = preproc_props['FilePathMocoInp']
+    sub_preproc.update_props(preproc_props)
+    
+    # sub_preproc.run_preproc(method_name='weighted_series_sum', modality='pet')
+    
+    
+    
     # sub_preproc.run_preproc('motion_corr')
     # sub_preproc.run_preproc('register_pet')
     
