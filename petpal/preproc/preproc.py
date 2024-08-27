@@ -258,19 +258,20 @@ class PreProc():
 
 
     def run_preproc(self,
-                    method_name: str):
+                    method_name: str,
+                    modality: str = None):
         """
         Run a specific preprocessing step.
 
         Args:
-            method_name (str): Name of method to be run. Must be name of a
-                method in this module.
+            method_name (str): Name of method to be run. Must be name of a method in this module.
+            modality (str, optional): Modality of the image. Defaults to None. Should be one of 'pet', 't1w', 'mpr', 'flair', 't2w'
         """
         preproc_props = self.preproc_props
         self._check_method_props_exist(method_name=method_name)
 
         if method_name=='weighted_series_sum':
-            outfile = self._generate_outfile_path(method_short='wss')
+            outfile = self._generate_outfile_path(method_short='wss', modality=modality)
             weighted_series_sum(input_image_4d_path=preproc_props['FilePathWSSInput'],
                                 out_image_path=outfile,
                                 half_life=preproc_props['HalfLife'],
@@ -279,7 +280,7 @@ class PreProc():
                                 verbose=preproc_props['Verbose'])
 
         elif method_name=='motion_corr':
-            outfile = self._generate_outfile_path(method_short='moco')
+            outfile = self._generate_outfile_path(method_short='moco', modality=modality)
             moco_outputs = motion_corr.motion_corr(input_image_4d_path=preproc_props['FilePathMocoInp'],
                                                    motion_target_option=preproc_props['MotionTarget'],
                                                    out_image_path=outfile,
@@ -294,7 +295,7 @@ class PreProc():
             return moco_outputs
 
         elif method_name=='register_pet':
-            outfile = self._generate_outfile_path(method_short='reg')
+            outfile = self._generate_outfile_path(method_short='reg', modality=modality)
             register_pet(motion_target_option=preproc_props['MotionTarget'],
                          input_reg_image_path=preproc_props['FilePathRegInp'],
                          reference_image_path=preproc_props['FilePathAnat'],
@@ -304,7 +305,7 @@ class PreProc():
                          kwargs=preproc_props['RegPars'])
 
         elif method_name=='resample_segmentation':
-            outfile = self._generate_outfile_path(method_short='seg-res')
+            outfile = self._generate_outfile_path(method_short='seg-res', modality=modality)
             resample_segmentation(input_image_4d_path=preproc_props['FilePathTACInput'],
                                   segmentation_image_path=preproc_props['FilePathSeg'],
                                   out_seg_path=outfile,
@@ -312,7 +313,7 @@ class PreProc():
             self.update_props({'FilePathSeg': outfile})
 
         elif method_name=='roi_tac':
-            outfile = self._generate_outfile_path(method_short='tac',extension='.tsv')
+            outfile = self._generate_outfile_path(method_short='tac',extension='.tsv', modality=modality)
             return roi_tac(input_image_4d_path=preproc_props['FilePathTACInput'],
                            roi_image_path=preproc_props['FilePathSeg'],
                            out_tac_path=outfile,
@@ -330,7 +331,7 @@ class PreProc():
                        time_frame_keyword=preproc_props['TimeFrameKeyword'])
 
         elif method_name=='warp_pet_atlas':
-            outfile = self._generate_outfile_path(method_short='space-atlas')
+            outfile = self._generate_outfile_path(method_short='space-atlas', modality=modality)
             warp_pet_atlas(input_image_path=preproc_props['FilePathWarpInput'],
                            anat_image_path=preproc_props['FilePathAnat'],
                            atlas_image_path=preproc_props['FilePathAtlas'],
@@ -339,14 +340,14 @@ class PreProc():
                            kwargs=preproc_props['WarpPars'])
 
         elif method_name=='apply_xfm_ants':
-            outfile = self._generate_outfile_path(method_short='space-atlas')
+            outfile = self._generate_outfile_path(method_short='space-atlas', modality=modality)
             apply_xfm_ants(input_image_path=preproc_props['FilePathWarpInput'],
                            ref_image_path=preproc_props['FilePathWarpRef'],
                            out_image_path=outfile,
                            xfm_paths=preproc_props['FilePathAntsXfms'])
 
         elif method_name=='apply_xfm_fsl':
-            outfile = self._generate_outfile_path(method_short='space-atlas')
+            outfile = self._generate_outfile_path(method_short='space-atlas', modality=modality)
             apply_xfm_fsl(input_image_path=preproc_props['FilePathWarpInput'],
                           ref_image_path=preproc_props['FilePathWarpRef'],
                           out_image_path=outfile,
@@ -355,7 +356,7 @@ class PreProc():
                           postmat_path=preproc_props['FilePathFSLPostmat'])
 
         elif method_name=='suvr':
-            outfile = self._generate_outfile_path(method_short='suvr')
+            outfile = self._generate_outfile_path(method_short='suvr', modality=modality)
             suvr(input_image_path=preproc_props['FilePathSUVRInput'],
                  segmentation_image_path=preproc_props['FilePathSeg'],
                  ref_region=preproc_props['RefRegion'],
@@ -363,19 +364,19 @@ class PreProc():
                  verbose=preproc_props['Verbose'])
 
         elif method_name=='gauss_blur':
-            outfile = self._generate_outfile_path(method_short=f"blur_{preproc_props['BlurSize']}mm")
+            outfile = self._generate_outfile_path(method_short=f"blur_{preproc_props['BlurSize']}mm", modality=modality)
             gauss_blur(input_image_path=preproc_props['FilePathBlurInput'],
                        blur_size_mm=preproc_props['BlurSize'],
                        out_image_path=outfile,
                        verbose=preproc_props['Verbose'])
 
         elif method_name=='vat_wm_ref_region':
-            out_ref_region = self._generate_outfile_path(method_short='wm-ref')
+            out_ref_region = self._generate_outfile_path(method_short='wm-ref', modality=modality)
             segmentation_tools.vat_wm_ref_region(
                 input_segmentation_path=f"{preproc_props['FilePathSeg']}",
                 out_segmentation_path=out_ref_region
             )
-            outfile = self._generate_outfile_path(method_short='wm-merged')
+            outfile = self._generate_outfile_path(method_short='wm-merged', modality=modality)
             segmentation_tools.vat_wm_region_merge(
                 wmparc_segmentation_path=f"{preproc_props['FilePathSeg']}",
                 bs_segmentation_path=f"{preproc_props['FilePathBSseg']}",
