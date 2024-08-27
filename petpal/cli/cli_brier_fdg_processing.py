@@ -18,8 +18,13 @@ def fdg_protocol(sub_id: str,
     else: # Assumes that the file is in 'SOME_BIDS_Dir/code'
         BIDS_ROOT_DIR = os.path.abspath("../")
     
-    sub_path = os.path.join(f"{BIDS_ROOT_DIR}", f"sub-{sub_id}", f"ses-{ses_id}")
+    if out_dir_path is not None:
+        out_dir = os.path.abspath(out_dir_path)
+    else:
+        out_dir = os.path.join(BIDS_ROOT_DIR, "derivatives", f"{sub_id}", f"{ses_id}")
     
+    sub_path = os.path.join(f"{BIDS_ROOT_DIR}", f"sub-{sub_id}", f"ses-{ses_id}")
+
     if pet_dir_path is not None:
         pet_dir = os.path.abspath(pet_dir_path)
     else:
@@ -29,6 +34,7 @@ def fdg_protocol(sub_id: str,
         anat_dir = os.path.abspath(anat_dir_path)
     else:
         anat_dir = os.path.join(f"{sub_path}", "anat")
+    
     
     
     preproc_props = {
