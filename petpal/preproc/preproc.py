@@ -377,7 +377,7 @@ class PreProc():
             )
         
         elif method_name=='thresh_crop':
-            outfile = self._generate_outfile_path(method_short='threshcrop')
+            outfile = self._generate_outfile_path(method_short='desc_threshcropped_pet')
             thresh_crop(input_image_path=preproc_props['FilePathCropInput'],
                         out_image_path=outfile,
                         thresh_val=preproc_props['CropThreshold'],
