@@ -56,14 +56,17 @@ def fdg_protocol(sub_id: str,
     sub_preproc.update_props(preproc_props)
     
     sub_preproc.run_preproc(method_name='thresh_crop', modality='pet')
-    preproc_props['FilePathMocoInp'] = sub_preproc._generate_outfile_path(method_short='threshcropped', modality='pet')
-    preproc_props['FilePathWSSInput'] = preproc_props['FilePathMocoInp']
+    
+    preproc_props['FilePathWSSInput'] = sub_preproc._generate_outfile_path(method_short='threshcropped', modality='pet')
     sub_preproc.update_props(preproc_props)
     
-    # sub_preproc.run_preproc(method_name='weighted_series_sum', modality='pet')
+    sub_preproc.run_preproc(method_name='weighted_series_sum', modality='pet')
+
+    preproc_props['FilePathMocoInp'] = preproc_props['FilePathWSSInput']
+    preproc_props['MotionTarget'] = sub_preproc._generate_outfile_path(method_short='wss', modality='pet')
+    sub_preproc.update_props(preproc_props)
+
+    sub_preproc.run_preproc('motion_corr', modality='pet')
     
-    
-    
-    # sub_preproc.run_preproc('motion_corr')
     # sub_preproc.run_preproc('register_pet')
     
