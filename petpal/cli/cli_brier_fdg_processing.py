@@ -1,6 +1,25 @@
 from ..preproc import preproc
 import os
+import numpy as np
+from ..utils import image_io
+from ..input_function.blood_input import BloodInputFunction
 
+
+def resample_blood_data_on_scanner_times(pet4d_path: str,
+                                         raw_blood_tac: str,
+                                         lin_fit_thresh_in_mins: float,
+                                         out_tac_path: str):
+    image_meta_data = image_io.load_metadata_for_nifty_with_same_filename(image_path=pet4d_path)
+    frame_times = np.asarray(image_meta_data['FrameReferenceTime']) / 60.0
+    blood_times, blood_activity = image_io.load_tac(filename=raw_blood_tac)
+    blood_intp = BloodInputFunction(time=blood_times, activity=blood_activity, thresh_in_mins=lin_fit_thresh_in_mins)
+    resampled_blood = blood_intp.calc_blood_input_function(t=frame_times)
+    resampled_tac = np.asarray([frame_times, resampled_blood], dtype=float)
+    
+    np.savetxt(X=resampled_tac.T, fname=out_tac_path)
+    
+    return None
+    
 
 def fdg_protocol(sub_id: str,
                  ses_id: str,
@@ -8,10 +27,11 @@ def fdg_protocol(sub_id: str,
                  pet_dir_path: str = None,
                  anat_dir_path: str = None,
                  out_dir_path: str = None,
-                 run_crop: bool = True,
-                 run_wss: bool = True,
-                 run_moco: bool = True,
-                 run_reg: bool = True,):
+                 run_crop: bool = False,
+                 run_wss: bool = False,
+                 run_moco: bool = False,
+                 run_reg: bool = False,
+                 run_resample: bool = False,):
     
     sub_ses_prefix = f'sub-{sub_id}_ses-{ses_id}'
     
@@ -40,7 +60,9 @@ def fdg_protocol(sub_id: str,
     
     raw_pet_img_path = os.path.join(pet_dir, f"{sub_ses_prefix}_pet.nii.gz")
     t1w_reference_img_path = os.path.join(anat_dir, f"{sub_ses_prefix}_MPRAGE.nii.gz")
+    raw_blood_tac_path = os.path.join(pet_dir, f"{sub_ses_prefix}_desc-decaycorrected_blood.tsv")
     out_mod = 'pet'
+    lin_fit_thresh_in_mins = 30.0
     
     preproc_props = {
         'FilePathAnat': t1w_reference_img_path,
@@ -60,6 +82,7 @@ def fdg_protocol(sub_id: str,
     preproc_props['FilePathMocoInp'] = preproc_props['FilePathWSSInput']
     preproc_props['MotionTarget'] = sub_preproc._generate_outfile_path(method_short='wss', modality=out_mod)
     preproc_props['FilePathRegInp'] = sub_preproc._generate_outfile_path(method_short='moco', modality=out_mod)
+    preproc_props['FilePathTACInput'] = sub_preproc._generate_outfile_path(method_short='reg', modality=out_mod)
     sub_preproc.update_props(preproc_props)
     
     if run_crop:
@@ -70,5 +93,10 @@ def fdg_protocol(sub_id: str,
         sub_preproc.run_preproc(method_name='motion_corr', modality=out_mod)
     if run_reg:
         sub_preproc.run_preproc(method_name='register_pet', modality=out_mod)
-    
+    if run_resample:
+        resample_tac_path = os.path.join(out_dir, f"{sub_ses_prefix}_desc-onscannertimes_blood.tsv")
+        resample_blood_data_on_scanner_times(pet4d_path=preproc_props['FilePathTACInput'],
+                                             raw_blood_tac=raw_blood_tac_path,
+                                             lin_fit_thresh_in_mins=lin_fit_thresh_in_mins,
+                                             out_tac_path=resample_tac_path)
     
