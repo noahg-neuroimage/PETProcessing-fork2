@@ -2,14 +2,16 @@ from ..preproc import preproc
 import os
 
 
-
-
 def fdg_protocol(sub_id: str,
                  ses_id: str,
                  bids_root_dir: str = None,
                  pet_dir_path: str = None,
                  anat_dir_path: str = None,
-                 out_dir_path: str = None):
+                 out_dir_path: str = None,
+                 run_crop: bool = True,
+                 run_wss: bool = True,
+                 run_moco: bool = True,
+                 run_reg: bool = True,):
     
     sub_ses_prefix = f'sub-{sub_id}_ses-{ses_id}'
     
@@ -59,11 +61,15 @@ def fdg_protocol(sub_id: str,
     preproc_props['FilePathRegInp'] = sub_preproc._generate_outfile_path(method_short='moco', modality='pet')
     sub_preproc.update_props(preproc_props)
     
-    sub_preproc.run_preproc(method_name='thresh_crop', modality='pet')
+    if run_crop:
+        sub_preproc.run_preproc(method_name='thresh_crop', modality='pet')
     
-    sub_preproc.run_preproc(method_name='weighted_series_sum', modality='pet')
+    if run_wss:
+        sub_preproc.run_preproc(method_name='weighted_series_sum', modality='pet')
 
-    sub_preproc.run_preproc(method_name='motion_corr', modality='pet')
+    if run_moco:
+        sub_preproc.run_preproc(method_name='motion_corr', modality='pet')
     
-    sub_preproc.run_preproc(method_name='register_pet', modality='pet')
+    if run_reg:
+        sub_preproc.run_preproc(method_name='register_pet', modality='pet')
     
