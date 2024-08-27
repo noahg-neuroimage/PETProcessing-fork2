@@ -21,7 +21,7 @@ def fdg_protocol(sub_id: str,
     if out_dir_path is not None:
         out_dir = os.path.abspath(out_dir_path)
     else:
-        out_dir = os.path.join(BIDS_ROOT_DIR, "derivatives", "petpal", "brier_fdg_pipeline", f"sub-{sub_id}", f"ses-{ses_id}")
+        out_dir = os.path.join(BIDS_ROOT_DIR, "derivatives", "petpal", "pipeline_brier_fdg", f"sub-{sub_id}", f"ses-{ses_id}")
         os.makedirs(out_dir, exist_ok=True)
     
     sub_path = os.path.join(f"{BIDS_ROOT_DIR}", f"sub-{sub_id}", f"ses-{ses_id}")
