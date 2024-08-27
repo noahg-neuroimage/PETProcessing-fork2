@@ -21,9 +21,14 @@ def fdg_protocol(sub_id: str,
     sub_path = os.path.join(f"{BIDS_ROOT_DIR}", f"sub-{sub_id}", f"ses-{ses_id}")
     
     if pet_dir_path is not None:
-        pet_dir = pet_dir_path
+        pet_dir = os.path.abspath(pet_dir_path)
     else:
         pet_dir = os.path.join(f"{sub_path}", "pet")
+        
+    if anat_dir_path is not None:
+        anat_dir = os.path.abspath(anat_dir_path)
+    else:
+        anat_dir = os.path.join(f"{sub_path}", "anat")
     
     
     preproc_props = {
