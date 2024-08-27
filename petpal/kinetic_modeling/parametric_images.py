@@ -479,7 +479,7 @@ class GraphicalAnalysisParametricImage:
 
         """
         file_name_prefix = os.path.join(self.output_directory,
-                                        f"{self.output_filename_prefix}-parametric-{self.analysis_props['MethodName']}")
+                                        f"{self.output_filename_prefix}_desc-{self.analysis_props['MethodName']}")
         nifty_img_affine = _safe_load_4dpet_nifty(filename=self.pet4D_img_path).affine
         try:
             tmp_slope_img = nibabel.Nifti1Image(dataobj=self.slope_image, affine=nifty_img_affine)
@@ -514,6 +514,6 @@ class GraphicalAnalysisParametricImage:
             * :func:`save_analysis_properties`
         """
         analysis_props_file = os.path.join(self.output_directory,
-                                           f"{self.output_filename_prefix}-parametric-{self.analysis_props['MethodName']}-analysis-props.json")
+                                           f"{self.output_filename_prefix}_desc-{self.analysis_props['MethodName']}_props.json")
         with open(analysis_props_file, 'w') as f:
             json.dump(obj=self.analysis_props, fp=f, indent=4)

@@ -3,6 +3,7 @@ import os
 import numpy as np
 from ..utils import image_io
 from ..input_function.blood_input import BloodInputFunction
+from ..kinetic_modeling.parametric_images import GraphicalAnalysisParametricImage
 
 
 def resample_blood_data_on_scanner_times(pet4d_path: str,
@@ -21,7 +22,7 @@ def resample_blood_data_on_scanner_times(pet4d_path: str,
     return None
     
 
-def fdg_protocol(sub_id: str,
+def fdg_protocol_with_arterial(sub_id: str,
                  ses_id: str,
                  bids_root_dir: str = None,
                  pet_dir_path: str = None,
@@ -31,7 +32,8 @@ def fdg_protocol(sub_id: str,
                  run_wss: bool = False,
                  run_moco: bool = False,
                  run_reg: bool = False,
-                 run_resample: bool = False,):
+                 run_resample: bool = False,
+                 run_patlak: bool = False):
     
     sub_ses_prefix = f'sub-{sub_id}_ses-{ses_id}'
     
@@ -61,6 +63,7 @@ def fdg_protocol(sub_id: str,
     raw_pet_img_path = os.path.join(pet_dir, f"{sub_ses_prefix}_pet.nii.gz")
     t1w_reference_img_path = os.path.join(anat_dir, f"{sub_ses_prefix}_MPRAGE.nii.gz")
     raw_blood_tac_path = os.path.join(pet_dir, f"{sub_ses_prefix}_desc-decaycorrected_blood.tsv")
+    resample_tac_path = os.path.join(out_dir, f"{sub_ses_prefix}_desc-onscannertimes_blood.tsv")
     out_mod = 'pet'
     lin_fit_thresh_in_mins = 30.0
     
@@ -94,9 +97,14 @@ def fdg_protocol(sub_id: str,
     if run_reg:
         sub_preproc.run_preproc(method_name='register_pet', modality=out_mod)
     if run_resample:
-        resample_tac_path = os.path.join(out_dir, f"{sub_ses_prefix}_desc-onscannertimes_blood.tsv")
         resample_blood_data_on_scanner_times(pet4d_path=preproc_props['FilePathTACInput'],
                                              raw_blood_tac=raw_blood_tac_path,
                                              lin_fit_thresh_in_mins=lin_fit_thresh_in_mins,
                                              out_tac_path=resample_tac_path)
-    
+    if run_patlak:
+        patlak_obj = GraphicalAnalysisParametricImage(input_tac_path=resample_tac_path,
+                                                      pet4D_img_path=preproc_props['FilePathTACInput'],
+                                                      output_directory=out_dir,
+                                                      output_filename_prefix=sub_ses_prefix)
+        patlak_obj.run_analysis(method_name='patlak', t_thresh_in_mins=lin_fit_thresh_in_mins)
+        patlak_obj.save_analysis()
