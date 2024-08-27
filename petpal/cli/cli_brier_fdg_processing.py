@@ -4,16 +4,26 @@ import os
 
 
 
-def fdg_protocol(bids_root_dir: str,
-                 sub_id: str,
+def fdg_protocol(sub_id: str,
                  ses_id: str,
-                 pet_dir: str,
-                 anat_dir: str,
-                 out_dir: str):
+                 bids_root_dir: str = None,
+                 pet_dir_path: str = None,
+                 anat_dir_path: str = None,
+                 out_dir_path: str = None):
     
     sub_ses_prefix = f'sub-{sub_id}_ses-{ses_id}'
     
-    BIDS_ROOT = os.path.abspath(bids_root_dir)
+    if bids_root_dir is not None:
+        BIDS_ROOT_DIR = os.path.abspath(bids_root_dir)
+    else: # Assumes that the file is in 'SOME_BIDS_Dir/code'
+        BIDS_ROOT_DIR = os.path.abspath("../")
+    
+    sub_path = os.path.join(f"{BIDS_ROOT_DIR}", f"sub-{sub_id}", f"ses-{ses_id}")
+    
+    if pet_dir_path is not None:
+        pet_dir = pet_dir_path
+    else:
+        pet_dir = os.path.join(f"{sub_path}", "pet")
     
     
     preproc_props = {
