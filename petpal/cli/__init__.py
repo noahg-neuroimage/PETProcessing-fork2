@@ -7,7 +7,6 @@ from . import cli_reference_tissue_models
 from . import cli_tac_fitting
 from . import cli_tac_interpolation
 
-
 def main():
     print("PETPAL - Positron Emission Tomography Processing and Analysis Library)")
 

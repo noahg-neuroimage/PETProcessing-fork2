@@ -54,7 +54,7 @@ _PREPROC_PROPS_ = {'FilePathCropInput': None,
                    'BlurSize': None,
                    'RegionExtract': None,
                    'TimeFrameKeyword': None,
-                   'CropThresh': None,
+                   'CropThreshold': None,
                    'Verbose': False}
 _REQUIRED_KEYS_ = {
     'weighted_series_sum': ['FilePathWSSInput','HalfLife','Verbose'],
