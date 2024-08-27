@@ -233,7 +233,7 @@ class PreProc():
                                method_short: str,
                                extension: str='nii.gz',
                                modality: str = None,):
-        """
+        r"""
         Generate the path to an output file, from the output directory,
         filename prefix, abbreviation of the method name, and filename
         extension.
@@ -242,6 +242,11 @@ class PreProc():
             method_short (str): Abbreviation of the method to generate outfile.
             extension (str): File type extension to return. Defaults to
                 'nii.gz'.
+            modality (str, optional): Modality of the image. Should be one of 'pet', 't1w', 'mpr', 'flair', 't2w'
+            
+        Returns:
+            If modality is None, we return 'output_dir/fileprefix_{method_short}.{extension}'. Else, we return
+            output_dir/fileprefix_desc-{method_short}_{modality}.{extension}
         """
         
         if modality is None:
