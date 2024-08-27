@@ -40,6 +40,7 @@ def fdg_protocol(sub_id: str,
     t1w_reference_img_path = os.path.join(anat_dir, f"{sub_ses_prefix}_MPRAGE.nii.gz")
     
     preproc_props = {
+        'FilePathAnat': t1w_reference_img_path,
         'FilePathCropInput': raw_pet_img_path,
         'CropThreshold': 1.0e-2,
         'HalfLife': 6586.2,
@@ -51,22 +52,18 @@ def fdg_protocol(sub_id: str,
         'Verbose': True,
         }
     
-    sub_preproc = preproc.PreProc(output_directory=out_dir,
-                                  output_filename_prefix=sub_ses_prefix)
+    sub_preproc = preproc.PreProc(output_directory=out_dir, output_filename_prefix=sub_ses_prefix)
+    preproc_props['FilePathWSSInput'] = sub_preproc._generate_outfile_path(method_short='threshcropped', modality='pet')
+    preproc_props['FilePathMocoInp'] = preproc_props['FilePathWSSInput']
+    preproc_props['MotionTarget'] = sub_preproc._generate_outfile_path(method_short='wss', modality='pet')
+    preproc_props['FilePathRegInp'] = sub_preproc._generate_outfile_path(method_short='moco', modality='pet')
     sub_preproc.update_props(preproc_props)
     
     sub_preproc.run_preproc(method_name='thresh_crop', modality='pet')
     
-    preproc_props['FilePathWSSInput'] = sub_preproc._generate_outfile_path(method_short='threshcropped', modality='pet')
-    sub_preproc.update_props(preproc_props)
-    
     sub_preproc.run_preproc(method_name='weighted_series_sum', modality='pet')
 
-    preproc_props['FilePathMocoInp'] = preproc_props['FilePathWSSInput']
-    preproc_props['MotionTarget'] = sub_preproc._generate_outfile_path(method_short='wss', modality='pet')
-    sub_preproc.update_props(preproc_props)
-
-    sub_preproc.run_preproc('motion_corr', modality='pet')
+    sub_preproc.run_preproc(method_name='motion_corr', modality='pet')
     
-    # sub_preproc.run_preproc('register_pet')
+    sub_preproc.run_preproc(method_name='register_pet', modality='pet')
     
