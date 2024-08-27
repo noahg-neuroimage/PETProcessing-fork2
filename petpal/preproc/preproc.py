@@ -231,7 +231,8 @@ class PreProc():
 
     def _generate_outfile_path(self,
                                method_short: str,
-                               extension: str='nii.gz'):
+                               extension: str='nii.gz',
+                               modality: str = None,):
         """
         Generate the path to an output file, from the output directory,
         filename prefix, abbreviation of the method name, and filename
@@ -242,8 +243,13 @@ class PreProc():
             extension (str): File type extension to return. Defaults to
                 'nii.gz'.
         """
-        output_file_name = f'{self.output_filename_prefix}_{method_short}.{extension}'
-        return os.path.join(self.output_directory,output_file_name)
+        
+        if modality is None:
+            output_file_name = f'{self.output_filename_prefix}_{method_short}.{extension}'
+        else:
+            assert modality.lower() in ['pet', 't1w', 'mpr', 'flair', 't2w']
+            output_file_name = f'{self.output_filename_prefix}_desc-{method_short}_{modality}.{extension}'
+        return os.path.join(self.output_directory, output_file_name)
 
 
     def run_preproc(self,
