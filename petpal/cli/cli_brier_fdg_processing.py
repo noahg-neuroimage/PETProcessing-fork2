@@ -1,10 +1,12 @@
+from tabnanny import verbose
+
 from ..preproc import preproc
 import os
 import numpy as np
 from ..utils import image_io
 from ..input_function.blood_input import BloodInputFunction
 from ..kinetic_modeling.parametric_images import GraphicalAnalysisParametricImage
-
+import nibabel
 
 def resample_blood_data_on_scanner_times(pet4d_path: str,
                                          raw_blood_tac: str,
@@ -20,20 +22,33 @@ def resample_blood_data_on_scanner_times(pet4d_path: str,
     np.savetxt(X=resampled_tac.T, fname=out_tac_path)
     
     return None
-    
+
+
+def save_cmrglc_image_from_patlak_ki(patlak_ki_image_path: str,
+                                     output_file_path: str,
+                                     plasma_glucose: float,
+                                     lumped_constant: float,
+                                     rescaling_const: float):
+    patlak_image = image_io.ImageIO(verbose=False).load_nii(image_path=patlak_ki_image_path)
+    patlak_affine = patlak_image.affine
+    cmr_vals = (plasma_glucose / lumped_constant) * patlak_image.get_fdata() * rescaling_const
+    cmr_image = nibabel.Nifti1Image(dataobj=cmr_vals, affine=patlak_affine)
+    nibabel.save(cmr_image, f"{output_file_path}")
+
 
 def fdg_protocol_with_arterial(sub_id: str,
-                 ses_id: str,
-                 bids_root_dir: str = None,
-                 pet_dir_path: str = None,
-                 anat_dir_path: str = None,
-                 out_dir_path: str = None,
-                 run_crop: bool = False,
-                 run_wss: bool = False,
-                 run_moco: bool = False,
-                 run_reg: bool = False,
-                 run_resample: bool = False,
-                 run_patlak: bool = False):
+                               ses_id: str,
+                               bids_root_dir: str = None,
+                               pet_dir_path: str = None,
+                               anat_dir_path: str = None,
+                               out_dir_path: str = None,
+                               run_crop: bool = False,
+                               run_wss: bool = False,
+                               run_moco: bool = False,
+                               run_reg: bool = False,
+                               run_resample: bool = False,
+                               run_patlak: bool = False,
+                               run_cmrglc: bool = False, ):
     
     sub_ses_prefix = f'sub-{sub_id}_ses-{ses_id}'
     
@@ -108,3 +123,5 @@ def fdg_protocol_with_arterial(sub_id: str,
                                                       output_filename_prefix=sub_ses_prefix)
         patlak_obj.run_analysis(method_name='patlak', t_thresh_in_mins=lin_fit_thresh_in_mins)
         patlak_obj.save_analysis()
+    if run_cmrglc:
+    
