@@ -1,3 +1,6 @@
+import argparse
+
+from preproc.preproc import PreProc
 from ..preproc import preproc
 import os
 import numpy as np
@@ -147,3 +150,17 @@ def fdg_protocol_with_arterial(sub_id: str,
                                          plasma_glucose=read_plasma_glucose_concentration(plasma_glc_path),
                                          lumped_constant=cmrlgc_lumped_const,
                                          rescaling_const=cmrlgc_rescaling_const)
+
+_PROG_NAME_ = r"petpal-brier-fdg-pipeline"
+_FDG_CMR_EXAMPLE_ = (rf"""
+Example:
+    - Assuming if we are in the `code` directory of a BIDS directory:
+      {_PROG_NAME_} --sub-id XXXX --ses-id XX
+""")
+
+def main():
+    
+    
+    parser = argparse.ArgumentParser(prog=f'{_PROG_NAME_}',
+                                     description='Command line interface for generating parametric CMRglc images',
+                                     epilog=_FDG_CMR_EXAMPLE_)
