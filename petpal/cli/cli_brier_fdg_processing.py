@@ -170,7 +170,8 @@ def main():
                         help='Session ID assuming ses_XX where XX is the session ID.')
     
     parser.add_argument('-b', '--bids-dir', required=False, default=None,
-                        help='Base directory for the BIDS-like data for the study.')
+                        help='Base directory for the BIDS-like data for the study. If not set, assumes current working '
+                             'directory is the code/ directory of a BIDS-like directory.')
     parser.add_argument('-p', '--pet4d-dir', required=False, default=None,
                         help='Directory where the raw 4D-PET, raw blood tac, and blood glucose files are.')
     parser.add_argument('-a', '--anat-dir', required=False, default=None,
@@ -196,3 +197,19 @@ def main():
                         help='Whether to skip the patlak analysis step in the pipeline.')
     parser.add_argument('--skip-cmrglc', required=False, action='store_true', default=False,
                         help='Whether to skip the CMRglc analysis step in the pipeline.')
+
+    args = parser.parse_args()
+    
+    fdg_protocol_with_arterial(sub_id=args.sub_id,
+                               ses_id=args.ses_id,
+                               bids_root_dir=args.bids_dir,
+                               pet_dir_path=args.pet4d_dir,
+                               anat_dir_path=args.anat_dir,
+                               run_crop=not args.skip_crop,
+                               run_wss=not args.skip_wss,
+                               run_moco=not args.skip_moco,
+                               run_reg=not args.skip_reg,
+                               run_resample=not args.skip_blood_resample,
+                               run_patlak=not args.skip_patlak,
+                               run_cmrglc=not args.skip_cmrglc,
+                               verbose=args.verbose)
