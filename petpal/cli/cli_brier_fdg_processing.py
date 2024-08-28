@@ -1,6 +1,4 @@
 import argparse
-
-from preproc.preproc import PreProc
 from ..preproc import preproc
 import os
 import numpy as np
@@ -163,4 +161,38 @@ def main():
     
     parser = argparse.ArgumentParser(prog=f'{_PROG_NAME_}',
                                      description='Command line interface for generating parametric CMRglc images',
-                                     epilog=_FDG_CMR_EXAMPLE_)
+                                     epilog=_FDG_CMR_EXAMPLE_,
+                                     formatter_class=argparse.RawTextHelpFormatter)
+    
+    parser.add_argument('-i', '--sub-id', required=True,
+                        help='Subject ID assuming sub_XXXX where XXXX is the subject ID.')
+    parser.add_argument('s', '--ses-id', required=True,
+                        help='Session ID assuming ses_XX where XX is the session ID.')
+    
+    parser.add_argument('-b', '--bids-dir', required=False, default=None,
+                        help='Base directory for the BIDS-like data for the study.')
+    parser.add_argument('-p', '--pet4d-dir', required=False, default=None,
+                        help='Directory where the raw 4D-PET, raw blood tac, and blood glucose files are.')
+    parser.add_argument('-a', '--anat-dir', required=False, default=None,
+                        help='Directory where the T1-weighted MR image is.')
+    parser.add_argument('-o', '--out-dir', required=False, default=None,
+                        help='Directory where the outputs of the pipeline will be saved.')
+    
+    parser.add_argument('-v', '--verbose', required=False, action='store_true', default=False,
+                        help='Verbose information for each step in the pipeline.')
+    
+    
+    parser.add_argument('--skip-crop', required=False, action='store_true', default=False,
+                        help='Whether to skip the cropping step in the pipeline.')
+    parser.add_argument('--skip-wss', required=False, action='store_true', default=False,
+                        help='Whether to skip the weighted-series-sum (wss) step in the pipeline.')
+    parser.add_argument('--skip-moco', required=False, action='store_true', default=False,
+                        help='Whether to skip the moco step in the pipeline.')
+    parser.add_argument('--skip-reg', required=False, action='store_true', default=False,
+                        help='Whether to skip the registration step in the pipeline.')
+    parser.add_argument('--skip-blood-resample', required=False, action='store_true', default=False,
+                        help='Whether to skip the blood resample step in the pipeline.')
+    parser.add_argument('--skip-patlak', required=False, action='store_true', default=False,
+                        help='Whether to skip the patlak analysis step in the pipeline.')
+    parser.add_argument('--skip-cmrglc', required=False, action='store_true', default=False,
+                        help='Whether to skip the CMRglc analysis step in the pipeline.')
