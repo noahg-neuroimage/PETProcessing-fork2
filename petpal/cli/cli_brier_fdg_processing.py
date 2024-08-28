@@ -1,5 +1,3 @@
-from tabnanny import verbose
-
 from ..preproc import preproc
 import os
 import numpy as np
@@ -22,6 +20,10 @@ def resample_blood_data_on_scanner_times(pet4d_path: str,
     np.savetxt(X=resampled_tac.T, fname=out_tac_path)
     
     return None
+
+
+def read_plasma_glucose_concentration(file_path) -> float:
+    return float(np.loadtxt(file_path))
 
 
 def save_cmrglc_image_from_patlak_ki(patlak_ki_image_path: str,
@@ -48,7 +50,8 @@ def fdg_protocol_with_arterial(sub_id: str,
                                run_reg: bool = False,
                                run_resample: bool = False,
                                run_patlak: bool = False,
-                               run_cmrglc: bool = False, ):
+                               run_cmrglc: bool = False,
+                               verbose: bool = False):
     
     sub_ses_prefix = f'sub-{sub_id}_ses-{ses_id}'
     
@@ -81,6 +84,8 @@ def fdg_protocol_with_arterial(sub_id: str,
     resample_tac_path = os.path.join(out_dir, f"{sub_ses_prefix}_desc-onscannertimes_blood.tsv")
     out_mod = 'pet'
     lin_fit_thresh_in_mins = 30.0
+    cmrlgc_lumped_const = 0.65
+    cmrlgc_rescaling_const = 100.0
     
     preproc_props = {
         'FilePathAnat': t1w_reference_img_path,
@@ -92,7 +97,7 @@ def fdg_protocol_with_arterial(sub_id: str,
         'MotionTarget': (0, 600),
         'RegPars': {'aff_metric': 'mattes', 'type_of_transform': 'DenseRigid'},
         'TimeFrameKeyword': 'FrameReferenceTime',
-        'Verbose': True,
+        'Verbose': verbose,
         }
     
     sub_preproc = preproc.PreProc(output_directory=out_dir, output_filename_prefix=sub_ses_prefix)
@@ -124,4 +129,12 @@ def fdg_protocol_with_arterial(sub_id: str,
         patlak_obj.run_analysis(method_name='patlak', t_thresh_in_mins=lin_fit_thresh_in_mins)
         patlak_obj.save_analysis()
     if run_cmrglc:
-    
+        patlak_slope_img = os.path.join(out_dir, f"{sub_ses_prefix}_desc-patlak_slope.nii.gz")
+        cmrglc_slope_path = os.path.join(out_dir, f"{sub_ses_prefix}_desc-cmrglc_pet.nii.gz")
+        plasma_glc_path   = os.path.join(pet_dir, f"{sub_ses_prefix}_desc-bloodconcentration_glucose.txt")
+        
+        save_cmrglc_image_from_patlak_ki(patlak_ki_image_path=patlak_slope_img,
+                                         output_file_path=cmrglc_slope_path,
+                                         plasma_glucose=read_plasma_glucose_concentration(plasma_glc_path),
+                                         lumped_constant=cmrlgc_lumped_const,
+                                         rescaling_const=cmrlgc_rescaling_const)
