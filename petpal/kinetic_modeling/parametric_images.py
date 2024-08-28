@@ -17,6 +17,7 @@ from nibabel import Nifti1Image
 from . import graphical_analysis
 import os
 import warnings
+from ..utils import image_io
 
 
 @numba.njit()
@@ -487,6 +488,11 @@ class GraphicalAnalysisParametricImage:
             
             tmp_intercept_img = nibabel.Nifti1Image(dataobj=self.intercept_image, affine=nifty_img_affine)
             nibabel.save(tmp_intercept_img, f"{file_name_prefix}_intercept.nii.gz")
+            
+            image_io.safe_copy_meta(input_image_path=self.pet4D_img_path,
+                                    out_image_path=f"{file_name_prefix}_slope.nii.gz")
+            image_io.safe_copy_meta(input_image_path=self.pet4D_img_path,
+                                    out_image_path=f"{file_name_prefix}_intercept.nii.gz")
         except IOError as e:
             print("An IOError occurred while attempting to write the NIfTI image files.")
             raise e from None

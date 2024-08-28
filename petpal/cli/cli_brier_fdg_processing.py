@@ -36,6 +36,8 @@ def save_cmrglc_image_from_patlak_ki(patlak_ki_image_path: str,
     cmr_vals = (plasma_glucose / lumped_constant) * patlak_image.get_fdata() * rescaling_const
     cmr_image = nibabel.Nifti1Image(dataobj=cmr_vals, affine=patlak_affine)
     nibabel.save(cmr_image, f"{output_file_path}")
+    image_io.safe_copy_meta(input_image_path=patlak_ki_image_path,
+                            out_image_path=output_file_path)
 
 
 def fdg_protocol_with_arterial(sub_id: str,
