@@ -483,10 +483,10 @@ class GraphicalAnalysisParametricImage:
         nifty_img_affine = _safe_load_4dpet_nifty(filename=self.pet4D_img_path).affine
         try:
             tmp_slope_img = nibabel.Nifti1Image(dataobj=self.slope_image, affine=nifty_img_affine)
-            nibabel.save(tmp_slope_img, f"{file_name_prefix}-slope.nii.gz")
+            nibabel.save(tmp_slope_img, f"{file_name_prefix}_slope.nii.gz")
             
             tmp_intercept_img = nibabel.Nifti1Image(dataobj=self.intercept_image, affine=nifty_img_affine)
-            nibabel.save(tmp_intercept_img, f"{file_name_prefix}-intercept.nii.gz")
+            nibabel.save(tmp_intercept_img, f"{file_name_prefix}_intercept.nii.gz")
         except IOError as e:
             print("An IOError occurred while attempting to write the NIfTI image files.")
             raise e from None
