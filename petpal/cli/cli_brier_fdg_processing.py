@@ -166,7 +166,7 @@ def main():
     
     parser.add_argument('-i', '--sub-id', required=True,
                         help='Subject ID assuming sub_XXXX where XXXX is the subject ID.')
-    parser.add_argument('s', '--ses-id', required=True,
+    parser.add_argument('-s', '--ses-id', required=True,
                         help='Session ID assuming ses_XX where XX is the session ID.')
     
     parser.add_argument('-b', '--bids-dir', required=False, default=None,
