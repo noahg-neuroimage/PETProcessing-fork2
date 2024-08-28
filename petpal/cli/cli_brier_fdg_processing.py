@@ -67,6 +67,11 @@ def fdg_protocol_with_arterial(sub_id: str,
     else:
         out_dir = os.path.join(BIDS_ROOT_DIR, "derivatives", "petpal", "pipeline_brier_fdg", f"sub-{sub_id}", f"ses-{ses_id}")
         os.makedirs(out_dir, exist_ok=True)
+        
+    out_dir_preproc = os.path.join(out_dir, "preproc")
+    out_dir_kinetic_modeling = os.path.join(out_dir, "kinetic_modeling")
+    os.makedirs(out_dir_preproc, exist_ok=True)
+    os.makedirs(out_dir_kinetic_modeling, exist_ok=True)
     
     sub_path = os.path.join(f"{BIDS_ROOT_DIR}", f"sub-{sub_id}", f"ses-{ses_id}")
 
@@ -83,7 +88,8 @@ def fdg_protocol_with_arterial(sub_id: str,
     raw_pet_img_path = os.path.join(pet_dir, f"{sub_ses_prefix}_pet.nii.gz")
     t1w_reference_img_path = os.path.join(anat_dir, f"{sub_ses_prefix}_MPRAGE.nii.gz")
     raw_blood_tac_path = os.path.join(pet_dir, f"{sub_ses_prefix}_desc-decaycorrected_blood.tsv")
-    resample_tac_path = os.path.join(out_dir, f"{sub_ses_prefix}_desc-onscannertimes_blood.tsv")
+    resample_tac_path = os.path.join(out_dir_preproc, f"{sub_ses_prefix}_desc-onscannertimes_blood.tsv")
+   
     out_mod = 'pet'
     lin_fit_thresh_in_mins = 30.0
     cmrlgc_lumped_const = 0.65
@@ -102,7 +108,7 @@ def fdg_protocol_with_arterial(sub_id: str,
         'Verbose': verbose,
         }
     
-    sub_preproc = preproc.PreProc(output_directory=out_dir, output_filename_prefix=sub_ses_prefix)
+    sub_preproc = preproc.PreProc(output_directory=out_dir_preproc, output_filename_prefix=sub_ses_prefix)
     preproc_props['FilePathWSSInput'] = sub_preproc._generate_outfile_path(method_short='threshcropped', modality=out_mod)
     preproc_props['FilePathMocoInp'] = preproc_props['FilePathWSSInput']
     preproc_props['MotionTarget'] = sub_preproc._generate_outfile_path(method_short='wss', modality=out_mod)
@@ -126,13 +132,14 @@ def fdg_protocol_with_arterial(sub_id: str,
     if run_patlak:
         patlak_obj = GraphicalAnalysisParametricImage(input_tac_path=resample_tac_path,
                                                       pet4D_img_path=preproc_props['FilePathTACInput'],
-                                                      output_directory=out_dir,
+                                                      output_directory=out_dir_kinetic_modeling,
                                                       output_filename_prefix=sub_ses_prefix)
         patlak_obj.run_analysis(method_name='patlak', t_thresh_in_mins=lin_fit_thresh_in_mins)
         patlak_obj.save_analysis()
+        
     if run_cmrglc:
-        patlak_slope_img = os.path.join(out_dir, f"{sub_ses_prefix}_desc-patlak_slope.nii.gz")
-        cmrglc_slope_path = os.path.join(out_dir, f"{sub_ses_prefix}_desc-cmrglc_pet.nii.gz")
+        patlak_slope_img = os.path.join(out_dir_kinetic_modeling, f"{sub_ses_prefix}_desc-patlak_slope.nii.gz")
+        cmrglc_slope_path = os.path.join(out_dir_kinetic_modeling, f"{sub_ses_prefix}_desc-cmrglc_pet.nii.gz")
         plasma_glc_path   = os.path.join(pet_dir, f"{sub_ses_prefix}_desc-bloodconcentration_glucose.txt")
         
         save_cmrglc_image_from_patlak_ki(patlak_ki_image_path=patlak_slope_img,
