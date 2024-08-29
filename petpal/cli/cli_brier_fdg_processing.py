@@ -104,6 +104,7 @@ def fdg_protocol_with_arterial(sub_id: str,
         'StartTimeWSS':0,
         'EndTimeWSS':1800,
         'RegPars': {'aff_metric': 'GC', 'type_of_transform': 'Affine'},
+        'MocoTransformType' : 'Affine',
         'TimeFrameKeyword': 'FrameReferenceTime',
         'Verbose': verbose,
         }
