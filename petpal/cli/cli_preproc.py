@@ -221,8 +221,11 @@ def main():
         print(f"Running {command} with parameters: {preproc_props}")
 
     subject.update_props(new_preproc_props=preproc_props)
-    subject.run_preproc(method_name=command)
-
+    try:
+        subject.run_preproc(method_name=command)
+    except FileExistsError as e:
+        # TODO: prompt the user whether they want to skip or overwrite the file.
+        pass
 
 if __name__ == "__main__":
     main()
