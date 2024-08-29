@@ -23,8 +23,8 @@ def resample_blood_data_on_scanner_times(pet4d_path: str,
     return None
 
 
-def read_plasma_glucose_concentration(file_path) -> float:
-    return float(np.loadtxt(file_path))
+def read_plasma_glucose_concentration(file_path, correction_scale: float = 1.0/18.0) -> float:
+    return correction_scale * float(np.loadtxt(file_path))
 
 
 def save_cmrglc_image_from_patlak_ki(patlak_ki_image_path: str,
@@ -103,7 +103,7 @@ def fdg_protocol_with_arterial(sub_id: str,
         'HalfLife': 6586.2,
         'StartTimeWSS':0,
         'EndTimeWSS':1800,
-        'RegPars': {'aff_metric': 'mattes', 'type_of_transform': 'DenseRigid'},
+        'RegPars': {'aff_metric': 'GC', 'type_of_transform': 'Affine'},
         'TimeFrameKeyword': 'FrameReferenceTime',
         'Verbose': verbose,
         }
