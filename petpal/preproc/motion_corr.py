@@ -161,3 +161,11 @@ def motion_corr(input_image_4d_path: str,
     return pet_moco_np, pet_moco_params, pet_moco_fd
 
 
+def motion_corr_to_t1(input_image_4d_path: str,
+                      motion_target_option: Union[str,tuple],
+                      out_image_path: str,
+                      verbose: bool,
+                      frames_list: list = None,
+                      type_of_transform: str='AffineFast',
+                      transform_metric: str="mattes"):
+    pass
