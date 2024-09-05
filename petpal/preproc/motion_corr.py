@@ -162,13 +162,13 @@ def motion_corr(input_image_4d_path: str,
 
 def motion_corr_to_t1(input_image_4d_path: str,
                       t1_image_path: str,
-                      motion_target_option: Union[str,tuple],
+                      motion_target_option: Union[str, tuple],
                       out_image_path: str,
                       verbose: bool,
                       frames_list: list = None,
-                      type_of_transform: str='AffineFast',
-                      transform_metric: str="mattes",
-                      half_life: float=None):
+                      type_of_transform: str = 'AffineFast',
+                      transform_metric: str = "mattes",
+                      half_life: float = None):
     r"""
     Perform motion correction of a 4D PET image to a T1 anatomical image.
 
@@ -229,7 +229,7 @@ def motion_corr_to_t1(input_image_4d_path: str,
     motion_target_to_mpr_reg = ants.registration(fixed=t1_image,
                                                  moving=motion_target,
                                                  type_of_transform=type_of_transform,
-                                                 aff_metric=transform_metric,)
+                                                 aff_metric=transform_metric, )
     
     motion_target_in_t1 = motion_target_to_mpr_reg['warpedmovout']
     motion_transform_matrix = motion_target_to_mpr_reg['fwdtransforms']
@@ -239,10 +239,10 @@ def motion_corr_to_t1(input_image_4d_path: str,
     else:
         assert max(frames_list) < input_image.shape[-1]
         frames_to_correct = frames_list
-        
+    
     total_mean_voxel_value = t1_image.mean()
     
-    out_image_list = []
+    out_image = []
     input_image_list = input_image.ndimage_to_list()
     
     if verbose:
@@ -255,25 +255,24 @@ def motion_corr_to_t1(input_image_4d_path: str,
         if frame_mean_val < total_mean_voxel_value:
             tmp_transform = ants.apply_transforms(fixed=motion_target_in_t1,
                                                   moving=this_frame,
-                                                  transforms=motion_transform_matrix,)
-            out_image_list.append(tmp_transform)
+                                                  transforms=motion_transform_matrix, )
+            out_image.append(tmp_transform)
         else:
             tmp_reg = ants.registration(fixed=motion_target_in_t1,
                                         moving=this_frame,
                                         type_of_transform=type_of_transform,
-                                        aff_metric=transform_metric,)
-            out_image_list.append(tmp_reg['warpedmovout'])
+                                        aff_metric=transform_metric, )
+            out_image.append(tmp_reg['warpedmovout'])
     if verbose:
         print("... done!\n")
-    tmp_image = _gen_nd_image_based_on_image_list(out_image_list)
-    out_image = ants.list_to_ndimage(tmp_image, out_image_list)
+    tmp_image = _gen_nd_image_based_on_image_list(out_image)
+    out_image = ants.list_to_ndimage(tmp_image, out_image)
     out_image = ants.to_nibabel(out_image)
     
     nibabel.save(out_image, out_image_path)
     
     if verbose:
         print(f"(ImageOps4d): motion corrected image saved to {out_image_path}")
-    
 
 
 def _gen_nd_image_based_on_image_list(image_list: list[ants.core.ants_image.ANTsImage]):
