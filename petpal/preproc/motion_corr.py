@@ -168,8 +168,7 @@ def motion_corr_to_t1(input_image_4d_path: str,
                       frames_list: list = None,
                       type_of_transform: str='AffineFast',
                       transform_metric: str="mattes",
-                      half_life: float=None,
-                      **kwargs):
+                      half_life: float=None):
     
     input_image = ants.image_read(input_image_4d_path)
     t1_image = ants.image_read(t1_image_path)
