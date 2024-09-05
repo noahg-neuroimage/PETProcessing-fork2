@@ -169,6 +169,51 @@ def motion_corr_to_t1(input_image_4d_path: str,
                       type_of_transform: str='AffineFast',
                       transform_metric: str="mattes",
                       half_life: float=None):
+    r"""
+    Perform motion correction of a 4D PET image to a T1 anatomical image.
+
+    This function corrects motion in a 4D PET image by registering it to a T1 anatomical
+    image. The method uses a two-step process: first registering an intermediate motion
+    target to the T1 image (either the time-averaged image or a weighted-series-sum), and
+    then using the calculated transform to correct motion in individual frames of the PET series.
+    The motion-target-option is registered to the T1 anatomical image. For each frame in the 4D-PET
+    we want to motion-correct, if the frame mean voxel value is less than the entire time-series
+    mean voxel value, the frame is simply transformed to the motion-target in T1-space, else the frame
+    is registered to the motion-target in T1-space.
+
+    Args:
+        input_image_4d_path (str): Path to the 4D PET image to be corrected.
+        t1_image_path (str): Path to the 3D T1 anatomical image.
+        motion_target_option (str | tuple): Option for selecting the motion target image.
+            Can be a path to a file or a tuple range. If None, the average of the PET timeseries
+            is used.
+        out_image_path (str): Path to save the motion-corrected 4D image.
+        verbose (bool): Set to True to print verbose output during processing.
+        frames_list (list, optional): List of frame indices to correct. If None, all frames
+            are corrected.
+        type_of_transform (str): Type of transformation used in registration. Default is 'AffineFast'.
+        transform_metric (str): Metric for transformation optimization. Default is 'mattes'.
+        half_life (float, optional): Half-life of the PET radioisotope. Used if a calculation
+            is required for the motion target.
+
+    Returns:
+        None
+
+    Raises:
+        AssertionError: If maximum frame index in `frames_list` exceeds the number of frames in the PET image.
+
+    Example:
+        
+        .. code-block:: python
+        
+        
+        motion_corr_to_t1(input_image_4d_path='pet_timeseries.nii.gz',
+                          t1_image_path='t1_image.nii.gz',
+                          motion_target_option='average',
+                          out_image_path='pet_corrected.nii.gz',
+                          verbose=True)
+                        
+    """
     
     input_image = ants.image_read(input_image_4d_path)
     t1_image = ants.image_read(t1_image_path)
@@ -232,6 +277,45 @@ def motion_corr_to_t1(input_image_4d_path: str,
 
 
 def _gen_nd_image_based_on_image_list(image_list: list[ants.core.ants_image.ANTsImage]):
+    r"""
+    Generate a 4D ANTsImage based on a list of 3D ANTsImages.
+
+    This function takes a list of 3D ANTsImages and constructs a new 4D ANTsImage,
+    where the additional dimension represents the number of frames (3D images) in the list.
+    The 4D image retains the spacing, origin, direction, and shape properties of the 3D images,
+    with appropriate modifications for the additional dimension.
+
+    Args:
+        image_list (list[ants.core.ants_image.ANTsImage]):
+            List of 3D ANTsImage objects to be combined into a 4D image.
+            The list must contain at least one image, and all images must have the same
+            dimensions and properties.
+
+    Returns:
+        ants.core.ants_image.ANTsImage:
+            A 4D ANTsImage constructed from the input list of 3D images. The additional
+            dimension corresponds to the number of frames (length of the image list).
+
+    Raises:
+        AssertionError: If the `image_list` is empty or if the images in the list are not 3D.
+
+    See Also
+        * :func:`~petpal.preproc.motion_corr.motion_corr_to_t1`
+
+    Example:
+        
+        .. code-block:: python
+        
+        
+            import ants
+            image1 = ants.image_read('frame1.nii.gz')
+            image2 = ants.image_read('frame2.nii.gz')
+            image_list = [image1, image2]
+            result = _gen_nd_image_based_on_image_list(image_list)
+            print(result.dimension)  # 4
+            image4d = ants.list_to_ndimage(result, image_list)
+        
+    """
     assert len(image_list) > 0
     assert image_list[0].dimension == 3
     
