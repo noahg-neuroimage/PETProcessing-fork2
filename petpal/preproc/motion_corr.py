@@ -215,6 +215,12 @@ def motion_corr_to_t1(input_image_4d_path: str,
                                         type_of_transform=type_of_transform,
                                         aff_metric=transform_metric,)
             out_image_list.append(tmp_reg['warpedmovout'])
+            
+    tmp_image = _gen_nd_image_based_on_image_list(out_image_list)
+    out_image = ants.list_to_ndimage(tmp_image, out_image_list)
+    out_image = ants.to_nibabel(out_image)
+    
+    nibabel.save(out_image, out_image_path)
 
 
 def _gen_nd_image_based_on_image_list(image_list: list[ants.core.ants_image.ANTsImage]):
