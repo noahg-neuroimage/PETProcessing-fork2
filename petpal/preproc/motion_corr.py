@@ -167,5 +167,21 @@ def motion_corr_to_t1(input_image_4d_path: str,
                       verbose: bool,
                       frames_list: list = None,
                       type_of_transform: str='AffineFast',
-                      transform_metric: str="mattes"):
+                      transform_metric: str="mattes",
+                      half_life: float=None,
+                      **kwargs):
+    
+    input_image = ants.image_read(input_image_4d_path)
+    
+    time_average_of_input_image = input_image.get_average_of_timeseries()
+    
+    if motion_target_option is None:
+        motion_target = time_average_of_input_image
+    else:
+        motion_target_path = determine_motion_target(motion_target_option=motion_target_option,
+                                                     input_image_4d_path=input_image_4d_path,
+                                                     half_life=half_life)
+        motion_target = ants.image_read(motion_target_path)
+    
+    
     pass
