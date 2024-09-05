@@ -7,105 +7,6 @@ from ..input_function.blood_input import BloodInputFunction
 from ..kinetic_modeling.parametric_images import GraphicalAnalysisParametricImage
 import nibabel
 
-def resample_blood_data_on_scanner_times(pet4d_path: str,
-                                         raw_blood_tac: str,
-                                         lin_fit_thresh_in_mins: float,
-                                         out_tac_path: str):
-    r"""
-    Resample blood time-activity curve (TAC) based on PET scanner frame times. The function assumes
-    that the PET meta-data have 'FrameReferenceTime' in seconds. The saved TAC is in minutes.
-
-    This function takes the raw blood TAC sampled at arbitrary times, resamples it
-    to the frame times of a 4D PET image, and saves the resampled TAC to a file.
-
-    Args:
-        pet4d_path (str): Path to the 4D PET image file.
-        raw_blood_tac (str): Path to the file containing raw blood time-activity data.
-        lin_fit_thresh_in_mins (float): Threshold in minutes for piecewise linear fit.
-        out_tac_path (str): Path to save the resampled blood TAC.
-
-    Returns:
-        None. In the saved TAC file, the first column will be time in minutes,
-            and the second column will be the activity.
-
-    See Also:
-        - :class:`BloodInputFunction`
-        
-
-    Example:
-       
-       .. code-block:: python
-
-          resample_blood_data_on_scanner_times(
-              pet4d_path='pet_image.nii.gz',
-              raw_blood_tac='blood_tac.csv',
-              lin_fit_thresh_in_mins=0.5,
-              out_tac_path='resampled_blood_tac.csv'
-          )
-          
-          
-    """
-    image_meta_data = image_io.load_metadata_for_nifty_with_same_filename(image_path=pet4d_path)
-    frame_times = np.asarray(image_meta_data['FrameReferenceTime']) / 60.0
-    blood_times, blood_activity = image_io.load_tac(filename=raw_blood_tac)
-    blood_intp = BloodInputFunction(time=blood_times, activity=blood_activity, thresh_in_mins=lin_fit_thresh_in_mins)
-    resampled_blood = blood_intp.calc_blood_input_function(t=frame_times)
-    resampled_tac = np.asarray([frame_times, resampled_blood], dtype=float)
-    
-    np.savetxt(X=resampled_tac.T, fname=out_tac_path)
-    
-    return None
-
-
-def read_plasma_glucose_concentration(file_path: str, correction_scale: float = 1.0/18.0) -> float:
-    r"""
-    Temporary hacky function to read a single plasma glucose concentration value from a file.
-
-    This function reads a single numerical value from a specified file and applies a correction scale to it.
-    The primary use is to quickly extract plasma glucose concentration for further processing. The default
-    scaling os 1.0/18.0 is the one used in the CMMS study to get the right units.
-
-    Args:
-        file_path (str): Path to the file containing the plasma glucose concentration value.
-        correction_scale (float): Scale factor for correcting the read value. Default is `1.0/18.0`.
-
-    Returns:
-        float: Corrected plasma glucose concentration value.
-    """
-    return correction_scale * float(np.loadtxt(file_path))
-
-
-def save_cmrglc_image_from_patlak_ki(patlak_ki_image_path: str,
-                                     output_file_path: str,
-                                     plasma_glucose: float,
-                                     lumped_constant: float,
-                                     rescaling_const: float):
-    r"""
-    Generate and save a CMRglc image by rescaling a Patlak-Ki image.
-
-    This function reads a Patlak-Ki image, rescales it using provided parameters (plasma glucose,
-    lumped constant, and a rescaling constant), and saves the resulting image as a CMRglc image.
-    
-    The final image will be `rescaling_constant * K_i * plasma_glucose / lumped_constant`.
-    
-    Args:
-        patlak_ki_image_path (str): Path to the Patlak-Ki image file.
-        output_file_path (str): Path to save the rescaled CMRglc image.
-        plasma_glucose (float): Plasma glucose concentration value used for rescaling.
-        lumped_constant (float): Lumped constant value used for rescaling.
-        rescaling_const (float): Additional rescaling constant applied to the Patlak-Ki values.
-
-    Returns:
-        None
-    """
-    patlak_image = image_io.ImageIO(verbose=False).load_nii(image_path=patlak_ki_image_path)
-    patlak_affine = patlak_image.affine
-    cmr_vals = (plasma_glucose / lumped_constant) * patlak_image.get_fdata() * rescaling_const
-    cmr_image = nibabel.Nifti1Image(dataobj=cmr_vals, affine=patlak_affine)
-    nibabel.save(cmr_image, f"{output_file_path}")
-    image_io.safe_copy_meta(input_image_path=patlak_ki_image_path,
-                            out_image_path=output_file_path)
-
 
 def fdg_protocol_with_arterial(sub_id: str,
                                ses_id: str,
@@ -160,12 +61,12 @@ def fdg_protocol_with_arterial(sub_id: str,
         
     Notes:
         The pipeline-function is intended to be used with BIDs-like datasets where we have the following assumptions
-        about the naming conventions of different file types:
-            - In the ``pet_dir_path`` directory we have the following files:
-                - 4D-PET: ``sub-{sub_id}_ses-{ses_id}_pet.nii.gz``
-                - Blood TAC: ``sub-{sub_id}_ses-{ses_id}_desc-decaycorrected_blood.tsv``
-            - In the ``anat_dir_path`` directory we have the following files:
-                - T1w image in MPRAGE: ``sub-{sub_id}_ses-{ses_id}_MPRAGE.nii.gz``
+        about the naming conventions of different file types.
+        - In the ``pet_dir_path`` directory we have the following files:
+            - 4D-PET: ``sub-{sub_id}_ses-{ses_id}_pet.nii.gz``
+            - Blood TAC: ``sub-{sub_id}_ses-{ses_id}_desc-decaycorrected_blood.tsv``
+        - In the ``anat_dir_path`` directory we have the following file:
+            - T1w image in MPRAGE: ``sub-{sub_id}_ses-{ses_id}_MPRAGE.nii.gz``
         - If ``bids_root_dir`` is not provided, it defaults to the parent directory, assuming the current working directory
           is within the ``code`` directory of a BIDS dataset.
         - Default output directory `out_dir_path` is constructed as:
@@ -301,7 +202,7 @@ Example:
 """)
 
 def main():
-    f"""
+    rf"""
     Command line interface for generating parametric CMRglc images.
 
     This CLI provides access to the comprehensive FDG PET preprocessing and analysis pipeline. Multiple
@@ -411,3 +312,102 @@ def main():
                                run_patlak=not args.skip_patlak,
                                run_cmrglc=not args.skip_cmrglc,
                                verbose=args.verbose)
+
+
+def resample_blood_data_on_scanner_times(pet4d_path: str,
+                                         raw_blood_tac: str,
+                                         lin_fit_thresh_in_mins: float,
+                                         out_tac_path: str):
+    r"""
+    Resample blood time-activity curve (TAC) based on PET scanner frame times. The function assumes
+    that the PET meta-data have 'FrameReferenceTime' in seconds. The saved TAC is in minutes.
+
+    This function takes the raw blood TAC sampled at arbitrary times, resamples it
+    to the frame times of a 4D PET image, and saves the resampled TAC to a file.
+
+    Args:
+        pet4d_path (str): Path to the 4D PET image file.
+        raw_blood_tac (str): Path to the file containing raw blood time-activity data.
+        lin_fit_thresh_in_mins (float): Threshold in minutes for piecewise linear fit.
+        out_tac_path (str): Path to save the resampled blood TAC.
+
+    Returns:
+        None. In the saved TAC file, the first column will be time in minutes,
+            and the second column will be the activity.
+
+    See Also:
+        - :class:`BloodInputFunction`
+
+
+    Example:
+
+       .. code-block:: python
+
+          resample_blood_data_on_scanner_times(
+              pet4d_path='pet_image.nii.gz',
+              raw_blood_tac='blood_tac.csv',
+              lin_fit_thresh_in_mins=0.5,
+              out_tac_path='resampled_blood_tac.csv'
+          )
+
+
+    """
+    image_meta_data = image_io.load_metadata_for_nifty_with_same_filename(image_path=pet4d_path)
+    frame_times = np.asarray(image_meta_data['FrameReferenceTime']) / 60.0
+    blood_times, blood_activity = image_io.load_tac(filename=raw_blood_tac)
+    blood_intp = BloodInputFunction(time=blood_times, activity=blood_activity, thresh_in_mins=lin_fit_thresh_in_mins)
+    resampled_blood = blood_intp.calc_blood_input_function(t=frame_times)
+    resampled_tac = np.asarray([frame_times, resampled_blood], dtype=float)
+    
+    np.savetxt(X=resampled_tac.T, fname=out_tac_path)
+    
+    return None
+
+
+def read_plasma_glucose_concentration(file_path: str, correction_scale: float = 1.0 / 18.0) -> float:
+    r"""
+    Temporary hacky function to read a single plasma glucose concentration value from a file.
+
+    This function reads a single numerical value from a specified file and applies a correction scale to it.
+    The primary use is to quickly extract plasma glucose concentration for further processing. The default
+    scaling os 1.0/18.0 is the one used in the CMMS study to get the right units.
+
+    Args:
+        file_path (str): Path to the file containing the plasma glucose concentration value.
+        correction_scale (float): Scale factor for correcting the read value. Default is `1.0/18.0`.
+
+    Returns:
+        float: Corrected plasma glucose concentration value.
+    """
+    return correction_scale * float(np.loadtxt(file_path))
+
+
+def save_cmrglc_image_from_patlak_ki(patlak_ki_image_path: str,
+                                     output_file_path: str,
+                                     plasma_glucose: float,
+                                     lumped_constant: float,
+                                     rescaling_const: float):
+    r"""
+    Generate and save a CMRglc image by rescaling a Patlak-Ki image.
+
+    This function reads a Patlak-Ki image, rescales it using provided parameters (plasma glucose,
+    lumped constant, and a rescaling constant), and saves the resulting image as a CMRglc image.
+
+    The final image will be `rescaling_constant * K_i * plasma_glucose / lumped_constant`.
+
+    Args:
+        patlak_ki_image_path (str): Path to the Patlak-Ki image file.
+        output_file_path (str): Path to save the rescaled CMRglc image.
+        plasma_glucose (float): Plasma glucose concentration value used for rescaling.
+        lumped_constant (float): Lumped constant value used for rescaling.
+        rescaling_const (float): Additional rescaling constant applied to the Patlak-Ki values.
+
+    Returns:
+        None
+    """
+    patlak_image = image_io.ImageIO(verbose=False).load_nii(image_path=patlak_ki_image_path)
+    patlak_affine = patlak_image.affine
+    cmr_vals = (plasma_glucose / lumped_constant) * patlak_image.get_fdata() * rescaling_const
+    cmr_image = nibabel.Nifti1Image(dataobj=cmr_vals, affine=patlak_affine)
+    nibabel.save(cmr_image, f"{output_file_path}")
+    image_io.safe_copy_meta(input_image_path=patlak_ki_image_path, out_image_path=output_file_path)
