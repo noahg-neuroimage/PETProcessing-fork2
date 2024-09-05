@@ -5,7 +5,6 @@ Provides methods to motion correct 4D PET data. Includes method
 registration.
 """
 import os
-import re
 import tempfile
 from typing import Union
 import ants
@@ -216,6 +215,23 @@ def motion_corr_to_t1(input_image_4d_path: str,
                                         type_of_transform=type_of_transform,
                                         aff_metric=transform_metric,)
             out_image_list.append(tmp_reg['warpedmovout'])
+
+
+def _gen_nd_image_based_on_image_list(image_list: list[ants.core.ants_image.ANTsImage]):
+    assert len(image_list) > 0
+    assert image_list[0].dimension == 3
     
+    num_frames = len(image_list)
+    spacing_3d = image_list[0].spacing
+    origin_3d = image_list[0].origin
+    shape_3d = image_list[0].shape
+    direction_3d = image_list[0].direction
     
-        
+    direction_4d = np.eye(4)
+    direction_4d[:3, :3] = direction_3d
+    spacing_4d = (*spacing_3d, 1.0)
+    origin_4d = (*origin_3d, 0.0)
+    shape_4d = (*shape_3d, num_frames)
+    
+    tmp_image = ants.make_image(imagesize=shape_4d, spacing=spacing_4d, origin=origin_4d, direction=direction_4d)
+    return tmp_image
