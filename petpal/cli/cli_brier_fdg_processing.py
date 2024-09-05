@@ -57,7 +57,21 @@ def resample_blood_data_on_scanner_times(pet4d_path: str,
     return None
 
 
-def read_plasma_glucose_concentration(file_path, correction_scale: float = 1.0/18.0) -> float:
+def read_plasma_glucose_concentration(file_path: str, correction_scale: float = 1.0/18.0) -> float:
+    r"""
+    Temporary hacky function to read a single plasma glucose concentration value from a file.
+
+    This function reads a single numerical value from a specified file and applies a correction scale to it.
+    The primary use is to quickly extract plasma glucose concentration for further processing. The default
+    scaling os 1.0/18.0 is the one used in the CMMS study to get the right units.
+
+    Args:
+        file_path (str): Path to the file containing the plasma glucose concentration value.
+        correction_scale (float): Scale factor for correcting the read value. Default is `1.0/18.0`.
+
+    Returns:
+        float: Corrected plasma glucose concentration value.
+    """
     return correction_scale * float(np.loadtxt(file_path))
 
 
@@ -66,6 +80,24 @@ def save_cmrglc_image_from_patlak_ki(patlak_ki_image_path: str,
                                      plasma_glucose: float,
                                      lumped_constant: float,
                                      rescaling_const: float):
+    r"""
+    Generate and save a CMRglc image by rescaling a Patlak-Ki image.
+
+    This function reads a Patlak-Ki image, rescales it using provided parameters (plasma glucose,
+    lumped constant, and a rescaling constant), and saves the resulting image as a CMRglc image.
+    
+    The final image will be `rescaling_constant * K_i * plasma_glucose / lumped_constant`.
+    
+    Args:
+        patlak_ki_image_path (str): Path to the Patlak-Ki image file.
+        output_file_path (str): Path to save the rescaled CMRglc image.
+        plasma_glucose (float): Plasma glucose concentration value used for rescaling.
+        lumped_constant (float): Lumped constant value used for rescaling.
+        rescaling_const (float): Additional rescaling constant applied to the Patlak-Ki values.
+
+    Returns:
+        None
+    """
     patlak_image = image_io.ImageIO(verbose=False).load_nii(image_path=patlak_ki_image_path)
     patlak_affine = patlak_image.affine
     cmr_vals = (plasma_glucose / lumped_constant) * patlak_image.get_fdata() * rescaling_const
