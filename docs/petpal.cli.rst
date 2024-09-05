@@ -15,6 +15,8 @@ Submodules
    petpal.cli.cli_reference_tissue_models
    petpal.cli.cli_tac_fitting
    petpal.cli.cli_tac_interpolation
+   petpal.cli.brier_fdg_processing
+
 
 Module contents
 ---------------
