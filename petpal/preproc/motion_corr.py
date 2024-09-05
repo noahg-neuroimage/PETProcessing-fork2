@@ -175,10 +175,8 @@ def motion_corr_to_t1(input_image_4d_path: str,
     input_image = ants.image_read(input_image_4d_path)
     t1_image = ants.image_read(t1_image_path)
     
-    time_average_of_input_image = input_image.get_average_of_timeseries()
-    
     if motion_target_option is None:
-        motion_target = time_average_of_input_image
+        motion_target = input_image.get_average_of_timeseries()
     else:
         motion_target_path = determine_motion_target(motion_target_option=motion_target_option,
                                                      input_image_4d_path=input_image_4d_path,
@@ -193,4 +191,31 @@ def motion_corr_to_t1(input_image_4d_path: str,
     motion_target_in_t1 = motion_target_to_mpr_reg['warpedmovout']
     motion_transform_matrix = motion_target_to_mpr_reg['fwdtransforms']
     
-    pass
+    if frames_list is None:
+        frames_to_correct = np.arange(input_image.shape[-1], dtype=int)
+    else:
+        assert max(frames_list) < input_image.shape[-1]
+        frames_to_correct = frames_list
+        
+    total_mean_voxel_value = t1_image.mean()
+    
+    out_image_list = []
+    input_image_list = input_image.ndimage_to_list()
+    
+    for frame_id in frames_to_correct:
+        this_frame = input_image_list[frame_id]
+        frame_mean_val = this_frame.mean()
+        if frame_mean_val < total_mean_voxel_value:
+            tmp_transform = ants.apply_transforms(fixed=motion_target_in_t1,
+                                                  moving=this_frame,
+                                                  transforms=motion_transform_matrix,)
+            out_image_list.append(tmp_transform)
+        else:
+            tmp_reg = ants.registration(fixed=motion_target_in_t1,
+                                        moving=this_frame,
+                                        type_of_transform=type_of_transform,
+                                        aff_metric=transform_metric,)
+            out_image_list.append(tmp_reg['warpedmovout'])
+    
+    
+        
