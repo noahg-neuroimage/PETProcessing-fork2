@@ -121,12 +121,64 @@ def fdg_protocol_with_arterial(sub_id: str,
                                run_patlak: bool = False,
                                run_cmrglc: bool = False,
                                verbose: bool = False):
+    r"""
+    Perform a complete FDG PET preprocessing and analysis pipeline using the specified options. Refer to the
+    Notes for explanations of the default behavior of arguments. This function is intended to be used with
+    BIDs-like datasets.
     
+    This function conducts a series of preprocessing steps (each of which can be skipped)
+        - threshold cropping
+        - weighted series summation
+        - motion correction,
+        - registration
+        - resampling of blood TAC data on scanner frame times
+        - Patlak analysis (parametric images)
+        - CMRglc (parametric image)
+        
+    Args:
+        sub_id (str): Subject ID in the BIDS format (e.g., '01').
+        ses_id (str): Session ID in the BIDS format (e.g., '01').
+        bids_root_dir (str, optional): Root directory of the BIDS dataset. If not provided, assumes the
+            current working directory is within a BIDS dataset and set to its parent directory.
+        pet_dir_path (str, optional): Path to the PET directory. If not provided, constructs the path
+            based on `bids_root_dir`, `sub_id`, and `ses_id`.
+        anat_dir_path (str, optional): Path to the anatomical directory. If not provided, constructs the path
+            based on `bids_root_dir`, `sub_id`, and `ses_id`.
+        out_dir_path (str, optional): Output directory path. If not provided, constructs default output directory
+            within the BIDS derivatives folder under `BIDS_ROOT_DIR`.
+        run_crop (bool): Whether to perform threshold cropping. Default is False.
+        run_wss (bool): Whether to perform weighted series summation. Default is False.
+        run_moco (bool): Whether to perform motion correction. Default is False.
+        run_reg (bool): Whether to perform registration. Default is False.
+        run_resample (bool): Whether to resample blood TAC data on scanner times. Default is False.
+        run_patlak (bool): Whether to perform Patlak analysis. Default is False.
+        run_cmrglc (bool): Whether to generate CMRglc images. Default is False.
+        verbose (bool): Whether to print verbose output during processing. Default is False.
+
+    Returns:
+        None
+        
+    Notes:
+        The pipeline-function is intended to be used with BIDs-like datasets where we have the following assumptions
+        about the naming conventions of different file types:
+            - In the `pet_dir_path` directory we have the following files:
+                - 4D-PET: sub-{sub_id}_ses-{ses_id}_pet.nii.gz
+                - Blood TAC: sub-{sub_id}_ses-{ses_id}_desc-decaycorrected_blood.tsv
+            - In the `anat_dir_path` directory we have the following files:
+                - T1w image in MPRAGE: sub-{sub_id}_ses-{ses_id}_MPRAGE.nii.gz
+        - If `bids_root_dir` is not provided, it defaults to the parent directory, assuming the current working directory
+          is within the `code` directory of a BIDS dataset.
+        - Default output directory `out_dir_path` is constructed as:
+          ``<BIDS_ROOT_DIR>/derivatives/petpal/pipeline_brier_fdg/sub-<sub_id>/ses-<ses_id>``.
+        - Various preprocessing properties such as `CropThreshold`, `HalfLife`, and `TimeFrameKeyword` are set internally
+          with standard default values tailored for FDG PET processing.
+          
+    """
     sub_ses_prefix = f'sub-{sub_id}_ses-{ses_id}'
     
     if bids_root_dir is not None:
         BIDS_ROOT_DIR = os.path.abspath(bids_root_dir)
-    else: # Assumes that the file is in 'SOME_BIDS_Dir/code'
+    else:
         BIDS_ROOT_DIR = os.path.abspath("../")
     
     if out_dir_path is not None:
@@ -165,13 +217,13 @@ def fdg_protocol_with_arterial(sub_id: str,
     preproc_props = {
         'FilePathAnat': t1w_reference_img_path,
         'FilePathCropInput': raw_pet_img_path,
-        'CropThreshold': 1.0e-2,
+        'CropThreshold': 8.5e-3,
         'HalfLife': 6586.2,
         'StartTimeWSS':0,
         'EndTimeWSS':1800,
         'RegPars': {'aff_metric': 'mattes', 'type_of_transform': 'AffineFast'},
         'MocoTransformType' : 'AffineFast',
-        'MocoPars' : {'fdOffset':10, 'verbose':False},
+        'MocoPars' : {'verbose':False},
         'TimeFrameKeyword': 'FrameReferenceTime',
         'Verbose': verbose,
         }
