@@ -162,6 +162,7 @@ def motion_corr(input_image_4d_path: str,
 
 
 def motion_corr_to_t1(input_image_4d_path: str,
+                      t1_image_path: str,
                       motion_target_option: Union[str,tuple],
                       out_image_path: str,
                       verbose: bool,
@@ -172,6 +173,7 @@ def motion_corr_to_t1(input_image_4d_path: str,
                       **kwargs):
     
     input_image = ants.image_read(input_image_4d_path)
+    t1_image = ants.image_read(t1_image_path)
     
     time_average_of_input_image = input_image.get_average_of_timeseries()
     
@@ -183,5 +185,12 @@ def motion_corr_to_t1(input_image_4d_path: str,
                                                      half_life=half_life)
         motion_target = ants.image_read(motion_target_path)
     
+    motion_target_to_mpr_reg = ants.registration(fixed=t1_image,
+                                                 moving=motion_target,
+                                                 type_of_transform=type_of_transform,
+                                                 aff_metric=transform_metric,)
+    
+    motion_target_in_t1 = motion_target_to_mpr_reg['warpedmovout']
+    motion_transform_matrix = motion_target_to_mpr_reg['fwdtransforms']
     
     pass
