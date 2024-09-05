@@ -161,17 +161,22 @@ def fdg_protocol_with_arterial(sub_id: str,
     Notes:
         The pipeline-function is intended to be used with BIDs-like datasets where we have the following assumptions
         about the naming conventions of different file types:
-            - In the `pet_dir_path` directory we have the following files:
-                - 4D-PET: sub-{sub_id}_ses-{ses_id}_pet.nii.gz
-                - Blood TAC: sub-{sub_id}_ses-{ses_id}_desc-decaycorrected_blood.tsv
-            - In the `anat_dir_path` directory we have the following files:
-                - T1w image in MPRAGE: sub-{sub_id}_ses-{ses_id}_MPRAGE.nii.gz
-        - If `bids_root_dir` is not provided, it defaults to the parent directory, assuming the current working directory
-          is within the `code` directory of a BIDS dataset.
+            - In the ``pet_dir_path`` directory we have the following files:
+                - 4D-PET: ``sub-{sub_id}_ses-{ses_id}_pet.nii.gz``
+                - Blood TAC: ``sub-{sub_id}_ses-{ses_id}_desc-decaycorrected_blood.tsv``
+            - In the ``anat_dir_path`` directory we have the following files:
+                - T1w image in MPRAGE: ``sub-{sub_id}_ses-{ses_id}_MPRAGE.nii.gz``
+        - If ``bids_root_dir`` is not provided, it defaults to the parent directory, assuming the current working directory
+          is within the ``code`` directory of a BIDS dataset.
         - Default output directory `out_dir_path` is constructed as:
           ``<BIDS_ROOT_DIR>/derivatives/petpal/pipeline_brier_fdg/sub-<sub_id>/ses-<ses_id>``.
         - Various preprocessing properties such as `CropThreshold`, `HalfLife`, and `TimeFrameKeyword` are set internally
           with standard default values tailored for FDG PET processing.
+          
+    See Also:
+        * :class:`preproc`
+        * :class:`BloodInputFunction`
+        * :class:`GraphicalAnalysisParametricImage`
           
     """
     sub_ses_prefix = f'sub-{sub_id}_ses-{ses_id}'
