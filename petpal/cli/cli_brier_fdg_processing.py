@@ -277,11 +277,84 @@ _PROG_NAME_ = r"petpal-brier-fdg-pipeline"
 _FDG_CMR_EXAMPLE_ = (rf"""
 Example:
     - Assuming if we are in the `code` directory of a BIDS directory:
-      {_PROG_NAME_} --sub-id XXXX --ses-id XX
+        {_PROG_NAME_} --sub-id XXXX --ses-id XX
+      
+    - Running with all directory options:
+        {_PROG_NAME_} -i 001 -s 01 -b /path/to/bids -p /path/to/pet -a /path/to/anat -o /path/to/output --verbose
+        
+        
+    - Assuming we are in the `code` directory of a BIDS-like directory where we skip the kinetic-modeling
+      (performing a threshold crop, motion correction and registration to T1):
+        {_PROG_NAME_} -i 001 -s 01 --verbose --skip-patlak --skip-cmrglc --skip-blood-resample
+      
+    The pipeline-function is intended to be used with BIDs-like datasets where we have the following assumptions
+        about the naming conventions of different file types:
+            - In the ``pet_dir_path`` directory we have the following files:
+                - 4D-PET: ``sub-{{sub_id}}_ses-{{ses_id}}_pet.nii.gz``
+                - Blood TAC: ``sub-{{sub_id}}_ses-{{ses_id}}_desc-decaycorrected_blood.tsv``
+            - In the ``anat_dir_path`` directory we have the following files:
+                - T1w image in MPRAGE: ``sub-{{sub_id}}_ses-{{ses_id}}_MPRAGE.nii.gz``
+        - If ``bids_root_dir`` is not provided, it defaults to the parent directory, assuming the current working directory
+          is within the ``code`` directory of a BIDS dataset.
+        - Default output directory `out_dir_path` is constructed as:
+          ``<BIDS_ROOT_DIR>/derivatives/petpal/pipeline_brier_fdg/sub-<sub_id>/ses-<ses_id>``.
 """)
 
 def main():
-    
+    f"""
+    Command line interface for generating parametric CMRglc images.
+
+    This CLI provides access to the comprehensive FDG PET preprocessing and analysis pipeline. Multiple
+    processing steps can be executed or skipped based on the provided arguments. The default behavior assumes
+    a BIDS-like directory structure if not explicitly overridden.
+
+    Command Line Arguments:
+        -i, --sub-id (str): Subject ID assuming sub-XXXX where XXXX is the subject ID. (Required)
+        -s, --ses-id (str): Session ID assuming ses-XX where XX is the session ID. (Required)
+        -b, --bids-dir (str, optional): Base directory for the BIDS-like data for the study. If not set, assumes
+            the current working directory is the code/ directory within a BIDS-like directory. Default is None.
+        -p, --pet4d-dir (str, optional): Directory where the raw 4D-PET, raw blood TAC, and blood glucose files
+            are located. Default is None.
+        -a, --anat-dir (str, optional): Directory where the T1-weighted MR image is located. Default is None.
+        -o, --out-dir (str, optional): Directory where the outputs of the pipeline will be saved. Default is None.
+        -v, --verbose (bool, optional): Verbose information for each step in the pipeline. Default is False.
+
+        --skip-crop (bool, optional): Whether to skip the cropping step in the pipeline. Default is False.
+        --skip-wss (bool, optional): Whether to skip the weighted-series-sum (wss) step in the pipeline. Default is False.
+        --skip-moco (bool, optional): Whether to skip the motion correction (moco) step in the pipeline. Default is False.
+        --skip-reg (bool, optional): Whether to skip the registration step in the pipeline. Default is False.
+        --skip-blood-resample (bool, optional): Whether to skip the blood resample step in the pipeline. Default is False.
+        --skip-patlak (bool, optional): Whether to skip the Patlak analysis step in the pipeline. Default is False.
+        --skip-cmrglc (bool, optional): Whether to skip the CMRglc analysis step in the pipeline. Default is False.
+
+    Returns:
+        None
+
+    Example:
+        Example command to run the CLI assuming we are in the `code` directory of a BIDS-like directory:
+        
+        .. code-block:: bash
+        
+            {_PROG_NAME_} -i 001 -s 01  --verbose
+            
+
+        Example command to run the CLI with all directory options:
+            
+        .. code-block:: bash
+            
+            {_PROG_NAME_} -i 001 -s 01 -b /path/to/bids -p /path/to/pet -a /path/to/anat -o /path/to/output --verbose
+            
+        
+        Example command to run the CLI (assuming we are in the `code` directory of a BIDS-like directory)
+        where we skip the kinetic-modeling (performing a threshold crop, motion correction and registration to T1):
+        
+        .. code-block:: bash
+            
+            {_PROG_NAME_} -i 001 -s 01 --verbose --skip-patlak --skip-cmrglc --skip-blood-resample
+            
+            
+            
+    """
     
     parser = argparse.ArgumentParser(prog=f'{_PROG_NAME_}',
                                      description='Command line interface for generating parametric CMRglc images',
@@ -301,7 +374,8 @@ def main():
     parser.add_argument('-a', '--anat-dir', required=False, default=None,
                         help='Directory where the T1-weighted MR image is.')
     parser.add_argument('-o', '--out-dir', required=False, default=None,
-                        help='Directory where the outputs of the pipeline will be saved.')
+                        help='Directory where the outputs of the pipeline will be saved. If not set, will generate a '
+                             'derivatives directory in the BIDs root directory.')
     
     parser.add_argument('-v', '--verbose', required=False, action='store_true', default=False,
                         help='Verbose information for each step in the pipeline.')
