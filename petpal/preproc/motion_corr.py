@@ -201,7 +201,11 @@ def motion_corr_to_t1(input_image_4d_path: str,
     out_image_list = []
     input_image_list = input_image.ndimage_to_list()
     
+    if verbose:
+        print("(Info): On frame:", end=' ')
+    
     for frame_id in frames_to_correct:
+        print(f"{frame_id:>02}", end=' ')
         this_frame = input_image_list[frame_id]
         frame_mean_val = this_frame.mean()
         if frame_mean_val < total_mean_voxel_value:
@@ -215,12 +219,17 @@ def motion_corr_to_t1(input_image_4d_path: str,
                                         type_of_transform=type_of_transform,
                                         aff_metric=transform_metric,)
             out_image_list.append(tmp_reg['warpedmovout'])
-            
+    if verbose:
+        print("... done!\n")
     tmp_image = _gen_nd_image_based_on_image_list(out_image_list)
     out_image = ants.list_to_ndimage(tmp_image, out_image_list)
     out_image = ants.to_nibabel(out_image)
     
     nibabel.save(out_image, out_image_path)
+    
+    if verbose:
+        print(f"(ImageOps4d): motion corrected image saved to {out_image_path}")
+    
 
 
 def _gen_nd_image_based_on_image_list(image_list: list[ants.core.ants_image.ANTsImage]):
