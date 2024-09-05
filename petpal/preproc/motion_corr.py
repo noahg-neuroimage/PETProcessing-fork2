@@ -159,3 +159,5 @@ def motion_corr(input_image_4d_path: str,
     if verbose:
         print(f"(ImageOps4d): motion corrected image saved to {out_image_path}")
     return pet_moco_np, pet_moco_params, pet_moco_fd
+
+
