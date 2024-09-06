@@ -18,9 +18,54 @@ TODOs:
 """
 import os
 from scipy.interpolate import interp1d
+from scipy.ndimage import center_of_mass
 import nibabel
 import numpy as np
 from ..utils import image_io, math_lib
+
+
+def crop_image(input_image_path: str,
+               out_image_path: str,
+               x_dim: int=256,
+               y_dim: int=256):
+    """
+    Crops an image in the X and Y axes to exclude voxels outside of the head. This is done to
+    reduce the size of the image for faster processing, while preserving scientifically
+    valuable information. Preserves dimension along Z and time axes.
+
+    The returned, cropped image is centered on the "center of mass" computed using 
+    :py:func:`scipy.ndimage.center_of_mass`. If the image is 3D, the center of mass is computed
+    directly on the image array. If the image is 4D, the image is first averaged over the time axis
+    before computing the center of mass.
+
+    Args:
+        input_image_path (str): Path to input image to be cropped.
+        out_image_path (str): Path to which cropped image is saved.
+        x_dim (int): Size of the X axis of the returned image. Default value 256.
+        y_dim (int): Size of the Y axis of the returned image. Default value 256.
+    
+    Returns:
+        cropped_image (nibabel.nifti1.Nifti1Image): The cropped image.
+    """
+    image = nibabel.load(input_image_path)
+    image_np = image.get_fdata()
+
+    if len(image_np.shape)<4:
+        center = center_of_mass(image_np)
+    else:
+        image_mean = np.mean(image_np,axis=-1)
+        center = center_of_mass(image_mean)
+
+    center = np.round(center).astype('int')
+    x_half = x_dim // 2
+    y_half = y_dim // 2
+
+    cropped_image = image.slicer[center[0]-x_half:center[0]+x_half,center[1]-y_half:center[1]+y_half]
+    nibabel.save(cropped_image,out_image_path)
+    image_io.safe_copy_meta(input_image_path=input_image_path,
+                            out_image_path=out_image_path)
+    return cropped_image
+
 
 def weighted_series_sum(input_image_4d_path: str,
                         out_image_path: str,
@@ -253,7 +298,7 @@ def gauss_blur(input_image_path: str,
                blur_size_mm: float,
                out_image_path: str,
                verbose: bool,
-               use_FWHM: bool=True):
+               use_fwhm: bool=True):
     """
     Blur an image with a 3D Gaussian kernal of a provided size in mm. Extracts
     Gaussian sigma from provided blur size, and voxel sizes in the image
@@ -278,7 +323,7 @@ def gauss_blur(input_image_path: str,
     blur_image = math_lib.gauss_blur_computation(input_image=input_image,
                                                  blur_size_mm=blur_size_mm,
                                                  input_zooms=input_zooms,
-                                                 use_FWHM=use_FWHM)
+                                                 use_fwhm=use_fwhm)
 
     out_image = nibabel.nifti1.Nifti1Image(dataobj=blur_image,
                                            affine=input_nibabel.affine,

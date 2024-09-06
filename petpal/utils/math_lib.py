@@ -45,12 +45,12 @@ def weighted_sum_computation(frame_duration: np.ndarray,
 def gauss_blur_computation(input_image: np.ndarray,
                            blur_size_mm: float,
                            input_zooms: list,
-                           use_FWHM: bool):
+                           use_fwhm: bool):
     """
     Applies a Gaussian blur to an array image. Function intended to be a
     wrapper to be applied by other methods.
     """
-    if use_FWHM:
+    if use_fwhm:
         blur_size = blur_size_mm / (2*np.sqrt(2*np.log(2)))
     else:
         blur_size = blur_size_mm

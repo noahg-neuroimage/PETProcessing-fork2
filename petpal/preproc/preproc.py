@@ -37,8 +37,8 @@ _PREPROC_PROPS_ = {'FilePathCropInput': None,
                    'FilePathAtlas': None,
                    'FilePathSUVRInput': None,
                    'FilePathBlurInput': None,
-                   'FilePathFSLPostmat': None,
-                   'FilePathFSLPremat': None,
+                   'FilePathFSLPostmat': '',
+                   'FilePathFSLPremat': '',
                    'FilePathWarpRef': None,
                    'FilePathWarp': None,
                    'FilePathAntsXfms': None,
@@ -46,6 +46,8 @@ _PREPROC_PROPS_ = {'FilePathCropInput': None,
                    'HalfLife': None,
                    'StartTimeWSS': 0,
                    'EndTimeWSS': -1,
+                   'CropXdim': None,
+                   'CropYdim': None,
                    'MotionTarget': None,
                    'MocoTransformType': 'DenseRigid',
                    'MocoPars': None,
@@ -70,7 +72,8 @@ _REQUIRED_KEYS_ = {
     'apply_xfm_ants': ['FilePathWarpInput','FilePathWarpRef','FilePathAntsXfms','Verbose'],
     'apply_xfm_fsl': ['FilePathWarpInput','FilePathWarpRef','FilePathWarp','FilePathFSLPremat','FilePathFSLPostmat','Verbose'],
     'thresh_crop': ['FilePathCropInput', 'CropThreshold', 'Verbose'],
-    'vat_wm_ref_region': ['FilePathBSseg','FilePathSeg']
+    'vat_wm_ref_region': ['FilePathBSseg','FilePathSeg'],
+    'crop_image': ['FilePathCropInput','CropXdim','CropYdim']
 }
 
 
@@ -396,6 +399,14 @@ class PreProc():
                         out_image_path=outfile,
                         thresh_val=preproc_props['CropThreshold'],
                         verbose=preproc_props['Verbose'],
-                        copy_metadata=True)
-        
+                        copy_metadata=True)  
+
+        elif method_name=='crop_image':
+            outfile = self._generate_outfile_path(method_short='crop')
+            image_operations_4d.crop_image(
+                input_image_path=preproc_props['FilePathCropInput'],
+                out_image_path=outfile,
+                x_dim=preproc_props['CropXdim'],
+                y_dim=preproc_props['CropYdim']
+            )
         return None
