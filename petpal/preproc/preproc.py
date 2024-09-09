@@ -329,7 +329,7 @@ class PreProc():
 
         elif method_name == 'write_tacs':
             outdir = os.path.join(self.output_directory, 'tacs')
-            os.makedirs(outdir) # This could error out with FileExistsError now
+            os.makedirs(outdir, exist_ok=True)
             write_tacs(input_image_4d_path=preproc_props['FilePathTACInput'],
                        label_map_path=preproc_props['FilePathLabelMap'],
                        segmentation_image_path=preproc_props['FilePathSeg'],

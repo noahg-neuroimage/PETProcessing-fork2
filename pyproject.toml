@@ -20,7 +20,7 @@ dependencies = [
     "numba",
     "pandas",
     "nibabel",
-    "antspyx",
+    "antspyx==0.4.2",
     "fslpy",
     "SimpleITK",
     "matplotlib",
@@ -51,6 +51,7 @@ classifiers = [  # These are added to PyPI package when published; Used for sear
     petpal-tcm-fit = "petpal.cli.cli_tac_fitting:main"
     petpal-rtms = "petpal.cli.cli_reference_tissue_models:main"
     petpal-vat-proc = "petpal.cli.cli_vat_processing:main"
+    petpal-pib-proc = "petpal.cli.cli_pib_processing:main"
 
 [project.urls]
     Repository = "https://github.com/FurqanDar/PETProcessing.git"
