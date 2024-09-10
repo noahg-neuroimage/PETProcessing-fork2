@@ -282,6 +282,15 @@ class PreProc():
                                 start_time=preproc_props['StartTimeWSS'],
                                 end_time=preproc_props['EndTimeWSS'],
                                 verbose=preproc_props['Verbose'])
+            
+        elif method_name == 'motion_corr_per_frame':
+            outfile = self._generate_outfile_path(method_short='moco', modality=modality)
+            motion_corr.motion_corr_per_frame(input_image_4d_path=preproc_props['FilePathMocoInp'],
+                                              motion_target_option=preproc_props['MotionTarget'],
+                                              out_image_path=outfile,
+                                              verbose=preproc_props['Verbose'],
+                                              half_life=preproc_props['HalfLife'],
+                                              kwargs=preproc_props['MocoPars'])
 
         elif method_name=='motion_corr':
             outfile = self._generate_outfile_path(method_short='moco', modality=modality)
