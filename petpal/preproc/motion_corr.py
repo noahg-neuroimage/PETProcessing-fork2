@@ -180,7 +180,8 @@ def motion_corr_per_frame(input_image_4d_path: str,
     input_image = ants.image_read(input_image_4d_path)
     
     motion_target_path = determine_motion_target(motion_target_option=motion_target_option,
-                                                 input_image_4d_path=input_image_4d_path, half_life=half_life)
+                                                 input_image_4d_path=input_image_4d_path,
+                                                 half_life=half_life)
     motion_target = ants.image_read(motion_target_path)
     
     if frames_list is None:
