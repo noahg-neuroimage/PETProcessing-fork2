@@ -28,6 +28,9 @@ def determine_motion_target(motion_target_option: Union[str,tuple,list],
     If it is the option ``weighted_series_sum``, then run
     :meth:`weighted_series_sum` and return the output path.
 
+    If it is the option ``mean_image``, then compute the time-average of the
+    4D-PET image.
+
     If it is a tuple, run a weighted sum on the PET series on a range of 
     frames. The elements of the tuple are treated as times in seconds, counted
     from the time of the first frame, i.e. (0,300) would average all frames 
@@ -37,7 +40,7 @@ def determine_motion_target(motion_target_option: Union[str,tuple,list],
     Args:
         motion_target_option (str | tuple | list): Determines how the method behaves,
             according to the above description. Can be a file, a method
-            ('weighted_series_sum'), or a tuple range e.g. (0,600).
+            ('weighted_series_sum' or 'mean_image'), or a tuple range e.g. (0,600).
         input_image_4d_path (str): Path to the PET image. This is intended to
             be supplied by the parent method employing this function. Default
             value None.
@@ -177,6 +180,47 @@ def motion_corr_per_frame(input_image_4d_path: str,
                           transform_metric: str = 'mattes',
                           half_life: float = None,
                           **kwargs):
+    r"""
+    Perform per-frame motion correction on a 4D PET image.
+
+    This function applies motion correction to each frame of a 4D PET image based on a specified
+    motion target. Frames with mean voxel values below the overall mean are not corrected.
+
+    Args:
+        input_image_4d_path (str): Path to the input 4D PET image file.
+        motion_target_option (Union[str, tuple]): Option to determine the motion target. This can be a path to a
+            specific image file, a tuple of frame indices to generate a target, or specific options recognized
+            by :func:`determine_motion_target`.
+        out_image_path (str): Path to save the motion-corrected output image.
+        verbose (bool): Whether to print verbose output during processing.
+        frames_list (list, optional): List of frame indices to correct. If None, corrects all frames. Default is None.
+        type_of_transform (str, optional): Type of transformation to use for registration. Default is 'Affine'.
+        transform_metric (str, optional): Metric to use for the transformation. Default is 'mattes'.
+        half_life (float, optional): Half-life value used by `determine_motion_target` if applicable. Default is None.
+        **kwargs: Additional arguments passed to the `ants.registration` method.
+
+    Returns:
+        None
+
+    Example:
+        
+        .. code-block:: python
+            
+            from petpal.preproc.motion_corr import motion_corr_per_frame
+            
+            motion_corr_per_frame(input_image_4d_path='/path/to/image.nii.gz',
+                                  motion_target_option='/path/to/target_image.nii.gz',
+                                  out_image_path='/path/to/output_motion_corrected.nii.gz',
+                                  verbose=True)
+                              
+    Notes:
+        - The :func:`determine_motion_target` function is used to derive the motion target image based on the specified option.
+        - If `frames_list` is not provided, all frames of the 4D image will be corrected.
+        - Frames with mean voxel values lower than the overall mean voxel value of the 4D image are not motion-corrected.
+        - Motion correction is performed using the :py:func:`ants.registration` method from the ANTsPy library.
+        - The corrected frames are reassembled into a 4D image and saved to the specified output path.
+        
+    """
     input_image = ants.image_read(input_image_4d_path)
     
     motion_target_path = determine_motion_target(motion_target_option=motion_target_option,
