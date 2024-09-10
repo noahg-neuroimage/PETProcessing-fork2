@@ -159,13 +159,32 @@ def motion_corr(input_image_4d_path: str,
         print(f"(ImageOps4d): motion corrected image saved to {out_image_path}")
     return pet_moco_np, pet_moco_params, pet_moco_fd
 
+
 def motion_corr_per_frame(input_image_4d_path: str,
-                          motion_target_option: Union[str,tuple],
+                          motion_target_option: Union[str, tuple],
                           out_image_path: str,
                           verbose: bool,
-                          type_of_transform: str='Affine',
-                          half_life: float=None,
+                          frames_list: list = None,
+                          type_of_transform: str = 'Affine',
+                          transform_metric: str = 'mattes',
+                          half_life: float = None,
                           **kwargs):
+    input_image = ants.image_read(input_image_4d_path)
+    
+    if motion_target_option is None:
+        motion_target = input_image.get_average_of_timeseries()
+    else:
+        motion_target_path = determine_motion_target(motion_target_option=motion_target_option,
+                                                     input_image_4d_path=input_image_4d_path,
+                                                     half_life=half_life)
+        motion_target = ants.image_read(motion_target_path)
+    
+    if frames_list is None:
+        frames_to_correct = np.arange(input_image.shape[-1], dtype=int)
+    else:
+        assert max(frames_list) < input_image.shape[-1]
+        frames_to_correct = frames_list
+        
     pass
 
 def motion_corr_to_t1(input_image_4d_path: str,
