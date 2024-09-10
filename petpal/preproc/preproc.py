@@ -291,7 +291,7 @@ class PreProc():
         elif method_name == 'motion_corr_per_frame':
             outfile = self._generate_outfile_path(method_short='moco', modality=modality)
             motion_corr.motion_corr_per_frame(input_image_4d_path=preproc_props['FilePathMocoInp'],
-                                              motion_target_option=None,
+                                              motion_target_option=preproc_props['MotionTarget'],
                                               out_image_path=outfile,
                                               type_of_transform=preproc_props['MocoTransformType'],
                                               verbose=preproc_props['Verbose'],

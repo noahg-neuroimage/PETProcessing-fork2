@@ -179,13 +179,16 @@ def motion_corr_per_frame(input_image_4d_path: str,
                           **kwargs):
     input_image = ants.image_read(input_image_4d_path)
     
-    if motion_target_option is None:
-        motion_target = input_image.get_average_of_timeseries()
-    else:
-        motion_target_path = determine_motion_target(motion_target_option=motion_target_option,
-                                                     input_image_4d_path=input_image_4d_path,
-                                                     half_life=half_life)
-        motion_target = ants.image_read(motion_target_path)
+    # if motion_target_option is None:
+    #     motion_target = input_image.get_average_of_timeseries()
+    # else:
+    #     motion_target_path = determine_motion_target(motion_target_option=motion_target_option,
+    #                                                  input_image_4d_path=input_image_4d_path,
+    #                                                  half_life=half_life)
+    #     motion_target = ants.image_read(motion_target_path)
+    motion_target_path = determine_motion_target(motion_target_option=motion_target_option,
+                                                 input_image_4d_path=input_image_4d_path, half_life=half_life)
+    motion_target = ants.image_read(motion_target_path)
     
     if frames_list is None:
         frames_to_correct = np.arange(input_image.shape[-1], dtype=int)
@@ -209,7 +212,9 @@ def motion_corr_per_frame(input_image_4d_path: str,
             tmp_reg = ants.registration(fixed=motion_target,
                                         moving=this_frame,
                                         type_of_transform=type_of_transform,
-                                        aff_metric=transform_metric, **kwargs)
+                                        aff_metric=transform_metric,
+                                        interpolator='bSpline',
+                                        **kwargs)
             out_image.append(tmp_reg['warpedmovout'])
             
     if verbose:
@@ -283,13 +288,18 @@ def motion_corr_to_t1(input_image_4d_path: str,
     input_image = ants.image_read(input_image_4d_path)
     t1_image = ants.image_read(t1_image_path)
     
-    if motion_target_option is None:
-        motion_target = input_image.get_average_of_timeseries()
-    else:
-        motion_target_path = determine_motion_target(motion_target_option=motion_target_option,
-                                                     input_image_4d_path=input_image_4d_path,
-                                                     half_life=half_life)
-        motion_target = ants.image_read(motion_target_path)
+    # if motion_target_option is None:
+    #     motion_target = input_image.get_average_of_timeseries()
+    # else:
+    #     motion_target_path = determine_motion_target(motion_target_option=motion_target_option,
+    #                                                  input_image_4d_path=input_image_4d_path,
+    #                                                  half_life=half_life)
+    #     motion_target = ants.image_read(motion_target_path)
+    
+    motion_target_path = determine_motion_target(motion_target_option=motion_target_option,
+                                            input_image_4d_path=input_image_4d_path,
+                                            half_life=half_life)
+    motion_target = ants.image_read(motion_target_path)
     
     motion_target_to_mpr_reg = ants.registration(fixed=t1_image,
                                                  moving=motion_target,
