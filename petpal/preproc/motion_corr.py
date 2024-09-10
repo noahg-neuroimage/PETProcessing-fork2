@@ -240,7 +240,7 @@ def motion_corr_to_t1(input_image_4d_path: str,
         assert max(frames_list) < input_image.shape[-1]
         frames_to_correct = frames_list
     
-    total_mean_voxel_value = t1_image.mean()
+    total_mean_voxel_value = input_image.mean()
     
     out_image = []
     input_image_list = input_image.ndimage_to_list()
