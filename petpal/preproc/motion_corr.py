@@ -185,6 +185,36 @@ def motion_corr_per_frame(input_image_4d_path: str,
         assert max(frames_list) < input_image.shape[-1]
         frames_to_correct = frames_list
         
+    total_mean_voxel_value = input_image.mean()
+    
+    out_image = []
+    input_image_list = input_image.ndimage_to_list()
+    
+    for frame_id in frames_to_correct:
+        if verbose:
+            print(f"{frame_id:>02}", end=' ')
+        this_frame = input_image_list[frame_id]
+        frame_mean_val = this_frame.mean()
+        if frame_mean_val < total_mean_voxel_value:
+            out_image.append(this_frame)
+        else:
+            tmp_reg = ants.registration(fixed=motion_target,
+                                        moving=this_frame,
+                                        type_of_transform=type_of_transform,
+                                        aff_metric=transform_metric, **kwargs)
+            out_image.append(tmp_reg['warpedmovout'])
+            
+    if verbose:
+        print("... done!\n")
+    tmp_image = _gen_nd_image_based_on_image_list(out_image)
+    out_image = ants.list_to_ndimage(tmp_image, out_image)
+    out_image = ants.to_nibabel(out_image)
+    
+    nibabel.save(out_image, out_image_path)
+    
+    if verbose:
+        print(f"(ImageOps4d): motion corrected image saved to {out_image_path}")
+        
     pass
 
 def motion_corr_to_t1(input_image_4d_path: str,
