@@ -159,6 +159,14 @@ def motion_corr(input_image_4d_path: str,
         print(f"(ImageOps4d): motion corrected image saved to {out_image_path}")
     return pet_moco_np, pet_moco_params, pet_moco_fd
 
+def motion_corr_per_frame(input_image_4d_path: str,
+                          motion_target_option: Union[str,tuple],
+                          out_image_path: str,
+                          verbose: bool,
+                          type_of_transform: str='Affine',
+                          half_life: float=None,
+                          **kwargs):
+    pass
 
 def motion_corr_to_t1(input_image_4d_path: str,
                       t1_image_path: str,
@@ -249,7 +257,8 @@ def motion_corr_to_t1(input_image_4d_path: str,
         print("(Info): On frame:", end=' ')
     
     for frame_id in frames_to_correct:
-        print(f"{frame_id:>02}", end=' ')
+        if verbose:
+            print(f"{frame_id:>02}", end=' ')
         this_frame = input_image_list[frame_id]
         frame_mean_val = this_frame.mean()
         if frame_mean_val < total_mean_voxel_value:
