@@ -22,6 +22,7 @@ register_pet = register.register_pet
 warp_pet_atlas = register.warp_pet_atlas
 apply_xfm_ants = register.apply_xfm_ants
 apply_xfm_fsl = register.apply_xfm_fsl
+thresh_crop = image_operations_4d.SimpleAutoImageCropper
 
 
 _PREPROC_PROPS_ = {'FilePathCropInput': None,
@@ -41,13 +42,14 @@ _PREPROC_PROPS_ = {'FilePathCropInput': None,
                    'FilePathWarpRef': None,
                    'FilePathWarp': None,
                    'FilePathAntsXfms': None,
-                   'FilePathBSseg': None, 
+                   'FilePathBSseg': None,
                    'HalfLife': None,
                    'StartTimeWSS': 0,
                    'EndTimeWSS': -1,
                    'CropXdim': None,
                    'CropYdim': None,
                    'MotionTarget': None,
+                   'MocoTransformType': 'DenseRigid',
                    'MocoPars': None,
                    'RegPars': None,
                    'WarpPars': None,
@@ -55,6 +57,7 @@ _PREPROC_PROPS_ = {'FilePathCropInput': None,
                    'BlurSize': None,
                    'RegionExtract': None,
                    'TimeFrameKeyword': None,
+                   'CropThreshold': None,
                    'Verbose': False}
 _REQUIRED_KEYS_ = {
     'weighted_series_sum': ['FilePathWSSInput','HalfLife','Verbose'],
@@ -68,6 +71,7 @@ _REQUIRED_KEYS_ = {
     'gauss_blur': ['FilePathBlurInput','BlurSize','Verbose'],
     'apply_xfm_ants': ['FilePathWarpInput','FilePathWarpRef','FilePathAntsXfms','Verbose'],
     'apply_xfm_fsl': ['FilePathWarpInput','FilePathWarpRef','FilePathWarp','FilePathFSLPremat','FilePathFSLPostmat','Verbose'],
+    'thresh_crop': ['FilePathCropInput', 'CropThreshold', 'Verbose'],
     'vat_wm_ref_region': ['FilePathBSseg','FilePathSeg'],
     'crop_image': ['FilePathCropInput','CropXdim','CropYdim']
 }
@@ -296,6 +300,7 @@ class PreProc():
             outfile = self._generate_outfile_path(method_short='moco', modality=modality)
             moco_outputs = motion_corr.motion_corr(input_image_4d_path=preproc_props['FilePathMocoInp'],
                                                    motion_target_option=preproc_props['MotionTarget'],
+                                                   type_of_transform=preproc_props['MocoTransformType'],
                                                    out_image_path=outfile,
                                                    verbose=preproc_props['Verbose'],
                                                    half_life=preproc_props['HalfLife'],
@@ -396,6 +401,14 @@ class PreProc():
                 wm_ref_segmentation_path=out_ref_region,
                 out_image_path=outfile
             )
+        
+        elif method_name=='thresh_crop':
+            outfile = self._generate_outfile_path(method_short='threshcropped', modality=modality)
+            thresh_crop(input_image_path=preproc_props['FilePathCropInput'],
+                        out_image_path=outfile,
+                        thresh_val=preproc_props['CropThreshold'],
+                        verbose=preproc_props['Verbose'],
+                        copy_metadata=True)  
 
         elif method_name=='crop_image':
             outfile = self._generate_outfile_path(method_short='crop')
@@ -405,5 +418,4 @@ class PreProc():
                 x_dim=preproc_props['CropXdim'],
                 y_dim=preproc_props['CropYdim']
             )
-
         return None

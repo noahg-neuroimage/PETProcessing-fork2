@@ -2,7 +2,6 @@
 import os
 import argparse
 import pandas as pd
-from nipype.interfaces import petpvc
 from petpal.preproc import preproc
 
 _VAT_EXAMPLE_ = (r"""
