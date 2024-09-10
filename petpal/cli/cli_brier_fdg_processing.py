@@ -127,9 +127,9 @@ def fdg_protocol_with_arterial(sub_id: str,
         'HalfLife': 6586.2,
         'StartTimeWSS':0,
         'EndTimeWSS':1800,
-        'RegPars': {'aff_metric': 'mattes', 'type_of_transform': 'AffineFast'},
-        'MocoTransformType' : 'AffineFast',
-        'MocoPars' : {'verbose':False},
+        'RegPars': {'aff_metric': 'mattes', 'type_of_transform': 'Dense'},
+        'MocoTransformType' : 'Affine',
+        'MocoPars' : {'verbose':True},
         'TimeFrameKeyword': 'FrameReferenceTime',
         'Verbose': verbose,
         }
@@ -147,7 +147,7 @@ def fdg_protocol_with_arterial(sub_id: str,
     if run_wss:
         sub_preproc.run_preproc(method_name='weighted_series_sum', modality=out_mod)
     if run_moco:
-        sub_preproc.run_preproc(method_name='motion_corr', modality=out_mod)
+        sub_preproc.run_preproc(method_name='motion_corr_per_frame', modality=out_mod)
     if run_reg:
         sub_preproc.run_preproc(method_name='register_pet', modality=out_mod)
     if run_resample:

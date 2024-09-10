@@ -56,7 +56,7 @@ def determine_motion_target(motion_target_option: Union[str,tuple,list],
     if isinstance(motion_target_option,str):
         if os.path.exists(motion_target_option):
             return motion_target_option
-
+        
         elif motion_target_option=='weighted_series_sum':        
             out_image_file = tempfile.mkstemp(suffix='_wss.nii.gz')[1]
             weighted_series_sum(input_image_4d_path=input_image_4d_path,
@@ -64,10 +64,18 @@ def determine_motion_target(motion_target_option: Union[str,tuple,list],
                                 half_life=half_life,
                                 verbose=False)
             return out_image_file
-
+        
+        elif motion_target_option=='mean_image':
+            out_image_file = tempfile.mkstemp(suffix='_mean.nii.gz')[1]
+            input_img = ants.image_read(input_image_4d_path)
+            mean_img = input_img.get_average_of_timeseries()
+            mean_img = ants.to_nibabel(mean_img)
+            nibabel.save(mean_img, out_image_file)
+            return out_image_file
+        
         else:
             raise ValueError("motion_target_option did not match a file or 'weighted_series_sum'")
-
+        
     elif isinstance(motion_target_option,tuple) or isinstance(motion_target_option,list):
 
         start_time = motion_target_option[0]

@@ -62,6 +62,7 @@ _PREPROC_PROPS_ = {'FilePathCropInput': None,
 _REQUIRED_KEYS_ = {
     'weighted_series_sum': ['FilePathWSSInput','HalfLife','Verbose'],
     'motion_corr': ['FilePathMocoInp','MotionTarget','Verbose'],
+    'motion_corr_per_frame': ['FilePathMocoInp','MotionTarget','Verbose'],
     'register_pet': ['MotionTarget','FilePathRegInp','FilePathAnat','Verbose'],
     'resample_segmentation': ['FilePathTACInput','FilePathSeg','Verbose'],
     'roi_tac': ['FilePathTACInput','FilePathSeg','RegionExtract','Verbose'],
@@ -290,8 +291,9 @@ class PreProc():
         elif method_name == 'motion_corr_per_frame':
             outfile = self._generate_outfile_path(method_short='moco', modality=modality)
             motion_corr.motion_corr_per_frame(input_image_4d_path=preproc_props['FilePathMocoInp'],
-                                              motion_target_option=preproc_props['MotionTarget'],
+                                              motion_target_option=None,
                                               out_image_path=outfile,
+                                              type_of_transform=preproc_props['MocoTransformType'],
                                               verbose=preproc_props['Verbose'],
                                               half_life=preproc_props['HalfLife'],
                                               kwargs=preproc_props['MocoPars'])
