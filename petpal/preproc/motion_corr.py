@@ -272,15 +272,15 @@ def motion_corr_frame_list(input_image_4d_path: str,
         
     pass
 
-def motion_corr_to_t1(input_image_4d_path: str,
-                      t1_image_path: str,
-                      motion_target_option: Union[str, tuple],
-                      out_image_path: str,
-                      verbose: bool,
-                      frames_list: list = None,
-                      type_of_transform: str = 'AffineFast',
-                      transform_metric: str = "mattes",
-                      half_life: float = None):
+def motion_corr_frame_list_to_t1(input_image_4d_path: str,
+                                 t1_image_path: str,
+                                 motion_target_option: Union[str, tuple],
+                                 out_image_path: str,
+                                 verbose: bool,
+                                 frames_list: list = None,
+                                 type_of_transform: str = 'AffineFast',
+                                 transform_metric: str = "mattes",
+                                 half_life: float = None):
     r"""
     Perform motion correction of a 4D PET image to a T1 anatomical image.
 
@@ -319,7 +319,7 @@ def motion_corr_to_t1(input_image_4d_path: str,
         .. code-block:: python
         
         
-            motion_corr_to_t1(input_image_4d_path='pet_timeseries.nii.gz',
+            motion_corr_frame_list_to_t1(input_image_4d_path='pet_timeseries.nii.gz',
                               t1_image_path='t1_image.nii.gz',
                               motion_target_option='average',
                               out_image_path='pet_corrected.nii.gz',
@@ -412,7 +412,7 @@ def _gen_nd_image_based_on_image_list(image_list: list[ants.core.ants_image.ANTs
         AssertionError: If the `image_list` is empty or if the images in the list are not 3D.
 
     See Also
-        * :func:`petpal.preproc.motion_corr.motion_corr_to_t1`
+        * :func:`petpal.preproc.motion_corr.motion_corr_frame_list_to_t1`
 
     Example:
         
