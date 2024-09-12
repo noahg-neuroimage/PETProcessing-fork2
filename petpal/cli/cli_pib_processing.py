@@ -60,7 +60,7 @@ def _parse_command_line_args() -> argparse.Namespace:
                         action='store_true')
     parser.add_argument('-t', '--threads',
                         help='Number of threads to use for parallel processing; no parallel processing occurs if -t/--threads not specified',
-                        default=1)
+                        default=1, type=int)
     parser.add_argument('--skip-motion-correct', help='Do not perform motion correction', action='store_true')
     parser.add_argument('--skip-register', help='Do not perform registration', action='store_true')
     parser.add_argument('--skip-tacs', help='Do not generate TACs', action='store_true')
@@ -89,15 +89,16 @@ def process_single_subject_session(preproc_instance: petpal.preproc.preproc.PreP
     # Adjust progress bar for skipped steps
     num_steps = (skip_motion_correct, skip_register, skip_tacs, skip_suvr).count(False)
     if num_steps > 0:
-        progress_bar = tqdm(total=num_steps)
+        progress_bar = tqdm(total=num_steps, desc=f'{preproc_instance.output_filename_prefix}')
 
     with logging_redirect_tqdm():
 
         # Step 1: Run Motion Correction on 4DPET image
         if not skip_motion_correct:
             logger.debug(f'Performing Motion Correction on {preproc_instance.preproc_props["FilePathMocoInp"]}')
+            preproc_instance.run_preproc(method_name='thresh_crop', modality='pet')
             try:
-                preproc_instance.run_preproc(method_name='motion_corr')
+                preproc_instance.run_preproc(method_name='motion_corr', modality='pet')
             except KeyError as e:
                 logger.error(
                     f'Error during motion correction on pet image {preproc_instance.preproc_props["FilePathMocoInp"]}:'
@@ -111,7 +112,7 @@ def process_single_subject_session(preproc_instance: petpal.preproc.preproc.PreP
             logger.debug(
                 f'Registering {preproc_instance.preproc_props["FilePathRegInp"]} to '
                 f'{preproc_instance.preproc_props["FilePathAnat"]} space')
-            preproc_instance.run_preproc(method_name='register_pet')
+            preproc_instance.run_preproc(method_name='register_pet', modality='pet')
             progress_bar.update(1)
 
         # Step 3: Extract TACs from each Brain ROI using Freesurfer Segmentation Input
@@ -136,7 +137,7 @@ def process_single_subject_session(preproc_instance: petpal.preproc.preproc.PreP
             logger.debug(
                 f'Starting SUVR Process for Registered and Motion-Corrected copy of '
                 f'{preproc_instance.preproc_props["FilePathRegInp"]}')
-            preproc_instance.run_preproc(method_name='weighted_series_sum')
+            preproc_instance.run_preproc(method_name='weighted_series_sum', modality='pet')
             preproc_instance.run_preproc(method_name='suvr')
             progress_bar.update(1)
 
@@ -194,7 +195,7 @@ def main():
                 session_id = sessions_pattern.match(session_dir.name).group(1)  # Retrieve session id
                 prefix = f'sub-{subject_id}_ses-{session_id}'
                 sub_ses_props = {
-                    'FilePathMocoInp':
+                    'FilePathCropInput':
                         glob.glob(f'{session_dir.path}/pet/sub-{subject_id}_ses-{session_id}_pet.nii.gz')[0],
                     'FilePathAnat': glob.glob(f'{session_dir.path}/anat/sub-{subject_id}_ses-{session_id}_T1w.nii.gz')[
                         0],
@@ -212,7 +213,7 @@ def main():
         else:
             prefix = f'sub-{subject_id}'
             sub_props = {
-                'FilePathMocoInp': glob.glob(f'{subject_dir.path}/pet/sub-{subject_id}_pet.nii.gz')[0],
+                'FilePathCropInput': glob.glob(f'{subject_dir.path}/pet/sub-{subject_id}_pet.nii.gz')[0],
                 'FilePathAnat': glob.glob(f'{subject_dir.path}/anat/sub-{subject_id}_T1w.nii.gz')[0],
                 'FilePathSeg':
                     glob.glob(f'{bids_dir}/derivatives/freesurfer/sub-{subject_id}/sub-{subject_id}_aparc+aseg.nii.gz')[
@@ -229,23 +230,29 @@ def main():
     for subject_info in subject_inputs:
         # Update props with everything necessary that's not found in BIDS input directory.
         properties = {
-            'FilePathWSSInput': subject_info._generate_outfile_path(method_short='reg'),
+            'FilePathWSSInput': subject_info._generate_outfile_path(method_short='reg', modality='pet'),
+            'FilePathMocoInp': subject_info._generate_outfile_path(method_short='threshcropped', modality='pet'),
             'HalfLife': half_life,
+            'CropThreshold': .01,
             'Verbose': True if (verbose > 0) else False,
             'MotionTarget': (0, 600),  # Use the summed first 10 minutes as motion target
-            'FilePathRegInp': subject_info._generate_outfile_path(method_short='moco'),
-            'FilePathTACInput': subject_info._generate_outfile_path(method_short='reg'),
+            'FilePathRegInp': subject_info._generate_outfile_path(method_short='moco', modality='pet'),
+            'FilePathTACInput': subject_info._generate_outfile_path(method_short='reg', modality='pet'),
             'FilePathLabelMap': label_map_path,
             'TimeFrameKeyword': 'FrameTimesStart',
-            'FilePathSUVRInput': subject_info._generate_outfile_path(method_short='wss'),
+            'FilePathSUVRInput': subject_info._generate_outfile_path(method_short='wss', modality='pet'),
             'RefRegion': 8,
         }
         subject_info.update_props(properties)
 
-    with Pool(threads) as p:
-        p.starmap(process_single_subject_session,
-                  map(lambda subject_dict: (subject_dict, skip_motion_correct, skip_register, skip_tacs, skip_suvr),
-                      subject_inputs))
+    if threads != 1:
+        with Pool(threads) as p:
+            p.starmap(process_single_subject_session,
+                      map(lambda subject_obj: (subject_obj, skip_motion_correct, skip_register, skip_tacs, skip_suvr),
+                          subject_inputs))
+    else:
+        for subject_info in subject_inputs:
+            process_single_subject_session(subject_info, skip_motion_correct, skip_register, skip_tacs, skip_suvr,)
 
 
 if __name__ == "__main__":
