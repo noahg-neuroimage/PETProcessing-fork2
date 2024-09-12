@@ -47,6 +47,9 @@ See Also:
 """
 import os
 import argparse
+
+from rich import region
+
 from petpal.preproc import preproc
 
 
@@ -212,6 +215,8 @@ def main():
         preproc_props['BlurSize'] = args.blur_size_mm
     if 'time_frame_keyword' in args.__dict__.keys():
         preproc_props['TimeFrameKeyword'] = args.time_frame_keyword
+    if 'ref-region' in args.__dict__.keys():
+        preproc_props['RefRegion'] = args.ref-region
 
     command = str(args.command).replace('-','_')
 
@@ -219,11 +224,7 @@ def main():
         print(f"Running {command} with parameters: {preproc_props}")
 
     subject.update_props(new_preproc_props=preproc_props)
-    try:
-        subject.run_preproc(method_name=command)
-    except FileExistsError as e:
-        # TODO: prompt the user whether they want to skip or overwrite the file.
-        pass
+    subject.run_preproc(method_name=command)
 
 if __name__ == "__main__":
     main()
