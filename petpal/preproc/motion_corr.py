@@ -240,6 +240,9 @@ def motion_corr_frame_list(input_image_4d_path: str,
     out_image = []
     input_image_list = input_image.ndimage_to_list()
     
+    if verbose:
+        print("(Info): On frame:", end=' ')
+    
     for frame_id, moco_this_frame in enumerate(frames_to_correct):
         if verbose:
             print(f"{frame_id:>02}", end=' ')
@@ -340,13 +343,14 @@ def motion_corr_to_t1(input_image_4d_path: str,
     motion_target_in_t1 = motion_target_to_mpr_reg['warpedmovout']
     motion_transform_matrix = motion_target_to_mpr_reg['fwdtransforms']
     
+    frames_to_correct = np.zeros(input_image.shape[-1], dtype=bool)
+    
     if frames_list is None:
-        frames_to_correct = np.arange(input_image.shape[-1], dtype=int)
+        _correct_these_frames = np.ones(input_image.shape[-1], dtype=int)
+        frames_to_correct[list(_correct_these_frames)] = True
     else:
         assert max(frames_list) < input_image.shape[-1]
-        frames_to_correct = frames_list
-    
-    total_mean_voxel_value = input_image.mean()
+        frames_to_correct[list(frames_list)] = True
     
     out_image = []
     input_image_list = input_image.ndimage_to_list()
@@ -354,22 +358,22 @@ def motion_corr_to_t1(input_image_4d_path: str,
     if verbose:
         print("(Info): On frame:", end=' ')
     
-    for frame_id in frames_to_correct:
+    for frame_id, moco_this_frame in enumerate(frames_to_correct):
         if verbose:
             print(f"{frame_id:>02}", end=' ')
         this_frame = input_image_list[frame_id]
-        frame_mean_val = this_frame.mean()
-        if frame_mean_val < total_mean_voxel_value:
-            tmp_transform = ants.apply_transforms(fixed=motion_target_in_t1,
-                                                  moving=this_frame,
-                                                  transforms=motion_transform_matrix, )
-            out_image.append(tmp_transform)
-        else:
+        if moco_this_frame:
             tmp_reg = ants.registration(fixed=motion_target_in_t1,
                                         moving=this_frame,
                                         type_of_transform=type_of_transform,
                                         aff_metric=transform_metric, )
             out_image.append(tmp_reg['warpedmovout'])
+        else:
+            tmp_transform = ants.apply_transforms(fixed=motion_target_in_t1,
+                                                  moving=this_frame,
+                                                  transforms=motion_transform_matrix, )
+            out_image.append(tmp_transform)
+            
     if verbose:
         print("... done!\n")
     tmp_image = _gen_nd_image_based_on_image_list(out_image)
