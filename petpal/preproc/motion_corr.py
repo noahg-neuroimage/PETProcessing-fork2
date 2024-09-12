@@ -169,7 +169,7 @@ def motion_corr(input_image_4d_path: str,
     if verbose:
         print(f"(ImageOps4d): motion corrected image saved to {out_image_path}")
     return pet_moco_np, pet_moco_params, pet_moco_fd
-
+    
 
 def motion_corr_frame_list(input_image_4d_path: str,
                            motion_target_option: Union[str, tuple],
@@ -388,6 +388,30 @@ def motion_corr_frame_list_to_t1(input_image_4d_path: str,
         print(f"(ImageOps4d): motion corrected image saved to {out_image_path}")
 
 
+def motion_corr_frames_above_mean_value(input_image_4d_path: str,
+                                        motion_target_option: Union[str, tuple],
+                                        out_image_path: str,
+                                        verbose: bool,
+                                        type_of_transform: str = 'Affine',
+                                        transform_metric: str = 'mattes',
+                                        half_life: float = None,
+                                        scale_factor = 1.0,
+                                        **kwargs):
+    
+    frames_list = _get_frame_ids_where_frame_mean_is_higher_than_total_mean(image_4d_path=input_image_4d_path,
+                                                                            scale_factor=scale_factor)
+    
+    motion_corr_frame_list(input_image_4d_path=input_image_4d_path,
+                           motion_target_option=motion_target_option,
+                           out_image_path=out_image_path,
+                           verbose=verbose,
+                           frames_list = frames_list,
+                           type_of_transform=type_of_transform,
+                           transform_metric=transform_metric,
+                           half_life=half_life,
+                           **kwargs)
+
+
 def _gen_nd_image_based_on_image_list(image_list: list[ants.core.ants_image.ANTsImage]):
     r"""
     Generate a 4D ANTsImage based on a list of 3D ANTsImages.
@@ -447,10 +471,10 @@ def _gen_nd_image_based_on_image_list(image_list: list[ants.core.ants_image.ANTs
     return tmp_image
 
 
-def _get_frame_ids_where_frame_mean_is_higher_than_total_mean(image: ants.core.ants_image.ANTsImage,
+def _get_frame_ids_where_frame_mean_is_higher_than_total_mean(image_4d_path: str,
                                                               scale_factor: float = 1.0):
-    assert isinstance(image, ants.core.ants_image.ANTsImage)
     assert scale_factor > 0
+    image = ants.image_read(image_4d_path)
     total_mean = scale_factor * image.mean()
     
     frames_list = []
