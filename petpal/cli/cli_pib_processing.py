@@ -16,6 +16,8 @@ Assumptions regarding input data:
     * If generating tacs or SUVR, segmentation is assumed to exist at
         "{bids_dir}/derivatives/freesurfer/{prefix}-aparc+aseg.nii.gz"
         * In this case, "prefix" should exactly match a corresponding prefix in your bids_dir (e.g. "sub-01")
+    * MRI and PET input files are assumed to have ONLY sub-{}, (optionally) ses-{}, and a suffix (e.g. 'pet'). No
+        run-{}, desc-{}, etc... are allowed currently.
 
 
 
@@ -86,7 +88,7 @@ def process_single_subject_session(preproc_instance: petpal.preproc.preproc.PreP
 
     """
 
-    # Adjust progress bar for skipped steps
+    # Adjust progress bar size to account for skipped steps
     num_steps = (skip_motion_correct, skip_register, skip_tacs, skip_suvr).count(False)
     if num_steps > 0:
         progress_bar = tqdm(total=num_steps, desc=f'{preproc_instance.output_filename_prefix}')
