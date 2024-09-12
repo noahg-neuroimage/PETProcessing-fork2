@@ -184,7 +184,7 @@ def motion_corr_frame_list(input_image_4d_path: str,
     Perform per-frame motion correction on a 4D PET image.
 
     This function applies motion correction to each frame of a 4D PET image based on a specified
-    motion target. Frames with mean voxel values below the overall mean are not corrected.
+    motion target. Only the frames in ``frames_list`` are motion corrected, all else are kept as is.
 
     Args:
         input_image_4d_path (str): Path to the input 4D PET image file.
@@ -216,7 +216,6 @@ def motion_corr_frame_list(input_image_4d_path: str,
     Notes:
         - The :func:`determine_motion_target` function is used to derive the motion target image based on the specified option.
         - If `frames_list` is not provided, all frames of the 4D image will be corrected.
-        - Frames with mean voxel values lower than the overall mean voxel value of the 4D image are not motion-corrected.
         - Motion correction is performed using the :py:func:`ants.registration` method from the ANTsPy library.
         - The corrected frames are reassembled into a 4D image and saved to the specified output path.
         
@@ -269,8 +268,6 @@ def motion_corr_frame_list(input_image_4d_path: str,
     
     if verbose:
         print(f"(ImageOps4d): motion corrected image saved to {out_image_path}")
-        
-    pass
 
 def motion_corr_frame_list_to_t1(input_image_4d_path: str,
                                  t1_image_path: str,
@@ -288,10 +285,8 @@ def motion_corr_frame_list_to_t1(input_image_4d_path: str,
     image. The method uses a two-step process: first registering an intermediate motion
     target to the T1 image (either the time-averaged image or a weighted-series-sum), and
     then using the calculated transform to correct motion in individual frames of the PET series.
-    The motion-target-option is registered to the T1 anatomical image. For each frame in the 4D-PET
-    we want to motion-correct, if the frame mean voxel value is less than the entire time-series
-    mean voxel value, the frame is simply transformed to the motion-target in T1-space, else the frame
-    is registered to the motion-target in T1-space.
+    The motion-target-option is registered to the T1 anatomical image. Then, given the frames in the frame list, the
+    frames are registered to the T1 image, and all other frames are simply transformed to the motion-target in T1-space.
 
     Args:
         input_image_4d_path (str): Path to the 4D PET image to be corrected.
@@ -302,7 +297,7 @@ def motion_corr_frame_list_to_t1(input_image_4d_path: str,
         out_image_path (str): Path to save the motion-corrected 4D image.
         verbose (bool): Set to True to print verbose output during processing.
         frames_list (list, optional): List of frame indices to correct. If None, all frames
-            are corrected.
+            are corrected & registered.
         type_of_transform (str): Type of transformation used in registration. Default is 'AffineFast'.
         transform_metric (str): Metric for transformation optimization. Default is 'mattes'.
         half_life (float, optional): Half-life of the PET radioisotope. Used if a calculation
@@ -397,6 +392,51 @@ def motion_corr_frames_above_mean_value(input_image_4d_path: str,
                                         half_life: float = None,
                                         scale_factor = 1.0,
                                         **kwargs):
+    r"""
+    Perform motion correction on frames with mean values above the mean of a 4D PET image.
+
+    This function applies motion correction only to the frames in a 4D PET image whose mean voxel values
+    are greater than the overall mean voxel value of the entire image. It internally utilizes the
+    :func:`motion_corr_frame_list` function to perform the motion correction.
+
+    Args:
+        input_image_4d_path (str): Path to the input 4D PET image file.
+        motion_target_option (Union[str, tuple]): Option to determine the motion target. This can be a path to a
+            specific image file, a tuple of frame indices to generate a target, or specific options recognized
+            by :func:`determine_motion_target`.
+        out_image_path (str): Path to save the motion-corrected output image.
+        verbose (bool): Whether to print verbose output during processing.
+        type_of_transform (str, optional): Type of transformation to use for registration. Default is 'Affine'.
+        transform_metric (str, optional): Metric to use for the transformation. Default is 'mattes'.
+        half_life (float, optional): Half-life value used by `determine_motion_target`, if applicable. Default is None.
+        scale_factor (float, optional): Scale factor to apply to frame mean values before comparison. Default is 1.0.
+        **kwargs: Additional arguments passed to the `ants.registration` method.
+
+    Returns:
+        None
+
+    Example:
+
+        .. code-block:: python
+
+            from petpal.preproc.motion_corr import motion_corr_frames_above_mean_value
+
+            motion_corr_frames_above_mean_value(input_image_4d_path='/path/to/image.nii.gz',
+                                                motion_target_option='/path/to/target_image.nii.gz',
+                                                out_image_path='/path/to/output_motion_corrected.nii.gz',
+                                                verbose=True,
+                                                type_of_transform='Affine',
+                                                transform_metric='mattes',
+                                                scale_factor=1.2)
+
+    Notes:
+        - Uses :func:`motion_corr_frame_list` for the actual motion correction of specified frames.
+        - Frames with mean voxel values greater than the total mean voxel value (optionally scaled by `scale_factor`)
+          are selected for motion correction.
+        - The :func:`_get_frame_ids_where_frame_mean_is_higher_than_total_mean` function is used to identify the
+          frames to be motion corrected based on their mean voxel values.
+          
+    """
     
     frames_list = _get_frame_ids_where_frame_mean_is_higher_than_total_mean(image_4d_path=input_image_4d_path,
                                                                             scale_factor=scale_factor)
@@ -421,6 +461,52 @@ def motion_corr_frames_above_mean_value_to_t1(input_image_4d_path: str,
                                               transform_metric: str = "mattes",
                                               half_life: float = None,
                                               scale_factor: float = 1.0):
+    """
+    Perform motion correction on frames with mean values above the mean of a 4D PET image to a T1 anatomical image.
+
+    This function applies motion correction only to the frames in a 4D PET image whose mean voxel values
+    are greater than the overall mean voxel value of the entire image. It corrects these frames by registering
+    them to a T1 anatomical image, using the `motion_corr_frame_list_to_t1` function.
+
+    Args:
+        input_image_4d_path (str): Path to the input 4D PET image file.
+        t1_image_path (str): Path to the 3D T1 anatomical image.
+        motion_target_option (Union[str, tuple]): Option to determine the motion target. This can be a path to a
+            specific image file, a tuple of frame indices to generate a target, or specific options recognized
+            by :func:`determine_motion_target`.
+        out_image_path (str): Path to save the motion-corrected output image.
+        verbose (bool): Whether to print verbose output during processing.
+        type_of_transform (str, optional): Type of transformation to use for registration. Default is 'AffineFast'.
+        transform_metric (str, optional): Metric to use for the transformation. Default is 'mattes'.
+        half_life (float, optional): Half-life value used by `determine_motion_target`, if applicable. Default is None.
+        scale_factor (float, optional): Scale factor applied to the mean voxel value of the entire image for comparison.
+            Must be greater than 0. Default is 1.0.
+
+    Returns:
+        None
+
+    Example:
+
+        .. code-block:: python
+
+            from petpal.preproc.motion_corr import motion_corr_frames_above_mean_value_to_t1
+
+            motion_corr_frames_above_mean_value_to_t1(input_image_4d_path='/path/to/image.nii.gz',
+                                                      t1_image_path='/path/to/t1_image.nii.gz',
+                                                      motion_target_option='/path/to/target_image.nii.gz',
+                                                      out_image_path='/path/to/output_motion_corrected.nii.gz',
+                                                      verbose=True,
+                                                      type_of_transform='AffineFast',
+                                                      transform_metric='mattes',
+                                                      scale_factor=1.2)
+
+    Notes:
+        - This function internally uses :func:`motion_corr_frame_list_to_t1` for the actual motion correction of specified frames.
+        - Frames with mean voxel values greater than the total mean voxel value (optionally scaled by `scale_factor`)
+          are selected for motion correction.
+        - The :func:`_get_frame_ids_where_frame_mean_is_higher_than_total_mean` function identifies the frames
+          to be motion corrected based on their mean voxel values.
+    """
     frames_list = _get_frame_ids_where_frame_mean_is_higher_than_total_mean(image_4d_path=input_image_4d_path,
                                                                             scale_factor=scale_factor)
     
@@ -496,6 +582,38 @@ def _gen_nd_image_based_on_image_list(image_list: list[ants.core.ants_image.ANTs
 
 def _get_frame_ids_where_frame_mean_is_higher_than_total_mean(image_4d_path: str,
                                                               scale_factor: float = 1.0):
+    """
+    Get the frame indices where the frame mean is higher than the total mean of a 4D image.
+
+    This function calculates the mean voxel value of each frame in a 4D image and returns the indices of the
+    frames whose mean voxel value is greater than or equal to the mean voxel value of the entire image,
+    optionally scaled by a provided factor.
+
+    Args:
+        image_4d_path (str): Path to the input 4D PET image file.
+        scale_factor (float, optional): Scale factor applied to the mean voxel value of the entire image for comparison.
+            Must be greater than 0. Default is 1.0.
+
+    Returns:
+        list: A list of frame indices where the frame mean voxel value is greater than or equal to the scaled total mean voxel value.
+
+    Example:
+
+        .. code-block:: python
+
+            from petpal.preproc.motion_corr import _get_frame_ids_where_frame_mean_is_higher_than_total_mean
+
+            frame_ids = _get_frame_ids_where_frame_mean_is_higher_than_total_mean(image_4d_path='/path/to/image.nii.gz',
+                                                                                  scale_factor=1.2)
+
+            print(frame_ids)  # Output: [0, 3, 5, ...]
+
+    Notes:
+        - The :func:`ants.image_read` from ANTsPy is used to read the 4D image into memory.
+        - The mean voxel value of the entire image is scaled by `scale_factor` for comparison with individual frame means.
+        - The function uses the :func:`ants.ndimage_to_list` method from ANTsPy to convert the 4D image into a list of 3D frames.
+    
+    """
     assert scale_factor > 0
     image = ants.image_read(image_4d_path)
     total_mean = scale_factor * image.mean()
