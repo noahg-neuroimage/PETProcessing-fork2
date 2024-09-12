@@ -445,3 +445,17 @@ def _gen_nd_image_based_on_image_list(image_list: list[ants.core.ants_image.ANTs
     
     tmp_image = ants.make_image(imagesize=shape_4d, spacing=spacing_4d, origin=origin_4d, direction=direction_4d)
     return tmp_image
+
+
+def _get_frame_ids_where_frame_mean_is_higher_than_total_mean(image: ants.core.ants_image.ANTsImage,
+                                                              scale_factor: float = 1.0):
+    assert isinstance(image, ants.core.ants_image.ANTsImage)
+    assert scale_factor > 0
+    total_mean = scale_factor * image.mean()
+    
+    frames_list = []
+    for frame_id, a_frame in enumerate(image.ndimage_to_list()):
+        if a_frame.mean() >= total_mean:
+            frames_list.append(frame_id)
+    
+    return frames_list
