@@ -412,6 +412,29 @@ def motion_corr_frames_above_mean_value(input_image_4d_path: str,
                            **kwargs)
 
 
+def motion_corr_frames_above_mean_value_to_t1(input_image_4d_path: str,
+                                              t1_image_path: str,
+                                              motion_target_option: Union[str, tuple],
+                                              out_image_path: str,
+                                              verbose: bool,
+                                              type_of_transform: str = 'AffineFast',
+                                              transform_metric: str = "mattes",
+                                              half_life: float = None,
+                                              scale_factor: float = 1.0):
+    frames_list = _get_frame_ids_where_frame_mean_is_higher_than_total_mean(image_4d_path=input_image_4d_path,
+                                                                            scale_factor=scale_factor)
+    
+    motion_corr_frame_list_to_t1(input_image_4d_path=input_image_4d_path,
+                                 t1_image_path=t1_image_path,
+                                 motion_target_option=motion_target_option,
+                                 out_image_path=out_image_path,
+                                 verbose=verbose,
+                                 frames_list=frames_list,
+                                 type_of_transform=type_of_transform,
+                                 transform_metric=transform_metric,
+                                 half_life=half_life)
+
+
 def _gen_nd_image_based_on_image_list(image_list: list[ants.core.ants_image.ANTsImage]):
     r"""
     Generate a 4D ANTsImage based on a list of 3D ANTsImages.
