@@ -171,15 +171,15 @@ def motion_corr(input_image_4d_path: str,
     return pet_moco_np, pet_moco_params, pet_moco_fd
 
 
-def motion_corr_per_frame(input_image_4d_path: str,
-                          motion_target_option: Union[str, tuple],
-                          out_image_path: str,
-                          verbose: bool,
-                          frames_list: list = None,
-                          type_of_transform: str = 'Affine',
-                          transform_metric: str = 'mattes',
-                          half_life: float = None,
-                          **kwargs):
+def motion_corr_frame_list(input_image_4d_path: str,
+                           motion_target_option: Union[str, tuple],
+                           out_image_path: str,
+                           verbose: bool,
+                           frames_list: list = None,
+                           type_of_transform: str = 'Affine',
+                           transform_metric: str = 'mattes',
+                           half_life: float = None,
+                           **kwargs):
     r"""
     Perform per-frame motion correction on a 4D PET image.
 
@@ -206,9 +206,9 @@ def motion_corr_per_frame(input_image_4d_path: str,
         
         .. code-block:: python
             
-            from petpal.preproc.motion_corr import motion_corr_per_frame
+            from petpal.preproc.motion_corr import motion_corr_frame_list
             
-            motion_corr_per_frame(input_image_4d_path='/path/to/image.nii.gz',
+            motion_corr_frame_list(input_image_4d_path='/path/to/image.nii.gz',
                                   motion_target_option='/path/to/target_image.nii.gz',
                                   out_image_path='/path/to/output_motion_corrected.nii.gz',
                                   verbose=True)
@@ -228,25 +228,23 @@ def motion_corr_per_frame(input_image_4d_path: str,
                                                  half_life=half_life)
     motion_target = ants.image_read(motion_target_path)
     
+    frames_to_correct = np.zeros(input_image.shape[-1], dtype=bool)
+    
     if frames_list is None:
-        frames_to_correct = np.arange(input_image.shape[-1], dtype=int)
+        _correct_these_frames = np.ones(input_image.shape[-1], dtype=int)
+        frames_to_correct[list(_correct_these_frames)] = True
     else:
         assert max(frames_list) < input_image.shape[-1]
-        frames_to_correct = frames_list
-        
-    total_mean_voxel_value = input_image.mean()
+        frames_to_correct[list(frames_list)] = True
     
     out_image = []
     input_image_list = input_image.ndimage_to_list()
     
-    for frame_id in frames_to_correct:
+    for frame_id, moco_this_frame in enumerate(frames_to_correct):
         if verbose:
             print(f"{frame_id:>02}", end=' ')
         this_frame = input_image_list[frame_id]
-        frame_mean_val = this_frame.mean()
-        if frame_mean_val < total_mean_voxel_value:
-            out_image.append(this_frame)
-        else:
+        if moco_this_frame:
             tmp_reg = ants.registration(fixed=motion_target,
                                         moving=this_frame,
                                         type_of_transform=type_of_transform,
@@ -255,6 +253,8 @@ def motion_corr_per_frame(input_image_4d_path: str,
                                         reg_iterations=(),
                                         **kwargs)
             out_image.append(tmp_reg['warpedmovout'])
+        else:
+            out_image.append(this_frame)
             
     if verbose:
         print("... done!\n")
