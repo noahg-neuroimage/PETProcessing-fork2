@@ -47,10 +47,7 @@ See Also:
 """
 import os
 import argparse
-
-from rich import region
-
-from petpal.preproc import preproc
+from ..preproc import preproc
 
 
 _PREPROC_EXAMPLES_ = (r"""
@@ -216,7 +213,7 @@ def main():
     if 'time_frame_keyword' in args.__dict__.keys():
         preproc_props['TimeFrameKeyword'] = args.time_frame_keyword
     if 'ref-region' in args.__dict__.keys():
-        preproc_props['RefRegion'] = args.ref-region
+        preproc_props['RefRegion'] = args.ref_region
 
     command = str(args.command).replace('-','_')
 
@@ -225,6 +222,7 @@ def main():
 
     subject.update_props(new_preproc_props=preproc_props)
     subject.run_preproc(method_name=command)
+
 
 if __name__ == "__main__":
     main()

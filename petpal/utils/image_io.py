@@ -260,7 +260,7 @@ class ImageIO():
 
         return spacing, origin, direction
 
-    def extract_np_to_ants(self, image_array: np.ndarray, affine: np.ndarray) -> ants.core.ants_image.ANTsImage:
+    def extract_np_to_ants(self, image_array: np.ndarray, affine: np.ndarray) -> ants.ANTsImage:
         """
         Wrapper to convert an image array into ants object.
         Note header info is lost as ANTs does not carry this metadata.
