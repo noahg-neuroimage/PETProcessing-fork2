@@ -127,9 +127,9 @@ def fdg_protocol_with_arterial(sub_id: str,
         'HalfLife': 6586.2,
         'StartTimeWSS':0,
         'EndTimeWSS':1800,
-        'RegPars': {'aff_metric': 'mattes', 'type_of_transform': 'AffineFast'},
-        'MocoTransformType' : 'AffineFast',
-        'MocoPars' : {'verbose':False},
+        'RegPars': {'aff_metric': 'mattes', 'type_of_transform': 'Rigid'},
+        'MocoTransformType' : 'Affine',
+        'MocoPars' : {'verbose':True},
         'TimeFrameKeyword': 'FrameReferenceTime',
         'Verbose': verbose,
         }
@@ -137,7 +137,7 @@ def fdg_protocol_with_arterial(sub_id: str,
     sub_preproc = preproc.PreProc(output_directory=out_dir_preproc, output_filename_prefix=sub_ses_prefix)
     preproc_props['FilePathWSSInput'] = sub_preproc._generate_outfile_path(method_short='threshcropped', modality=out_mod)
     preproc_props['FilePathMocoInp'] = preproc_props['FilePathWSSInput']
-    preproc_props['MotionTarget'] = sub_preproc._generate_outfile_path(method_short='wss', modality=out_mod)
+    preproc_props['MotionTarget'] = 'mean_image'
     preproc_props['FilePathRegInp'] = sub_preproc._generate_outfile_path(method_short='moco', modality=out_mod)
     preproc_props['FilePathTACInput'] = sub_preproc._generate_outfile_path(method_short='reg', modality=out_mod)
     sub_preproc.update_props(preproc_props)
@@ -147,7 +147,7 @@ def fdg_protocol_with_arterial(sub_id: str,
     if run_wss:
         sub_preproc.run_preproc(method_name='weighted_series_sum', modality=out_mod)
     if run_moco:
-        sub_preproc.run_preproc(method_name='motion_corr', modality=out_mod)
+        sub_preproc.run_preproc(method_name='motion_corr_frames_above_mean', modality=out_mod)
     if run_reg:
         sub_preproc.run_preproc(method_name='register_pet', modality=out_mod)
     if run_resample:
