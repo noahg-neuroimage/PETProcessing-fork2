@@ -165,7 +165,7 @@ def replace_probabilistic_region(segmentation_numpy: np.ndarray,
         region_blur = math_lib.gauss_blur_computation(input_image=region_mask,
                                                       blur_size_mm=blur_size_mm,
                                                       input_zooms=segmentation_zooms,
-                                                      use_FWHM=True)
+                                                      use_fwhm=True)
         segmentations_combined += [region_blur]
     
     segmentations_combined_np = np.array(segmentations_combined)
@@ -249,7 +249,7 @@ def vat_wm_ref_region(input_segmentation_path: str,
     wm_csf_blurred = math_lib.gauss_blur_computation(input_image=wm_csf_merged,
                                                      blur_size_mm=9,
                                                      input_zooms=seg_resolution,
-                                                     use_FWHM=True)
+                                                     use_fwhm=True)
     
     wm_csf_eroded = image_operations_4d.threshold(input_image_numpy=wm_csf_blurred,
                                                   lower_bound=0.95)
