@@ -405,3 +405,273 @@ def write_tacs(input_image_4d_path: str,
         header_text = f'{time_frame_keyword}\t{regions_abrev[i]}_mean_activity'
         out_tac_path = os.path.join(out_tac_dir, f'tac-{regions_abrev[i]}.tsv')
         np.savetxt(out_tac_path,region_tac_file,delimiter='\t',header=header_text,comments='')
+
+
+class SimpleAutoImageCropper(object):
+    r"""
+    Class for automatically cropping 3D or 4D medical images based on pixel intensity thresholds.
+
+    This class provides functionality to load a medical image, determine the meaningful regions
+    by thresholding, and crop the image to remove regions outside these boundaries.
+    It also supports copying metadata from the original image.
+
+    Attributes:
+        input_image_path (str): The file path to the input image.
+        out_image_path (str): The file path to save the cropped image.
+        thresh (float): The threshold value used to determine the boundaries.
+        verbose (bool): If True, prints information about image shapes.
+        input_img_obj (nibabel.Nifti1Image): The loaded input image object.
+        crop_img_obj (nibabel.Nifti1Image): The cropped image object.
+
+    Example:
+        
+        .. code-block:: python
+        
+            from petpal.preproc.image_operations_4d import SimpleAutoImageCropper
+    
+            cropper = SimpleAutoImageCropper(
+                input_image_path='path/to/input_image.nii',
+                out_image_path='path/to/output_image.nii',
+                thresh_val=0.01,
+                verbose=True,
+                copy_metadata=True
+            )
+
+    See Also:
+        - :meth:`get_cropped_image`
+        - :meth:`get_index_pairs_for_all_dims`
+        - :meth:`get_left_and_right_boundary_indices_for_threshold`
+        - :meth:`gen_line_profile`
+        
+        
+    """
+    def __init__(self,
+                 input_image_path: str,
+                 out_image_path: str,
+                 thresh_val: float = 1.0e-2,
+                 verbose: bool = True,
+                 copy_metadata: bool = True
+                 ):
+        r"""
+        Initializes the SimpleAutoImageCropper with input image path, output image path, and other parameters.
+
+        Loads the input image, generates the cropped image using the specified threshold, and saves it to the output path.
+
+        Args:
+            input_image_path (str): The file path to the input image.
+            out_image_path (str): The file path to save the cropped image.
+            thresh_val (float, optional): The threshold value used to determine the boundaries.
+                                          Must be less than 0.5. Defaults to 1e-2.
+            verbose (bool, optional): If True, prints information about image shapes. Defaults to True.
+            copy_metadata (bool, optional): If True, copies metadata from the original image to the cropped image. Defaults to True.
+
+        Raises:
+            AssertionError: If the `thresh_val` is not less than 0.5.
+
+        Example:
+            
+            .. code-block:: python
+
+                from petpal.preproc.image_operations_4d import SimpleAutoImageCropper
+    
+                cropper = SimpleAutoImageCropper(
+                    input_image_path='path/to/input_image.nii',
+                    out_image_path='path/to/output_image.nii',
+                    thresh_val=0.01,
+                    verbose=True,
+                    copy_metadata=True
+                )
+
+        """
+        self.input_image_path = input_image_path
+        self.out_image_path = out_image_path
+        self.thresh = thresh_val
+        self.verbose = verbose
+        self.input_img_obj = nibabel.load(self.input_image_path)
+        self.crop_img_obj = self.get_cropped_image(img_obj=self.input_img_obj, thresh=self.thresh)
+            
+        nibabel.save(filename=self.out_image_path, img=self.crop_img_obj)
+        if copy_metadata:
+            image_io.safe_copy_meta(input_image_path=self.input_image_path,
+                                    out_image_path=self.out_image_path)
+            
+        if verbose:
+            print(f"(info): Input image has shape:  {self.input_img_obj.shape}")
+            print(f"(info): Output image has shape: {self.crop_img_obj.shape}")
+        
+        
+    
+    @staticmethod
+    def gen_line_profile(img_arr: np.ndarray, dim: str = 'x'):
+        r"""
+        Generates a line profile by averaging the pixel intensities along specified dimensions.
+
+        This function computes the mean pixel intensities along a specified dimension (x, y, or z)
+        of a 3D or 4D image array.
+
+        Args:
+            img_arr (np.ndarray): The input image array.
+            dim (str, optional): The dimension along which to compute the line profile.
+                                 Must be one of 'x', 'y', or 'z'. Case-insensitive. Defaults to 'x'.
+
+        Returns:
+            np.ndarray: The computed line profile as a 1D array.
+
+        Raises:
+            AssertionError: If `dim` is not one of 'x', 'y', or 'z'.
+
+        Example:
+            
+            .. code-block:: python
+            
+                import numpy as np
+                from petpal.preproc.image_operations_4d import SimpleAutoImageCropper
+    
+                img_arr = np.random.rand(100, 100, 100)  # Example 3D array
+                x_profile = SimpleAutoImageCropper.gen_line_profile(img_arr=img_arr, dim='x')
+                print(x_profile)
+        
+        """
+        tmp_dim = dim.lower()
+        assert tmp_dim in ['x', 'y', 'z']
+        if tmp_dim == 'x':
+            return np.mean(img_arr, axis=(1, 2))
+        if tmp_dim == 'y':
+            return np.mean(img_arr, axis=(0, 2))
+        if tmp_dim == 'z':
+            return np.mean(img_arr, axis=(0, 1))
+    
+    @staticmethod
+    def get_left_and_right_boundary_indices_for_threshold(line_prof: np.ndarray,
+                                                          thresh: float = 1e-2):
+        r"""
+        Determines the left and right boundary indices above a threshold in a line profile.
+
+        This function identifies the indices where the normalized line profile crosses the specified threshold value,
+        indicating the boundaries of the region of interest.
+
+        Args:
+            line_prof (np.ndarray): The input line profile as a 1D array.
+            thresh (float, optional): The threshold value for determining boundaries. Must be less than 0.5. Defaults to 1e-2.
+
+        Returns:
+            tuple: A tuple containing the left and right boundary indices (left_index, right_index).
+
+        Raises:
+            AssertionError: If the `thresh` value is not less than 0.5.
+
+        Example:
+            
+            .. code-block:: python
+            
+                import numpy as np
+                from petpal.preproc.image_operations_4d import SimpleAutoImageCropper
+    
+                line_prof = np.random.rand(100)  # Example normalized line profile
+                left_index, right_index = SimpleAutoImageCropper.get_left_and_right_boundary_indices_for_threshold(line_prof=line_prof, thresh=0.01)
+                print(left_index, right_index)
+        
+        """
+        assert thresh < 0.5
+        norm_prof = line_prof / np.max(line_prof)
+        l_ind, r_ind = np.argwhere(norm_prof > thresh).T[0][[0, -1]]
+        return l_ind, r_ind
+
+    @staticmethod
+    def get_index_pairs_for_all_dims(img_obj: nibabel.Nifti1Image, thresh: float = 1e-2):
+        r"""
+        Gets the boundary indices for each dimension of the input image based on a threshold value.
+
+        This function computes the left and right boundary indices for all dimensions (x, y, z)
+        by generating line profiles and applying a threshold to identify meaningful regions.
+
+        Args:
+            img_obj (nibabel.Nifti1Image): The input NIfTI image object.
+            thresh (float, optional): The threshold value used to determine the boundaries.
+                                      Must be less than 0.5. Defaults to 1e-2.
+
+        Returns:
+            tuple: A tuple of boundary index pairs for each dimension, formatted as
+                   ((x_left, x_right), (y_left, y_right), (z_left, z_right)).
+
+        Raises:
+            AssertionError: If the `thresh` value is not less than 0.5.
+            
+        See Also:
+            - :meth:`get_index_pairs_for_all_dims`
+
+        Example:
+            
+            .. code-block:: python
+            
+                import nibabel as nib
+                from petpal.preproc.image_operations_4d import SimpleAutoImageCropper
+    
+                input_image_path = 'path/to/input_image.nii'
+                img_obj = nib.load(input_image_path)
+    
+                boundaries = SimpleAutoImageCropper.get_index_pairs_for_all_dims(img_obj=img_obj, thresh=0.01)
+                print(boundaries)
+        
+        """
+        if len(img_obj.shape) > 3:
+            tmp_data = np.mean(img_obj.get_fdata(), axis=-1)
+        else:
+            tmp_data = img_obj.get_fdata()
+        
+        prof_func = SimpleAutoImageCropper.gen_line_profile
+        index_func = SimpleAutoImageCropper.get_left_and_right_boundary_indices_for_threshold
+        
+        x_line_prof = prof_func(img_arr=tmp_data, dim='x')
+        x_left, x_right = index_func(line_prof=x_line_prof, thresh=thresh)
+        
+        y_line_prof = prof_func(img_arr=tmp_data, dim='y')
+        y_left, y_right = index_func(line_prof=y_line_prof, thresh=thresh)
+        
+        z_line_prof = prof_func(img_arr=tmp_data, dim='z')
+        z_left, z_right = index_func(line_prof=z_line_prof, thresh=thresh)
+        
+        return (x_left, x_right), (y_left, y_right), (z_left, z_right)
+    
+    @staticmethod
+    def get_cropped_image(img_obj: nibabel.Nifti1Image, thresh: float = 1e-2):
+        r"""
+        Crops the input medical image based on a threshold value.
+
+        This function determines the boundaries of the meaningful regions in the input image
+        by thresholding and then crops the image to remove regions outside these boundaries.
+
+        Args:
+            img_obj (nibabel.Nifti1Image): The input NIfTI image object to be cropped.
+            thresh (float, optional): The threshold value used to determine the boundaries.
+                                      Must be less than 0.5. Defaults to 1e-2.
+
+        Returns:
+            nibabel.Nifti1Image: The cropped NIfTI image object.
+
+        Raises:
+            AssertionError: If the `thresh` value is not less than 0.5.
+            
+        See Also:
+            - :meth:`get_index_pairs_for_all_dims`
+            - :meth:`get_left_and_right_boundary_indices_for_threshold`
+            - :meth:`gen_line_profile`
+
+        Example:
+            
+            .. code-block:: python
+            
+                import nibabel as nib
+                from petpal.preproc.image_operations_4d import SimpleAutoImageCropper
+    
+                input_image_path = 'path/to/input_image.nii'
+                img_obj = nib.load(input_image_path)
+    
+                cropped_img = SimpleAutoImageCropper.get_cropped_image(img_obj=img_obj, thresh=0.01)
+                nib.save(cropped_img, 'path/to/output_image.nii')
+        
+        """
+        (x_l, x_r), (y_l, y_r), (z_l, z_r) = SimpleAutoImageCropper.get_index_pairs_for_all_dims(img_obj=img_obj,
+                                                                                                 thresh=thresh)
+        
+        return img_obj.slicer[x_l:x_r, y_l:y_r, z_l:z_r, ...]

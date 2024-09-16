@@ -64,6 +64,7 @@ def register_pet(input_reg_image_path: str,
     xfm_apply = ants.apply_transforms(moving=pet_image_ants,
                                       fixed=mri_image,
                                       transformlist=xfm_output['fwdtransforms'],
+                                      interpolator='linear',
                                       imagetype=dim)
     if verbose:
         print(f'Registration applied to {input_reg_image_path}')
