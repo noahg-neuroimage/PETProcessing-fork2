@@ -1,20 +1,47 @@
-# pylint: skip-file
+"""
+Run dynamic VAT PET processing through standard protocol. Handles SUVR parametric imaging and
+regional TACs for further kinetic analysis. File structure standardized in the NIL Movement
+Disorders section is hard-coded. Requires list of subjects to process in a TSV, as well as paths to
+directories containing registrations, BIDS PET data, and output folder to write results to.
+
+Processing steps run:
+    * Motion correction
+    * Registration to MPRAGE
+    * Generation of standard VAT white matter reference region
+    * Write regional TACs to file
+    * Calculation of SUVR
+    * Blur output
+
+This code does not handle:
+    * PVC
+    * Warp to atlas
+
+"""
 import os
 import argparse
 import pandas as pd
 from petpal.preproc import preproc
 
-_VAT_EXAMPLE_ = (r"""
+_VAT_EXAMPLE_ = r"""
 Example:
   - Running many subjects:
     petpal-vat-proc --subjects participants.tsv --out-dir /path/to/output --pet-dir /path/to/pet/folder/ --reg-dir /path/to/subject/Registrations/
-""")
+"""
 
 
 def vat_protocol(subjstring: str,
                  out_dir: str,
                  pet_dir: str,
                  reg_dir: str):
+    """
+    Set up parameters necessary to run VAT processing and run steps in order.
+
+    Arguments:
+        subjstring (str): Original subject ID used in study, not BIDS name.
+        out_dir (str): Path to folder to which results are written.
+        pet_dir (str): BIDS folder containing PET data.
+        reg_dir (str): Folder containing standard registrations for all subjects.
+    """
     sub, ses = rename_subs(subjstring)
     preproc_props = {
         'FilePathLabelMap': '/data/jsp/human2/goldmann/dseg.tsv',
@@ -37,17 +64,15 @@ def vat_protocol(subjstring: str,
         out_prefix = f'{sub}_pet'
         preproc_props['FilePathMocoInp'] = f'{pet_dir}/{sub}/pet/{sub}_pet.nii.gz'
         preproc_props['FilePathSeg'] = f'{reg_dir}/{sub}/{sub}_aparc+aseg.nii'
-        preproc_props['FilePathBSseg'] = f'{reg_dir}/{sub}/{sub}_brainstemSsLabels.v13.FSvoxelSpace.nii'
+        preproc_props['FilePathBSseg'] = f'{reg_dir}/{sub}/{sub}_brainstem.nii'
         preproc_props['FilePathAnat'] = f'{reg_dir}/{sub}/{sub}_mpr.nii'
-        preproc_props['FilePathWarp'] = f'{reg_dir}/{sub}/MNI152_6mmres_FNIRT/{sub}_mpr_to_MNI152_T1_2mm_6mmwarpres_FSLwarp.nii'
     else:
         out_folder = f'{out_dir}/{sub}_{ses}'
         out_prefix = f'{sub}_{ses}_pet'
         preproc_props['FilePathMocoInp'] = f'{pet_dir}/{sub}/{ses}/pet/{sub}_{ses}_trc-18FVAT_pet.nii.gz'
         preproc_props['FilePathSeg'] = f'{reg_dir}/{sub}_{ses}/{sub}_{ses}_aparc+aseg.nii'
-        preproc_props['FilePathBSseg'] = f'{reg_dir}/{sub}_{ses}/{sub}_{ses}_brainstemSsLabels.v13.FSvoxelSpace.nii'
+        preproc_props['FilePathBSseg'] = f'{reg_dir}/{sub}_{ses}/{sub}_{ses}_brainstem.nii'
         preproc_props['FilePathAnat'] = f'{reg_dir}/{sub}_{ses}/{sub}_{ses}_mpr.nii'
-        preproc_props['FilePathWarp'] = f'{reg_dir}/{sub}_{ses}/MNI152_6mmres_FNIRT/{sub}_{ses}_mpr_to_MNI152_T1_2mm_6mmwarpres_FSLwarp.nii'
     sub_vat = preproc.PreProc(
         output_directory=out_folder,
         output_filename_prefix=out_prefix
@@ -56,8 +81,7 @@ def vat_protocol(subjstring: str,
         preproc_props['FilePathMocoInp'],
         preproc_props['FilePathSeg'],
         preproc_props['FilePathAnat'],
-        preproc_props['FilePathBSseg'],
-        preproc_props['FilePathWarp']
+        preproc_props['FilePathBSseg']
     ]
     for check in real_files:
         if not os.path.exists(check):
@@ -79,23 +103,22 @@ def vat_protocol(subjstring: str,
     sub_vat.run_preproc('weighted_series_sum')
     sub_vat.run_preproc('suvr')
     preproc_props['FilePathWarpInput'] = sub_vat._generate_outfile_path(method_short='suvr')
-    preproc_props['FilePathBlurInput'] = sub_vat._generate_outfile_path(method_short='space-atlas')
+    preproc_props['FilePathBlurInput'] = sub_vat._generate_outfile_path(method_short='suvr')
     sub_vat.update_props(preproc_props)
-    sub_vat.run_preproc('apply_xfm_fsl')
     sub_vat.run_preproc('gauss_blur')
     return None
 
 
 def rename_subs(sub: str):
     """
-    Handle converting subject ID to BIDS structure.
+    Handle converting original subject ID to BIDS name.
 
-    VATDYS0XX -> sub-VATDYS0XX
-    PIBXX-YYY_VYrZ -> sub-PIBXXYYY_ses-VYrZ
+    Arguments:
+        sub (str): Original subject ID
 
-    returns:
-        - subject part string
-        - session part string
+    Returns:
+        subname (str): Subject portion of ID converted to BIDS format.
+        sesname (str): Session portion of ID converted to BIDS format, if any.
     """
     if 'VAT' in sub:
         return [f'sub-{sub}', '']
@@ -109,7 +132,7 @@ def rename_subs(sub: str):
 
 def main():
     """
-    VAT command line interface
+    VAT command line interface. Handles options, loops through subjects and runs.
     """
     parser = argparse.ArgumentParser(prog='petpal-vat-proc',
                                      description='Command line interface for running VAT processing.',
