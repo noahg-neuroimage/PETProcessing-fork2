@@ -5,28 +5,26 @@ This module provides a CLI to generate TACs and SUVR parametric images using inp
 BIDS-compliant directory. It assumes all input PET data was collected using Pittsburgh Compound B (PiB) as the
 radiotracer.
 
-The user must provide either ALL of the following:
-    * Path to the top-level of a BIDS-compliant directory
+The user must provide ALL of the following:
+    * Path to 4DPET file (.nii or .nii.gz)
+    * Path to T1 mri file (.nii or .nii.gz)
     * Path to label map .tsv file
+    * Path to segmentation file such as aparc+aseg.nii.gz from freesurfer (.nii or .nii.gz)
+    * Path to desired output directory
 
-This script uses one instance of the class :class:`petpal.preproc.preproc.PreProc` for each subject-session pair found
-in the BIDS directory.
+This script uses one instance of the class :class:`petpal.preproc.preproc.PreProc` to
+run all processing from motion-correction to SUVR generation
 
 Assumptions regarding input data:
-    * If generating tacs or SUVR, segmentation is assumed to exist at
-        "{bids_dir}/derivatives/freesurfer/{prefix}-aparc+aseg.nii.gz"
-        * In this case, "prefix" should exactly match a corresponding prefix in your bids_dir (e.g. "sub-01")
-    * MRI and PET input files are assumed to have ONLY sub-{}, (optionally) ses-{}, and a suffix (e.g. 'pet'). No
+    * MRI and PET input file names must only contain 'sub-{}', (optionally) 'ses-{}', and a suffix (e.g. 'pet'). No
         run-{}, desc-{}, etc... are allowed currently.
-
-
 
 Example:
     .. code-block:: bash
-        petpal-pib-proc -i bids_dir/ -l labelmap.tsv -v
+        petpal-pib-proc -p path/to/4dpet -m path/to/T1_mri -l path/to/labelmap -s path/to/segmentation -o outdir/ -v
 
 See Also:
-    :mod:`petpal.preproc` - module for initiating and saving the graphical analysis of PET parametric images.
+    :mod:`petpal.preproc`
 
 """
 
@@ -131,11 +129,11 @@ def main():
     label_map_path = os.path.abspath(args.label_map)
     path_to_pet = os.path.abspath(args.pet)
     path_to_mri = os.path.abspath(args.mri)
-    path_to_seg = os.path.abspath(args.segmentation)
+    path_to_seg = os.path.abspath(args.seg)
     outdir = os.path.abspath(args.outdir)
 
     verbose = args.verbose
-    skip_motion_correct = args.skip_motion_correct
+    skip_motion_correct = args.skip_moco
     skip_register = args.skip_register
     skip_tacs = args.skip_tacs
     skip_suvr = args.skip_suvr
@@ -157,8 +155,10 @@ def main():
     # TODO: Make a shared global dict with Half-Lives of common Radiotracers
     half_life = 1221.66  # C-11 Half-Life According to NIST
 
-    pattern = re.compile(r'sub-(\d+)')
-    prefix = re.match(pattern, path_to_pet.split(os.sep)[-1])[0] # There will only be one match if BIDS-compliant
+    pattern = re.compile(r'sub-\d+')
+    sub_matches = re.match(pattern, path_to_pet.split(os.sep)[-1])
+    prefix = sub_matches[0] # There will only be one match if BIDS-compliant
+
 
     subject = petpal.preproc.preproc.PreProc(output_directory=outdir,
                                              output_filename_prefix=prefix)
