@@ -430,7 +430,7 @@ class SimpleAutoImageCropper(object):
             from petpal.preproc.image_operations_4d import SimpleAutoImageCropper
     
             cropper = SimpleAutoImageCropper(
-                input_image_path='path/to/input_image.nii',
+                input_image_path='path/to/input_image_path.nii',
                 out_image_path='path/to/output_image.nii',
                 thresh_val=0.01,
                 verbose=True,
@@ -475,7 +475,7 @@ class SimpleAutoImageCropper(object):
                 from petpal.preproc.image_operations_4d import SimpleAutoImageCropper
     
                 cropper = SimpleAutoImageCropper(
-                    input_image_path='path/to/input_image.nii',
+                    input_image_path='path/to/input_image_path.nii',
                     out_image_path='path/to/output_image.nii',
                     thresh_val=0.01,
                     verbose=True,
@@ -607,7 +607,7 @@ class SimpleAutoImageCropper(object):
                 import nibabel as nib
                 from petpal.preproc.image_operations_4d import SimpleAutoImageCropper
     
-                input_image_path = 'path/to/input_image.nii'
+                input_image_path = 'path/to/input_image_path.nii'
                 img_obj = nib.load(input_image_path)
     
                 boundaries = SimpleAutoImageCropper.get_index_pairs_for_all_dims(img_obj=img_obj, thresh=0.01)
@@ -664,7 +664,7 @@ class SimpleAutoImageCropper(object):
                 import nibabel as nib
                 from petpal.preproc.image_operations_4d import SimpleAutoImageCropper
     
-                input_image_path = 'path/to/input_image.nii'
+                input_image_path = 'path/to/input_image_path.nii'
                 img_obj = nib.load(input_image_path)
     
                 cropped_img = SimpleAutoImageCropper.get_cropped_image(img_obj=img_obj, thresh=0.01)
