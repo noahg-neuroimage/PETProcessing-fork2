@@ -60,7 +60,8 @@ def crop_image(input_image_path: str,
     x_half = x_dim // 2
     y_half = y_dim // 2
 
-    cropped_image = image.slicer[center[0]-x_half:center[0]+x_half,center[1]-y_half:center[1]+y_half]
+    cropped_image = image.slicer[center[0]-x_half:center[0]+x_half,
+                                 center[1]-y_half:center[1]+y_half]
     nibabel.save(cropped_image,out_image_path)
     image_io.safe_copy_meta(input_image_path=input_image_path,
                             out_image_path=out_image_path)
@@ -117,7 +118,8 @@ def weighted_series_sum(input_image_4d_path: str,
             If equal to ``start_time``, one frame at start_time is used. Default value -1.
 
     Returns:
-        np.ndarray: 3D image array, in the same space as the input, with the weighted sum calculation applied.
+        np.ndarray: 3D image array, in the same space as the input, with the weighted sum
+            calculation applied.
 
     Raises:
         ValueError: If ``half_life`` is zero or negative.
@@ -135,7 +137,8 @@ def weighted_series_sum(input_image_4d_path: str,
     elif 'DecayFactor' in pet_meta.keys():
         decay_correction = pet_meta['DecayFactor']
     else:
-        raise ValueError("Neither 'DecayCorrectionFactor' nor 'DecayFactor' exist in meta-data file")
+        raise ValueError("Neither 'DecayCorrectionFactor' nor 'DecayFactor' exist in meta-data "
+                         "file")
 
     if 'TracerRadionuclide' in pet_meta.keys():
         tracer_isotope = pet_meta['TracerRadionuclide']
@@ -453,17 +456,21 @@ class SimpleAutoImageCropper(object):
                  copy_metadata: bool = True
                  ):
         r"""
-        Initializes the SimpleAutoImageCropper with input image path, output image path, and other parameters.
+        Initializes the SimpleAutoImageCropper with input image path, output image path, and other
+        parameters.
 
-        Loads the input image, generates the cropped image using the specified threshold, and saves it to the output path.
+        Loads the input image, generates the cropped image using the specified threshold, and saves
+        it to the output path.
 
         Args:
             input_image_path (str): The file path to the input image.
             out_image_path (str): The file path to save the cropped image.
             thresh_val (float, optional): The threshold value used to determine the boundaries.
                                           Must be less than 0.5. Defaults to 1e-2.
-            verbose (bool, optional): If True, prints information about image shapes. Defaults to True.
-            copy_metadata (bool, optional): If True, copies metadata from the original image to the cropped image. Defaults to True.
+            verbose (bool, optional): If True, prints information about image shapes. Defaults to
+                True.
+            copy_metadata (bool, optional): If True, copies metadata from the original image to the
+                cropped image. Defaults to True.
 
         Raises:
             AssertionError: If the `thresh_val` is not less than 0.5.
@@ -489,18 +496,17 @@ class SimpleAutoImageCropper(object):
         self.verbose = verbose
         self.input_img_obj = nibabel.load(self.input_image_path)
         self.crop_img_obj = self.get_cropped_image(img_obj=self.input_img_obj, thresh=self.thresh)
-            
+
         nibabel.save(filename=self.out_image_path, img=self.crop_img_obj)
         if copy_metadata:
             image_io.safe_copy_meta(input_image_path=self.input_image_path,
                                     out_image_path=self.out_image_path)
-            
+
         if verbose:
             print(f"(info): Input image has shape:  {self.input_img_obj.shape}")
             print(f"(info): Output image has shape: {self.crop_img_obj.shape}")
-        
-        
-    
+
+
     @staticmethod
     def gen_line_profile(img_arr: np.ndarray, dim: str = 'x'):
         r"""
@@ -540,19 +546,20 @@ class SimpleAutoImageCropper(object):
             return np.mean(img_arr, axis=(0, 2))
         if tmp_dim == 'z':
             return np.mean(img_arr, axis=(0, 1))
-    
+
     @staticmethod
     def get_left_and_right_boundary_indices_for_threshold(line_prof: np.ndarray,
                                                           thresh: float = 1e-2):
         r"""
         Determines the left and right boundary indices above a threshold in a line profile.
 
-        This function identifies the indices where the normalized line profile crosses the specified threshold value,
-        indicating the boundaries of the region of interest.
+        This function identifies the indices where the normalized line profile crosses the 
+        specified threshold value, indicating the boundaries of the region of interest.
 
         Args:
             line_prof (np.ndarray): The input line profile as a 1D array.
-            thresh (float, optional): The threshold value for determining boundaries. Must be less than 0.5. Defaults to 1e-2.
+            thresh (float, optional): The threshold value for determining boundaries. Must be less
+                than 0.5. Defaults to 1e-2.
 
         Returns:
             tuple: A tuple containing the left and right boundary indices (left_index, right_index).
@@ -610,7 +617,8 @@ class SimpleAutoImageCropper(object):
                 input_image_path = 'path/to/input_image.nii'
                 img_obj = nib.load(input_image_path)
     
-                boundaries = SimpleAutoImageCropper.get_index_pairs_for_all_dims(img_obj=img_obj, thresh=0.01)
+                boundaries = SimpleAutoImageCropper.get_index_pairs_for_all_dims(img_obj=img_obj,
+                                                                                 thresh=0.01)
                 print(boundaries)
         
         """
@@ -618,21 +626,21 @@ class SimpleAutoImageCropper(object):
             tmp_data = np.mean(img_obj.get_fdata(), axis=-1)
         else:
             tmp_data = img_obj.get_fdata()
-        
+
         prof_func = SimpleAutoImageCropper.gen_line_profile
         index_func = SimpleAutoImageCropper.get_left_and_right_boundary_indices_for_threshold
-        
+
         x_line_prof = prof_func(img_arr=tmp_data, dim='x')
         x_left, x_right = index_func(line_prof=x_line_prof, thresh=thresh)
-        
+
         y_line_prof = prof_func(img_arr=tmp_data, dim='y')
         y_left, y_right = index_func(line_prof=y_line_prof, thresh=thresh)
-        
+
         z_line_prof = prof_func(img_arr=tmp_data, dim='z')
         z_left, z_right = index_func(line_prof=z_line_prof, thresh=thresh)
-        
+
         return (x_left, x_right), (y_left, y_right), (z_left, z_right)
-    
+
     @staticmethod
     def get_cropped_image(img_obj: nibabel.Nifti1Image, thresh: float = 1e-2):
         r"""
@@ -673,5 +681,5 @@ class SimpleAutoImageCropper(object):
         """
         (x_l, x_r), (y_l, y_r), (z_l, z_r) = SimpleAutoImageCropper.get_index_pairs_for_all_dims(img_obj=img_obj,
                                                                                                  thresh=thresh)
-        
+
         return img_obj.slicer[x_l:x_r, y_l:y_r, z_l:z_r, ...]
