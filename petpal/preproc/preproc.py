@@ -291,10 +291,10 @@ class PreProc():
         elif method_name == 'motion_corr_frames_above_mean':
             outfile = self._generate_outfile_path(method_short='moco', modality=modality)
             motion_corr.motion_corr_frames_above_mean_value(input_image_4d_path=preproc_props['FilePathMocoInp'],
-                                                            motion_target_option=preproc_props['MotionTarget'],
                                                             out_image_path=outfile,
-                                                            type_of_transform=preproc_props['MocoTransformType'],
+                                                            motion_target_option=preproc_props['MotionTarget'],
                                                             verbose=preproc_props['Verbose'],
+                                                            type_of_transform=preproc_props['MocoTransformType'],
                                                             half_life=preproc_props['HalfLife'],
                                                             kwargs=preproc_props['MocoPars'])
 
