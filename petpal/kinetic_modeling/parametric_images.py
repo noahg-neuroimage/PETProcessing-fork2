@@ -1,11 +1,12 @@
 """
-This module provides functions and a key class, :class:`GraphicalAnalysisParametricImage`, for graphical analysis and
-creation of parametric images of 4D-PET scan data. It heavily utilizes :mod:`numpy` for data manipulation and assumes
-the input as 4D PET images along with other required inputs.
+This module provides functions and a key class, :class:`GraphicalAnalysisParametricImage`, for 
+graphical analysis and creation of parametric images of 4D-PET scan data. It heavily utilizes 
+:mod:`numpy` for data manipulation and assumes the input as 4D PET images along with other required
+inputs.
 
-The :class:`GraphicalAnalysisParametricImage` class encapsulates the main functionality of the module, and encompasses
-methods for initializing data, running and saving analysis, calculating various properties, and handling parametric
-image data.
+The :class:`GraphicalAnalysisParametricImage` class encapsulates the main functionality of the 
+module, and encompasses methods for initializing data, running and saving analysis, calculating
+various properties, and handling parametric image data.
 """
 
 import os
@@ -17,7 +18,7 @@ import numpy as np
 import numba
 from nibabel import Nifti1Image
 from . import graphical_analysis
-from ..utils.image_io import safe_load_tac
+from ..utils.image_io import safe_load_tac, safe_copy_meta
 
 
 @numba.njit()
@@ -60,18 +61,20 @@ def apply_linearized_analysis_to_all_voxels(pTAC_times: np.ndarray,
                                        `tTAC_img`.
     """
     img_dims = tTAC_img.shape
-    
+
     slope_img = np.zeros((img_dims[0], img_dims[1], img_dims[2]), float)
     intercept_img = np.zeros_like(slope_img)
-    
+
     for i in range(0, img_dims[0], 1):
         for j in range(0, img_dims[1], 1):
             for k in range(0, img_dims[2], 1):
-                analysis_vals = analysis_func(input_tac_values=pTAC_vals, region_tac_values=tTAC_img[i, j, k, :],
-                                              tac_times_in_minutes=pTAC_times, t_thresh_in_minutes=t_thresh_in_mins)
+                analysis_vals = analysis_func(input_tac_values=pTAC_vals,
+                                              region_tac_values=tTAC_img[i, j, k, :],
+                                              tac_times_in_minutes=pTAC_times,
+                                              t_thresh_in_minutes=t_thresh_in_mins)
                 slope_img[i, j, k] = analysis_vals[0]
                 intercept_img[i, j, k] = analysis_vals[1]
-    
+
     return slope_img, intercept_img
 
 
@@ -110,19 +113,21 @@ def generate_parametric_images_with_graphical_method(pTAC_times: np.ndarray,
     """
     
     analysis_func = graphical_analysis.get_graphical_analysis_method(method_name=method_name)
-    slope_img, intercept_img = apply_linearized_analysis_to_all_voxels(pTAC_times=pTAC_times, pTAC_vals=pTAC_vals,
+    slope_img, intercept_img = apply_linearized_analysis_to_all_voxels(pTAC_times=pTAC_times,
+                                                                       pTAC_vals=pTAC_vals,
                                                                        tTAC_img=tTAC_img,
                                                                        t_thresh_in_mins=t_thresh_in_mins,
                                                                        analysis_func=analysis_func)
-    
+
     return slope_img, intercept_img
 
 def _safe_load_4dpet_nifty(filename: str) -> Nifti1Image:
     """
     Safely load a 4D PET NIfTI file.
 
-    This function checks if the given file has a '.nii' or '.nii.gz' extension, then tries to load it as a NIfTI file
-    using the nibabel library. If the file cannot be loaded, it raises an exception.
+    This function checks if the given file has a '.nii' or '.nii.gz' extension, then tries to load
+    it as a NIfTI file using the nibabel library. If the file cannot be loaded, it raises an
+    exception.
 
     Args:
         filename (str): The path of the NIfTI file to be loaded.
@@ -136,7 +141,7 @@ def _safe_load_4dpet_nifty(filename: str) -> Nifti1Image:
     """
     if not filename.endswith(('.nii', '.nii.gz')):
         raise ValueError("Invalid file extension. Only '.nii' and '.nii.gz' are supported.")
-    
+
     try:
         return nibabel.load(filename=filename)
     except Exception as e:
@@ -432,7 +437,7 @@ class GraphicalAnalysisParametricImage:
         self.slope_image, self.intercept_image = generate_parametric_images_with_graphical_method(
                 pTAC_times=p_tac_times, pTAC_vals=p_tac_vals, tTAC_img=nifty_pet4d_img.get_fdata() / 37000.,
                 t_thresh_in_mins=t_thresh_in_mins, method_name=method_name)
-    
+
     def save_parametric_images(self):
         """
         Saves the slope and intercept images as NIfTI files in the specified output directory.
@@ -460,13 +465,13 @@ class GraphicalAnalysisParametricImage:
         try:
             tmp_slope_img = nibabel.Nifti1Image(dataobj=self.slope_image, affine=nifty_img_affine)
             nibabel.save(tmp_slope_img, f"{file_name_prefix}-slope.nii.gz")
-            
+
             tmp_intercept_img = nibabel.Nifti1Image(dataobj=self.intercept_image, affine=nifty_img_affine)
             nibabel.save(tmp_intercept_img, f"{file_name_prefix}-intercept.nii.gz")
         except IOError as e:
             print("An IOError occurred while attempting to write the NIfTI image files.")
             raise e from None
-    
+
     def save_analysis_properties(self):
         """
         Saves the analysis properties to a JSON file in the output directory.
