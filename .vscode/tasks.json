@@ -1,0 +1,28 @@
+{
+    "version": "2.0.0",
+    "label": "pylint: whole project",
+    "type": "shell",
+    "command": "/data/norris/data1/usr/Noah/envs/PETPAL/bin/pylint --msg-template \"{path}:{line}:{column}:{category}:{symbol} - {msg}\" ${workspaceFolder}/petpal",
+    "windows": {
+        "command": "/data/norris/data1/usr/Noah/envs/PETPAL/bin/pylint --msg-template \"{path}:{line}: {column}:{category}:{symbol} - {msg}\" ${workspaceFolder}/petpal"
+    },
+    "presentation": {
+        "reveal": "never",
+        "panel": "shared"
+    },
+    "problemMatcher": {
+        "owner": "python",
+        "fileLocation": [
+            "relative",
+            "${workspaceFolder}"
+        ],
+        "pattern": {
+            "regexp": "^(.+):(\\d+):(\\d+):(\\w+):(.*)$",
+            "file": 1,
+            "line": 2,
+            "column": 3,
+            "severity": 4,
+            "message": 5
+        }
+    }
+}
