@@ -21,6 +21,7 @@ from . import graphical_analysis
 from ..utils.image_io import safe_load_tac, safe_copy_meta
 
 
+
 @numba.njit()
 def apply_linearized_analysis_to_all_voxels(pTAC_times: np.ndarray,
                                             pTAC_vals: np.ndarray,
@@ -460,14 +461,19 @@ class GraphicalAnalysisParametricImage:
 
         """
         file_name_prefix = os.path.join(self.output_directory,
-                                        f"{self.output_filename_prefix}-parametric-{self.analysis_props['MethodName']}")
+                                        f"{self.output_filename_prefix}_desc-{self.analysis_props['MethodName']}")
         nifty_img_affine = _safe_load_4dpet_nifty(filename=self.pet4D_img_path).affine
         try:
             tmp_slope_img = nibabel.Nifti1Image(dataobj=self.slope_image, affine=nifty_img_affine)
             nibabel.save(tmp_slope_img, f"{file_name_prefix}-slope.nii.gz")
 
             tmp_intercept_img = nibabel.Nifti1Image(dataobj=self.intercept_image, affine=nifty_img_affine)
-            nibabel.save(tmp_intercept_img, f"{file_name_prefix}-intercept.nii.gz")
+            nibabel.save(tmp_intercept_img, f"{file_name_prefix}_intercept.nii.gz")
+            
+            image_io.safe_copy_meta(input_image_path=self.pet4D_img_path,
+                                    out_image_path=f"{file_name_prefix}_slope.nii.gz")
+            image_io.safe_copy_meta(input_image_path=self.pet4D_img_path,
+                                    out_image_path=f"{file_name_prefix}_intercept.nii.gz")
         except IOError as e:
             print("An IOError occurred while attempting to write the NIfTI image files.")
             raise e from None
@@ -495,6 +501,6 @@ class GraphicalAnalysisParametricImage:
             * :func:`save_analysis_properties`
         """
         analysis_props_file = os.path.join(self.output_directory,
-                                           f"{self.output_filename_prefix}-parametric-{self.analysis_props['MethodName']}-analysis-props.json")
-        with open(analysis_props_file, 'w',encoding='utf-8') as f:
+                                           f"{self.output_filename_prefix}_desc-{self.analysis_props['MethodName']}_props.json")
+        with open(analysis_props_file, 'w') as f:
             json.dump(obj=self.analysis_props, fp=f, indent=4)
