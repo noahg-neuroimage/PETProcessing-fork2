@@ -86,6 +86,11 @@ def brain_mask(input_image_4d_path: str,
         atlas_image_path (str): Path to anatomical atlas image.
         atlas_mask_path (str): Path to brain mask in atlas space.
         motion_target_option: Used to determine 3D target in PET space. Default 'mean_image'.
+    
+    Note:
+        Requires access to an anatomical atlas or scan with a corresponding brain mask on said
+        anatomical data. FSL users can use the MNI152 atlas and mask available at 
+        $FSLDIR/data/standard/.
     """
     atlas = ants.image_read(atlas_image_path)
     atlas_mask = ants.image_read(atlas_mask_path)
