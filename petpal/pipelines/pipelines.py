@@ -1,3 +1,4 @@
+from ..utils.image_io import safe_copy_meta
 from typing import Callable
 import inspect
 
@@ -82,9 +83,12 @@ class ImageToImageStep(GenericStep):
         self.input_image_path = input_image_path
         self.output_image_path = output_image_path
         
-    def execute(self) -> None:
+    def execute(self, copy_meta_file: bool = True) -> None:
         print(f"(Info): Executing {self.name}")
         self.function(self.input_image_path, self.output_image_path, **self.kwargs)
+        if copy_meta_file:
+            safe_copy_meta(input_image_path=self.input_image_path,
+                           out_image_path=self.output_image_path)
         print(f"(Info): Finished {self.name}")
         
     def get_non_unset_args_from_function(self):
@@ -114,29 +118,33 @@ class ImageToImageStep(GenericStep):
 class GenericPipeline:
     def __init__(self, name: str) -> None:
         self.name = name
-        self.steps = []
+        self.steps = {}
         
     def add_step(self, step: GenericStep) -> None:
-        self.steps.append(step)
+        self.steps[step.name] = step
         
     def list_step_details(self) -> None:
-        print(f"(Pipeline Info):")
-        for step_id, a_step in enumerate(self.steps):
+        if not self.steps:
+            return None
+        print(f"({self.name} pipeline info):")
+        for step_id, (step_name, a_step) in enumerate(self.steps.items()):
             print('-' * 80)
             print(f"Step Number {step_id+1}")
             print(a_step)
             print('-' * 80)
         
     def list_step_names(self) -> None:
-        print(f"(Pipeline Info):")
+        if not self.steps:
+            return None
+        print(f"({self.name} pipeline info):")
         print('-' * 80)
-        for step_id, a_step in enumerate(self.steps):
+        for step_id, (step_name, a_step) in enumerate(self.steps.items()):
             print(f"Step Number {step_id+1}: {a_step.name}")
         print('-' * 80)
     
     def run_steps(self) -> None:
-        for step in self.steps:
-            step.execute()
+        for step_id, (step_name, a_step) in enumerate(self.steps.items()):
+            a_step.execute()
 
 
 class ProcessingPipeline(object):
@@ -172,3 +180,22 @@ class ProcessingPipeline(object):
     
     def list_kinetic_modeling_step_details(self) -> None:
         self.kinetic_modeling.list_step_details()
+    
+    #TODO: Needs a way better name and error handling etc.
+    def set_output_path_to_input_path_of_steps_from_pipeline(self,
+                                                             out_pipe_name: str,
+                                                             out_step_name: str,
+                                                             in_pipe_name : str,
+                                                             in_step_name: str) -> None:
+        
+        out_pipeline = self.__dict__[out_pipe_name]
+        in_pipeline = self.__dict__[in_pipe_name]
+        
+        out_step = out_pipeline.steps[out_step_name]
+        in_step = in_pipeline.steps[in_step_name]
+        
+        if isinstance(out_step, ImageToImageStep) and isinstance(in_step, ImageToImageStep):
+            in_step.input_image_path = out_step.output_image_path
+        else:
+            raise RuntimeError
+        
