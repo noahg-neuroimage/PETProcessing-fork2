@@ -7,10 +7,21 @@ class AbstractStep:
         self.name = name
         self.function = function
         self.kwargs = kwargs
-    
-    def get_function_signature(self):
-        signature = inspect.signature(self.function)
-        return signature
+        self.func_sig = inspect.signature(self.function)
+        
+    def get_non_unset_args_from_function(self):
+        """
+        This class gets all the function arguments as kwargs so we check through them all.
+        Returns:
+
+        """
+        unset_args_dict = dict()
+        func_params = self.func_sig.parameters
+        for arg_name, arg_val in func_params.items():
+            if arg_name not in self.kwargs:
+                    unset_args_dict[arg_name] = arg_val.default
+        return unset_args_dict
+        
     
     def execute(self) -> None:
         print(f"(Info): Executing {self.name}")
@@ -25,12 +36,26 @@ class ImageToImageStep(AbstractStep):
         super().__init__(name, function, **kwargs)
         self.input_image = input_image_path
         self.output_image = output_image_path
-        self.kwargs = kwargs
+        
         
     def execute(self) -> None:
         print(f"(Info): Executing {self.name}")
         self.function(self.input_image, self.output_image, **self.kwargs)
         print(f"(Info): Finished {self.name}")
+        
+    def get_non_unset_args_from_function(self):
+        """
+        Since this class expects to have functions with the signature f(some_input_path, some_output_path, *args),
+        we want to skip the first two arguments
+        Returns:
+
+        """
+        unset_args_dict = dict()
+        func_params = self.func_sig.parameters
+        for arg_name, arg_val in list(func_params.items())[2:]:
+            if arg_name not in self.kwargs:
+                    unset_args_dict[arg_name] = arg_val.default
+        return unset_args_dict
         
         
 class AbstractPipeline:
