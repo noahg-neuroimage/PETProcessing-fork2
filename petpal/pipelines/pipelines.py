@@ -6,8 +6,10 @@ class AbstractStep:
     def __init__(self, name: str, function: Callable, **kwargs) -> None:
         self.name = name
         self.function = function
+        self._func_name = function.__name__
         self.kwargs = kwargs
         self.func_sig = inspect.signature(self.function)
+        self.validate_kwargs_for_non_default_have_been_set()
         
     def get_non_unset_args_from_function(self):
         """
@@ -21,12 +23,31 @@ class AbstractStep:
             if arg_name not in self.kwargs:
                     unset_args_dict[arg_name] = arg_val.default
         return unset_args_dict
+    
+    def validate_kwargs_for_non_default_have_been_set(self):
+        unset_args_dict = self.get_non_unset_args_from_function()
+        for arg_name, arg_val in unset_args_dict.items():
+            if arg_val is inspect.Parameter.empty:
+                if arg_name not in self.kwargs:
+                    raise ValueError(f"{self._func_name}'s argument {arg_name} does not have a default value "
+                                     f"and must be set!")
         
     
     def execute(self) -> None:
         print(f"(Info): Executing {self.name}")
         self.function(**self.kwargs)
         print(f"(Info): Finished {self.name}")
+        
+    def __str__(self):
+        info_str = ['-'*50,
+                    '(Step Info):',
+                    f'Function Name: {self._func_name}',
+                    'Arguments Set:',
+                    f'{self.kwargs}',
+                    'Default Arguments:',
+                    f'{self.get_non_unset_args_from_function()}',
+                    '-'*50]
+        return '\n'.join(info_str)
 
 
 class ImageToImageStep(AbstractStep):
@@ -36,6 +57,9 @@ class ImageToImageStep(AbstractStep):
         super().__init__(name, function, **kwargs)
         self.input_image = input_image_path
         self.output_image = output_image_path
+        self.kwargs = {'input_image_path': input_image_path,
+                       'output_image_path': output_image_path,
+                       **self.kwargs}
         
         
     def execute(self) -> None:
