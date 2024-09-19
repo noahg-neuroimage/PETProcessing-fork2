@@ -3,8 +3,8 @@ import inspect
 
 class ArgsDict(dict):
     def __str__(self):
-        rep_str = [f'    {arg}: {val}' for arg, val in self.items()]
-        return '\n'.join(rep_str)
+        rep_str = [f'    {arg}={val}' for arg, val in self.items()]
+        return ',\n'.join(rep_str)
 
 
 class GenericStep:
@@ -61,6 +61,17 @@ class GenericStep:
                     'Default Arguments:',
                     f'{self.get_non_unset_args_from_function()}']
         return '\n'.join(info_str)
+    
+    def __repr__(self):
+        repr_kwargs = ArgsDict({'name'    : self.name,
+                                'function': f'{self.function.__module__}.{self.function.__name__}',
+                                })
+        obj_signature = inspect.signature(self.__init__).parameters
+        for arg_name in list(obj_signature)[2:-1]:
+            repr_kwargs[arg_name] = self.__dict__[arg_name]
+        repr_kwargs = ArgsDict({**repr_kwargs, **self.kwargs})
+        
+        return f'{type(self).__name__}(\n{repr_kwargs}\n)'
 
 
 class ImageToImageStep(GenericStep):
@@ -68,12 +79,12 @@ class ImageToImageStep(GenericStep):
                  input_image_path: str, output_image_path: str,
                  **kwargs) -> None:
         super().__init__(name, function, **kwargs)
-        self.input_image = input_image_path
-        self.output_image = output_image_path
+        self.input_image_path = input_image_path
+        self.output_image_path = output_image_path
         
     def execute(self) -> None:
         print(f"(Info): Executing {self.name}")
-        self.function(self.input_image, self.output_image, **self.kwargs)
+        self.function(self.input_image_path, self.output_image_path, **self.kwargs)
         print(f"(Info): Finished {self.name}")
         
     def get_non_unset_args_from_function(self):
@@ -91,14 +102,14 @@ class ImageToImageStep(GenericStep):
         return unset_args_dict
     
     def __str__(self):
-        io_dict = ArgsDict({'input_image_path': self.input_image,
-                            'output_image_path': self.output_image})
+        io_dict = ArgsDict({'input_image_path': self.input_image_path,
+                            'output_image_path': self.output_image_path})
         sup_str_list = super().__str__().split('\n')
         args_ind = sup_str_list.index("Arguments Set:")+1
         sup_str_list.insert(args_ind, f"{io_dict}")
         
         return "\n".join(sup_str_list)
-        
+    
         
 class GenericPipeline:
     def __init__(self, name: str) -> None:
