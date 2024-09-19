@@ -175,10 +175,10 @@ class ProcessingPipeline(object):
             step_names = self.preproc.get_step_names()
             this_step_name = step_names[-1]
             last_step_name = step_names[-2]
-            self.set_output_path_to_input_path_of_steps_from_pipeline(out_pipe_name='preproc',
-                                                                      out_step_name=last_step_name,
-                                                                      in_pipe_name='preproc',
-                                                                      in_step_name=this_step_name)
+            self.set_output_path_to_input_path_of_steps_from_pipelines(out_pipe_name='preproc',
+                                                                       out_step_name=last_step_name,
+                                                                       in_pipe_name='preproc',
+                                                                       in_step_name=this_step_name)
     
     def add_kinetic_modeling_step(self, step: GenericStep) -> None:
         self.kinetic_modeling.add_step(step)
@@ -196,11 +196,11 @@ class ProcessingPipeline(object):
         self.kinetic_modeling.list_step_details()
     
     #TODO: Needs a way better name and error handling etc.
-    def set_output_path_to_input_path_of_steps_from_pipeline(self,
-                                                             out_pipe_name: str,
-                                                             out_step_name: str,
-                                                             in_pipe_name : str,
-                                                             in_step_name: str) -> None:
+    def set_output_path_to_input_path_of_steps_from_pipelines(self,
+                                                              out_pipe_name: str,
+                                                              out_step_name: str,
+                                                              in_pipe_name : str,
+                                                              in_step_name: str) -> None:
         
         try:
             out_pipeline = getattr(self, out_pipe_name)
