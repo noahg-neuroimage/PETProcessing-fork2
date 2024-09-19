@@ -145,6 +145,10 @@ class ProcessingPipeline(object):
         self.preproc = GenericPipeline('preproc')
         self.kinetic_modeling = GenericPipeline('kinetic_modeling')
     
+    def run(self):
+        self.preproc.run_steps()
+        self.kinetic_modeling.run_steps()
+    
     def run_preproc(self):
         self.preproc.run_steps()
     
@@ -157,10 +161,10 @@ class ProcessingPipeline(object):
     def add_kinetic_modeling_step(self, step: GenericStep) -> None:
         self.kinetic_modeling.add_step(step)
     
-    def list_preproc_stes(self) -> None:
+    def list_preproc_steps(self) -> None:
         self.preproc.list_step_names()
     
-    def list_kinetic_modeling_stes(self) -> None:
+    def list_kinetic_modeling_steps(self) -> None:
         self.kinetic_modeling.list_step_names()
     
     def list_preproc_step_details(self) -> None:
