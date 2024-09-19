@@ -57,9 +57,6 @@ class ImageToImageStep(AbstractStep):
         super().__init__(name, function, **kwargs)
         self.input_image = input_image_path
         self.output_image = output_image_path
-        self.kwargs = {'input_image_path': input_image_path,
-                       'output_image_path': output_image_path,
-                       **self.kwargs}
         
         
     def execute(self) -> None:
