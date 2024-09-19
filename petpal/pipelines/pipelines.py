@@ -69,7 +69,7 @@ class GenericStep:
                                 })
         obj_signature = inspect.signature(self.__init__).parameters
         for arg_name in list(obj_signature)[2:-1]:
-            repr_kwargs[arg_name] = self.__dict__[arg_name]
+            repr_kwargs[arg_name] = getattr(self, arg_name)
         repr_kwargs = ArgsDict({**repr_kwargs, **self.kwargs})
         
         return f'{type(self).__name__}(\n{repr_kwargs}\n)'
@@ -142,6 +142,12 @@ class GenericPipeline:
             print(f"Step Number {step_id+1}: {a_step.name}")
         print('-' * 80)
     
+    def get_step_names(self):
+        if not self.steps:
+            return None
+        step_names = [a_name for a_name, a_step in self.steps.items()]
+        return step_names
+    
     def run_steps(self) -> None:
         for step_id, (step_name, a_step) in enumerate(self.steps.items()):
             a_step.execute()
@@ -163,11 +169,12 @@ class ProcessingPipeline(object):
     def run_kinetic_modeling(self):
         self.kinetic_modeling.run_steps()
     
-    def add_preproc_step(self, step: GenericStep, recieves_input_path_from_previous_step: bool = False) -> None:
+    def add_preproc_step(self, step: GenericStep, receives_input_path_from_previous_step: bool = False) -> None:
         self.preproc.add_step(step)
-        if recieves_input_path_from_previous_step:
-            this_step_name = step.name
-            last_step_name = list(self.preproc.steps)[-2]
+        if receives_input_path_from_previous_step:
+            step_names = self.preproc.get_step_names()
+            this_step_name = step_names[-1]
+            last_step_name = step_names[-2]
             self.set_output_path_to_input_path_of_steps_from_pipeline(out_pipe_name='preproc',
                                                                       out_step_name=last_step_name,
                                                                       in_pipe_name='preproc',
@@ -198,8 +205,8 @@ class ProcessingPipeline(object):
         try:
             out_pipeline = getattr(self, out_pipe_name)
             in_pipeline = getattr(self, in_pipe_name)
-            out_step = next(step for step in out_pipeline.steps if step.name == out_step_name)
-            in_step = next(step for step in in_pipeline.steps if step.name == in_step_name)
+            out_step = next(step for step_name, step in out_pipeline.steps.items() if step_name == out_step_name)
+            in_step = next(step for step_name, step in in_pipeline.steps.items() if step_name == in_step_name)
             
             if isinstance(out_step, ImageToImageStep) and isinstance(in_step, ImageToImageStep):
                 in_step.input_image_path = out_step.output_image_path
