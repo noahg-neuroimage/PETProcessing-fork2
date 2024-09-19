@@ -163,8 +163,15 @@ class ProcessingPipeline(object):
     def run_kinetic_modeling(self):
         self.kinetic_modeling.run_steps()
     
-    def add_preproc_step(self, step: GenericStep) -> None:
+    def add_preproc_step(self, step: GenericStep, recieves_input_path_from_previous_step: bool = False) -> None:
         self.preproc.add_step(step)
+        if recieves_input_path_from_previous_step:
+            this_step_name = step.name
+            last_step_name = list(self.preproc.steps)[-2]
+            self.set_output_path_to_input_path_of_steps_from_pipeline(out_pipe_name='preproc',
+                                                                      out_step_name=last_step_name,
+                                                                      in_pipe_name='preproc',
+                                                                      in_step_name=this_step_name)
     
     def add_kinetic_modeling_step(self, step: GenericStep) -> None:
         self.kinetic_modeling.add_step(step)
@@ -188,14 +195,17 @@ class ProcessingPipeline(object):
                                                              in_pipe_name : str,
                                                              in_step_name: str) -> None:
         
-        out_pipeline = self.__dict__[out_pipe_name]
-        in_pipeline = self.__dict__[in_pipe_name]
-        
-        out_step = out_pipeline.steps[out_step_name]
-        in_step = in_pipeline.steps[in_step_name]
-        
-        if isinstance(out_step, ImageToImageStep) and isinstance(in_step, ImageToImageStep):
-            in_step.input_image_path = out_step.output_image_path
-        else:
-            raise RuntimeError
+        try:
+            out_pipeline = getattr(self, out_pipe_name)
+            in_pipeline = getattr(self, in_pipe_name)
+            out_step = next(step for step in out_pipeline.steps if step.name == out_step_name)
+            in_step = next(step for step in in_pipeline.steps if step.name == in_step_name)
+            
+            if isinstance(out_step, ImageToImageStep) and isinstance(in_step, ImageToImageStep):
+                in_step.input_image_path = out_step.output_image_path
+            else:
+                raise TypeError(
+                    f"Both steps must be of type ImageToImageStep. Got {type(out_step)} and {type(in_step)}")
+        except (AttributeError, StopIteration) as e:
+            raise RuntimeError(f"Error setting pipeline paths: {e}")
         
