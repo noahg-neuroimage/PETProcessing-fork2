@@ -65,7 +65,7 @@ class GenericStep:
     
     def __repr__(self):
         repr_kwargs = ArgsDict({'name'    : self.name,
-                                'function': f'{self.function.__module__}.{self.function.__name__}',
+                                'function': f'{self.function.__module__}.{self._func_name}',
                                 })
         obj_signature = inspect.signature(self.__init__).parameters
         for arg_name in list(obj_signature)[2:-1]:
