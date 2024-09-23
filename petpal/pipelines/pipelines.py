@@ -223,7 +223,6 @@ class ProcessingPipeline(object):
     def list_kinetic_modeling_step_details(self) -> None:
         self.kinetic_modeling.list_step_details()
     
-    #TODO: Needs a way better name and error handling etc.
     def chain_outputs_as_inputs_between_steps(self,
                                               out_pipe_name: str,
                                               out_step_name: str,
@@ -234,6 +233,6 @@ class ProcessingPipeline(object):
             out_pipeline : ImageToImageStep = getattr(self, out_pipe_name)
             in_pipeline : ImageToImageStep = getattr(self, in_pipe_name)
             in_pipeline[in_step_name].set_input_as_output_from(out_pipeline[out_step_name])
-        except (AttributeError) as e:
+        except AttributeError as e:
             raise RuntimeError(f"Error setting chaining outputs and inputs for steps: {e}")
         
