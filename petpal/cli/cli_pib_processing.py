@@ -29,10 +29,13 @@ See Also:
 """
 
 import argparse
-import glob
 import logging
 import os
 import re
+
+from Demos.win32ts_logoff_disconnected import session
+from openpyxl.descriptors import Default
+
 import petpal.preproc
 
 logger = logging.getLogger(__name__)
@@ -48,12 +51,26 @@ def _parse_command_line_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description='Script to process PiB PET data from 4D-PET to SUVR Parametric Image',
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
-    parser.add_argument('-p', '--pet', required=True, help='Path to input 4D PET File')
-    parser.add_argument('-m', '--mri', required=True, help='Path to input T1 MRI File')
-    parser.add_argument('-l', '--label_map', required=True, help='Path to .tsv file containing segmentation LUT info')
-    parser.add_argument('-s', '--seg', required=True, help='Path to segmentation file (.nii.gz)')
-    parser.add_argument('-o', '--outdir', required=True,
-                        help="Directory to store all outputs. Directory will be created if it doesn't exist")
+    parser.add_argument('--sub', required=True, help='Subject ID assuming sub_XXXX where XXXX is the subject ID.')
+    parser.add_argument('--ses', required=True, help='Session ID assuming ses_XX where XX is the session ID.')
+    parser.add_argument('-b', '--bids-dir', required=False, default=None,
+                        help='Path to bids directory. If not set, assumes current working directory is the code/ '
+                             'directory of a BIDS-like directory. ')
+    parser.add_argument('-p', '--pet', required=False, default=None,
+                        help="Path to input 4D PET File. If not set, assumes file named sub-XXXX_ses-XX_T1w.nii.gz "
+                             "can be found in subjects's anat/ directory.")
+    parser.add_argument('-m', '--mri', required=False, default=None,
+                        help="Path to input T1 MRI File. If not set, assumes file named sub-XXXX_ses-XX_pet.nii.gz"
+                             " can be found in subject's pet/ directory.")
+    parser.add_argument('-o', '--outdir', required=False, default=None,
+                        help="Directory to store all outputs. If not set, will use existing derivatives/ directory "
+                             "or create one.")
+    parser.add_argument('-l', '--label-map', required=False, default=None,
+                        help='Path to .tsv file containing segmentation LUT info. If not set, assumes file can be '
+                             'found in derivatives/freesurfer/dseg.tsv.')
+    parser.add_argument('-s', '--seg', required=False, default=None,
+                        help='Path to segmentation file (.nii.gz). If not set, assumes file can be found in '
+                             'derivatives/freesurfer/sub-XXXX-ses-XX/aparc+aseg.nii.gz.')
     parser.add_argument('-v', '--verbose', help='Display more information while running', action='store_true')
     parser.add_argument('--skip-moco', help='Do not perform motion correction', action='store_true')
     parser.add_argument('--skip-register', help='Do not perform registration', action='store_true')
@@ -126,12 +143,21 @@ def main():
     # Unpack command line arguments
     args = _parse_command_line_args()
 
-    label_map_path = os.path.abspath(args.label_map)
-    path_to_pet = os.path.abspath(args.pet)
-    path_to_mri = os.path.abspath(args.mri)
-    path_to_seg = os.path.abspath(args.seg)
-    outdir = os.path.abspath(args.outdir)
-
+    subject_id = args.sub
+    session_id = args.ses
+    bids_dir = os.path.abspath('../') if args.bids_dir is None else os.path.abspath(args.bids_dir)
+    label_map_path = os.path.join(bids_dir, 'derivatives', 'freesurfer',
+                                  'dseg.tsv') if args.label_map is None else os.path.abspath(args.label_map)
+    path_to_pet = os.path.join(bids_dir, f'sub-{subject_id}', f'ses-{session_id}', 'pet',
+                               f'sub-{subject_id}_ses-{session_id}_pet.nii.gz') if args.pet is None else os.path.abspath(
+        args.pet)
+    path_to_mri = os.path.join(bids_dir, f'sub-{subject_id}', f'ses-{session_id}', 'anat',
+                               f'sub-{subject_id}_ses-{session_id}_T1w.nii.gz') if args.mri is None else os.path.abspath(
+        args.mri)
+    path_to_seg = os.path.join(bids_dir, 'derivatives', 'freesurfer', f'sub-{subject_id}', f'ses-{session_id}',
+                               'aparc+aseg.nii.gz') if args.seg is None else os.path.abspath(args.seg)
+    outdir = os.path.join(bids_dir, 'derivatives', 'petpal', 'pib_processing', f'sub-{subject_id}',
+                          f'ses-{session_id}') if args.outdir is None else os.path.abspath(args.outdir)
     verbose = args.verbose
     skip_motion_correct = args.skip_moco
     skip_register = args.skip_register
@@ -140,8 +166,11 @@ def main():
 
     logger.setLevel(level=logging.INFO if verbose else logging.WARNING)
 
-    if not os.path.exists(args.label_map):
-        raise FileNotFoundError(f'No such file {args.label_map}')
+    if not os.path.exists(bids_dir):
+        raise FileNotFoundError(f'No such directory: {bids_dir}')
+
+    if not os.path.exists(label_map_path):
+        raise FileNotFoundError(f'No such file {label_map_path}')
 
     if not os.path.exists(path_to_mri):
         raise FileNotFoundError(f'No such file {path_to_mri}')
@@ -155,13 +184,8 @@ def main():
     # TODO: Make a shared global dict with Half-Lives of common Radiotracers
     half_life = 1221.66  # C-11 Half-Life According to NIST
 
-    pattern = re.compile(r'sub-\d+')
-    sub_matches = re.match(pattern, path_to_pet.split(os.sep)[-1])
-    prefix = sub_matches[0] # There will only be one match if BIDS-compliant
-
-
     subject = petpal.preproc.preproc.PreProc(output_directory=outdir,
-                                             output_filename_prefix=prefix)
+                                             output_filename_prefix=subject_id)
 
     # Update props with everything necessary.
     properties = {
