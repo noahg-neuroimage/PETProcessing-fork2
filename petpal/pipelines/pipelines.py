@@ -115,6 +115,15 @@ class ImageToImageStep(GenericStep):
         
         return "\n".join(sup_str_list)
     
+    def set_input_as_output_from(self, sending_step: GenericStep) -> None:
+        if isinstance(sending_step, ImageToImageStep):
+            self.input_image_path = sending_step.output_image_path
+        else:
+            raise TypeError(
+                    f"The provided step {sending_step} is not an instance of ImageToImageStep. "
+                    f"It is of type {type(sending_step)}.")
+        
+    
         
 class GenericPipeline:
     def __init__(self, name: str) -> None:
@@ -152,6 +161,24 @@ class GenericPipeline:
     def run_steps(self) -> None:
         for step_id, (step_name, a_step) in enumerate(self.steps.items()):
             a_step.execute()
+            
+    def __getitem__(self, key: str) -> GenericStep:
+        """
+        Allows accessing steps by name.
+
+        Args:
+            key: str, step name
+
+        Returns:
+            Corresponding GenericStep object
+
+        Raises:
+            KeyError: If the name does not exist
+        """
+        try:
+            return self.steps[key]
+        except KeyError:
+            raise KeyError(f"No step found with name: {key}")
 
 
 class ProcessingPipeline(object):
@@ -176,10 +203,10 @@ class ProcessingPipeline(object):
             step_names = self.preproc.get_step_names()
             this_step_name = step_names[-1]
             last_step_name = step_names[-2]
-            self.set_output_path_to_input_path_of_steps_from_pipelines(out_pipe_name='preproc',
-                                                                       out_step_name=last_step_name,
-                                                                       in_pipe_name='preproc',
-                                                                       in_step_name=this_step_name)
+            self.chain_outputs_as_inputs_between_steps(out_pipe_name='preproc',
+                                                       out_step_name=last_step_name,
+                                                       in_pipe_name='preproc',
+                                                       in_step_name=this_step_name)
     
     def add_kinetic_modeling_step(self, step: GenericStep) -> None:
         self.kinetic_modeling.add_step(step)
@@ -197,23 +224,16 @@ class ProcessingPipeline(object):
         self.kinetic_modeling.list_step_details()
     
     #TODO: Needs a way better name and error handling etc.
-    def set_output_path_to_input_path_of_steps_from_pipelines(self,
-                                                              out_pipe_name: str,
-                                                              out_step_name: str,
-                                                              in_pipe_name : str,
-                                                              in_step_name: str) -> None:
+    def chain_outputs_as_inputs_between_steps(self,
+                                              out_pipe_name: str,
+                                              out_step_name: str,
+                                              in_pipe_name : str,
+                                              in_step_name: str) -> None:
         
         try:
-            out_pipeline = getattr(self, out_pipe_name)
-            in_pipeline = getattr(self, in_pipe_name)
-            out_step = next(step for step_name, step in out_pipeline.steps.items() if step_name == out_step_name)
-            in_step = next(step for step_name, step in in_pipeline.steps.items() if step_name == in_step_name)
-            
-            if isinstance(out_step, ImageToImageStep) and isinstance(in_step, ImageToImageStep):
-                in_step.input_image_path = out_step.output_image_path
-            else:
-                raise TypeError(
-                    f"Both steps must be of type ImageToImageStep. Got {type(out_step)} and {type(in_step)}")
-        except (AttributeError, StopIteration) as e:
-            raise RuntimeError(f"Error setting pipeline paths: {e}")
+            out_pipeline : ImageToImageStep = getattr(self, out_pipe_name)
+            in_pipeline : ImageToImageStep = getattr(self, in_pipe_name)
+            in_pipeline[in_step_name].set_input_as_output_from(out_pipeline[out_step_name])
+        except (AttributeError) as e:
+            raise RuntimeError(f"Error setting chaining outputs and inputs for steps: {e}")
         
