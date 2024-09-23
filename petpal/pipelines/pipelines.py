@@ -17,9 +17,10 @@ class GenericStep:
         self.func_sig = inspect.signature(self.function)
         self.validate_kwargs_for_non_default_have_been_set()
         
-    def get_non_unset_args_from_function(self):
+    def get_function_args_not_set_in_kwargs(self):
         """
-        This class gets all the function arguments as kwargs so we check through them all.
+        This class gets all the function arguments as kwargs so we check through them all. Note that we ignore
+        kwargs for the function.
         Returns:
 
         """
@@ -31,7 +32,7 @@ class GenericStep:
         return unset_args_dict
     
     def get_empty_default_kwargs(self):
-        unset_args_dict = self.get_non_unset_args_from_function()
+        unset_args_dict = self.get_function_args_not_set_in_kwargs()
         empty_kwargs = []
         for arg_name, arg_val in unset_args_dict.items():
             if arg_val is inspect.Parameter.empty:
@@ -60,7 +61,7 @@ class GenericStep:
                     'Arguments Set:',
                     f'{self.kwargs}',
                     'Default Arguments:',
-                    f'{self.get_non_unset_args_from_function()}']
+                    f'{self.get_function_args_not_set_in_kwargs()}']
         return '\n'.join(info_str)
     
     def __repr__(self):
@@ -91,7 +92,7 @@ class ImageToImageStep(GenericStep):
                            out_image_path=self.output_image_path)
         print(f"(Info): Finished {self.name}")
         
-    def get_non_unset_args_from_function(self):
+    def get_function_args_not_set_in_kwargs(self):
         """
         Since this class expects to have functions with the signature f(some_input_path, some_output_path, **kwargs),
         we want to skip the first two arguments
