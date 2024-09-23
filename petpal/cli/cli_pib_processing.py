@@ -31,11 +31,6 @@ See Also:
 import argparse
 import logging
 import os
-import re
-
-from Demos.win32ts_logoff_disconnected import session
-from openpyxl.descriptors import Default
-
 import petpal.preproc
 
 logger = logging.getLogger(__name__)
