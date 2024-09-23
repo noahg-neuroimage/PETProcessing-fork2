@@ -20,7 +20,7 @@ dependencies = [
     "numba",
     "pandas",
     "nibabel",
-    "antspyx==0.4.2",
+    "antspyx == 0.4.2",
     "fslpy",
     "SimpleITK",
     "matplotlib",
@@ -28,7 +28,6 @@ dependencies = [
     "pydata-sphinx-theme",
     "bids_validator",
     "seaborn",
-    "tqdm"
 ]
 readme = "README.md"
 classifiers = [  # These are added to PyPI package when published; Used for searching
