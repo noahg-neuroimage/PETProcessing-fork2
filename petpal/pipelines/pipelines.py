@@ -40,7 +40,6 @@ class GenericStep:
                     empty_kwargs.append(arg_name)
         return empty_kwargs
         
-    
     def validate_kwargs_for_non_default_have_been_set(self):
         empty_kwargs = self.get_empty_default_kwargs()
         if empty_kwargs:
@@ -50,7 +49,7 @@ class GenericStep:
     
     def execute(self) -> None:
         print(f"(Info): Executing {self.name}")
-        # self.function(**self.kwargs)
+        self.function(**self.kwargs)
         print(f"(Info): Finished {self.name}")
         
         
@@ -86,10 +85,10 @@ class ImageToImageStep(GenericStep):
         
     def execute(self, copy_meta_file: bool = True) -> None:
         print(f"(Info): Executing {self.name}")
-        # self.function(self.input_image_path, self.output_image_path, **self.kwargs)
-        # if copy_meta_file:
-        #     safe_copy_meta(input_image_path=self.input_image_path,
-        #                    out_image_path=self.output_image_path)
+        self.function(self.input_image_path, self.output_image_path, **self.kwargs)
+        if copy_meta_file:
+            safe_copy_meta(input_image_path=self.input_image_path,
+                           out_image_path=self.output_image_path)
         print(f"(Info): Finished {self.name}")
         
     def get_function_args_not_set_in_kwargs(self):
@@ -122,9 +121,77 @@ class ImageToImageStep(GenericStep):
             raise TypeError(
                     f"The provided step {sending_step} is not an instance of ImageToImageStep. "
                     f"It is of type {type(sending_step)}.")
-        
+
+
+class ObjectBasedStep:
+    def __init__(self,
+                 name: str,
+                 class_type: type,
+                 init_kwargs: dict,
+                 call_kwargs: dict):
+        self.name : str = name
+        self.class_type: type = class_type
+        self.init_kwargs: dict = ArgsDict(init_kwargs)
+        self.call_kwargs: dict = ArgsDict(call_kwargs)
+        self.init_sig: inspect.Signature = inspect.signature(self.class_type.__init__)
+        self.call_sig: inspect.Signature = inspect.signature(self.class_type.__call__)
+        self.validate_kwargs()
+        self.instance: type = self.class_type(**self.init_kwargs)
     
+    def validate_kwargs(self):
+        empty_init_kwargs = self.get_empty_default_kwargs(self.init_sig, self.init_kwargs)
+        empty_call_kwargs = self.get_empty_default_kwargs(self.call_sig, self.call_kwargs)
         
+        if empty_init_kwargs or empty_call_kwargs:
+            err_msg = [f"For {self.class_type.__name__}, the following arguments must be set:"]
+            if empty_init_kwargs:
+                err_msg.append("Initialization:")
+                err_msg.append(f"{empty_init_kwargs}")
+            if empty_call_kwargs:
+                err_msg.append("Calling:")
+                err_msg.append(f"{empty_call_kwargs}")
+            raise RuntimeError("\n".join(err_msg))
+    
+    @staticmethod
+    def get_args_not_set_in_kwargs(sig: inspect.Signature, kwargs: dict) -> dict:
+        unset_args_dict = ArgsDict()
+        for arg_name, arg_val in sig.parameters.items():
+            if arg_name not in kwargs and arg_name != 'self':
+                    unset_args_dict[arg_name] = arg_val.default
+        return unset_args_dict
+    
+    def get_empty_default_kwargs(self, sig: inspect.Signature, set_kwargs: dict) -> list:
+        unset_kwargs = self.get_args_not_set_in_kwargs(sig=sig, kwargs=set_kwargs)
+        empty_kwargs = []
+        for arg_name, arg_val in unset_kwargs.items():
+            if arg_val is inspect.Parameter.empty:
+                if arg_name not in set_kwargs:
+                    empty_kwargs.append(arg_name)
+        return empty_kwargs
+    
+    def execute(self) -> None:
+        print(f"(Info): Executing {self.name}")
+        self.instance(**self.call_kwargs)
+        print(f"(Info): Finished {self.name}")
+    
+    def __str__(self):
+        unset_init_args = self.get_args_not_set_in_kwargs(self.init_sig, self.init_kwargs)
+        unset_call_args = self.get_args_not_set_in_kwargs(self.call_sig, self.call_kwargs)
+        
+        info_str = [f'({type(self).__name__} Info):',
+                    f'Step Name: {self.name}',
+                    f'Class Name: {self.class_type.__name__}',
+                    'Initialization Arguments:',
+                    f'{self.init_kwargs}',
+                    'Default Initialization Arguments:',
+                    f'{unset_init_args}',
+                    'Call Arguments:',
+                    f'{self.call_kwargs}',
+                    'Default Call Arguments:',
+                    f'{unset_call_args}']
+        return '\n'.join(info_str)
+
+
 class GenericPipeline:
     def __init__(self, name: str) -> None:
         self.name = name

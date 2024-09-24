@@ -504,3 +504,7 @@ class GraphicalAnalysisParametricImage:
                                            f"{self.output_filename_prefix}_desc-{self.analysis_props['MethodName']}_props.json")
         with open(analysis_props_file, 'w',encoding='utf-8') as f:
             json.dump(obj=self.analysis_props, fp=f, indent=4)
+
+    def __call__(self, method_name: str, t_thresh_in_mins: float):
+        self.run_analysis(method_name=method_name, t_thresh_in_mins=t_thresh_in_mins)
+        self.save_analysis_properties()
