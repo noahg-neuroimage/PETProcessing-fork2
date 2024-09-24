@@ -50,7 +50,7 @@ class GenericStep:
     
     def execute(self) -> None:
         print(f"(Info): Executing {self.name}")
-        self.function(**self.kwargs)
+        # self.function(**self.kwargs)
         print(f"(Info): Finished {self.name}")
         
         
@@ -86,10 +86,10 @@ class ImageToImageStep(GenericStep):
         
     def execute(self, copy_meta_file: bool = True) -> None:
         print(f"(Info): Executing {self.name}")
-        self.function(self.input_image_path, self.output_image_path, **self.kwargs)
-        if copy_meta_file:
-            safe_copy_meta(input_image_path=self.input_image_path,
-                           out_image_path=self.output_image_path)
+        # self.function(self.input_image_path, self.output_image_path, **self.kwargs)
+        # if copy_meta_file:
+        #     safe_copy_meta(input_image_path=self.input_image_path,
+        #                    out_image_path=self.output_image_path)
         print(f"(Info): Finished {self.name}")
         
     def get_function_args_not_set_in_kwargs(self):
@@ -136,12 +136,14 @@ class GenericPipeline:
     def list_step_details(self) -> None:
         if not self.steps:
             return None
-        print(f"({self.name} pipeline info):")
+        print("*"*90)
+        print(f"({self.name} Pipeline Info):")
         for step_id, (step_name, a_step) in enumerate(self.steps.items()):
             print('-' * 80)
             print(f"Step Number {step_id+1}")
             print(a_step)
             print('-' * 80)
+        print("*" * 90)
         
     def list_step_names(self) -> None:
         if not self.steps:
@@ -197,9 +199,9 @@ class ProcessingPipeline(object):
     def run_kinetic_modeling(self):
         self.kinetic_modeling.run_steps()
     
-    def add_preproc_step(self, step: GenericStep, receives_input_path_from_previous_step: bool = False) -> None:
+    def add_preproc_step(self, step: GenericStep, receives_output_from_previous_step_as_input: bool = False) -> None:
         self.preproc.add_step(step)
-        if receives_input_path_from_previous_step:
+        if receives_output_from_previous_step_as_input:
             step_names = self.preproc.get_step_names()
             this_step_name = step_names[-1]
             last_step_name = step_names[-2]
