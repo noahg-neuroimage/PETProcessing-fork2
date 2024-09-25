@@ -1,6 +1,9 @@
 from ..utils.image_io import safe_copy_meta
 from typing import Callable
 import inspect
+from ..preproc import preproc
+from ..input_function import blood_input
+from ..kinetic_modeling import parametric_images
 
 class ArgsDict(dict):
     def __str__(self):
@@ -190,6 +193,43 @@ class ObjectBasedStep:
                     'Default Call Arguments:',
                     f'{unset_call_args}']
         return '\n'.join(info_str)
+
+
+TEMPLATE_STEPS = {
+    'thresh_crop': ImageToImageStep(name='crop',
+                                    function=preproc.image_operations_4d.SimpleAutoImageCropper,
+                                    input_image_path='',
+                                    output_image_path=''
+                                   ),
+    'moco_frames_above_mean': ImageToImageStep(name='moco',
+                                              function=preproc.motion_corr.motion_corr_frames_above_mean_value,
+                                              input_image_path='',
+                                              output_image_path='',
+                                              motion_target_option='mean_image',
+                                              verbose=True),
+    'register_pet_to_t1' : ImageToImageStep(name='reg',
+                                           function=preproc.register.register_pet,
+                                           input_image_path='',
+                                           output_image_path='',
+                                           reference_image_path='',
+                                           motion_target_option='weighted_sum_series',
+                                           verbose=True),
+    'resample_blood' : GenericStep(name='resample_bTAC',
+                            function=blood_input.resample_blood_data_on_scanner_times,
+                            pet4d_path='',
+                            raw_blood_tac='',
+                            out_tac_path='',
+                            lin_fit_thresh_in_mins=30.0),
+    'parametric_patlak' : ObjectBasedStep(name='parametric_patlak',
+                              class_type=parametric_images.GraphicalAnalysisParametricImage,
+                              init_kwargs=dict(input_tac_path='',
+                                               pet4D_img_path='',
+                                               output_directory='',
+                                               output_filename_prefix=''
+                                              ),
+                              call_kwargs=dict(method_name='patlak',
+                                               t_thresh_in_mins=30.0))
+    }
 
 
 class GenericPipeline:
