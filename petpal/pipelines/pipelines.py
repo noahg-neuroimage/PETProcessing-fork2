@@ -1,3 +1,6 @@
+import copy
+import os.path
+
 from ..utils.image_io import safe_copy_meta
 from typing import Callable, Union
 import inspect
@@ -292,9 +295,10 @@ class GenericPipeline:
 
 class ProcessingPipeline(object):
     def __init__(self, name: str) -> None:
-        self.name = name
-        self.preproc = GenericPipeline('preproc')
-        self.kinetic_modeling = GenericPipeline('kinetic_modeling')
+        self.name: str = name
+        self.preproc: GenericPipeline = GenericPipeline('preproc')
+        self.kinetic_modeling: GenericPipeline = GenericPipeline('kinetic_modeling')
+        self.output_to_input_chains: list[tuple[ImageToImageStep, ImageToImageStep]] = []
     
     def run(self):
         self.preproc.run_steps()
@@ -342,6 +346,9 @@ class ProcessingPipeline(object):
             out_pipeline : ImageToImageStep = getattr(self, out_pipe_name)
             in_pipeline : ImageToImageStep = getattr(self, in_pipe_name)
             in_pipeline[in_step_name].set_input_as_output_from(out_pipeline[out_step_name])
+            if (out_pipeline[out_step_name], in_pipeline[in_step_name]) not in self.output_to_input_chains:
+                self.output_to_input_chains.append((out_pipeline[out_step_name], in_pipeline[in_step_name]))
+            
         except AttributeError as e:
             raise RuntimeError(f"Error setting chaining outputs and inputs for steps: {e}")
         
@@ -357,3 +364,13 @@ simple_parametric_patlak_pipeline.add_preproc_step(TEMPLATE_STEPS['resample_bloo
 
 simple_parametric_patlak_pipeline.add_kinetic_modeling_step(TEMPLATE_STEPS['parametric_patlak'])
 
+
+class BIDsPipeline():
+    def __init__(self, sub_id: str,
+                 ses_id: str,
+                 bids_dir:str='../',
+                 proc_pipeline:ProcessingPipeline=simple_parametric_patlak_pipeline):
+        self.sub_id = sub_id
+        self.ses_id = ses_id
+        self.bids_root_dir = os.path.abspath(bids_dir)
+        self.processing_pipeline = copy.deepcopy(proc_pipeline)
