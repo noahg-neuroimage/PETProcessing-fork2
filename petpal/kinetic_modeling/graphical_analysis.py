@@ -158,17 +158,17 @@ def get_index_from_threshold(times_in_minutes: np.ndarray, t_thresh_in_minutes: 
 
 # TODO: Add more detailed documentation.
 @numba.njit()
-def patlak_analysis(input_tac_values: np.ndarray,
+def patlak_analysis(tac_times_in_minutes: np.ndarray,
+                    input_tac_values: np.ndarray,
                     region_tac_values: np.ndarray,
-                    tac_times_in_minutes: np.ndarray,
                     t_thresh_in_minutes: float) -> np.ndarray:
     """
     Performs Patlak analysis given the input TAC, region TAC, times and threshold.
     
     Args:
+        tac_times_in_minutes (np.ndarray): Array of times in minutes.
         input_tac_values (np.ndarray): Array of input TAC values
         region_tac_values (np.ndarray): Array of ROI TAC values
-        tac_times_in_minutes (np.ndarray): Array of times in minutes.
         t_thresh_in_minutes (np.ndarray): Threshold time in minutes. Line is fit for all values after the threshold.
 
     Returns:
