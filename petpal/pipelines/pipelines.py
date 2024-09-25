@@ -1,5 +1,5 @@
 from ..utils.image_io import safe_copy_meta
-from typing import Callable
+from typing import Callable, Union
 import inspect
 from ..preproc import preproc
 from ..input_function import blood_input
@@ -306,7 +306,7 @@ class ProcessingPipeline(object):
     def run_kinetic_modeling(self):
         self.kinetic_modeling.run_steps()
     
-    def add_preproc_step(self, step: GenericStep, receives_output_from_previous_step_as_input: bool = False) -> None:
+    def add_preproc_step(self, step: Union[GenericStep, ObjectBasedStep], receives_output_from_previous_step_as_input: bool = False) -> None:
         self.preproc.add_step(step)
         if receives_output_from_previous_step_as_input:
             step_names = self.preproc.get_step_names()
@@ -317,7 +317,7 @@ class ProcessingPipeline(object):
                                                        in_pipe_name='preproc',
                                                        in_step_name=this_step_name)
     
-    def add_kinetic_modeling_step(self, step: GenericStep) -> None:
+    def add_kinetic_modeling_step(self, step: Union[GenericStep, ObjectBasedStep]) -> None:
         self.kinetic_modeling.add_step(step)
     
     def list_preproc_steps(self) -> None:
@@ -345,3 +345,15 @@ class ProcessingPipeline(object):
         except AttributeError as e:
             raise RuntimeError(f"Error setting chaining outputs and inputs for steps: {e}")
         
+
+simple_parametric_patlak_pipeline = ProcessingPipeline(name='basic_fdg_parametric_patlak')
+
+simple_parametric_patlak_pipeline.add_preproc_step(TEMPLATE_STEPS['thresh_crop'])
+simple_parametric_patlak_pipeline.add_preproc_step(TEMPLATE_STEPS['moco_frames_above_mean'],
+                                                   receives_output_from_previous_step_as_input=True)
+simple_parametric_patlak_pipeline.add_preproc_step(TEMPLATE_STEPS['register_pet_to_t1'],
+                                                   receives_output_from_previous_step_as_input=True)
+simple_parametric_patlak_pipeline.add_preproc_step(TEMPLATE_STEPS['resample_blood'])
+
+simple_parametric_patlak_pipeline.add_kinetic_modeling_step(TEMPLATE_STEPS['parametric_patlak'])
+
