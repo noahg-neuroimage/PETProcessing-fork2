@@ -40,7 +40,7 @@ def calc_srtm_tac(tac_times: np.ndarray, ref_tac_vals: np.ndarray, r1: float, k2
     
     
     Args:
-        tac_times (np.ndarray): Times for the reference TAC.
+        tac_times (np.ndarray): The array representing the time-points for both TACs.
         r1 (float): The ratio of the clearance rate of tracer from plasma to the reference to the transfer rate of the
             tracer from plasma to the tissue; :math:`R_{1}\equiv\frac{k_1^\prime}{k_1}`.
         k2 (float): The rate constant for the transfer of the tracer from tissue compartment to plasma.
@@ -93,7 +93,7 @@ def _calc_simplified_frtm_tac(tac_times: np.ndarray,
     the parameter calculation.
     
     Args:
-        tac_times (np.ndarray): Times for the reference TAC.
+        tac_times (np.ndarray): The array representing the time-points for both TACs.
         r1 (float): The ratio of the clearance rate of tracer from plasma to the reference to the transfer rate of the
             tracer from plasma to the tissue; :math:`R_{1}\equiv\frac{k_1^\prime}{k_1}`.
         a1 (float): Coefficient of the first exponential term.
@@ -199,7 +199,7 @@ def calc_frtm_tac(tac_times: np.ndarray,
         
     
     Args:
-        tac_times (np.ndarray): Times for the reference TAC.
+        tac_times (np.ndarray): The array representing the time-points for both TACs.
         r1 (float): The ratio of the clearance rate of tracer from plasma to the reference to the transfer rate of the
             tracer from plasma to the tissue; :math:`R_{1}\equiv\frac{k_1^\prime}{k_1}`.
         k2 (float): The rate of tracer transfer from the first tissue compartment to plasma.
@@ -223,8 +223,8 @@ def calc_frtm_tac(tac_times: np.ndarray,
                                      alpha_1=alpha_1, alpha_2=alpha_2)
 
 
-def fit_srtm_to_tac(tgt_tac_vals: np.ndarray,
-                    ref_tac_times: np.ndarray,
+def fit_srtm_to_tac(tac_times: np.ndarray,
+                    tgt_tac_vals: np.ndarray,
                     ref_tac_vals: np.ndarray,
                     r1_start: float = 0.5,
                     k2_start: float = 0.5,
@@ -241,8 +241,8 @@ def fit_srtm_to_tac(tgt_tac_vals: np.ndarray,
     parameters.
     
     Args:
+        tac_times (np.ndarray): The array representing the time-points for both TACs.
         tgt_tac_vals (np.ndarray): Target TAC to fit with the SRTM.
-        ref_tac_times (np.ndarray): Reference TAC values.
         ref_tac_vals (np.ndarray): Reference (and Target) TAC times.
         r1_start (float): Starting guess for the :math:`R_1\equiv\frac{k_1^\prime}{k_1}` parameter.
         k2_start (float): Starting guess for :math:`k_2` parameter.
@@ -263,11 +263,11 @@ def fit_srtm_to_tac(tgt_tac_vals: np.ndarray,
     
     starting_values = [r1_start, k2_start, bp_start]
     
-    return sp_fit(f=_fitting_srtm, xdata=ref_tac_times, ydata=tgt_tac_vals, p0=starting_values)
+    return sp_fit(f=_fitting_srtm, xdata=tac_times, ydata=tgt_tac_vals, p0=starting_values)
 
 
-def fit_srtm2_to_tac(tgt_tac_vals: np.ndarray,
-                     ref_tac_times: np.ndarray,
+def fit_srtm2_to_tac(tac_times: np.ndarray,
+                     tgt_tac_vals: np.ndarray,
                      ref_tac_vals: np.ndarray,
                      k2_prime: float = 0.5,
                      r1_start: float = 0.5,
@@ -284,8 +284,8 @@ def fit_srtm2_to_tac(tgt_tac_vals: np.ndarray,
     parameters.
 
     Args:
+        tac_times (np.ndarray): The array representing the time-points for both TACs.
         tgt_tac_vals (np.ndarray): Target TAC to fit with the SRTM2.
-        ref_tac_times (np.ndarray): Reference TAC values.
         ref_tac_vals (np.ndarray): Reference (and Target) TAC times.
         k2_prime (float): The :math:`k_2^\prime` value.` Defaults to 0.5.
         r1_start (float): Starting guess for the :math:`R_1\equiv\frac{k_1^\prime}{k_1}` parameter.
@@ -308,12 +308,12 @@ def fit_srtm2_to_tac(tgt_tac_vals: np.ndarray,
 
     starting_values = [r1_start, bp_start]
 
-    return sp_fit(f=_fitting_srtm, xdata=ref_tac_times, ydata=tgt_tac_vals, p0=starting_values)
+    return sp_fit(f=_fitting_srtm, xdata=tac_times, ydata=tgt_tac_vals, p0=starting_values)
 
 
 
-def fit_srtm_to_tac_with_bounds(tgt_tac_vals: np.ndarray,
-                                ref_tac_times: np.ndarray,
+def fit_srtm_to_tac_with_bounds(tac_times: np.ndarray,
+                                tgt_tac_vals: np.ndarray,
                                 ref_tac_vals: np.ndarray,
                                 r1_bounds: np.ndarray = np.asarray([0.5, 0.0, 10.0]),
                                 k2_bounds: np.ndarray = np.asarray([0.5, 0.0, 10.0]),
@@ -330,11 +330,11 @@ def fit_srtm_to_tac_with_bounds(tgt_tac_vals: np.ndarray,
     bounds for each parameter are formatted as: ``(starting_value, lo_bound, hi_bound)``.
 
     Args:
+        tac_times (np.ndarray): The array representing the time-points for both TACs.
         tgt_tac_vals (np.ndarray): Target TAC to fit with the SRTM.
-        ref_tac_times (np.ndarray): Times of the reference TAC data.
         ref_tac_vals (np.ndarray): Reference TAC values.
         r1_bounds (np.ndarray): The bounds for the :math:`R_1\equiv\frac{k_1^\prime}{k_1}` parameter.
-        Defaults to [0.5, 0.0, 10.0].
+            Defaults to [0.5, 0.0, 10.0].
         k2_bounds (np.ndarray): The bounds for :math:`k_2` parameter. Defaults to [0.5, 0.0, 10.0].
         bp_bounds (np.ndarray): The bounds for the binding potential parameter. Defaults to [0.5, 0.0, 10.0].
 
@@ -355,12 +355,12 @@ def fit_srtm_to_tac_with_bounds(tgt_tac_vals: np.ndarray,
     lo_values = (r1_bounds[1], k2_bounds[1], bp_bounds[1])
     hi_values = (r1_bounds[2], k2_bounds[2], bp_bounds[2])
 
-    return sp_fit(f=_fitting_srtm, xdata=ref_tac_times, ydata=tgt_tac_vals,
+    return sp_fit(f=_fitting_srtm, xdata=tac_times, ydata=tgt_tac_vals,
                   p0=st_values, bounds=[lo_values, hi_values])
 
 
-def fit_srtm2_to_tac_with_bounds(tgt_tac_vals: np.ndarray,
-                                 ref_tac_times: np.ndarray,
+def fit_srtm2_to_tac_with_bounds(tac_times: np.ndarray,
+                                 tgt_tac_vals: np.ndarray,
                                  ref_tac_vals: np.ndarray,
                                  k2_prime: float = 0.5,
                                  r1_bounds: np.ndarray = np.asarray([0.5, 0.0, 10.0]),
@@ -377,8 +377,8 @@ def fit_srtm2_to_tac_with_bounds(tgt_tac_vals: np.ndarray,
     bounds for each parameter are formatted as: ``(starting_value, lo_bound, hi_bound)``.
 
     Args:
+        tac_times (np.ndarray): The array representing the time-points for both TACs.
         tgt_tac_vals (np.ndarray): Target TAC to fit with the SRTM2.
-        ref_tac_times (np.ndarray): Times of the reference TAC data.
         ref_tac_vals (np.ndarray): Reference TAC values.
         k2_prime (int): The value for :math:`k_2^\prime`. Defaults to 0.5.
         r1_bounds (np.ndarray): The bounds for the :math:`R_1\equiv\frac{k_1^\prime}{k_1}` parameter.
@@ -405,11 +405,11 @@ def fit_srtm2_to_tac_with_bounds(tgt_tac_vals: np.ndarray,
     lo_values = (r1_bounds[1], bp_bounds[1])
     hi_values = (r1_bounds[2], bp_bounds[2])
 
-    return sp_fit(f=_fitting_srtm, xdata=ref_tac_times, ydata=tgt_tac_vals, p0=st_values, bounds=[lo_values, hi_values])
+    return sp_fit(f=_fitting_srtm, xdata=tac_times, ydata=tgt_tac_vals, p0=st_values, bounds=[lo_values, hi_values])
 
 
-def fit_frtm_to_tac(tgt_tac_vals: np.ndarray,
-                    ref_tac_times: np.ndarray,
+def fit_frtm_to_tac(tac_times: np.ndarray,
+                    tgt_tac_vals: np.ndarray,
                     ref_tac_vals: np.ndarray,
                     r1_start: float = 0.5,
                     k2_start: float = 0.5,
@@ -427,8 +427,8 @@ def fit_frtm_to_tac(tgt_tac_vals: np.ndarray,
     parameters.
 
     Args:
+        tac_times (np.ndarray): The array representing the time-points for both TACs.
         tgt_tac_vals (np.ndarray): Target TAC to fit with the SRTM.
-        ref_tac_times (np.ndarray): Reference TAC values.
         ref_tac_vals (np.ndarray): Reference (and Target) TAC times.
         r1_start (float): Starting guess for the :math:`R_1\equiv\frac{k_1^\prime}{k_1}` parameter.
         k2_start (float): Starting guess for :math:`k_2` parameter.
@@ -449,16 +449,16 @@ def fit_frtm_to_tac(tgt_tac_vals: np.ndarray,
         return calc_frtm_tac(tac_times=tac_times, ref_tac_vals=ref_tac_vals, r1=r1, k2=k2, k3=k3, k4=k4)
 
     starting_values = (r1_start, k2_start, k3_start, k4_start)
-    return sp_fit(f=_fitting_frtm, xdata=ref_tac_times, ydata=tgt_tac_vals, p0=starting_values)
+    return sp_fit(f=_fitting_frtm, xdata=tac_times, ydata=tgt_tac_vals, p0=starting_values)
 
 
-def fit_frtm2_to_tac(tgt_tac_vals: np.ndarray,
-                    ref_tac_times: np.ndarray,
-                    ref_tac_vals: np.ndarray,
-                    k2_prime: float = 0.5,
-                    r1_start: float = 0.5,
-                    k3_start: float = 0.5,
-                    k4_start: float = 0.5) -> tuple:
+def fit_frtm2_to_tac(tac_times: np.ndarray,
+                     tgt_tac_vals: np.ndarray,
+                     ref_tac_vals: np.ndarray,
+                     k2_prime: float = 0.5,
+                     r1_start: float = 0.5,
+                     k3_start: float = 0.5,
+                     k4_start: float = 0.5) -> tuple:
     r"""
     Fit FRTM2 to the provided target Time Activity Curve (TAC), given the reference TAC, times, and starting guesses for
     the kinetic parameters.
@@ -471,8 +471,8 @@ def fit_frtm2_to_tac(tgt_tac_vals: np.ndarray,
     parameters.
 
     Args:
+        tac_times (np.ndarray): The array representing the time-points for both TACs.
         tgt_tac_vals (np.ndarray): Target TAC to fit with the SRTM.
-        ref_tac_times (np.ndarray): Reference TAC values.
         ref_tac_vals (np.ndarray): Reference (and Target) TAC times.
         k2_prime (float): Value for the :math:`k_2^\prime` parameter. Defaults to 0.5.
         r1_start (float): Starting guess for the :math:`R_1\equiv\frac{k_1^\prime}{k_1}` parameter.
@@ -494,11 +494,11 @@ def fit_frtm2_to_tac(tgt_tac_vals: np.ndarray,
         return calc_frtm_tac(tac_times=tac_times, ref_tac_vals=ref_tac_vals, r1=r1, k2=k2_prime, k3=k3, k4=k4)
 
     starting_values = (r1_start, k3_start, k4_start)
-    return sp_fit(f=_fitting_frtm, xdata=ref_tac_times, ydata=tgt_tac_vals, p0=starting_values)
+    return sp_fit(f=_fitting_frtm, xdata=tac_times, ydata=tgt_tac_vals, p0=starting_values)
 
 
-def fit_frtm_to_tac_with_bounds(tgt_tac_vals: np.ndarray,
-                                ref_tac_times: np.ndarray,
+def fit_frtm_to_tac_with_bounds(tac_times: np.ndarray,
+                                tgt_tac_vals: np.ndarray,
                                 ref_tac_vals: np.ndarray,
                                 r1_bounds: np.ndarray = np.asarray([0.5, 0.0, 10.0]),
                                 k2_bounds: np.ndarray = np.asarray([0.5, 0.0, 10.0]),
@@ -516,8 +516,8 @@ def fit_frtm_to_tac_with_bounds(tgt_tac_vals: np.ndarray,
     bounds for each parameter are formatted as: ``(starting_value, lo_bound, hi_bound)``.
 
     Args:
+        tac_times (np.ndarray): The array representing the time-points for both TACs.
         tgt_tac_vals (np.ndarray): Target TAC to fit with the SRTM.
-        ref_tac_times (np.ndarray): Times of the reference TAC data.
         ref_tac_vals (np.ndarray): Reference TAC values.
         r1_bounds (np.ndarray): The bounds for the :math:`R_1\equiv\frac{k_1^\prime}{k_1}` parameter.
         Defaults to [0.5, 0.0, 10.0].
@@ -542,12 +542,12 @@ def fit_frtm_to_tac_with_bounds(tgt_tac_vals: np.ndarray,
     lo_values = (r1_bounds[1], k2_bounds[1], k3_bounds[1], k4_bounds[1])
     hi_values = (r1_bounds[2], k2_bounds[2], k3_bounds[2], k4_bounds[2])
 
-    return sp_fit(f=_fitting_frtm, xdata=ref_tac_times, ydata=tgt_tac_vals,
+    return sp_fit(f=_fitting_frtm, xdata=tac_times, ydata=tgt_tac_vals,
                   p0=st_values, bounds=[lo_values, hi_values])
 
 
-def fit_frtm2_to_tac_with_bounds(tgt_tac_vals: np.ndarray,
-                                 ref_tac_times: np.ndarray,
+def fit_frtm2_to_tac_with_bounds(tac_times: np.ndarray,
+                                 tgt_tac_vals: np.ndarray,
                                  ref_tac_vals: np.ndarray,
                                  k2_prime: float = 0.5,
                                  r1_bounds: np.ndarray = np.asarray([0.5, 0.0, 10.0]),
@@ -565,8 +565,8 @@ def fit_frtm2_to_tac_with_bounds(tgt_tac_vals: np.ndarray,
     bounds for each parameter are formatted as: ``(starting_value, lo_bound, hi_bound)``.
 
     Args:
+        tac_times (np.ndarray): The array representing the time-points for both TACs.
         tgt_tac_vals (np.ndarray): Target TAC to fit with the SRTM.
-        ref_tac_times (np.ndarray): Times of the reference TAC data.
         ref_tac_vals (np.ndarray): Reference TAC values.
         k2_prime (float): The value for the :math:`k_2^\prime` parameter. Defaults to 0.5.
         r1_bounds (np.ndarray): The bounds for the :math:`R_1\equiv\frac{k_1^\prime}{k_1}` parameter.
@@ -593,11 +593,11 @@ def fit_frtm2_to_tac_with_bounds(tgt_tac_vals: np.ndarray,
     lo_values = (r1_bounds[1], k3_bounds[1], k4_bounds[1])
     hi_values = (r1_bounds[2], k3_bounds[2], k4_bounds[2])
 
-    return sp_fit(f=_fitting_frtm, xdata=ref_tac_times, ydata=tgt_tac_vals, p0=st_values, bounds=[lo_values, hi_values])
+    return sp_fit(f=_fitting_frtm, xdata=tac_times, ydata=tgt_tac_vals, p0=st_values, bounds=[lo_values, hi_values])
 
 @numba.njit(fastmath=True)
-def fit_mrtm_original_to_tac(tgt_tac_vals: np.ndarray,
-                             ref_tac_times: np.ndarray,
+def fit_mrtm_original_to_tac(tac_times: np.ndarray,
+                             tgt_tac_vals: np.ndarray,
                              ref_tac_vals: np.ndarray,
                              t_thresh_in_mins: float):
     r"""
@@ -618,8 +618,8 @@ def fit_mrtm_original_to_tac(tgt_tac_vals: np.ndarray,
 
 
     Args:
+        tac_times (np.ndarray): The array representing the time-points for both TACs.
         tgt_tac_vals (np.ndarray): Target TAC values to fit the MRTM.
-        ref_tac_times (np.ndarray): Times of the reference TAC (in minutes).
         ref_tac_vals (np.ndarray): Reference TAC values.
         t_thresh_in_mins (float): Threshold time in minutes.
 
@@ -637,16 +637,16 @@ def fit_mrtm_original_to_tac(tgt_tac_vals: np.ndarray,
     if len(non_zero_indices) <= 2:
         return np.asarray([np.nan, np.nan, np.nan])
 
-    t_thresh = get_index_from_threshold(times_in_minutes=ref_tac_times[non_zero_indices],
+    t_thresh = get_index_from_threshold(times_in_minutes=tac_times[non_zero_indices],
                                         t_thresh_in_minutes=t_thresh_in_mins)
 
-    if len(ref_tac_times[non_zero_indices][t_thresh:]) <= 2:
+    if len(tac_times[non_zero_indices][t_thresh:]) <= 2:
         return np.asarray([np.nan, np.nan, np.nan])
 
-    y = cum_trapz(xdata=ref_tac_times, ydata=tgt_tac_vals, initial=0.0)
+    y = cum_trapz(xdata=tac_times, ydata=tgt_tac_vals, initial=0.0)
     y = y[non_zero_indices] / tgt_tac_vals[non_zero_indices]
 
-    x1 = cum_trapz(xdata=ref_tac_times, ydata=ref_tac_vals, initial=0.0)
+    x1 = cum_trapz(xdata=tac_times, ydata=ref_tac_vals, initial=0.0)
     x1 = x1[non_zero_indices] / tgt_tac_vals[non_zero_indices]
 
     x2 = ref_tac_vals[non_zero_indices] / tgt_tac_vals[non_zero_indices]
@@ -660,8 +660,8 @@ def fit_mrtm_original_to_tac(tgt_tac_vals: np.ndarray,
 
 
 @numba.njit(fastmath=True)
-def fit_mrtm_2003_to_tac(tgt_tac_vals: np.ndarray,
-                         ref_tac_times: np.ndarray,
+def fit_mrtm_2003_to_tac(tac_times: np.ndarray,
+                         tgt_tac_vals: np.ndarray,
                          ref_tac_vals: np.ndarray,
                          t_thresh_in_mins: float):
     r"""
@@ -681,8 +681,8 @@ def fit_mrtm_2003_to_tac(tgt_tac_vals: np.ndarray,
 
 
     Args:
+        tac_times (np.ndarray): The array representing the time-points for both TACs.
         tgt_tac_vals (np.ndarray): Target TAC values to fit the MRTM.
-        ref_tac_times (np.ndarray): Times of the reference TAC (in minutes).
         ref_tac_vals (np.ndarray): Reference TAC values.
         t_thresh_in_mins (float): Threshold time in minutes.
 
@@ -695,14 +695,14 @@ def fit_mrtm_2003_to_tac(tgt_tac_vals: np.ndarray,
 
     """
 
-    t_thresh = get_index_from_threshold(times_in_minutes=ref_tac_times, t_thresh_in_minutes=t_thresh_in_mins)
+    t_thresh = get_index_from_threshold(times_in_minutes=tac_times, t_thresh_in_minutes=t_thresh_in_mins)
     if t_thresh == -1:
         return np.asarray([np.nan, np.nan, np.nan])
 
     y = tgt_tac_vals
     x_matrix = np.ones((len(y), 3), float)
-    x_matrix[:, 0] = cum_trapz(xdata=ref_tac_times, ydata=ref_tac_vals, initial=0.0)
-    x_matrix[:, 1] = cum_trapz(xdata=ref_tac_times, ydata=tgt_tac_vals, initial=0.0)
+    x_matrix[:, 0] = cum_trapz(xdata=tac_times, ydata=ref_tac_vals, initial=0.0)
+    x_matrix[:, 1] = cum_trapz(xdata=tac_times, ydata=tgt_tac_vals, initial=0.0)
     x_matrix[:, 2] = ref_tac_vals
 
     fit_ans = np.linalg.lstsq(x_matrix[t_thresh:], y[t_thresh:])[0]
@@ -710,8 +710,8 @@ def fit_mrtm_2003_to_tac(tgt_tac_vals: np.ndarray,
 
 
 @numba.njit(fastmath=True)
-def fit_mrtm2_2003_to_tac(tgt_tac_vals: np.ndarray,
-                          ref_tac_times: np.ndarray,
+def fit_mrtm2_2003_to_tac(tac_times: np.ndarray,
+                          tgt_tac_vals: np.ndarray,
                           ref_tac_vals: np.ndarray,
                           t_thresh_in_mins: float,
                           k2_prime: float):
@@ -732,8 +732,8 @@ def fit_mrtm2_2003_to_tac(tgt_tac_vals: np.ndarray,
 
 
     Args:
+        tac_times (np.ndarray): The array representing the time-points for both TACs.
         tgt_tac_vals (np.ndarray): Target TAC values to fit the MRTM2.
-        ref_tac_times (np.ndarray): Times of the reference TAC (in minutes).
         ref_tac_vals (np.ndarray): Reference TAC values.
         t_thresh_in_mins (float): Threshold time in minutes.
         k2_prime (float): Kinetic parameter: washout rate for the reference region.
@@ -746,13 +746,13 @@ def fit_mrtm2_2003_to_tac(tgt_tac_vals: np.ndarray,
         
     """
 
-    t_thresh = get_index_from_threshold(times_in_minutes=ref_tac_times, t_thresh_in_minutes=t_thresh_in_mins)
+    t_thresh = get_index_from_threshold(times_in_minutes=tac_times, t_thresh_in_minutes=t_thresh_in_mins)
     if t_thresh == -1:
         return np.asarray([np.nan, np.nan])
 
-    x1 = cum_trapz(xdata=ref_tac_times, ydata=ref_tac_vals, initial=0.0)
+    x1 = cum_trapz(xdata=tac_times, ydata=ref_tac_vals, initial=0.0)
     x1 += ref_tac_vals / k2_prime
-    x2 = cum_trapz(xdata=ref_tac_times, ydata=tgt_tac_vals, initial=0.0)
+    x2 = cum_trapz(xdata=tac_times, ydata=tgt_tac_vals, initial=0.0)
 
     y = tgt_tac_vals
     x_matrix = np.ones((len(y), 2), float)
@@ -911,8 +911,8 @@ class FitTACWithRTMs:
     The fitting result contains the estimated kinetic parameters depending on the chosen model.
 
     Attributes:
+        tac_times (np.ndarray): The array representing the time-points for both TACs.
         target_tac_vals (np.ndarray): The target TAC values.
-        reference_tac_times (np.ndarray): The time points of the reference TAC.
         reference_tac_vals (np.ndarray): The reference TAC values.
         method (str): Optional. The kinetic model to use. Defaults to 'mrtm'.
         bounds (np.ndarray): Optional. Parameter bounds for the specified kinetic model. Defaults to None.
@@ -943,7 +943,7 @@ class FitTACWithRTMs:
             srtm_tac_vals = pet_rtms.calc_srtm_tac(tac_times=ref_tac_times, ref_tac_vals=ref_tac_vals, r1=1.0, k2=0.25, bp=3.0)
             
             rtm_analysis = pet_rtms.FitTACWithRTMs(target_tac_vals=srtm_tac_vals,
-                                                reference_tac_times=ref_tac_times,
+                                                tac_times=ref_tac_times,
                                                 reference_tac_vals=ref_tac_vals,
                                                 method='srtm')
             
@@ -961,8 +961,8 @@ class FitTACWithRTMs:
         
     """
     def __init__(self,
+                 tac_times: np.ndarray,
                  target_tac_vals: np.ndarray,
-                 reference_tac_times: np.ndarray,
                  reference_tac_vals: np.ndarray,
                  method: str = 'mrtm',
                  bounds: Union[None, np.ndarray] = None,
@@ -976,8 +976,8 @@ class FitTACWithRTMs:
         
 
         Args:
+            tac_times (np.ndarray): The array representing the time-points for both TACs.
             target_tac_vals (np.ndarray): The array representing the target TAC values.
-            reference_tac_times (np.ndarray): The array representing time points associated with the reference TAC.
             reference_tac_vals (np.ndarray): The array representing values of the reference TAC.
             method (str, optional): The kinetics method to be used. Default is 'mrtm'.
             bounds (Union[None, np.ndarray], optional): Bounds for kinetic parameters used in optimization. None
@@ -991,8 +991,8 @@ class FitTACWithRTMs:
             AssertionError: If rate constant k2_prime is non-positive.
         """
         
+        self.reference_tac_times: np.ndarray = tac_times
         self.target_tac_vals: np.ndarray = target_tac_vals
-        self.reference_tac_times: np.ndarray = reference_tac_times
         self.reference_tac_vals: np.ndarray = reference_tac_vals
         self.method: str = method.lower()
         self.bounds: Union[None, np.ndarray] = bounds
@@ -1115,77 +1115,68 @@ class FitTACWithRTMs:
         """
         if self.method == "srtm":
             if self.bounds is not None:
-                self.fit_results = fit_srtm_to_tac_with_bounds(tgt_tac_vals=self.target_tac_vals,
-                                                               ref_tac_times=self.reference_tac_times,
+                self.fit_results = fit_srtm_to_tac_with_bounds(tac_times=self.reference_tac_times,
+                                                               tgt_tac_vals=self.target_tac_vals,
                                                                ref_tac_vals=self.reference_tac_vals,
-                                                               r1_bounds=self.bounds[0],
-                                                               k2_bounds=self.bounds[1],
+                                                               r1_bounds=self.bounds[0], k2_bounds=self.bounds[1],
                                                                bp_bounds=self.bounds[2])
             else:
-                self.fit_results = fit_srtm_to_tac(tgt_tac_vals=self.target_tac_vals,
-                                                   ref_tac_times=self.reference_tac_times,
+                self.fit_results = fit_srtm_to_tac(tac_times=self.reference_tac_times,
+                                                   tgt_tac_vals=self.target_tac_vals,
                                                    ref_tac_vals=self.reference_tac_vals)
 
         elif self.method == "srtm2":
             if self.bounds is not None:
-                self.fit_results = fit_srtm2_to_tac_with_bounds(tgt_tac_vals=self.target_tac_vals,
-                                                                ref_tac_times=self.reference_tac_times,
+                self.fit_results = fit_srtm2_to_tac_with_bounds(tac_times=self.reference_tac_times,
+                                                                tgt_tac_vals=self.target_tac_vals,
                                                                 ref_tac_vals=self.reference_tac_vals,
-                                                                k2_prime=self.k2_prime,
-                                                                r1_bounds=self.bounds[0],
+                                                                k2_prime=self.k2_prime, r1_bounds=self.bounds[0],
                                                                 bp_bounds=self.bounds[1])
             else:
-                self.fit_results = fit_srtm2_to_tac(tgt_tac_vals=self.target_tac_vals,
-                                                    ref_tac_times=self.reference_tac_times,
-                                                    ref_tac_vals=self.reference_tac_vals,
-                                                    k2_prime=self.k2_prime)
+                self.fit_results = fit_srtm2_to_tac(tac_times=self.reference_tac_times,
+                                                    tgt_tac_vals=self.target_tac_vals,
+                                                    ref_tac_vals=self.reference_tac_vals, k2_prime=self.k2_prime)
         elif self.method == "frtm":
             if self.bounds is not None:
-                self.fit_results = fit_frtm_to_tac_with_bounds(tgt_tac_vals=self.target_tac_vals,
-                                                               ref_tac_times=self.reference_tac_times,
+                self.fit_results = fit_frtm_to_tac_with_bounds(tac_times=self.reference_tac_times,
+                                                               tgt_tac_vals=self.target_tac_vals,
                                                                ref_tac_vals=self.reference_tac_vals,
-                                                               r1_bounds=self.bounds[0],
-                                                               k2_bounds=self.bounds[1],
-                                                               k3_bounds=self.bounds[2],
-                                                               k4_bounds=self.bounds[3])
+                                                               r1_bounds=self.bounds[0], k2_bounds=self.bounds[1],
+                                                               k3_bounds=self.bounds[2], k4_bounds=self.bounds[3])
             else:
-                self.fit_results = fit_frtm_to_tac(tgt_tac_vals=self.target_tac_vals,
-                                                   ref_tac_times=self.reference_tac_times,
+                self.fit_results = fit_frtm_to_tac(tac_times=self.reference_tac_times,
+                                                   tgt_tac_vals=self.target_tac_vals,
                                                    ref_tac_vals=self.reference_tac_vals)
 
         elif self.method == "frtm2":
             if self.bounds is not None:
-                self.fit_results = fit_frtm2_to_tac_with_bounds(tgt_tac_vals=self.target_tac_vals,
-                                                                ref_tac_times=self.reference_tac_times,
+                self.fit_results = fit_frtm2_to_tac_with_bounds(tac_times=self.reference_tac_times,
+                                                                tgt_tac_vals=self.target_tac_vals,
                                                                 ref_tac_vals=self.reference_tac_vals,
-                                                                k2_prime=self.k2_prime,
-                                                                r1_bounds=self.bounds[0],
-                                                                k3_bounds=self.bounds[1],
-                                                                k4_bounds=self.bounds[2])
+                                                                k2_prime=self.k2_prime, r1_bounds=self.bounds[0],
+                                                                k3_bounds=self.bounds[1], k4_bounds=self.bounds[2])
             else:
-                self.fit_results = fit_frtm2_to_tac(tgt_tac_vals=self.target_tac_vals,
-                                                    ref_tac_times=self.reference_tac_times,
-                                                    ref_tac_vals=self.reference_tac_vals,
-                                                    k2_prime=self.k2_prime)
+                self.fit_results = fit_frtm2_to_tac(tac_times=self.reference_tac_times,
+                                                    tgt_tac_vals=self.target_tac_vals,
+                                                    ref_tac_vals=self.reference_tac_vals, k2_prime=self.k2_prime)
 
         elif self.method == "mrtm-original":
-            self.fit_results = fit_mrtm_original_to_tac(tgt_tac_vals=self.target_tac_vals,
-                                                        ref_tac_times=self.reference_tac_times,
+            self.fit_results = fit_mrtm_original_to_tac(tac_times=self.reference_tac_times,
+                                                        tgt_tac_vals=self.target_tac_vals,
                                                         ref_tac_vals=self.reference_tac_vals,
                                                         t_thresh_in_mins=self.t_thresh_in_mins)
 
         elif self.method == "mrtm":
-            self.fit_results = fit_mrtm_2003_to_tac(tgt_tac_vals=self.target_tac_vals,
-                                                    ref_tac_times=self.reference_tac_times,
+            self.fit_results = fit_mrtm_2003_to_tac(tac_times=self.reference_tac_times,
+                                                    tgt_tac_vals=self.target_tac_vals,
                                                     ref_tac_vals=self.reference_tac_vals,
                                                     t_thresh_in_mins=self.t_thresh_in_mins)
 
         elif self.method == "mrtm2":
-            self.fit_results = fit_mrtm2_2003_to_tac(tgt_tac_vals=self.target_tac_vals,
-                                                     ref_tac_times=self.reference_tac_times,
+            self.fit_results = fit_mrtm2_2003_to_tac(tac_times=self.reference_tac_times,
+                                                     tgt_tac_vals=self.target_tac_vals,
                                                      ref_tac_vals=self.reference_tac_vals,
-                                                     t_thresh_in_mins=self.t_thresh_in_mins,
-                                                     k2_prime=self.k2_prime)
+                                                     t_thresh_in_mins=self.t_thresh_in_mins, k2_prime=self.k2_prime)
         else:
             raise ValueError(f"Invalid method! Must be either 'srtm', 'frtm', 'mrtm-original', 'mrtm' or 'mrtm2'. Got {self.method}.")
 
@@ -1384,13 +1375,9 @@ class RTMAnalysis:
 
         ref_tac_times, ref_tac_vals = safe_load_tac(filename=self.ref_tac_path, **tac_load_kwargs)
         _tgt_tac_times, tgt_tac_vals = safe_load_tac(filename=self.roi_tac_path, **tac_load_kwargs)
-        analysis_obj = FitTACWithRTMs(target_tac_vals=tgt_tac_vals,
-                                      reference_tac_times=ref_tac_times,
-                                      reference_tac_vals=ref_tac_vals,
-                                      method=self.method,
-                                      bounds=bounds,
-                                      t_thresh_in_mins=t_thresh_in_mins,
-                                      k2_prime=k2_prime)
+        analysis_obj = FitTACWithRTMs(tac_times=ref_tac_times, target_tac_vals=tgt_tac_vals,
+                                      reference_tac_vals=ref_tac_vals, method=self.method, bounds=bounds,
+                                      t_thresh_in_mins=t_thresh_in_mins, k2_prime=k2_prime)
         analysis_obj.fit_tac_to_model()
 
         return analysis_obj.fit_results
