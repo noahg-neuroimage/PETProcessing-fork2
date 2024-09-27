@@ -198,6 +198,8 @@ class ObjectBasedStep:
         return '\n'.join(info_str)
 
 
+StepType = Union[ImageToImageStep, GenericStep, ObjectBasedStep]
+
 TEMPLATE_STEPS = {
     'thresh_crop': ImageToImageStep(name='crop',
                                     function=preproc.image_operations_4d.SimpleAutoImageCropper,
@@ -237,18 +239,23 @@ TEMPLATE_STEPS = {
 
 class GenericPipeline:
     def __init__(self, name: str) -> None:
-        self.name = name
-        self.steps = {}
+        self.name: str = name
+        self.step_objs: list[StepType] = []
+        self.step_names: list[str] = []
         
-    def add_step(self, step: GenericStep) -> None:
-        self.steps[step.name] = step
+    def add_step(self, step: StepType) -> None:
+        if step.name not in self.step_names:
+            self.step_objs.append(step)
+            self.step_names.append(step.name)
+        else:
+            raise KeyError("A step with this name already exists.")
         
     def list_step_details(self) -> None:
-        if not self.steps:
+        if not self.step_objs:
             return None
         print("*"*90)
         print(f"({self.name} Pipeline Info):")
-        for step_id, (step_name, a_step) in enumerate(self.steps.items()):
+        for step_id, a_step in enumerate(self.step_objs):
             print('-' * 80)
             print(f"Step Number {step_id+1}")
             print(a_step)
@@ -256,41 +263,48 @@ class GenericPipeline:
         print("*" * 90)
         
     def list_step_names(self) -> None:
-        if not self.steps:
+        if not self.step_objs:
             return None
         print(f"({self.name} pipeline info):")
         print('-' * 80)
-        for step_id, (step_name, a_step) in enumerate(self.steps.items()):
-            print(f"Step Number {step_id+1}: {a_step.name}")
+        for step_id, step_name in enumerate(self.step_names):
+            print(f"Step Number {step_id+1}: {step_name}")
         print('-' * 80)
     
     def get_step_names(self):
-        if not self.steps:
-            return None
-        step_names = [a_name for a_name, a_step in self.steps.items()]
-        return step_names
+        return self.step_names
     
     def run_steps(self) -> None:
-        for step_id, (step_name, a_step) in enumerate(self.steps.items()):
+        for step_id, (step_name, a_step) in enumerate(zip(self.step_names, self.step_objs)):
             a_step.execute()
             
-    def __getitem__(self, key: str) -> GenericStep:
+    def __getitem__(self, step: Union[int, str]) -> StepType:
         """
         Allows accessing steps by name.
 
         Args:
-            key: str, step name
+            step: int|str, step number in the sequence. If a string, we get the corresponding step
 
         Returns:
-            Corresponding GenericStep object
+            Corresponding Step object
 
         Raises:
+            IndexError: If the index is out of range
             KeyError: If the name does not exist
         """
-        try:
-            return self.steps[key]
-        except KeyError:
-            raise KeyError(f"No step found with name: {key}")
+        if isinstance(step, int):
+            try:
+                return self.step_objs[step]
+            except IndexError:
+                raise IndexError(f"Step number {step} does not exist.")
+        elif isinstance(step, str):
+            try:
+                return self.step_objs[step]
+            except KeyError:
+                raise KeyError(f"Step name {step} does not exist.")
+        else:
+            raise TypeError(f"Key must be an integer or a string. Got {type(step)}")
+    
 
 
 class ProcessingPipeline(object):
@@ -298,7 +312,7 @@ class ProcessingPipeline(object):
         self.name: str = name
         self.preproc: GenericPipeline = GenericPipeline('preproc')
         self.kinetic_modeling: GenericPipeline = GenericPipeline('kinetic_modeling')
-        self.output_to_input_chains: list[tuple[ImageToImageStep, ImageToImageStep]] = []
+        self.output_to_input_chains: list[tuple[StepType, StepType]] = []
     
     def run(self):
         self.preproc.run_steps()
@@ -310,18 +324,13 @@ class ProcessingPipeline(object):
     def run_kinetic_modeling(self):
         self.kinetic_modeling.run_steps()
     
-    def add_preproc_step(self, step: Union[GenericStep, ObjectBasedStep], receives_output_from_previous_step_as_input: bool = False) -> None:
+    def add_preproc_step(self, step: StepType, receives_output_from_previous_step_as_input: bool = False) -> None:
         self.preproc.add_step(step)
         if receives_output_from_previous_step_as_input:
-            step_names = self.preproc.get_step_names()
-            this_step_name = step_names[-1]
-            last_step_name = step_names[-2]
-            self.chain_outputs_as_inputs_between_steps(out_pipe_name='preproc',
-                                                       out_step_name=last_step_name,
-                                                       in_pipe_name='preproc',
-                                                       in_step_name=this_step_name)
+            self.preproc[-1].set_input_as_output_from(self.preproc[-2])
+            self.output_to_input_chains.append((self.preproc[-2], self.preproc[-1]))
     
-    def add_kinetic_modeling_step(self, step: Union[GenericStep, ObjectBasedStep]) -> None:
+    def add_kinetic_modeling_step(self, step: StepType) -> None:
         self.kinetic_modeling.add_step(step)
     
     def list_preproc_steps(self) -> None:
@@ -345,6 +354,8 @@ class ProcessingPipeline(object):
         try:
             out_pipeline : ImageToImageStep = getattr(self, out_pipe_name)
             in_pipeline : ImageToImageStep = getattr(self, in_pipe_name)
+            
+            
             in_pipeline[in_step_name].set_input_as_output_from(out_pipeline[out_step_name])
             if (out_pipeline[out_step_name], in_pipeline[in_step_name]) not in self.output_to_input_chains:
                 self.output_to_input_chains.append((out_pipeline[out_step_name], in_pipeline[in_step_name]))
