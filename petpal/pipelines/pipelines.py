@@ -1,5 +1,6 @@
 import copy
 import os.path
+import networkx as nx
 
 from ..utils.image_io import safe_copy_meta
 from typing import Callable, Union
@@ -314,41 +315,66 @@ class ProcessingPipeline(object):
     def __init__(self, name: str) -> None:
         self.name: str = name
         self.preproc: GenericPipeline = GenericPipeline('preproc')
-        self.kinetic_modeling: GenericPipeline = GenericPipeline('kinetic_modeling')
+        self.km: GenericPipeline = GenericPipeline('km')
+        self.dependency_graph: nx.DiGraph = nx.DiGraph()
         self.output_to_input_chains: list[tuple[StepType, StepType]] = []
     
     def run(self):
         self.preproc.run_steps()
-        self.kinetic_modeling.run_steps()
+        self.km.run_steps()
     
     def run_preproc(self):
         self.preproc.run_steps()
     
     def run_kinetic_modeling(self):
-        self.kinetic_modeling.run_steps()
+        self.km.run_steps()
     
     def add_preproc_step(self, step: StepType, receives_output_from_previous_step_as_input: bool = False) -> None:
         self.preproc.add_step(step)
+        self.dependency_graph.add_node(":".join(['preproc', step.name]))
         if receives_output_from_previous_step_as_input:
+            self.add_output_to_input_dependency(out_pipe_name='preproc', in_pipe_name='preproc',
+                                                out_step=-2, in_step=-1)
             self.chain_outputs_as_inputs_between_steps(out_pipe_name='preproc',
                                                        in_pipe_name='preproc',
                                                        out_step=-2,
                                                        in_step=-1)
     
     def add_kinetic_modeling_step(self, step: StepType) -> None:
-        self.kinetic_modeling.add_step(step)
+        self.km.add_step(step)
+        self.dependency_graph.add_node(":".join(['km', step.name]))
     
     def list_preproc_steps(self) -> None:
         self.preproc.list_step_names()
     
     def list_kinetic_modeling_steps(self) -> None:
-        self.kinetic_modeling.list_step_names()
+        self.km.list_step_names()
     
     def list_preproc_step_details(self) -> None:
         self.preproc.list_step_details()
     
     def list_kinetic_modeling_step_details(self) -> None:
-        self.kinetic_modeling.list_step_details()
+        self.km.list_step_details()
+        
+    def __getitem__(self, pipe_name: str) -> GenericPipeline:
+        try:
+            return getattr(self, pipe_name)
+        except AttributeError:
+            raise KeyError(f"Pipeline {pipe_name} does not exist.")
+    
+    def add_output_to_input_dependency(self,
+                                       out_pipe_name: str, in_pipe_name: str,
+                                       out_step: Union[str, int], in_step: Union[str, int]) -> None:
+        out_pipe: GenericPipeline = self[out_pipe_name]
+        in_pipe: GenericPipeline = self.[in_pipe_name]
+        
+        out_node_name = ":".join([out_pipe_name, out_pipe[out_step].name])
+        in_node_name  = ":".join([in_pipe_name, in_pipe[in_step].name])
+        
+        self.dependency_graph.add_edge(out_node_name, in_node_name)
+        
+        if not nx.is_directed_acyclic_graph(self.dependency_graph):
+            raise RuntimeError(f"Adding dependency {out_node_name} -> {in_node_name} creates a cycle!")
     
     def chain_outputs_as_inputs_between_steps(self,
                                               out_pipe_name: str,
@@ -357,11 +383,12 @@ class ProcessingPipeline(object):
                                               in_step: Union[str, int]) -> None:
         
         try:
-            out_pipeline : ImageToImageStep = getattr(self, out_pipe_name)
-            in_pipeline : ImageToImageStep = getattr(self, in_pipe_name)
+            out_pipeline : GenericPipeline = getattr(self, out_pipe_name)
+            in_pipeline : GenericPipeline = getattr(self, in_pipe_name)
             if (out_pipeline[out_step], in_pipeline[in_step]) not in self.output_to_input_chains:
                 in_pipeline[in_step].set_input_as_output_from(out_pipeline[out_step])
                 self.output_to_input_chains.append((out_pipeline[out_step], in_pipeline[in_step]))
+                
         except AttributeError as e:
             raise RuntimeError(f"Error setting chaining outputs and inputs for steps: {e}")
         
