@@ -5,23 +5,20 @@ This module provides a CLI to generate TACs and SUVR parametric images using inp
 BIDS-compliant directory. It assumes all input PET data was collected using Pittsburgh Compound B (PiB) as the
 radiotracer.
 
-The user must provide ALL of the following:
-    * Path to 4DPET file (.nii or .nii.gz)
-    * Path to T1 mri file (.nii or .nii.gz)
-    * Path to label map .tsv file
-    * Path to segmentation file such as aparc+aseg.nii.gz from freesurfer (.nii or .nii.gz)
-    * Path to desired output directory
+The user MUST provide the following:
+    * Subject ID (--sub): Subject index, following BIDS. Usually just a number like 011 or 1023.
+    * Session ID (--ses): Session index, following BIDS. Same as above.
+        * Note that if you're bids directory doesn't have session folder, you'll need to create them.
 
 This script uses one instance of the class :class:`petpal.preproc.preproc.PreProc` to
 run all processing from motion-correction to SUVR generation
 
 Assumptions regarding input data:
-    * MRI and PET input file names must only contain 'sub-{}', (optionally) 'ses-{}', and a suffix (e.g. 'pet'). No
-        run-{}, desc-{}, etc... are allowed currently.
+    * Run this cli (petpal-pib-proc) with the help flag (-h) for a list of all assumptions for each optional flag.
 
 Example:
     .. code-block:: bash
-        petpal-pib-proc -p path/to/4dpet -m path/to/T1_mri -l path/to/labelmap -s path/to/segmentation -o outdir/ -v
+        petpal-pib-proc --sub 021 --ses 01 -v
 
 See Also:
     :mod:`petpal.preproc`
