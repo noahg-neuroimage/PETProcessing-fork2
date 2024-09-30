@@ -126,7 +126,7 @@ class ImageToImageStep(GenericStep):
             self.input_image_path = sending_step.output_image_path
         else:
             raise TypeError(
-                    f"The provided step {sending_step} is not an instance of ImageToImageStep. "
+                    f"The provided step: {sending_step}\n is not an instance of ImageToImageStep. "
                     f"It is of type {type(sending_step)}.")
 
 
@@ -331,7 +331,7 @@ class ProcessingPipeline(object):
     
     def add_preproc_step(self, step: StepType, receives_output_from_previous_step_as_input: bool = False) -> None:
         self.preproc.add_step(step)
-        self.dependency_graph.add_node(":".join(['preproc', step.name]))
+        self.dependency_graph.add_node(":".join(['preproc', step.name]), proc='preproc')
         if receives_output_from_previous_step_as_input:
             self.add_output_to_input_dependency(out_pipe_name='preproc', in_pipe_name='preproc',
                                                 out_step=-2, in_step=-1)
@@ -342,7 +342,7 @@ class ProcessingPipeline(object):
     
     def add_kinetic_modeling_step(self, step: StepType) -> None:
         self.km.add_step(step)
-        self.dependency_graph.add_node(":".join(['km', step.name]))
+        self.dependency_graph.add_node(":".join(['km', step.name]), proc='km')
     
     def list_preproc_steps(self) -> None:
         self.preproc.list_step_names()
@@ -375,6 +375,18 @@ class ProcessingPipeline(object):
         
         if not nx.is_directed_acyclic_graph(self.dependency_graph):
             raise RuntimeError(f"Adding dependency {out_node_name} -> {in_node_name} creates a cycle!")
+    
+    def update_step_dependencies(self, verbose=True):
+        for node_name in nx.topological_sort(self.dependency_graph):
+            for an_edge in self.dependency_graph[node_name]:
+                out_pipe, out_step = node_name.split(':')
+                in_pipe, in_step = an_edge.split(':')
+                out_pipe = self[out_pipe]
+                in_pipe = self[in_pipe]
+                in_pipe[in_step].set_input_as_output_from(out_pipe[out_step])
+                if verbose:
+                    print(f"(Info): Dependency {node_name} -> {an_edge} updated")
+    
     
     def chain_outputs_as_inputs_between_steps(self,
                                               out_pipe_name: str,
