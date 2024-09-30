@@ -298,8 +298,11 @@ class GenericPipeline:
             except IndexError:
                 raise IndexError(f"Step number {step} does not exist.")
         elif isinstance(step, str):
+            if step not in self.step_names:
+                raise KeyError(f"Step name {step} does not exist.")
             try:
-                return self.step_objs[step]
+                step_index = self.step_names.index(step)
+                return self.step_objs[step_index]
             except KeyError:
                 raise KeyError(f"Step name {step} does not exist.")
         else:
@@ -327,8 +330,10 @@ class ProcessingPipeline(object):
     def add_preproc_step(self, step: StepType, receives_output_from_previous_step_as_input: bool = False) -> None:
         self.preproc.add_step(step)
         if receives_output_from_previous_step_as_input:
-            self.preproc[-1].set_input_as_output_from(self.preproc[-2])
-            self.output_to_input_chains.append((self.preproc[-2], self.preproc[-1]))
+            self.chain_outputs_as_inputs_between_steps(out_pipe_name='preproc',
+                                                       in_pipe_name='preproc',
+                                                       out_step=-2,
+                                                       in_step=-1)
     
     def add_kinetic_modeling_step(self, step: StepType) -> None:
         self.kinetic_modeling.add_step(step)
@@ -347,19 +352,16 @@ class ProcessingPipeline(object):
     
     def chain_outputs_as_inputs_between_steps(self,
                                               out_pipe_name: str,
-                                              out_step_name: str,
-                                              in_pipe_name : str,
-                                              in_step_name: str) -> None:
+                                              in_pipe_name: str,
+                                              out_step: Union[str, int],
+                                              in_step: Union[str, int]) -> None:
         
         try:
             out_pipeline : ImageToImageStep = getattr(self, out_pipe_name)
             in_pipeline : ImageToImageStep = getattr(self, in_pipe_name)
-            
-            
-            in_pipeline[in_step_name].set_input_as_output_from(out_pipeline[out_step_name])
-            if (out_pipeline[out_step_name], in_pipeline[in_step_name]) not in self.output_to_input_chains:
-                self.output_to_input_chains.append((out_pipeline[out_step_name], in_pipeline[in_step_name]))
-            
+            if (out_pipeline[out_step], in_pipeline[in_step]) not in self.output_to_input_chains:
+                in_pipeline[in_step].set_input_as_output_from(out_pipeline[out_step])
+                self.output_to_input_chains.append((out_pipeline[out_step], in_pipeline[in_step]))
         except AttributeError as e:
             raise RuntimeError(f"Error setting chaining outputs and inputs for steps: {e}")
         
