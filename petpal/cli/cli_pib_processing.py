@@ -18,6 +18,7 @@ Assumptions regarding input data:
 
 Example:
     .. code-block:: bash
+
         petpal-pib-proc --sub 021 --ses 01 -v
 
 See Also:
