@@ -366,7 +366,7 @@ class ProcessingPipeline(object):
                                        out_pipe_name: str, in_pipe_name: str,
                                        out_step: Union[str, int], in_step: Union[str, int]) -> None:
         out_pipe: GenericPipeline = self[out_pipe_name]
-        in_pipe: GenericPipeline = self.[in_pipe_name]
+        in_pipe: GenericPipeline = self[in_pipe_name]
         
         out_node_name = ":".join([out_pipe_name, out_pipe[out_step].name])
         in_node_name  = ":".join([in_pipe_name, in_pipe[in_step].name])
