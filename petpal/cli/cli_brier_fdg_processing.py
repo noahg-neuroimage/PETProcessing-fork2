@@ -4,7 +4,7 @@ import os
 import numpy as np
 from ..utils import image_io
 from ..input_function.blood_input import BloodInputFunction
-from ..kinetic_modeling.parametric_images import GraphicalAnalysisParametricImage, save_cmrglc_image_from_patlak_ki
+from ..kinetic_modeling.parametric_images import GraphicalAnalysisParametricImage, generate_cmrglc_parametric_image_from_ki_image
 
 
 def fdg_protocol_with_arterial(sub_id: str,
@@ -167,11 +167,12 @@ def fdg_protocol_with_arterial(sub_id: str,
         cmrglc_slope_path = os.path.join(out_dir_kinetic_modeling, f"{sub_ses_prefix}_desc-cmrglc_pet.nii.gz")
         plasma_glc_path   = os.path.join(pet_dir, f"{sub_ses_prefix}_desc-bloodconcentration_glucose.txt")
         
-        save_cmrglc_image_from_patlak_ki(patlak_ki_image_path=patlak_slope_img,
-                                         output_file_path=cmrglc_slope_path,
-                                         plasma_glucose=read_plasma_glucose_concentration(plasma_glc_path),
-                                         lumped_constant=cmrlgc_lumped_const,
-                                         rescaling_const=cmrlgc_rescaling_const)
+        generate_cmrglc_parametric_image_from_ki_image(input_ki_image_path=patlak_slope_img,
+                                                       output_image_path=cmrglc_slope_path,
+                                                       plasma_glucose_file_path=plasma_glc_path,
+                                                       glucose_rescaling_constant=1.0 / 18.0,
+                                                       lumped_constant=cmrlgc_lumped_const,
+                                                       rescaling_const=cmrlgc_rescaling_const)
 
 _PROG_NAME_ = r"petpal-brier-fdg-pipeline"
 _FDG_CMR_EXAMPLE_ = (rf"""
@@ -361,22 +362,3 @@ def resample_blood_data_on_scanner_times(pet4d_path: str,
     np.savetxt(X=resampled_tac.T, fname=out_tac_path)
     
     return None
-
-
-def read_plasma_glucose_concentration(file_path: str, correction_scale: float = 1.0 / 18.0) -> float:
-    r"""
-    Temporary hacky function to read a single plasma glucose concentration value from a file.
-
-    This function reads a single numerical value from a specified file and applies a correction scale to it.
-    The primary use is to quickly extract plasma glucose concentration for further processing. The default
-    scaling os 1.0/18.0 is the one used in the CMMS study to get the right units.
-
-    Args:
-        file_path (str): Path to the file containing the plasma glucose concentration value.
-        correction_scale (float): Scale factor for correcting the read value. Default is `1.0/18.0`.
-
-    Returns:
-        float: Corrected plasma glucose concentration value.
-    """
-    return correction_scale * float(np.loadtxt(file_path))
-
