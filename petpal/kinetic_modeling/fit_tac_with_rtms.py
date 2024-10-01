@@ -1,10 +1,6 @@
 """
 This module contains the FitTacWithRTMs class, used to fit kinetic models to a target and
 reference Time Activity Curve.
-
-TODO:
-    * Figure out a better way to consistently handle fit quality/residuals across methods
-
 """
 from typing import Union
 import numpy as np
@@ -313,20 +309,20 @@ class FitTACWithRTMs:
             self.fit_results = fit_mrtm_original_to_tac(tgt_tac_vals=self.target_tac_vals,
                                                         ref_tac_times=self.reference_tac_times,
                                                         ref_tac_vals=self.reference_tac_vals,
-                                                        t_thresh_in_mins=self.t_thresh_in_mins)[0]
+                                                        t_thresh_in_mins=self.t_thresh_in_mins)
 
         elif self.method == "mrtm":
             self.fit_results = fit_mrtm_2003_to_tac(tgt_tac_vals=self.target_tac_vals,
                                                     ref_tac_times=self.reference_tac_times,
                                                     ref_tac_vals=self.reference_tac_vals,
-                                                    t_thresh_in_mins=self.t_thresh_in_mins)[0]
+                                                    t_thresh_in_mins=self.t_thresh_in_mins)
 
         elif self.method == "mrtm2":
             self.fit_results = fit_mrtm2_2003_to_tac(tgt_tac_vals=self.target_tac_vals,
                                                      ref_tac_times=self.reference_tac_times,
                                                      ref_tac_vals=self.reference_tac_vals,
                                                      t_thresh_in_mins=self.t_thresh_in_mins,
-                                                     k2_prime=self.k2_prime)[0]
+                                                     k2_prime=self.k2_prime)
         else:
             raise ValueError("Invalid method! Must be either 'srtm', 'frtm', 'mrtm-original', "
                              f"'mrtm' or 'mrtm2'. Got {self.method}.")

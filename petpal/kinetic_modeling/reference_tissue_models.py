@@ -3,7 +3,6 @@ Todo:
     * Add the Ichise paper citations.
     * Add the SRTM and FRTM paper citations.
     * Add implementations for the SRTM2 and FRTM2 analyses.
-    * Implement fit quality/residuals for all methods
     
 """
 import numpy as np
@@ -750,10 +749,8 @@ def fit_mrtm_original_to_tac(tgt_tac_vals: np.ndarray,
     x_matrix[:, 0] = x1[:]
     x_matrix[:, 1] = x2[:]
 
-    fit = np.linalg.lstsq(x_matrix[t_thresh:], y[t_thresh:])[0]
-    fit_ans = fit[0]
-    fit_res = fit[1]
-    return (fit_ans, fit_res)
+    fit_ans = np.linalg.lstsq(x_matrix[t_thresh:], y[t_thresh:])[0]
+    return fit_ans
 
 
 @numba.njit(fastmath=True)
@@ -807,10 +804,8 @@ def fit_mrtm_2003_to_tac(tgt_tac_vals: np.ndarray,
         xdata=ref_tac_times, ydata=tgt_tac_vals, initial=0.0)
     x_matrix[:, 2] = ref_tac_vals
 
-    fit = np.linalg.lstsq(x_matrix[t_thresh:], y[t_thresh:])[0]
-    fit_ans = fit[0]
-    fit_res = fit[1]
-    return (fit_ans, fit_res)
+    fit_ans = np.linalg.lstsq(x_matrix[t_thresh:], y[t_thresh:])[0]
+    return fit_ans
 
 
 @numba.njit(fastmath=True)
@@ -868,10 +863,8 @@ def fit_mrtm2_2003_to_tac(tgt_tac_vals: np.ndarray,
     x_matrix[:, 0] = x1[:]
     x_matrix[:, 1] = x2[:]
 
-    fit = np.linalg.lstsq(x_matrix[t_thresh:], y[t_thresh:])[0]
-    fit_ans = fit[0]
-    fit_res = fit[1]
-    return (fit_ans, fit_res)
+    fit_ans = np.linalg.lstsq(x_matrix[t_thresh:], y[t_thresh:])[0]
+    return fit_ans
 
 
 def calc_bp_from_mrtm_original_fit(fit_vals: np.ndarray) -> float:
