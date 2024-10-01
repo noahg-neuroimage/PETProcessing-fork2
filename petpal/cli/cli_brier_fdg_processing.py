@@ -4,8 +4,7 @@ import os
 import numpy as np
 from ..utils import image_io
 from ..input_function.blood_input import BloodInputFunction
-from ..kinetic_modeling.parametric_images import GraphicalAnalysisParametricImage
-import nibabel
+from ..kinetic_modeling.parametric_images import GraphicalAnalysisParametricImage, save_cmrglc_image_from_patlak_ki
 
 
 def fdg_protocol_with_arterial(sub_id: str,
@@ -381,33 +380,3 @@ def read_plasma_glucose_concentration(file_path: str, correction_scale: float = 
     """
     return correction_scale * float(np.loadtxt(file_path))
 
-
-def save_cmrglc_image_from_patlak_ki(patlak_ki_image_path: str,
-                                     output_file_path: str,
-                                     plasma_glucose: float,
-                                     lumped_constant: float,
-                                     rescaling_const: float):
-    r"""
-    Generate and save a CMRglc image by rescaling a Patlak-Ki image.
-
-    This function reads a Patlak-Ki image, rescales it using provided parameters (plasma glucose,
-    lumped constant, and a rescaling constant), and saves the resulting image as a CMRglc image.
-
-    The final image will be `rescaling_constant * K_i * plasma_glucose / lumped_constant`.
-
-    Args:
-        patlak_ki_image_path (str): Path to the Patlak-Ki image file.
-        output_file_path (str): Path to save the rescaled CMRglc image.
-        plasma_glucose (float): Plasma glucose concentration value used for rescaling.
-        lumped_constant (float): Lumped constant value used for rescaling.
-        rescaling_const (float): Additional rescaling constant applied to the Patlak-Ki values.
-
-    Returns:
-        None
-    """
-    patlak_image = image_io.ImageIO(verbose=False).load_nii(image_path=patlak_ki_image_path)
-    patlak_affine = patlak_image.affine
-    cmr_vals = (plasma_glucose / lumped_constant) * patlak_image.get_fdata() * rescaling_const
-    cmr_image = nibabel.Nifti1Image(dataobj=cmr_vals, affine=patlak_affine)
-    nibabel.save(cmr_image, f"{output_file_path}")
-    image_io.safe_copy_meta(input_image_path=patlak_ki_image_path, out_image_path=output_file_path)
