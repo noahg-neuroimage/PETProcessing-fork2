@@ -281,6 +281,10 @@ class GraphicalAnalysisParametricImage:
         self.save_parametric_images()
         self.save_analysis_properties()
 
+    def __call__(self, method_name: str, t_thresh_in_mins: float):
+        self.run_analysis(method_name=method_name, t_thresh_in_mins=t_thresh_in_mins)
+        self.save_analysis()
+
     def calculate_analysis_properties(self, method_name: str, t_thresh_in_mins: float):
         """
         Performs a set of calculations to collate various analysis properties.
