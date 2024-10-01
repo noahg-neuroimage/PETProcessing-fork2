@@ -17,8 +17,10 @@ import nibabel
 import numpy as np
 import numba
 from nibabel import Nifti1Image
-from . import graphical_analysis
+from ..utils import image_io
 from ..utils.image_io import safe_load_tac, safe_copy_meta
+from ..utils.useful_functions import read_plasma_glucose_concentration
+from . import graphical_analysis
 
 
 
@@ -505,6 +507,38 @@ class GraphicalAnalysisParametricImage:
         with open(analysis_props_file, 'w',encoding='utf-8') as f:
             json.dump(obj=self.analysis_props, fp=f, indent=4)
 
-    def __call__(self, method_name: str, t_thresh_in_mins: float):
-        self.run_analysis(method_name=method_name, t_thresh_in_mins=t_thresh_in_mins)
-        self.save_analysis_properties()
+
+def generate_cmrglc_parametric_image_from_ki_image(input_ki_image_path: str,
+                                                   output_image_path: str,
+                                                   plasma_glucose_file_path: str,
+                                                   glucose_rescaling_constant: float,
+                                                   lumped_constant: float,
+                                                   rescaling_const: float):
+    r"""
+    Generate and save a CMRglc image by rescaling a Patlak-Ki image.
+
+    This function reads a Patlak-Ki image, rescales it using provided parameters (plasma glucose file,
+    lumped constant, and a rescaling constant), and saves the resulting image as a CMRglc image.
+
+    The final image will be `rescaling_constant * K_i * plasma_glucose / lumped_constant`.
+
+    Args:
+        input_ki_image_path (str): Path to the Patlak-Ki image file.
+        output_image_path (str): Path to save the rescaled CMRglc image.
+        plasma_glucose_file_path (str): File path to stored plasma glucose concentration.
+            Assumed to be just one number in the file.
+        glucose_rescaling_constant (float): Rescaling constant for the glucose concentration.
+        lumped_constant (float): Lumped constant value used for rescaling.
+        rescaling_const (float): Additional rescaling constant applied to the Patlak-Ki values.
+
+    Returns:
+        None
+    """
+    patlak_image = image_io.ImageIO(verbose=False).load_nii(image_path=input_ki_image_path)
+    patlak_affine = patlak_image.affine
+    plasma_glucose = read_plasma_glucose_concentration(file_path=plasma_glucose_file_path,
+                                                       correction_scale=glucose_rescaling_constant)
+    cmr_vals = (plasma_glucose / lumped_constant) * patlak_image.get_fdata() * rescaling_const
+    cmr_image = nibabel.Nifti1Image(dataobj=cmr_vals, affine=patlak_affine)
+    nibabel.save(cmr_image, f"{output_image_path}")
+    image_io.safe_copy_meta(input_image_path=input_ki_image_path, out_image_path=output_image_path)
