@@ -1,9 +1,7 @@
 import argparse
 from ..preproc import preproc
 import os
-import numpy as np
-from ..utils import image_io
-from ..input_function.blood_input import BloodInputFunction
+from ..input_function.blood_input import resample_blood_data_on_scanner_times
 from ..kinetic_modeling.parametric_images import GraphicalAnalysisParametricImage, generate_cmrglc_parametric_image_from_ki_image
 
 
@@ -312,53 +310,3 @@ def main():
                                run_patlak=not args.skip_patlak,
                                run_cmrglc=not args.skip_cmrglc,
                                verbose=args.verbose)
-
-
-def resample_blood_data_on_scanner_times(pet4d_path: str,
-                                         raw_blood_tac: str,
-                                         lin_fit_thresh_in_mins: float,
-                                         out_tac_path: str):
-    r"""
-    Resample blood time-activity curve (TAC) based on PET scanner frame times. The function assumes
-    that the PET meta-data have 'FrameReferenceTime' in seconds. The saved TAC is in minutes.
-
-    This function takes the raw blood TAC sampled at arbitrary times, resamples it
-    to the frame times of a 4D PET image, and saves the resampled TAC to a file.
-
-    Args:
-        pet4d_path (str): Path to the 4D PET image file.
-        raw_blood_tac (str): Path to the file containing raw blood time-activity data.
-        lin_fit_thresh_in_mins (float): Threshold in minutes for piecewise linear fit.
-        out_tac_path (str): Path to save the resampled blood TAC.
-
-    Returns:
-        None. In the saved TAC file, the first column will be time in minutes,
-            and the second column will be the activity.
-
-    See Also:
-        - :class:`BloodInputFunction`
-
-
-    Example:
-
-       .. code-block:: python
-
-          resample_blood_data_on_scanner_times(
-              pet4d_path='pet_image.nii.gz',
-              raw_blood_tac='blood_tac.csv',
-              lin_fit_thresh_in_mins=0.5,
-              out_tac_path='resampled_blood_tac.csv'
-          )
-
-
-    """
-    image_meta_data = image_io.load_metadata_for_nifty_with_same_filename(image_path=pet4d_path)
-    frame_times = np.asarray(image_meta_data['FrameReferenceTime']) / 60.0
-    blood_times, blood_activity = image_io.safe_load_tac(filename=raw_blood_tac)
-    blood_intp = BloodInputFunction(time=blood_times, activity=blood_activity, thresh_in_mins=lin_fit_thresh_in_mins)
-    resampled_blood = blood_intp.calc_blood_input_function(t=frame_times)
-    resampled_tac = np.asarray([frame_times, resampled_blood], dtype=float)
-    
-    np.savetxt(X=resampled_tac.T, fname=out_tac_path)
-    
-    return None
