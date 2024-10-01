@@ -17,11 +17,10 @@ import nibabel
 import numpy as np
 import numba
 from nibabel import Nifti1Image
-
-from utils import image_io
-from . import graphical_analysis
+from ..utils import image_io
 from ..utils.image_io import safe_load_tac, safe_copy_meta
 from ..utils.useful_functions import read_plasma_glucose_concentration
+from . import graphical_analysis
 
 
 
