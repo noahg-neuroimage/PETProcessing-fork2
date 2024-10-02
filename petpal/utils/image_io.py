@@ -98,6 +98,12 @@ def safe_load_tac(filename: str, **kwargs) -> np.ndarray:
     """
     try:
         return np.array(np.loadtxt(filename).T, dtype=float, order='C', **kwargs)
+    except ValueError:
+        try:
+            return np.array(np.loadtxt(filename,skiprows=1).T, dtype=float, order='C', **kwargs)
+        except Exception as e:
+            print(f"Couldn't read file {filename}. Error: {e}")
+            raise e
     except Exception as e:
         print(f"Couldn't read file {filename}. Error: {e}")
         raise e
