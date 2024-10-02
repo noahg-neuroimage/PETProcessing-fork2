@@ -102,12 +102,13 @@ def generate_parametric_images_with_graphical_method(pTAC_times: np.ndarray,
 
         t_thresh_in_mins (float): A float representing the threshold time in minutes.
 
-        method_name (str): The analysis method's name to apply. Must be one of: 'patlak', 'logan', or 'alt_logan'.
+        method_name (str): The analysis method's name to apply. Must be one of: 'patlak', 'logan',
+            or 'alt_logan'.
 
     Returns:
-        Tuple[np.ndarray, np.ndarray]: A tuple of two 3D numpy arrays representing the calculated slope image
-                                       and the intercept image, each of the same spatial dimensions as
-                                       `tTAC_img`.
+        Tuple[np.ndarray, np.ndarray]: A tuple of two 3D numpy arrays representing the calculated
+            slope image and the intercept image, each of the same spatial dimensions as `tTAC_img`.
+                                       
 
     Raises:
        ValueError: If the `method_name` is not one of the following: 'patlak', 'logan', 'alt_logan'.
@@ -155,8 +156,9 @@ def _safe_load_4dpet_nifty(filename: str) -> Nifti1Image:
 
 class GraphicalAnalysisParametricImage:
     """
-    Class for generating parametric images of 4D-PET images using graphical analyses. It provides methods to run
-    graphical analysis, calculate properties of the resulting images, and save the results using file paths.
+    Class for generating parametric images of 4D-PET images using graphical analyses. It provides
+    methods to run graphical analysis, calculate properties of the resulting images, and save the
+    results using file paths.
 
     Attributes:
         input_tac_path (str): Absolute path to the input Time-Activity Curve (TAC) file.
@@ -164,8 +166,10 @@ class GraphicalAnalysisParametricImage:
         output_directory (str): Absolute path to the output directory.
         output_filename_prefix (str): Prefix of the output file names.
         analysis_props (dict): Dictionary of properties of the graphical analysis.
-        slope_image (np.ndarray): The slope image resulting from the graphical analysis, initialized to None.
-        intercept_image (np.ndarray): The intercept image resulting from the graphical analysis, initialized to None.
+        slope_image (np.ndarray): The slope image resulting from the graphical analysis,
+            initialized to None.
+        intercept_image (np.ndarray): The intercept image resulting from the graphical analysis,
+            initialized to None.
 
     """
 
