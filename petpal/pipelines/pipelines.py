@@ -395,6 +395,13 @@ TEMPLATE_STEPS = {
                                            reference_image_path='',
                                            motion_target_option='weighted_sum_series',
                                            verbose=True),
+    'write_roi_tacs' : GenericStep(name='write_roi_tacs',
+                                   function=preproc.image_operations_4d.write_tacs,
+                                   input_image_4d_path='',
+                                   label_map_path='',
+                                   segmentation_image_path='',
+                                   out_tac_dir='',
+                                   verbose=True),
     'resample_blood' : GenericStep(name='resample_bTAC',
                             function=blood_input.resample_blood_data_on_scanner_times,
                             pet4d_path='',
@@ -436,6 +443,8 @@ general_fdg_pipeline.add_preproc_step(TEMPLATE_STEPS['moco_frames_above_mean'],
                                       receives_output_from_previous_step_as_input=True)
 general_fdg_pipeline.add_preproc_step(TEMPLATE_STEPS['register_pet_to_t1'],
                                       receives_output_from_previous_step_as_input=True)
+general_fdg_pipeline.add_preproc_step(TEMPLATE_STEPS['write_roi_tacs'],
+                                      receives_output_from_previous_step_as_input=False)
 general_fdg_pipeline.add_preproc_step(TEMPLATE_STEPS['resample_blood'])
 
 general_fdg_pipeline.add_kinetic_modeling_step(TEMPLATE_STEPS['parametric_patlak'])
@@ -446,10 +455,11 @@ general_fdg_pipeline.add_kinetic_modeling_step(TEMPLATE_STEPS['roi_2tcm-k4zero_f
 
 
 class BIDsPipeline():
-    def __init__(self, sub_id: str,
+    def __init__(self,
+                 sub_id: str,
                  ses_id: str,
-                 bids_dir:str='../',
-                 proc_pipeline:ProcessingPipeline=general_fdg_pipeline):
+                 bids_dir: str = '../',
+                 proc_pipeline: ProcessingPipeline = general_fdg_pipeline):
         self.sub_id = sub_id
         self.ses_id = ses_id
         self.bids_root_dir = os.path.abspath(bids_dir)
