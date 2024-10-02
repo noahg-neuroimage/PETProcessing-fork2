@@ -201,42 +201,6 @@ class ObjectBasedStep:
 
 StepType = Union[ImageToImageStep, GenericStep, ObjectBasedStep]
 
-TEMPLATE_STEPS = {
-    'thresh_crop': ImageToImageStep(name='crop',
-                                    function=preproc.image_operations_4d.SimpleAutoImageCropper,
-                                    input_image_path='',
-                                    output_image_path=''
-                                   ),
-    'moco_frames_above_mean': ImageToImageStep(name='moco',
-                                              function=preproc.motion_corr.motion_corr_frames_above_mean_value,
-                                              input_image_path='',
-                                              output_image_path='',
-                                              motion_target_option='mean_image',
-                                              verbose=True),
-    'register_pet_to_t1' : ImageToImageStep(name='reg',
-                                           function=preproc.register.register_pet,
-                                           input_image_path='',
-                                           output_image_path='',
-                                           reference_image_path='',
-                                           motion_target_option='weighted_sum_series',
-                                           verbose=True),
-    'resample_blood' : GenericStep(name='resample_bTAC',
-                            function=blood_input.resample_blood_data_on_scanner_times,
-                            pet4d_path='',
-                            raw_blood_tac='',
-                            out_tac_path='',
-                            lin_fit_thresh_in_mins=30.0),
-    'parametric_patlak' : ObjectBasedStep(name='parametric_patlak',
-                              class_type=parametric_images.GraphicalAnalysisParametricImage,
-                              init_kwargs=dict(input_tac_path='',
-                                               pet4D_img_path='',
-                                               output_directory='',
-                                               output_filename_prefix=''
-                                              ),
-                              call_kwargs=dict(method_name='patlak',
-                                               t_thresh_in_mins=30.0))
-    }
-
 
 class GenericPipeline:
     def __init__(self, name: str) -> None:
@@ -310,7 +274,6 @@ class GenericPipeline:
             raise TypeError(f"Key must be an integer or a string. Got {type(step)}")
     
 
-
 class ProcessingPipeline(object):
     def __init__(self, name: str) -> None:
         self.name: str = name
@@ -340,9 +303,16 @@ class ProcessingPipeline(object):
                                                        out_step=-2,
                                                        in_step=-1)
     
-    def add_kinetic_modeling_step(self, step: StepType) -> None:
+    def add_kinetic_modeling_step(self, step: StepType, receives_output_from_previous_step: bool = False) -> None:
         self.km.add_step(step)
         self.dependency_graph.add_node(":".join(['km', step.name]), proc='km')
+        if receives_output_from_previous_step:
+            self.add_output_to_input_dependency(out_pipe_name='km',
+                                                in_pipe_name='km', out_step=-2,
+                                                in_step=-1)
+            self.chain_outputs_as_inputs_between_steps(out_pipe_name='km',
+                                                       in_pipe_name='km', out_step=-2,
+                                                       in_step=-1)
     
     def list_preproc_steps(self) -> None:
         self.preproc.list_step_names()
@@ -403,7 +373,52 @@ class ProcessingPipeline(object):
                 
         except AttributeError as e:
             raise RuntimeError(f"Error setting chaining outputs and inputs for steps: {e}")
+
         
+TEMPLATE_STEPS = {
+    'thresh_crop': ImageToImageStep(name='crop',
+                                    function=preproc.image_operations_4d.SimpleAutoImageCropper,
+                                    input_image_path='',
+                                    output_image_path=''
+                                   ),
+    'moco_frames_above_mean': ImageToImageStep(name='moco',
+                                              function=preproc.motion_corr.motion_corr_frames_above_mean_value,
+                                              input_image_path='',
+                                              output_image_path='',
+                                              motion_target_option='mean_image',
+                                              verbose=True),
+    'register_pet_to_t1' : ImageToImageStep(name='reg',
+                                           function=preproc.register.register_pet,
+                                           input_image_path='',
+                                           output_image_path='',
+                                           reference_image_path='',
+                                           motion_target_option='weighted_sum_series',
+                                           verbose=True),
+    'resample_blood' : GenericStep(name='resample_bTAC',
+                            function=blood_input.resample_blood_data_on_scanner_times,
+                            pet4d_path='',
+                            raw_blood_tac='',
+                            out_tac_path='',
+                            lin_fit_thresh_in_mins=30.0),
+    'parametric_patlak' : ObjectBasedStep(name='parametric_patlak',
+                              class_type=parametric_images.GraphicalAnalysisParametricImage,
+                              init_kwargs=dict(input_tac_path='',
+                                               pet4D_img_path='',
+                                               output_directory='',
+                                               output_filename_prefix=''
+                                              ),
+                              call_kwargs=dict(method_name='patlak',
+                                               t_thresh_in_mins=30.0)),
+    'parametric_cmrglc' : ImageToImageStep(name='parametric_cmrglc', # Clearly we need a path-to-path step as a more general step
+                                           function=parametric_images.generate_cmrglc_parametric_image_from_ki_image,
+                                           input_image_path='',
+                                           output_image_path='',
+                                           plasma_glucose_file_path='',
+                                           glucose_rescaling_constant=1.0/18.0,
+                                           lumped_constant=0.65,
+                                           rescaling_const=100.,
+                                           ),
+    }
 
 simple_parametric_patlak_pipeline = ProcessingPipeline(name='basic_fdg_parametric_patlak')
 
@@ -415,6 +430,8 @@ simple_parametric_patlak_pipeline.add_preproc_step(TEMPLATE_STEPS['register_pet_
 simple_parametric_patlak_pipeline.add_preproc_step(TEMPLATE_STEPS['resample_blood'])
 
 simple_parametric_patlak_pipeline.add_kinetic_modeling_step(TEMPLATE_STEPS['parametric_patlak'])
+simple_parametric_patlak_pipeline.add_kinetic_modeling_step(TEMPLATE_STEPS['parametric_cmrglc'],
+                                                            receives_output_from_previous_step=False)
 
 
 class BIDsPipeline():
