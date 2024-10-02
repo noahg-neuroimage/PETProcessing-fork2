@@ -17,7 +17,7 @@ import nibabel
 import numpy as np
 import numba
 
-from petpal.utils.image_io import safe_load_4dpet_nifty
+from petpal.utils.image_io import safe_load_4dpet_nifti
 from . import graphical_analysis
 from ..utils.image_io import safe_load_tac, safe_copy_meta
 
@@ -449,7 +449,7 @@ class GraphicalAnalysisParametricImage:
 
         """
         p_tac_times, p_tac_vals = safe_load_tac(self.input_tac_path)
-        nifty_pet4d_img = safe_load_4dpet_nifty(filename=self.pet4D_img_path)
+        nifty_pet4d_img = safe_load_4dpet_nifti(filename=self.pet4D_img_path)
         warnings.warn(
             f"PET image values are being scaled by {image_scale}.",
             UserWarning)
@@ -485,7 +485,7 @@ class GraphicalAnalysisParametricImage:
         file_name_prefix = os.path.join(self.output_directory,
                                         f"{self.output_filename_prefix}_desc-"
                                         f"{self.analysis_props['MethodName']}")
-        nifty_img_affine = safe_load_4dpet_nifty(
+        nifty_img_affine = safe_load_4dpet_nifti(
             filename=self.pet4D_img_path).affine
         try:
             tmp_slope_img = nibabel.Nifti1Image(

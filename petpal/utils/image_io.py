@@ -304,7 +304,7 @@ class ImageIO():
         return label_map
 
 
-def safe_load_4dpet_nifty(filename: str) -> nibabel.nifti1.Nifti1Image:
+def safe_load_4dpet_nifti(filename: str) -> nibabel.nifti1.Nifti1Image:
     """
     Safely load a 4D PET NIfTI file.
 
