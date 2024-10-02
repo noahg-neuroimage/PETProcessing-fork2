@@ -8,6 +8,7 @@ import inspect
 from ..preproc import preproc
 from ..input_function import blood_input
 from ..kinetic_modeling import parametric_images
+from ..kinetic_modeling import tac_fitting
 
 class ArgsDict(dict):
     def __str__(self):
@@ -418,27 +419,37 @@ TEMPLATE_STEPS = {
                                            lumped_constant=0.65,
                                            rescaling_const=100.,
                                            ),
+    'roi_2tcm-k4zero_fit' : ObjectBasedStep(name='roi_2tcm-k4zero_fit',
+                                           class_type=tac_fitting.FitTCMToTAC,
+                                           init_kwargs=dict(input_tac_path='',
+                                                            roi_tac_path='',
+                                                            output_directory='',
+                                                            output_filename_prefix='',
+                                                            compartment_model='2tcm-k4zero'),
+                                           call_kwargs=dict()),
     }
 
-simple_parametric_patlak_pipeline = ProcessingPipeline(name='basic_fdg_parametric_patlak')
+general_fdg_pipeline = ProcessingPipeline(name='general_fdg_pipeline',)
 
-simple_parametric_patlak_pipeline.add_preproc_step(TEMPLATE_STEPS['thresh_crop'])
-simple_parametric_patlak_pipeline.add_preproc_step(TEMPLATE_STEPS['moco_frames_above_mean'],
-                                                   receives_output_from_previous_step_as_input=True)
-simple_parametric_patlak_pipeline.add_preproc_step(TEMPLATE_STEPS['register_pet_to_t1'],
-                                                   receives_output_from_previous_step_as_input=True)
-simple_parametric_patlak_pipeline.add_preproc_step(TEMPLATE_STEPS['resample_blood'])
+general_fdg_pipeline.add_preproc_step(TEMPLATE_STEPS['thresh_crop'])
+general_fdg_pipeline.add_preproc_step(TEMPLATE_STEPS['moco_frames_above_mean'],
+                                      receives_output_from_previous_step_as_input=True)
+general_fdg_pipeline.add_preproc_step(TEMPLATE_STEPS['register_pet_to_t1'],
+                                      receives_output_from_previous_step_as_input=True)
+general_fdg_pipeline.add_preproc_step(TEMPLATE_STEPS['resample_blood'])
 
-simple_parametric_patlak_pipeline.add_kinetic_modeling_step(TEMPLATE_STEPS['parametric_patlak'])
-simple_parametric_patlak_pipeline.add_kinetic_modeling_step(TEMPLATE_STEPS['parametric_cmrglc'],
-                                                            receives_output_from_previous_step=False)
+general_fdg_pipeline.add_kinetic_modeling_step(TEMPLATE_STEPS['parametric_patlak'])
+general_fdg_pipeline.add_kinetic_modeling_step(TEMPLATE_STEPS['parametric_cmrglc'],
+                                               receives_output_from_previous_step=False)
+general_fdg_pipeline.add_kinetic_modeling_step(TEMPLATE_STEPS['roi_2tcm-k4zero_fit'],
+                                               receives_output_from_previous_step=False)
 
 
 class BIDsPipeline():
     def __init__(self, sub_id: str,
                  ses_id: str,
                  bids_dir:str='../',
-                 proc_pipeline:ProcessingPipeline=simple_parametric_patlak_pipeline):
+                 proc_pipeline:ProcessingPipeline=general_fdg_pipeline):
         self.sub_id = sub_id
         self.ses_id = ses_id
         self.bids_root_dir = os.path.abspath(bids_dir)

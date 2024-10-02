@@ -845,7 +845,11 @@ class FitTCMToTAC(object):
         analysis_props_file = f"{file_name_prefix}_props.json"
         with open(analysis_props_file, 'w',encoding='utf-8') as f:
             json.dump(obj=self.analysis_props, fp=f, indent=4)
-
+    
+    def __call__(self):
+        self.run_analysis()
+        self.save_analysis()
+    
     def calculate_fit_properties(self):
         r"""
         Calculates the fit properties and updates the analysis properties.
