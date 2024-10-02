@@ -253,7 +253,7 @@ class GraphicalAnalysisParametricImage:
         }
         return props
 
-    def run_analysis(self, method_name: str, t_thresh_in_mins: float):
+    def run_analysis(self, method_name: str, t_thresh_in_mins: float, image_scale: float=1./37000):
         """
         Executes the complete analysis procedure.
 
@@ -274,7 +274,7 @@ class GraphicalAnalysisParametricImage:
 
         """
         self.calculate_parametric_images(
-            method_name=method_name, t_thresh_in_mins=t_thresh_in_mins)
+            method_name=method_name, t_thresh_in_mins=t_thresh_in_mins, image_scale=image_scale)
         self.calculate_analysis_properties(
             method_name=method_name, t_thresh_in_mins=t_thresh_in_mins)
 
@@ -302,7 +302,9 @@ class GraphicalAnalysisParametricImage:
         self.save_parametric_images()
         self.save_analysis_properties()
 
-    def calculate_analysis_properties(self, method_name: str, t_thresh_in_mins: float):
+    def calculate_analysis_properties(self,
+                                      method_name: str,
+                                      t_thresh_in_mins: float):
         """
         Performs a set of calculations to collate various analysis properties.
 
@@ -435,22 +437,26 @@ class GraphicalAnalysisParametricImage:
         self.analysis_props['InterceptMean'] = np.mean(self.intercept_image)
         self.analysis_props['InterceptVariance'] = np.var(self.intercept_image)
 
-    # TODO: Come up with a smarter way to get the PET data in the correct units. I would prefer that 4DPET is saved in the right units already.
-    def calculate_parametric_images(self, method_name: str, t_thresh_in_mins: float):
+
+    def calculate_parametric_images(self,
+                                    method_name: str,
+                                    t_thresh_in_mins: float,
+                                    image_scale: float):
         """
         Performs graphical analysis of PET parametric images and generates/updates the slope and
         intercept images.
 
-        Warning:
-            This method divides the PET image values by 37000 for unit conversion to Bq/cc. Be
-            aware of this if you are using this function with PET images that are in other units!
+        Important:
+            This method scales the PET image values by the ``image_scale`` argument. This quantity
+            is inferred from the call to :meth:`run_analysis` which uses a default value of 1/37000
+            for unit conversion of the input PET image from Bq/mL to μCi/mL.
 
         This method uses the given graphical analysis method and threshold to perform the analysis
         given the input Time Activity Curve (TAC) and 4D PET image, and updates the slope and 
-        intercept images accordingly. PET images are loaded from the specified path and divided by
-        37000 to convert the values to Bq/cc. Then, the parametric images are calculated using the
-        specified graphical method and threshold time by explicitly analyzing each voxel in the 4D
-        PET image.
+        intercept images accordingly. PET images are loaded from the specified path and multiplied
+        by ``image_scale`` to convert the image into the proper units. Then, the parametric images 
+        are calculated using the specified graphical method and threshold time by explicitly
+        analyzing each voxel in the 4D PET image.
 
         Args:
             method_name (str): The name of the graphical analysis method to be used.
@@ -469,18 +475,16 @@ class GraphicalAnalysisParametricImage:
             * :func:`petpal.graphical_analysis.logan_analysis`
             * :func:`petpal.graphical_analysis.alternative_logan_analysis`
 
-        Notes:
-            The conversion to Bq/cc is hard-coded, and could be changed in later versions of the
-            module.
         """
         p_tac_times, p_tac_vals = safe_load_tac(self.input_tac_path)
         nifty_pet4d_img = _safe_load_4dpet_nifty(filename=self.pet4D_img_path)
         warnings.warn(
-            "PET image values are being divided by 37000 for unit conversion to Bq/cc.",
+            f"PET image values are being scaled by {image_scale}.",
             UserWarning)
         self.slope_image, self.intercept_image = generate_parametric_images_with_graphical_method(
-            pTAC_times=p_tac_times, pTAC_vals=p_tac_vals, tTAC_img=nifty_pet4d_img.get_fdata() /
-            37000.,
+            pTAC_times=p_tac_times,
+            pTAC_vals=p_tac_vals,
+            tTAC_img=nifty_pet4d_img.get_fdata() * image_scale,
             t_thresh_in_mins=t_thresh_in_mins, method_name=method_name)
 
     def save_parametric_images(self):
