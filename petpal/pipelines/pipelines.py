@@ -146,6 +146,9 @@ class ObjectBasedStep:
         self.validate_kwargs()
         self.instance: type = self.class_type(**self.init_kwargs)
     
+    def remake_instance(self):
+        self.instance = self.class_type(**self.init_kwargs)
+    
     def validate_kwargs(self):
         empty_init_kwargs = self.get_empty_default_kwargs(self.init_sig, self.init_kwargs)
         empty_call_kwargs = self.get_empty_default_kwargs(self.call_sig, self.call_kwargs)
@@ -177,7 +180,9 @@ class ObjectBasedStep:
                     empty_kwargs.append(arg_name)
         return empty_kwargs
     
-    def execute(self) -> None:
+    def execute(self, remake_obj: bool = True) -> None:
+        if remake_obj:
+            self.remake_instance()
         print(f"(Info): Executing {self.name}")
         self.instance(**self.call_kwargs)
         print(f"(Info): Finished {self.name}")
