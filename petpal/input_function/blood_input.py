@@ -177,7 +177,7 @@ def resample_blood_data_on_scanner_times(pet4d_path: str,
     resampled_blood = blood_intp.calc_blood_input_function(t=frame_times)
     resampled_tac = np.asarray([frame_times, resampled_blood], dtype=float)
     
-    np.savetxt(X=resampled_tac.T, fname=out_tac_path)
+    np.savetxt(X=resampled_tac.T, fname=out_tac_path, header="time(mins)\tactivity", comments='')
     
     return None
 

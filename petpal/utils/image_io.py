@@ -97,7 +97,9 @@ def safe_load_tac(filename: str, **kwargs) -> np.ndarray:
         Exception: An error occurred loading the TAC.
     """
     try:
-        return np.array(np.loadtxt(filename).T, dtype=float, order='C', **kwargs)
+        return np.array(np.loadtxt(filename, **kwargs).T, dtype=float, order='C')
+    except ValueError:
+        return np.array(np.loadtxt(filename, skiprows=1, **kwargs).T, dtype=float, order='C')
     except Exception as e:
         print(f"Couldn't read file {filename}. Error: {e}")
         raise e
