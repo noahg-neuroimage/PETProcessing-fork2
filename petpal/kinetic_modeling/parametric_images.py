@@ -16,7 +16,8 @@ from typing import Tuple, Callable
 import nibabel
 import numpy as np
 import numba
-from nibabel import Nifti1Image
+
+from petpal.utils.image_io import safe_load_4dpet_nifty
 from . import graphical_analysis
 from ..utils.image_io import safe_load_tac, safe_copy_meta
 
@@ -123,35 +124,6 @@ def generate_parametric_images_with_graphical_method(pTAC_times: np.ndarray,
                                                                        analysis_func=analysis_func)
 
     return slope_img, intercept_img
-
-
-def _safe_load_4dpet_nifty(filename: str) -> Nifti1Image:
-    """
-    Safely load a 4D PET NIfTI file.
-
-    This function checks if the given file has a '.nii' or '.nii.gz' extension, then tries to load
-    it as a NIfTI file using the nibabel library. If the file cannot be loaded, it raises an
-    exception.
-
-    Args:
-        filename (str): The path of the NIfTI file to be loaded.
-
-    Returns:
-        Nifti1Image: The loaded NIfTI 4D PET image.
-
-    Raises:
-        ValueError: If the file does not have a '.nii' or '.nii.gz' extension.
-        Exception:  If an error occurred while loading the NIfTI file.
-    """
-    if not filename.endswith(('.nii', '.nii.gz')):
-        raise ValueError(
-            "Invalid file extension. Only '.nii' and '.nii.gz' are supported.")
-
-    try:
-        return nibabel.load(filename=filename)
-    except Exception as e:
-        print(f"Couldn't read file {filename}. Error: {e}")
-        raise e
 
 
 class GraphicalAnalysisParametricImage:
@@ -477,7 +449,7 @@ class GraphicalAnalysisParametricImage:
 
         """
         p_tac_times, p_tac_vals = safe_load_tac(self.input_tac_path)
-        nifty_pet4d_img = _safe_load_4dpet_nifty(filename=self.pet4D_img_path)
+        nifty_pet4d_img = safe_load_4dpet_nifty(filename=self.pet4D_img_path)
         warnings.warn(
             f"PET image values are being scaled by {image_scale}.",
             UserWarning)
@@ -513,7 +485,7 @@ class GraphicalAnalysisParametricImage:
         file_name_prefix = os.path.join(self.output_directory,
                                         f"{self.output_filename_prefix}_desc-"
                                         f"{self.analysis_props['MethodName']}")
-        nifty_img_affine = _safe_load_4dpet_nifty(
+        nifty_img_affine = safe_load_4dpet_nifty(
             filename=self.pet4D_img_path).affine
         try:
             tmp_slope_img = nibabel.Nifti1Image(

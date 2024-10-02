@@ -302,3 +302,32 @@ class ImageIO():
         label_map = pd.read_csv(label_map_file,sep='\t')
 
         return label_map
+
+
+def safe_load_4dpet_nifty(filename: str) -> nibabel.nifti1.Nifti1Image:
+    """
+    Safely load a 4D PET NIfTI file.
+
+    This function checks if the given file has a '.nii' or '.nii.gz' extension, then tries to load
+    it as a NIfTI file using the nibabel library. If the file cannot be loaded, it raises an
+    exception.
+
+    Args:
+        filename (str): The path of the NIfTI file to be loaded.
+
+    Returns:
+        Nifti1Image: The loaded NIfTI 4D PET image.
+
+    Raises:
+        ValueError: If the file does not have a '.nii' or '.nii.gz' extension.
+        Exception:  If an error occurred while loading the NIfTI file.
+    """
+    if not filename.endswith(('.nii', '.nii.gz')):
+        raise ValueError(
+            "Invalid file extension. Only '.nii' and '.nii.gz' are supported.")
+
+    try:
+        return nibabel.load(filename=filename)
+    except Exception as e:
+        print(f"Couldn't read file {filename}. Error: {e}")
+        raise e
