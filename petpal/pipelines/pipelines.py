@@ -493,7 +493,7 @@ class BIDsPipeline():
         for dir in [self.preproc_dir, self.tacs_dir, self.km_dir]:
             os.makedirs(dir, exist_ok=True)
         
-        self.pet_path = os.path.join(self.bids_root_dir, self.sub_id, self.ses_id,
+        self.raw_pet_img_path = os.path.join(self.bids_root_dir, self.sub_id, self.ses_id,
                                      'pet', f'{self.sub_ses_pre}_pet.nii.gz')
         self.anat_path=os.path.join(self.bids_root_dir, self.sub_id, self.ses_id,
                                     'anat', f'{self.sub_ses_pre}_MPRAGE.nii.gz')
@@ -503,7 +503,7 @@ class BIDsPipeline():
         self.preproc = self.processing_pipeline.preproc
         self.km = self.processing_pipeline.km
         
-        self.preproc['crop'].input_image_path = self.pet_path
+        self.preproc['crop'].input_image_path = self.raw_pet_img_path
         self.preproc['crop'].output_image_path = os.path.join(self.preproc_dir,
                                                               f'{self.sub_ses_pre}_desc-cropped_pet.nii.gz')
         self.preproc['moco'].output_image_path = os.path.join(self.preproc_dir,
@@ -513,5 +513,11 @@ class BIDsPipeline():
                                                              f'{self.sub_ses_pre}_desc-reg_pet.nii.gz')
         self.preproc['reg'].init_kwargs['reference_image_path'] = self.anat_path
         self.preproc['reg'].init_kwargs['half_life'] = 6584.04
+        
+        self.preproc['resample_bTAC'].kwargs['pet4d_path']=self.raw_pet_img_path
+        self.preproc['resample_bTAC'].kwargs['raw_blood_tac']=os.path.join(self.bids_root_dir, self.sub_id, self.ses_id,
+                                                                           f'{self.sub_ses_pre}_desc-decaycorrected_blood.tsv')
+        self.preproc['resample_bTAC'].kwargs['out_tac_path']=os.path.join(self.tacs_dir,
+                                                                          f"{self.sub_ses_pre}_desc-resampled_blood.tsv")
         
         self.processing_pipeline.update_step_dependencies()
