@@ -70,8 +70,7 @@ def apply_linearized_analysis_to_all_voxels(pTAC_times: np.ndarray,
         for j in range(0, img_dims[1], 1):
             for k in range(0, img_dims[2], 1):
                 analysis_vals = analysis_func(input_tac_values=pTAC_vals,
-                                              region_tac_values=tTAC_img[i,
-                                                                         j, k, :],
+                                              region_tac_values=tTAC_img[i, j, k, :],
                                               tac_times_in_minutes=pTAC_times,
                                               t_thresh_in_minutes=t_thresh_in_mins)
                 slope_img[i, j, k] = analysis_vals[0]

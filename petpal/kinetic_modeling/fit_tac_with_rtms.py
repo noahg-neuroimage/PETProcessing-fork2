@@ -2,7 +2,7 @@
 This module contains the FitTacWithRTMs class, used to fit kinetic models to a target and
 reference Time Activity Curve.
 """
-from typing import Union
+from typing import Union, Callable
 import numpy as np
 from petpal.kinetic_modeling.reference_tissue_models import (fit_frtm2_to_tac,
                                                              fit_frtm2_to_tac_with_bounds,
@@ -15,6 +15,103 @@ from petpal.kinetic_modeling.reference_tissue_models import (fit_frtm2_to_tac,
                                                              fit_srtm2_to_tac_with_bounds,
                                                              fit_srtm_to_tac,
                                                              fit_srtm_to_tac_with_bounds)
+
+
+def get_rtm_method(method: str, bounds=None):
+    r"""Function for obtaining the appropriate reference tissue model.
+
+    This function accepts a string specifying a reference tissue model (RTM) analysis method. It
+    returns a reference to the function that performs the selected analysis method.
+
+    - If the method is 'srtm', 'srtm2', 'frtm', or 'frtm2', and bounds are provided, fitting
+        functions with bounds are used.
+    - If the method is 'srtm', 'srtm2', 'frtm', or 'frtm2', and bounds are not provided, fitting
+        functions without bounds are used.
+    - If the method is 'mrtm-original', 'mrtm' or 'mrtm2', related fitting methods are utilized.
+
+
+    Args:
+        method_name (str): The name of the RTM. This should be one of the following strings:
+            'srtm', 'srtm2', 'frtm', 'frtm2', 'mrtm-original', 'mrtm' or 'mrtm2'.
+
+    Returns:
+        function: A reference to the function that performs the corresponding graphical TAC
+        analysis. The returned function will take arguments specific to the analysis method, such
+        as input TAC values, tissue TAC values, TAC times in minutes, and threshold time in
+        minutes.
+
+
+
+    Raises:
+        ValueError: If the method name is invalid and not one of 'srtm', 'frtm',
+            'mrtm-original', 'mrtm' or 'mrtm2'.
+
+
+    See Also:
+        * :func:`fit_srtm_to_tac_with_bounds`
+        * :func:`fit_srtm_to_tac`
+        * :func:`fit_frtm_to_tac_with_bounds`
+        * :func:`fit_frtm_to_tac`
+        * :func:`fit_srtm2_to_tac_with_bounds`
+        * :func:`fit_srtm2_to_tac`
+        * :func:`fit_frtm2_to_tac_with_bounds`
+        * :func:`fit_frtm2_to_tac`
+        * :func:`fit_mrtm_original_to_tac`
+        * :func:`fit_mrtm_2003_to_tac`
+        * :func:`fit_mrtm2_2003_to_tac`
+
+    """
+    methods_all = ["srtm","srtm2","mrtm-original","mrtm","mrtm2","frtm","frtm2"]
+    if method not in methods_all:
+        raise ValueError("Invalid method! Must be either 'srtm', 'frtm', 'mrtm-original', "
+                        f"'mrtm' or 'mrtm2'. Got {method}.")
+
+    methods_with_bounds = {"srtm": fit_srtm_to_tac_with_bounds,
+                           "srtm2": fit_srtm2_to_tac_with_bounds,
+                           "frtm": fit_frtm_to_tac_with_bounds,
+                           "frtm2": fit_frtm2_to_tac_with_bounds}
+
+    methods_no_bounds = {"srtm": fit_srtm_to_tac,
+                         "srtm2": fit_srtm2_to_tac,
+                         "mrtm-original": fit_mrtm_original_to_tac,
+                         "mrtm": fit_mrtm_2003_to_tac,
+                         "mrtm2": fit_mrtm2_2003_to_tac,
+                         "frtm": fit_frtm_to_tac,
+                         "frtm2": fit_frtm2_to_tac}
+
+    if bounds is not None:
+        return methods_with_bounds.get(method)
+    return methods_no_bounds.get(method)
+
+
+def get_rtm_correct_inputs(method: Callable,
+                           bounds=None,
+                           k2_prime=None,
+                           t_thresh_in_mins=None):
+    """
+    Take inputs get correct dictionary with correct assignments
+    """
+    method_args = method.__annotations__.keys()
+    args_dict = {}
+    if 'k2_prime' in method_args:
+        args_dict['k2_prime'] = k2_prime
+    if 't_thresh_in_mins' in method_args:
+        args_dict['t_thresh_in_mins'] = t_thresh_in_mins
+    if 'r1_bounds' in method_args:
+        args_dict['r1_bounds'] = bounds[0]
+    if 'k2_bounds' in method_args:
+        args_dict['k2_bounds'] = bounds[1]
+    if 'k2_bounds' in method_args and 'bp_bounds' in method_args:
+        args_dict['bp_bounds'] = bounds[2]
+    if 'k2_prime' in method_args and 'bp_bounds' in method_args:
+        args_dict['bp_bounds'] = bounds[1]
+    if 'k2_bounds' in method_args and 'k4_bounds' in method_args:
+        args_dict['k3_bounds'] = bounds[2]
+        args_dict['k4_bounds'] = bounds[3]
+    if 'k2_prime' in method_args and 'k4_bounds' in method_args:
+        args_dict['k3_bounds'] = bounds[1]
+        args_dict['k4_bounds'] = bounds[2]
+    return args_dict
 
 
 class FitTACWithRTMs:
@@ -250,79 +347,12 @@ class FitTACWithRTMs:
             * :func:`fit_mrtm2_2003_to_tac`
 
         """
-        if self.method == "srtm":
-            if self.bounds is not None:
-                self.fit_results = fit_srtm_to_tac_with_bounds(tgt_tac_vals=self.target_tac_vals,
-                                                               ref_tac_times=self.reference_tac_times,
-                                                               ref_tac_vals=self.reference_tac_vals,
-                                                               r1_bounds=self.bounds[0],
-                                                               k2_bounds=self.bounds[1],
-                                                               bp_bounds=self.bounds[2])
-            else:
-                self.fit_results = fit_srtm_to_tac(tgt_tac_vals=self.target_tac_vals,
-                                                   ref_tac_times=self.reference_tac_times,
-                                                   ref_tac_vals=self.reference_tac_vals)
-
-        elif self.method == "srtm2":
-            if self.bounds is not None:
-                self.fit_results = fit_srtm2_to_tac_with_bounds(tgt_tac_vals=self.target_tac_vals,
-                                                                ref_tac_times=self.reference_tac_times,
-                                                                ref_tac_vals=self.reference_tac_vals,
-                                                                k2_prime=self.k2_prime,
-                                                                r1_bounds=self.bounds[0],
-                                                                bp_bounds=self.bounds[1])
-            else:
-                self.fit_results = fit_srtm2_to_tac(tgt_tac_vals=self.target_tac_vals,
-                                                    ref_tac_times=self.reference_tac_times,
-                                                    ref_tac_vals=self.reference_tac_vals,
-                                                    k2_prime=self.k2_prime)
-        elif self.method == "frtm":
-            if self.bounds is not None:
-                self.fit_results = fit_frtm_to_tac_with_bounds(tgt_tac_vals=self.target_tac_vals,
-                                                               ref_tac_times=self.reference_tac_times,
-                                                               ref_tac_vals=self.reference_tac_vals,
-                                                               r1_bounds=self.bounds[0],
-                                                               k2_bounds=self.bounds[1],
-                                                               k3_bounds=self.bounds[2],
-                                                               k4_bounds=self.bounds[3])
-            else:
-                self.fit_results = fit_frtm_to_tac(tgt_tac_vals=self.target_tac_vals,
-                                                   ref_tac_times=self.reference_tac_times,
-                                                   ref_tac_vals=self.reference_tac_vals)
-
-        elif self.method == "frtm2":
-            if self.bounds is not None:
-                self.fit_results = fit_frtm2_to_tac_with_bounds(tgt_tac_vals=self.target_tac_vals,
-                                                                ref_tac_times=self.reference_tac_times,
-                                                                ref_tac_vals=self.reference_tac_vals,
-                                                                k2_prime=self.k2_prime,
-                                                                r1_bounds=self.bounds[0],
-                                                                k3_bounds=self.bounds[1],
-                                                                k4_bounds=self.bounds[2])
-            else:
-                self.fit_results = fit_frtm2_to_tac(tgt_tac_vals=self.target_tac_vals,
-                                                    ref_tac_times=self.reference_tac_times,
-                                                    ref_tac_vals=self.reference_tac_vals,
-                                                    k2_prime=self.k2_prime)
-
-        elif self.method == "mrtm-original":
-            self.fit_results = fit_mrtm_original_to_tac(tgt_tac_vals=self.target_tac_vals,
-                                                        ref_tac_times=self.reference_tac_times,
-                                                        ref_tac_vals=self.reference_tac_vals,
-                                                        t_thresh_in_mins=self.t_thresh_in_mins)
-
-        elif self.method == "mrtm":
-            self.fit_results = fit_mrtm_2003_to_tac(tgt_tac_vals=self.target_tac_vals,
-                                                    ref_tac_times=self.reference_tac_times,
-                                                    ref_tac_vals=self.reference_tac_vals,
-                                                    t_thresh_in_mins=self.t_thresh_in_mins)
-
-        elif self.method == "mrtm2":
-            self.fit_results = fit_mrtm2_2003_to_tac(tgt_tac_vals=self.target_tac_vals,
-                                                     ref_tac_times=self.reference_tac_times,
-                                                     ref_tac_vals=self.reference_tac_vals,
-                                                     t_thresh_in_mins=self.t_thresh_in_mins,
-                                                     k2_prime=self.k2_prime)
-        else:
-            raise ValueError("Invalid method! Must be either 'srtm', 'frtm', 'mrtm-original', "
-                             f"'mrtm' or 'mrtm2'. Got {self.method}.")
+        rtm_method = get_rtm_method(method=self.method,bounds=self.bounds)
+        rtm_kwargs = get_rtm_correct_inputs(method=rtm_method,
+                                            bounds=self.bounds,
+                                            k2_prime=self.k2_prime,
+                                            t_thresh_in_mins=self.t_thresh_in_mins)
+        self.fit_results = rtm_method(tgt_tac_vals=self.target_tac_vals,
+                                      ref_tac_times=self.reference_tac_times,
+                                      ref_tac_vals=self.reference_tac_vals,
+                                      **rtm_kwargs)
