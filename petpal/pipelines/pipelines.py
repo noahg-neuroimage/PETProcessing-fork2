@@ -484,4 +484,13 @@ class BIDsPipeline():
         self.ses_id = ses_id
         self.sub_ses_pre = f'sub-{self.sub_id}_ses-{self.ses_id}'
         self.bids_root_dir = os.path.abspath(bids_dir)
+        
+        self.derivatives_dir = os.path.join(self.bids_root_dir, 'derivatives')
+        self.preproc_dir = os.path.join(self.derivatives_dir, 'preproc')
+        self.tacs_dir = os.path.join(self.derivatives_dir, 'tacs')
+        self.km_dir = os.path.join(self.derivatives_dir, 'kinetic-modeling')
+        
+        for dir in [self.preproc_dir, self.tacs_dir, self.km_dir]:
+            os.makedirs(dir, exist_ok=True)
+        
         self.processing_pipeline = copy.deepcopy(proc_pipeline)
