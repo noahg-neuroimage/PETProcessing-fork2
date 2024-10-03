@@ -407,7 +407,8 @@ class TACFitter(object):
         Returns:
             numpy.ndarray: The sanitized TAC: ``[sanitized_times, sanitized_vals]``.
         """
-        assert tac_times_in_minutes.shape == tac_vals.shape, "`tac_times_in_minutes` and `tac_vals` must have the same shape."
+        assert tac_times_in_minutes.shape == tac_vals.shape, ("`tac_times_in_minutes` and "
+                                                              "`tac_vals` must have the same shape.")
         if tac_times_in_minutes[0] != 0.0:
             return np.asarray([np.append(0, tac_times_in_minutes), np.append(0, tac_vals)])
         else:

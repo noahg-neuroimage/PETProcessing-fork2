@@ -1178,7 +1178,8 @@ class FitTACWithRTMs:
                                                      ref_tac_vals=self.reference_tac_vals,
                                                      t_thresh_in_mins=self.t_thresh_in_mins, k2_prime=self.k2_prime)
         else:
-            raise ValueError(f"Invalid method! Must be either 'srtm', 'frtm', 'mrtm-original', 'mrtm' or 'mrtm2'. Got {self.method}.")
+            raise ValueError(f"Invalid method! Must be either 'srtm', 'frtm', "
+                             f"'mrtm-original', 'mrtm' or 'mrtm2'. Got {self.method}.")
 
 
 class RTMAnalysis:
@@ -1239,7 +1240,8 @@ class RTMAnalysis:
             2. It obtains the absolute paths for reference and ROI TAC files and the output directory, to ensure
                they are consistently accessible.
             3. It initializes the analysis properties dictionary using `init_analysis_props` method.
-            4. It initializes the `_has_analysis_been_run` flag to False, to indicate that the RTM analysis has not yet been run.
+            4. It initializes the `_has_analysis_been_run` flag to False, to indicate that the RTM analysis has not
+               yet been run.
 
         Args:
             ref_tac_path (str): Path to the file containing reference TAC.
