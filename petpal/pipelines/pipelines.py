@@ -482,5 +482,6 @@ class BIDsPipeline():
                  proc_pipeline: ProcessingPipeline = general_fdg_pipeline):
         self.sub_id = sub_id
         self.ses_id = ses_id
+        self.sub_ses_pre = f'sub-{self.sub_id}_ses-{self.ses_id}'
         self.bids_root_dir = os.path.abspath(bids_dir)
         self.processing_pipeline = copy.deepcopy(proc_pipeline)
