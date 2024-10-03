@@ -1,5 +1,7 @@
 import copy
 import os.path
+from crypt import methods
+
 import networkx as nx
 
 from ..utils.image_io import safe_copy_meta
@@ -9,6 +11,7 @@ from ..preproc import preproc
 from ..input_function import blood_input
 from ..kinetic_modeling import parametric_images
 from ..kinetic_modeling import tac_fitting
+from ..kinetic_modeling import reference_tissue_models as pet_rtms
 
 class ArgsDict(dict):
     def __str__(self):
@@ -440,6 +443,16 @@ TEMPLATE_STEPS = {
                                                             output_filename_prefix='',
                                                             compartment_model='2tcm-k4zero'),
                                            call_kwargs=dict()),
+    'roi_frtm_fit' : ObjectBasedStep(name='roi_frtm_fit',
+                                     class_type=pet_rtms.RTMAnalysis,
+                                     init_kwargs=dict(ref_tac_path='',
+                                                      roi_tac_path='',
+                                                      output_directory='',
+                                                      output_filename_prefix='',
+                                                      method='frtm'),
+                                     call_kwargs=dict(bounds='',
+                                                      t_thresh_in_mins=None,
+                                                      k2_prime=None)),
     }
 
 general_fdg_pipeline = ProcessingPipeline(name='general_fdg_pipeline',)
@@ -458,6 +471,7 @@ general_fdg_pipeline.add_kinetic_modeling_step(TEMPLATE_STEPS['parametric_cmrglc
                                                receives_output_from_previous_step=False)
 general_fdg_pipeline.add_kinetic_modeling_step(TEMPLATE_STEPS['roi_2tcm-k4zero_fit'],
                                                receives_output_from_previous_step=False)
+general_fdg_pipeline.add_kinetic_modeling_step(TEMPLATE_STEPS['roi_frtm_fit'], False)
 
 
 class BIDsPipeline():
