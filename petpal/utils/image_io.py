@@ -97,13 +97,17 @@ def safe_load_tac(filename: str, **kwargs) -> np.ndarray:
         Exception: An error occurred loading the TAC.
     """
     try:
-        return np.array(np.loadtxt(filename, **kwargs).T, dtype=float, order='C')
+        tac_data = np.asarray(np.loadtxt(filename, **kwargs).T, dtype=float, order='C')
     except ValueError:
-        return np.array(np.loadtxt(filename, skiprows=1, **kwargs).T, dtype=float, order='C')
+        tac_data = np.asarray(np.loadtxt(filename, skiprows=1, **kwargs).T, dtype=float, order='C')
     except Exception as e:
         print(f"Couldn't read file {filename}. Error: {e}")
         raise e
-
+    
+    if np.max(tac_data[0]) >= 300:
+        tac_data[0] /= 60.0
+    
+    return tac_data
 
 def safe_copy_meta(input_image_path: str,
                    out_image_path: str):
