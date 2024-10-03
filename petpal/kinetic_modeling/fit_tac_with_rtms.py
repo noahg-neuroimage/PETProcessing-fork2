@@ -31,8 +31,10 @@ def get_rtm_method(method: str, bounds=None):
 
 
     Args:
-        method_name (str): The name of the RTM. This should be one of the following strings:
+        method (str): The name of the RTM. This should be one of the following strings:
             'srtm', 'srtm2', 'frtm', 'frtm2', 'mrtm-original', 'mrtm' or 'mrtm2'.
+        bounds: The bounds on parameters fit during RTM analysis. This value is only used to 
+        determine whether to return the method that uses bounds or the unbounded one. Default None.
 
     Returns:
         function: A reference to the function that performs the corresponding graphical TAC
@@ -84,12 +86,38 @@ def get_rtm_method(method: str, bounds=None):
     return methods_no_bounds.get(method)
 
 
-def get_rtm_correct_inputs(method: Callable,
-                           bounds=None,
-                           k2_prime=None,
-                           t_thresh_in_mins=None):
+def get_rtm_kwargs(method: Callable,
+                   bounds=None,
+                   k2_prime=None,
+                   t_thresh_in_mins=None):
     """
-    Take inputs get correct dictionary with correct assignments
+    Function for getting special keyword arguments to be passed on to the provided when used as
+    part of an analysis.
+
+    Takes a callable reference tissue model (RTM) method, and optionally a set of bounds, a k2'
+    value, and/or a threshold time. The necessary arguments to run the provided method are then
+    processed and assigned to their appropriate values in the dictionary ``args_dict``. The 
+    function returns ``args_dict`` with any assigned values, which can be passed to ``method`` in
+    the form ``**args_dict``.
+
+    Args:
+        method (Callable): A method to fit a TAC with an RTM. Expected one of the methods from
+            :doc:`petpal.kinetic_modeling.reference_tissue_models`, such as
+            :meth:`fit_srtm_to_tac`.
+        bounds: The bounds on parameters fit during RTM analysis, if applicable. Expected order is
+            as they appear in the original method, e.g. see :meth:`fit_frtm_to_tac_with_bounds`.
+            Default None.
+        k2_prime: The `k2_prime` value to be used in the analysis, if applicable. Default None.
+        t_thresh_in_mins: The threshold time value to be used in the analysis, if applicable.
+            Default None.
+
+    Returns:
+        args_dict (dict): Dictionary with all keywords necessary to plug into an RTM analysis.
+    
+    Important:
+        If `bounds`,`k2_prime`, `t_thresh_in_mins` are all unset, as they should be for
+        :meth:`fit_srtm_to_tac` for example, will return an empty dictionary.
+            
     """
     method_args = method.__annotations__.keys()
     args_dict = {}
@@ -348,10 +376,10 @@ class FitTACWithRTMs:
 
         """
         rtm_method = get_rtm_method(method=self.method,bounds=self.bounds)
-        rtm_kwargs = get_rtm_correct_inputs(method=rtm_method,
-                                            bounds=self.bounds,
-                                            k2_prime=self.k2_prime,
-                                            t_thresh_in_mins=self.t_thresh_in_mins)
+        rtm_kwargs = get_rtm_kwargs(method=rtm_method,
+                                    bounds=self.bounds,
+                                    k2_prime=self.k2_prime,
+                                    t_thresh_in_mins=self.t_thresh_in_mins)
         self.fit_results = rtm_method(tgt_tac_vals=self.target_tac_vals,
                                       ref_tac_times=self.reference_tac_times,
                                       ref_tac_vals=self.reference_tac_vals,
