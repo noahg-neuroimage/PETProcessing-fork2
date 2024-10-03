@@ -486,7 +486,7 @@ class BIDsPipeline():
         self.bids_root_dir = os.path.abspath(bids_dir)
         
         self.derivatives_dir = os.path.join(self.bids_root_dir, 'derivatives')
-        self.preproc_dir = os.path.join(self.derivatives_dir, 'preproc')
+        self.preproc_dir = os.path.join(self.derivatives_dir, 'preprocessing')
         self.tacs_dir = os.path.join(self.derivatives_dir, 'tacs')
         self.km_dir = os.path.join(self.derivatives_dir, 'kinetic-modeling')
         
