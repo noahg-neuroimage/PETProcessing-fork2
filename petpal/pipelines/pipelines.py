@@ -506,4 +506,12 @@ class BIDsPipeline():
         self.preproc['crop'].input_image_path = self.pet_path
         self.preproc['crop'].output_image_path = os.path.join(self.preproc_dir,
                                                               f'{self.sub_ses_pre}_desc-cropped_pet.nii.gz')
+        self.preproc['moco'].output_image_path = os.path.join(self.preproc_dir,
+                                                              f'{self.sub_ses_pre}_desc-mocod_pet.nii.gz')
         
+        self.preproc['reg'].output_image_path = os.path.join(self.preproc_dir,
+                                                             f'{self.sub_ses_pre}_desc-reg_pet.nii.gz')
+        self.preproc['reg'].init_kwargs['reference_image_path'] = self.anat_path
+        self.preproc['reg'].init_kwargs['half_life'] = 6584.04
+        
+        self.processing_pipeline.update_step_dependencies()
