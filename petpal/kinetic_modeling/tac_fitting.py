@@ -398,7 +398,7 @@ class TACFitter(object):
 
         The method ensures that the TAC starts from time zero by checking the first timestamp. If it's not zero, a zero
         timestamp and value are prepended, otherwise, the first value is set to zero. This method assumes that
-        `tac_times` and `tac_vals` arrays have the same shape.
+        `tac_times_in_minutes` and `tac_vals` arrays have the same shape.
 
         Args:
             tac_times (numpy.ndarray): The original times of the TAC.
@@ -407,7 +407,7 @@ class TACFitter(object):
         Returns:
             numpy.ndarray: The sanitized TAC: ``[sanitized_times, sanitized_vals]``.
         """
-        assert tac_times.shape == tac_vals.shape, "`tac_times` and `tac_vals` must have the same shape."
+        assert tac_times.shape == tac_vals.shape, "`tac_times_in_minutes` and `tac_vals` must have the same shape."
         if tac_times[0] != 0.0:
             return np.asarray([np.append(0, tac_times), np.append(0, tac_vals)])
         else:
@@ -420,7 +420,7 @@ class TACFitter(object):
         r"""
         Resamples the Time-Activity Curve (TAC) on given new time points by linear interpolation.
 
-        The method performs a linear interpolation of `tac_vals` on `new_times` based on `tac_times`.
+        The method performs a linear interpolation of `tac_vals` on `new_times` based on `tac_times_in_minutes`.
 
         Args:
             tac_times (numpy.ndarray): The original times of the TAC.
