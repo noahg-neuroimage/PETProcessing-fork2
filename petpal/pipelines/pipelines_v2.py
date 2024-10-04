@@ -176,3 +176,11 @@ class ImageToImageStep(BaseFunctionBasedStep):
         args_ind = sup_str_list.index("Arguments Passed:")
         sup_str_list.insert(args_ind, f"Input & Output Paths:\n{io_dict}")
         return "\n".join(sup_str_list)
+    
+    def set_input_as_output_from(self, sending_step: BaseFunctionBasedStep) -> None:
+        if isinstance(sending_step, ImageToImageStep):
+            self.input_image_path = sending_step.output_image_path
+        else:
+            raise TypeError(
+                    f"The provided step: {sending_step}\n is not an instance of ImageToImageStep. "
+                    f"It is of type {type(sending_step)}.")
