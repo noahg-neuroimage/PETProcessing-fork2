@@ -22,11 +22,21 @@ class BaseFunctionBasedStep():
         self.func_sig = inspect.signature(self.function)
         self.validate_kwargs_for_non_default_have_been_set()
         
-    def validate_kwargs_for_non_default_have_been_set(self) -> None:
-        pass
+    def get_function_args_not_set_in_kwargs(self):
+        unset_args_dict = ArgsDict()
+        func_params = self.func_sig.parameters
+        arg_names = list(func_params)
+        for arg_name in arg_names[len(self.args):]:
+            if arg_name not in self.kwargs:
+                unset_args_dict[arg_name] = func_params[arg_name].default
+        return unset_args_dict
     
     def get_empty_default_kwargs(self):
         pass
+    
+    def validate_kwargs_for_non_default_have_been_set(self) -> None:
+        pass
+    
     
     def execute(self):
         print(f"(Info): Executing {self.name}")
