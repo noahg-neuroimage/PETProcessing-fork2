@@ -225,7 +225,6 @@ class FitTACWithRTMs:
         for the given 'method', and we make sure that any fitting threshold are defined for the
         MRTM analyses.
 
-
         Args:
             target_tac_vals (np.ndarray): The array representing the target TAC values.
             reference_tac_times (np.ndarray): The array representing time points associated with
