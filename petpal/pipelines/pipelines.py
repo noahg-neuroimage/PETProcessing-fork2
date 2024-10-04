@@ -522,8 +522,8 @@ class BIDsPipeline():
         
         self.preproc['reg'].output_image_path = os.path.join(self.preproc_dir,
                                                              f'{self.sub_ses_pre}_desc-reg_pet.nii.gz')
-        self.preproc['reg'].init_kwargs['reference_image_path'] = self.anat_path
-        self.preproc['reg'].init_kwargs['half_life'] = 6584.04
+        self.preproc['reg'].kwargs['reference_image_path'] = self.anat_path
+        self.preproc['reg'].kwargs['half_life'] = 6584.04
         
         self.preproc['resample_bTAC'].kwargs['pet4d_path']=self.raw_pet_img_path
         self.preproc['resample_bTAC'].kwargs['raw_blood_tac']=os.path.join(self.bids_root_dir, self.sub_id, self.ses_id,
