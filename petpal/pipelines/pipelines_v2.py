@@ -19,7 +19,7 @@ class BaseFunctionBasedStep():
         self.function = function
         self._func_name = function.__name__
         self.args = args
-        self.kwargs = kwargs
+        self.kwargs = ArgsDict(kwargs)
         self.func_sig = inspect.signature(self.function)
         self.validate_kwargs_for_non_default_have_been_set()
         
@@ -53,9 +53,26 @@ class BaseFunctionBasedStep():
         self.function(*self.args, **self.kwargs)
         print(f"(Info): Finished {self.name}")
         
+    def generate_kwargs_from_args(self) -> ArgsDict:
+        args_to_kwargs_dict = ArgsDict()
+        for arg_name, arg_val in zip(list(self.func_sig.parameters), self.args):
+            args_to_kwargs_dict[arg_name] = arg_val
+        return args_to_kwargs_dict
+    
+    def __str__(self):
+        info_str = [f'({type(self).__name__} Info):',
+                    f'Step Name: {self.name}',
+                    f'Function Name: {self._func_name}',
+                    f'Arguments Passed:',
+                    f'{self.generate_kwargs_from_args()}',
+                    'Keyword-Arguments Set:',
+                    f'{self.kwargs if self.kwargs else "N/A"}',
+                    'Default Arguments:',
+                    f'{self.get_function_args_not_set_in_kwargs()}']
+        return '\n'.join(info_str)
+    
     
 class BaseObjectBasedStep():
-    
     def __init__(self,
                  name: str,
                  class_type: type,
@@ -110,3 +127,20 @@ class BaseObjectBasedStep():
         print(f"(Info): Executing {self.name}")
         self.instance(**self.call_kwargs)
         print(f"(Info): Finished {self.name}")
+    
+    def __str__(self):
+        unset_init_args = self.get_args_not_set_in_kwargs(self.init_sig, self.init_kwargs)
+        unset_call_args = self.get_args_not_set_in_kwargs(self.call_sig, self.call_kwargs)
+        
+        info_str = [f'({type(self).__name__} Info):',
+                    f'Step Name: {self.name}',
+                    f'Class Name: {self.class_type.__name__}',
+                    'Initialization Arguments:',
+                    f'{self.init_kwargs}',
+                    'Default Initialization Arguments:',
+                    f'{unset_init_args if unset_init_args else "N/A"}',
+                    'Call Arguments:',
+                    f'{self.call_kwargs if self.call_kwargs else "N/A"}',
+                    'Default Call Arguments:',
+                    f'{unset_call_args if unset_call_args else "N/A"}']
+        return '\n'.join(info_str)
