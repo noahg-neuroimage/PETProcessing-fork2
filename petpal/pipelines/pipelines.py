@@ -1,7 +1,5 @@
 import copy
 import os.path
-from crypt import methods
-
 import networkx as nx
 
 from ..utils.image_io import safe_copy_meta
@@ -12,6 +10,7 @@ from ..input_function import blood_input
 from ..kinetic_modeling import parametric_images
 from ..kinetic_modeling import tac_fitting
 from ..kinetic_modeling import reference_tissue_models as pet_rtms
+from ..kinetic_modeling import graphical_analysis as pet_grph
 
 class ArgsDict(dict):
     def __str__(self):
@@ -453,6 +452,15 @@ TEMPLATE_STEPS = {
                                      call_kwargs=dict(bounds='',
                                                       t_thresh_in_mins=None,
                                                       k2_prime=None)),
+    'roi_patlak' : ObjectBasedStep(name='roi_patlak',
+                                   class_type=pet_grph.GraphicalAnalysis,
+                                   init_kwargs=dict(input_tac_path='',
+                                                    roi_tac_path='',
+                                                    output_directory='',
+                                                    output_filename_prefix='',),
+                                   call_kwargs=dict(method_name='patlak',
+                                                    t_thresh_in_mins=30.0,)
+                                   ),
     }
 
 general_fdg_pipeline = ProcessingPipeline(name='general_fdg_pipeline',)
@@ -471,7 +479,10 @@ general_fdg_pipeline.add_kinetic_modeling_step(TEMPLATE_STEPS['parametric_cmrglc
                                                receives_output_from_previous_step=False)
 general_fdg_pipeline.add_kinetic_modeling_step(TEMPLATE_STEPS['roi_2tcm-k4zero_fit'],
                                                receives_output_from_previous_step=False)
-general_fdg_pipeline.add_kinetic_modeling_step(TEMPLATE_STEPS['roi_frtm_fit'], False)
+general_fdg_pipeline.add_kinetic_modeling_step(TEMPLATE_STEPS['roi_frtm_fit'],
+                                               receives_output_from_previous_step=False)
+general_fdg_pipeline.add_kinetic_modeling_step(TEMPLATE_STEPS['roi_patlak'],
+                                               receives_output_from_previous_step=False)
 
 
 class BIDsPipeline():
