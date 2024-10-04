@@ -32,6 +32,15 @@ class BaseFunctionBasedStep():
         return unset_args_dict
     
     def get_empty_default_kwargs(self):
+        unset_args_dict = self.get_function_args_not_set_in_kwargs()
+        empty_kwargs = []
+        for arg_name, arg_val in unset_args_dict.items():
+            if arg_val is inspect.Parameter.empty:
+                if arg_name not in self.kwargs:
+                    empty_kwargs.append(arg_name)
+        return empty_kwargs
+        
+        
         pass
     
     def validate_kwargs_for_non_default_have_been_set(self) -> None:
