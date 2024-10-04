@@ -158,17 +158,17 @@ def get_index_from_threshold(times_in_minutes: np.ndarray, t_thresh_in_minutes: 
 
 # TODO: Add more detailed documentation.
 @numba.njit()
-def patlak_analysis(input_tac_values: np.ndarray,
+def patlak_analysis(tac_times_in_minutes: np.ndarray,
+                    input_tac_values: np.ndarray,
                     region_tac_values: np.ndarray,
-                    tac_times_in_minutes: np.ndarray,
                     t_thresh_in_minutes: float) -> np.ndarray:
     """
     Performs Patlak analysis given the input TAC, region TAC, times and threshold.
     
     Args:
+        tac_times_in_minutes (np.ndarray): Array of times in minutes.
         input_tac_values (np.ndarray): Array of input TAC values
         region_tac_values (np.ndarray): Array of ROI TAC values
-        tac_times_in_minutes (np.ndarray): Array of times in minutes.
         t_thresh_in_minutes (np.ndarray): Threshold time in minutes. Line is fit for all values after the threshold.
 
     Returns:
@@ -199,16 +199,16 @@ def patlak_analysis(input_tac_values: np.ndarray,
 
 
 @numba.njit()
-def patlak_analysis_with_rsquared(input_tac_values: np.ndarray,
+def patlak_analysis_with_rsquared(tac_times_in_minutes: np.ndarray,
+                                  input_tac_values: np.ndarray,
                                   region_tac_values: np.ndarray,
-                                  tac_times_in_minutes: np.ndarray,
                                   t_thresh_in_minutes: float) -> Tuple[float, float, float]:
     """Performs Patlak analysis given the input TAC, region TAC, times and threshold.
 
     Args:
+        tac_times_in_minutes (np.ndarray): Array of times in minutes.
         input_tac_values (np.ndarray): Array of input TAC values
         region_tac_values (np.ndarray): Array of ROI TAC values
-        tac_times_in_minutes (np.ndarray): Array of times in minutes.
         t_thresh_in_minutes (np.ndarray): Threshold time in minutes. Line is fit for all values after the threshold.
 
     Returns:
@@ -239,9 +239,9 @@ def patlak_analysis_with_rsquared(input_tac_values: np.ndarray,
 
 
 @numba.njit
-def logan_analysis(input_tac_values: np.ndarray,
+def logan_analysis(tac_times_in_minutes: np.ndarray,
+                   input_tac_values: np.ndarray,
                    region_tac_values: np.ndarray,
-                   tac_times_in_minutes: np.ndarray,
                    t_thresh_in_minutes: float) -> np.ndarray:
     """Performs Logan analysis on given input TAC, regional TAC, times and threshold, considering non-zero values.
 
@@ -251,9 +251,9 @@ def logan_analysis(input_tac_values: np.ndarray,
     the function returns an array of NaNs.
 
     Args:
+        tac_times_in_minutes (np.ndarray): Array of times in minutes.
         input_tac_values (np.ndarray): Array of input TAC values.
         region_tac_values (np.ndarray): Array of ROI TAC values.
-        tac_times_in_minutes (np.ndarray): Array of times in minutes.
         t_thresh_in_minutes (np.ndarray): Threshold time in minutes. Line is fit for all values after the threshold.
 
     Returns:
@@ -286,17 +286,17 @@ def logan_analysis(input_tac_values: np.ndarray,
 
 
 @numba.njit()
-def logan_analysis_with_rsquared(input_tac_values: np.ndarray,
+def logan_analysis_with_rsquared(tac_times_in_minutes: np.ndarray,
+                                 input_tac_values: np.ndarray,
                                  region_tac_values: np.ndarray,
-                                 tac_times_in_minutes: np.ndarray,
                                  t_thresh_in_minutes: float) -> tuple[float, float, float]:
     """
     Performs Logan analysis on given input TAC, regional TAC, times and threshold.
 
     Args:
+        tac_times_in_minutes (np.ndarray): Array of times in minutes.
         input_tac_values (np.ndarray): Array of input TAC values
         region_tac_values (np.ndarray): Array of ROI TAC values
-        tac_times_in_minutes (np.ndarray): Array of times in minutes.
         t_thresh_in_minutes (np.ndarray): Threshold time in minutes. Line is fit for all values after the threshold.
 
     Returns:
@@ -331,9 +331,9 @@ def logan_analysis_with_rsquared(input_tac_values: np.ndarray,
 
 
 @numba.njit
-def alternative_logan_analysis(input_tac_values: np.ndarray,
+def alternative_logan_analysis(tac_times_in_minutes: np.ndarray,
+                               input_tac_values: np.ndarray,
                                region_tac_values: np.ndarray,
-                               tac_times_in_minutes: np.ndarray,
                                t_thresh_in_minutes: float) -> np.ndarray:
     """
     Performs Alternative Logan analysis on given input TAC, regional TAC, times and threshold, considering non-zero
@@ -345,9 +345,9 @@ def alternative_logan_analysis(input_tac_values: np.ndarray,
     the function returns an array of NaNs.
 
     Args:
+        tac_times_in_minutes (np.ndarray): Array of times in minutes.
         input_tac_values (np.ndarray): Array of input TAC values.
         region_tac_values (np.ndarray): Array of ROI TAC values.
-        tac_times_in_minutes (np.ndarray): Array of times in minutes.
         t_thresh_in_minutes (np.ndarray): Threshold time in minutes. Line is fit for all values after the threshold.
 
     Returns:
@@ -380,16 +380,16 @@ def alternative_logan_analysis(input_tac_values: np.ndarray,
 
 
 @numba.njit()
-def alternative_logan_analysis_with_rsquared(input_tac_values: np.ndarray,
+def alternative_logan_analysis_with_rsquared(tac_times_in_minutes: np.ndarray,
+                                             input_tac_values: np.ndarray,
                                              region_tac_values: np.ndarray,
-                                             tac_times_in_minutes: np.ndarray,
                                              t_thresh_in_minutes: float) -> tuple[float, float, float]:
     """Performs alternative logan analysis on given input TAC, regional TAC, times and threshold.
 
     Args:
+        tac_times_in_minutes (np.ndarray): Array of times in minutes.
         input_tac_values (np.ndarray): Array of input TAC values
         region_tac_values (np.ndarray): Array of ROI TAC values
-        tac_times_in_minutes (np.ndarray): Array of times in minutes.
         t_thresh_in_minutes (np.ndarray): Threshold time in minutes. Line is fit for all values after the threshold.
 
     Returns:
@@ -448,15 +448,15 @@ def get_graphical_analysis_method(method_name: str) -> Callable:
         .. code-block:: python
             
             from petpal.graphical_analysis import get_graphical_analysis_method as get_method
-            from petpal.graphical_analysis import safe_load_tac as load_tac
+            from petpal.utils.image_io import safe_load_tac as load_tac
             
             selected_func = get_method('logan')
             input_tac_values, tac_times_in_minutes = load_tac("PATH/TO/PLASMA/TAC.tsv")
             tissue_tac_values, _ = load_tac("PATH/TO/ROI/TAC.tsv")
             
-            results = selected_func(input_tac_values,
+            results = selected_func(tac_times_in_minutes,
+                                    input_tac_values,
                                     tissue_tac_values,
-                                    tac_times_in_minutes,
                                     t_thresh_in_minutes)
             print(results)
                                     
@@ -635,9 +635,9 @@ class GraphicalAnalysis:
         analysis_func = get_graphical_analysis_method_with_rsquared(method_name)
         p_tac_times, p_tac_vals = safe_load_tac(self.input_tac_path)
         _t_tac_times, t_tac_vals = safe_load_tac(self.roi_tac_path)
-        slope, intercept, rsquared = analysis_func(input_tac_values=p_tac_vals,
+        slope, intercept, rsquared = analysis_func(tac_times_in_minutes=p_tac_times,
+                                                   input_tac_values=p_tac_vals,
                                                    region_tac_values=t_tac_vals,
-                                                   tac_times_in_minutes=p_tac_times,
                                                    t_thresh_in_minutes=t_thresh_in_mins)
         self.analysis_props['Slope'] = slope
         self.analysis_props['Intercept'] = intercept
