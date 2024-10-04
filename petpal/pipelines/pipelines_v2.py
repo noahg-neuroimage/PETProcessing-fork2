@@ -17,11 +17,11 @@ class BaseFunctionBasedStep():
     def __init__(self, name: str, function: Callable, *args, **kwargs) -> None:
         self.name = name
         self.function = function
+        self._func_name = function.__name__
         self.args = args
         self.kwargs = kwargs
         self.func_sig = inspect.signature(self.function)
         self.validate_kwargs_for_non_default_have_been_set()
-        self._func_name = function.__name__
         
     def get_function_args_not_set_in_kwargs(self) -> ArgsDict:
         unset_args_dict = ArgsDict()
