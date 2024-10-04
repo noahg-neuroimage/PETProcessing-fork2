@@ -21,8 +21,9 @@ class BaseFunctionBasedStep():
         self.kwargs = kwargs
         self.func_sig = inspect.signature(self.function)
         self.validate_kwargs_for_non_default_have_been_set()
+        self._func_name = function.__name__
         
-    def get_function_args_not_set_in_kwargs(self):
+    def get_function_args_not_set_in_kwargs(self) -> ArgsDict:
         unset_args_dict = ArgsDict()
         func_params = self.func_sig.parameters
         arg_names = list(func_params)
@@ -31,7 +32,7 @@ class BaseFunctionBasedStep():
                 unset_args_dict[arg_name] = func_params[arg_name].default
         return unset_args_dict
     
-    def get_empty_default_kwargs(self):
+    def get_empty_default_kwargs(self) -> list:
         unset_args_dict = self.get_function_args_not_set_in_kwargs()
         empty_kwargs = []
         for arg_name, arg_val in unset_args_dict.items():
@@ -39,12 +40,12 @@ class BaseFunctionBasedStep():
                 if arg_name not in self.kwargs:
                     empty_kwargs.append(arg_name)
         return empty_kwargs
-        
-        
-        pass
     
     def validate_kwargs_for_non_default_have_been_set(self) -> None:
-        pass
+        empty_kwargs = self.get_empty_default_kwargs()
+        if empty_kwargs:
+            unset_args = '\n'.join(empty_kwargs)
+            raise RuntimeError(f"For {self._func_name}, the following arguments must be set:\n{unset_args}")
     
     
     def execute(self):
