@@ -60,11 +60,12 @@ class BaseFunctionBasedStep():
         return args_to_kwargs_dict
     
     def __str__(self):
+        args_to_kwargs_dict = self.generate_kwargs_from_args()
         info_str = [f'({type(self).__name__} Info):',
                     f'Step Name: {self.name}',
                     f'Function Name: {self._func_name}',
                     f'Arguments Passed:',
-                    f'{self.generate_kwargs_from_args()}',
+                    f'{args_to_kwargs_dict if args_to_kwargs_dict else "N/A"}',
                     'Keyword-Arguments Set:',
                     f'{self.kwargs if self.kwargs else "N/A"}',
                     'Default Arguments:',
@@ -144,3 +145,34 @@ class BaseObjectBasedStep():
                     'Default Call Arguments:',
                     f'{unset_call_args if unset_call_args else "N/A"}']
         return '\n'.join(info_str)
+    
+    
+class ImageToImageStep(BaseFunctionBasedStep):
+    def __init__(self,
+                 name: str,
+                 function: Callable,
+                 input_image_path: str,
+                 output_image_path: str,
+                 *args,
+                 **kwargs) -> None:
+        super().__init__(name, function, *(input_image_path, output_image_path, *args), **kwargs)
+        self.input_image_path = self.args[0]
+        self.output_image_path = self.args[1]
+        self.args = self.args[2:]
+    
+    def execute(self, copy_meta_file: bool = True) -> None:
+        print(f"(Info): Executing {self.name}")
+        self.function(self.input_image_path, self.output_image_path, self.args, **self.kwargs)
+        if copy_meta_file:
+            safe_copy_meta(input_image_path=self.input_image_path,
+                           out_image_path=self.output_image_path)
+        print(f"(Info): Finished {self.name}")
+    
+    def __str__(self):
+        io_dict = ArgsDict({'input_image_path': self.input_image_path,
+                            'output_image_path': self.output_image_path
+                           })
+        sup_str_list = super().__str__().split('\n')
+        args_ind = sup_str_list.index("Arguments Passed:")
+        sup_str_list.insert(args_ind, f"Input & Output Paths:\n{io_dict}")
+        return "\n".join(sup_str_list)
