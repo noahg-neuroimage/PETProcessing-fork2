@@ -464,10 +464,7 @@ class FitTACsWithRTMs:
     def __init__(self,
                  reference_tac: TimeActivityCurve,
                  tacs_dir: str,
-                 method: str = 'mrtm',
-                 bounds: Union[None, np.ndarray] = None,
-                 t_thresh_in_mins: float = None,
-                 k2_prime: float = None):
+                 rtm_inputs: RTMKwargs):
         r"""
         Initialize the FitTACWithRTMs object with specified parameters.
 
@@ -493,15 +490,10 @@ class FitTACsWithRTMs:
         """
         self.reference_tac = reference_tac
         self.tacs_dir = tacs_dir
-        self.method: str = method.lower()
-        self.bounds: Union[None, np.ndarray] = bounds
+        self.rtm_inputs = rtm_inputs
+
         self.validate_bounds()
-
-        self.t_thresh_in_mins: float = t_thresh_in_mins
-        self.k2_prime: float = k2_prime
-
         self.validate_method_inputs()
-
         self.fit_results: Union[None, np.ndarray] = None
 
     def validate_method_inputs(self):
@@ -529,17 +521,16 @@ class FitTACsWithRTMs:
             * :func:`fit_mrtm2_2003_to_tac`
 
         """
-        if self.method.startswith("mrtm"):
-            if self.t_thresh_in_mins is None:
+        if self.rtm_inputs.method.startswith("mrtm"):
+            if self.rtm_inputs.t_thresh_in_mins is None:
                 raise ValueError(
                     "t_t_thresh_in_mins must be defined if method is 'mrtm'")
-            else:
-                assert self.t_thresh_in_mins >= 0, "t_thresh_in_mins must be a positive number."
-        if self.method.endswith("2"):
-            if self.k2_prime is None:
+            assert self.rtm_inputs.t_thresh_in_mins >= 0, "t_thresh_in_mins must be a positive number."
+        if self.rtm_inputs.method.endswith("2"):
+            if self.rtm_inputs.k2_prime is None:
                 raise ValueError("k2_prime must be defined if we are using the reduced models: "
                                  "FRTM2, SRTM2, and MRTM2.")
-            assert self.k2_prime >= 0, "k2_prime must be a positive number."
+            assert self.rtm_inputs.k2_prime >= 0, "k2_prime must be a positive number."
 
     def validate_bounds(self):
         r"""Validates the bounds for different methods
@@ -564,31 +555,31 @@ class FitTACsWithRTMs:
             * :func:`fit_mrtm2_2003_to_tac`
 
         """
-        if self.bounds is not None:
-            num_params, num_vals = self.bounds.shape
-            if self.method == "srtm":
+        if self.rtm_inputs.bounds is not None:
+            num_params, num_vals = self.rtm_inputs.bounds.shape
+            if self.rtm_inputs.method == "srtm":
                 assert num_params == 3 and num_vals == 3, ("The bounds have the wrong shape. "
                                                            "Bounds must be (start, lo, hi) for each"
                                                            "of the fitting "
                                                            "parameters: r1, k2, bp")
-            elif self.method == "frtm":
+            elif self.rtm_inputs.method == "frtm":
                 assert num_params == 4 and num_vals == 3, (
                     "The bounds have the wrong shape. Bounds must be (start, lo, hi) "
                     "for each of the fitting parameters: r1, k2, k3, k4")
 
-            elif self.method == "srtm2":
+            elif self.rtm_inputs.method == "srtm2":
                 assert num_params == 2 and num_vals == 3, ("The bounds have the wrong shape. Bounds"
                                                            "must be (start, lo, hi) "
                                                            "for each of the"
                                                            " fitting parameters: r1, bp")
-            elif self.method == "frtm2":
+            elif self.rtm_inputs.method == "frtm2":
                 assert num_params == 3 and num_vals == 3, (
                     "The bounds have the wrong shape. Bounds must be (start, lo, hi) "
                     "for each of the fitting parameters: r1, k3, k4")
             else:
                 raise ValueError(f"Invalid method! Must be either 'srtm', 'frtm', 'srtm2' or "
                                  "'frtm2' if bounds are "
-                                 f"provided. Got {self.method}.")
+                                 f"provided. Got {self.rtm_inputs.method}.")
 
 
     def get_tacs_file_list(self):
@@ -650,11 +641,11 @@ class FitTACsWithRTMs:
             * :func:`fit_mrtm2_2003_to_tac`
 
         """
-        rtm_method = get_rtm_method(method=self.method,bounds=self.bounds)
+        rtm_method = get_rtm_method(method=self.rtm_inputs.method,bounds=self.rtm_inputs.bounds)
         rtm_kwargs = get_rtm_kwargs(method=rtm_method,
-                                    bounds=self.bounds,
-                                    k2_prime=self.k2_prime,
-                                    t_thresh_in_mins=self.t_thresh_in_mins)
+                                    bounds=self.rtm_inputs.bounds,
+                                    k2_prime=self.rtm_inputs.k2_prime,
+                                    t_thresh_in_mins=self.rtm_inputs.t_thresh_in_mins)
         self.fit_results = rtm_method(tgt_tac_vals=target_tac_vals,
                                       ref_tac_times=self.reference_tac.tac_times_in_minutes,
                                       ref_tac_vals=self.reference_tac.tac_vals,
@@ -692,11 +683,11 @@ class FitTACsWithRTMs:
             * :func:`fit_mrtm2_2003_to_tac`
 
         """
-        rtm_method = get_rtm_method(method=self.method,bounds=self.bounds)
+        rtm_method = get_rtm_method(method=self.rtm_inputs.method,bounds=self.rtm_inputs.bounds)
         rtm_kwargs = get_rtm_kwargs(method=rtm_method,
-                                    bounds=self.bounds,
-                                    k2_prime=self.k2_prime,
-                                    t_thresh_in_mins=self.t_thresh_in_mins)
+                                    bounds=self.rtm_inputs.bounds,
+                                    k2_prime=self.rtm_inputs.k2_prime,
+                                    t_thresh_in_mins=self.rtm_inputs.t_thresh_in_mins)
         self.fit_results = rtm_method(tgt_tac_vals=target_tac_vals,
                                     ref_tac_times=self.reference_tac.tac_times_in_minutes,
                                     ref_tac_vals=self.reference_tac.tac_vals,
