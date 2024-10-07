@@ -655,14 +655,14 @@ class FitTACsWithRTMs:
             * :func:`fit_mrtm2_2003_to_tac`
 
         """
-
+        ref_tac = self.reference_tac
         self.fit_results = self.rtm_inputs.method(tgt_tac_vals=target_tac_vals,
-                                                  ref_tac_times=self.reference_tac.tac_times_in_minutes,
-                                                  ref_tac_vals=self.reference_tac.tac_vals,
+                                                  ref_tac_times=ref_tac.tac_times_in_minutes,
+                                                  ref_tac_vals=ref_tac.tac_vals,
                                                   **self.kwargs_dict)
 
 
-    def fit_many_tacs_to_model(self, target_tac_vals):
+    def fit_many_tacs_to_model(self, target_tac_vals_list):
         r"""Fits many target TACs to a model
 
         This method fits the target TAC values to the model depending on the chosen method in the
@@ -693,12 +693,11 @@ class FitTACsWithRTMs:
             * :func:`fit_mrtm2_2003_to_tac`
 
         """
-        rtm_method = get_rtm_method(method=self.rtm_inputs.method,bounds=self.rtm_inputs.bounds)
-        rtm_kwargs = get_rtm_kwargs(method=rtm_method,
-                                    bounds=self.rtm_inputs.bounds,
-                                    k2_prime=self.rtm_inputs.k2_prime,
-                                    t_thresh_in_mins=self.rtm_inputs.t_thresh_in_mins)
-        self.fit_results = rtm_method(tgt_tac_vals=target_tac_vals,
-                                    ref_tac_times=self.reference_tac.tac_times_in_minutes,
-                                    ref_tac_vals=self.reference_tac.tac_vals,
-                                    **rtm_kwargs)
+        ref_tac = self.reference_tac
+        fit_results = []
+        for target_tac_vals in target_tac_vals_list:
+            fit_results += [self.rtm_inputs.method(tgt_tac_vals=target_tac_vals,
+                                                  ref_tac_times=ref_tac.tac_times_in_minutes,
+                                                  ref_tac_vals=ref_tac.tac_vals,
+                                                  **self.kwargs_dict)]
+        return fit_results
