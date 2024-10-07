@@ -3,6 +3,7 @@ This module contains the FitTacWithRTMs class, used to fit kinetic models to a t
 reference Time Activity Curve.
 """
 from typing import Union, Callable
+from dataclasses import dataclass
 import glob
 import numpy as np
 from petpal.kinetic_modeling.reference_tissue_models import (fit_frtm2_to_tac,
@@ -89,9 +90,9 @@ def get_rtm_method(method: str, bounds=None):
 
 
 def get_rtm_kwargs(method: Callable,
-                   bounds=None,
-                   k2_prime=None,
-                   t_thresh_in_mins=None):
+                   bounds: list=None,
+                   k2_prime: float=None,
+                   t_thresh_in_mins: float=None):
     """
     Function for getting special keyword arguments to be passed on to the provided when used as
     part of an analysis.
@@ -142,6 +143,15 @@ def get_rtm_kwargs(method: Callable,
         args_dict['k3_bounds'] = bounds[1]
         args_dict['k4_bounds'] = bounds[2]
     return args_dict
+
+
+@dataclass
+class RTMKwargs:
+    """Class for handling RTM inputs and arguments"""
+    method: Callable
+    bounds: list
+    k2_prime: float
+    t_thresh_in_mins: float
 
 
 class FitTACWithRTMs:
