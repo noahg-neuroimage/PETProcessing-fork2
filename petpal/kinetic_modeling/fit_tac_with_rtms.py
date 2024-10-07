@@ -158,8 +158,8 @@ class FitTACWithRTMs:
     The fitting result contains the estimated kinetic parameters depending on the chosen model.
 
     Attributes:
+        tac_times_in_minutes (np.ndarray): The array representing the time-points for both TACs.
         target_tac_vals (np.ndarray): The target TAC values.
-        reference_tac_times (np.ndarray): The time points of the reference TAC.
         reference_tac_vals (np.ndarray): The reference TAC values.
         method (str): Optional. The kinetic model to use. Defaults to 'mrtm'.
         bounds (np.ndarray): Optional. Parameter bounds for the specified kinetic model. Defaults
@@ -185,14 +185,14 @@ class FitTACWithRTMs:
                                                          float)
 
             # generating a reference region tac
-            ref_tac_times, ref_tac_vals = pet_tcm.generate_tac_1tcm_c1_from_tac(tac_times=input_tac_times, tac_vals=input_tac_vals,
+            ref_tac_times, ref_tac_vals = pet_tcm.generate_tac_1tcm_c1_from_tac(tac_times_in_minutes=input_tac_times, tac_vals=input_tac_vals,
                                                                                 k1=1.0, k2=0.2)
 
             # generating an SRTM tac
-            srtm_tac_vals = pet_rtms.calc_srtm_tac(tac_times=ref_tac_times, ref_tac_vals=ref_tac_vals, r1=1.0, k2=0.25, bp=3.0)
+            srtm_tac_vals = pet_rtms.calc_srtm_tac(tac_times_in_minutes=ref_tac_times, ref_tac_vals=ref_tac_vals, r1=1.0, k2=0.25, bp=3.0)
 
             rtm_analysis = pet_rtms.FitTACWithRTMs(target_tac_vals=srtm_tac_vals,
-                                                reference_tac_times=ref_tac_times,
+                                                tac_times_in_minutes=ref_tac_times,
                                                 reference_tac_vals=ref_tac_vals,
                                                 method='srtm')
 
@@ -209,10 +209,9 @@ class FitTACWithRTMs:
         * :meth:`fit_tac_to_model`
 
     """
-
     def __init__(self,
+                 tac_times_in_minutes: np.ndarray,
                  target_tac_vals: np.ndarray,
-                 reference_tac_times: np.ndarray,
                  reference_tac_vals: np.ndarray,
                  method: str = 'mrtm',
                  bounds: Union[None, np.ndarray] = None,
@@ -226,9 +225,8 @@ class FitTACWithRTMs:
         MRTM analyses.
 
         Args:
+            tac_times_in_minutes (np.ndarray): The array representing the time-points for both TACs.
             target_tac_vals (np.ndarray): The array representing the target TAC values.
-            reference_tac_times (np.ndarray): The array representing time points associated with
-                the reference TAC.
             reference_tac_vals (np.ndarray): The array representing values of the reference TAC.
             method (str, optional): The kinetics method to be used. Default is 'mrtm'.
             bounds (Union[None, np.ndarray], optional): Bounds for kinetic parameters used in
@@ -243,8 +241,8 @@ class FitTACWithRTMs:
             AssertionError: If rate constant k2_prime is non-positive.
         """
 
+        self.tac_times_in_minutes: np.ndarray = tac_times_in_minutes
         self.target_tac_vals: np.ndarray = target_tac_vals
-        self.reference_tac_times: np.ndarray = reference_tac_times
         self.reference_tac_vals: np.ndarray = reference_tac_vals
         self.method: str = method.lower()
         self.bounds: Union[None, np.ndarray] = bounds
@@ -380,6 +378,6 @@ class FitTACWithRTMs:
                                     k2_prime=self.k2_prime,
                                     t_thresh_in_mins=self.t_thresh_in_mins)
         self.fit_results = rtm_method(tgt_tac_vals=self.target_tac_vals,
-                                      ref_tac_times=self.reference_tac_times,
+                                      ref_tac_times=self.tac_times_in_minutes,
                                       ref_tac_vals=self.reference_tac_vals,
                                       **rtm_kwargs)
