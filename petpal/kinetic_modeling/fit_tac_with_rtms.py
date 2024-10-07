@@ -589,6 +589,16 @@ class FitTACsWithRTMs:
         return tacs_file_list
 
 
+    def get_tacs_object_list(self, tacs_file_list: list):
+        """
+        Get a list of TimeActivityCurve objects from a list of TAC paths.
+        """
+        tacs_list = []
+        for tac_file in tacs_file_list:
+            tacs_list += [TimeActivityCurve(tac_path=tac_file)]
+        return tacs_list
+
+
     def fit_tac_to_model(self, target_tac_vals):
         r"""Fits TAC vals to model
 
