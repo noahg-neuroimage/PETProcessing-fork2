@@ -148,7 +148,7 @@ def get_rtm_kwargs(method: Callable,
 @dataclass
 class RTMKwargs:
     """Class for handling RTM inputs and arguments"""
-    method: Callable
+    method: list
     bounds: list
     k2_prime: float
     t_thresh_in_mins: float
@@ -491,9 +491,11 @@ class FitTACsWithRTMs:
         self.reference_tac = reference_tac
         self.tacs_dir = tacs_dir
         self.rtm_inputs = rtm_inputs
+        self.rtm_method = get_rtm_method(method=self.rtm_inputs.method,bounds=self.rtm_inputs.bounds)
 
         self.validate_bounds()
         self.validate_method_inputs()
+        self.kwargs_dict = self.get_rtm_kwargs_dict_from_class()
         self.fit_results: Union[None, np.ndarray] = None
 
     def validate_method_inputs(self):
@@ -610,6 +612,18 @@ class FitTACsWithRTMs:
         return tac_vals_list
 
 
+    def get_rtm_kwargs_dict_from_class(self):
+        """
+        Get a kwargs dict that functions as a direct input into the RTM methods from the values
+        stored in ``self.rtm_kwargs``.
+        """
+        rtm_kwargs_dict = get_rtm_kwargs(method=self.rtm_method,
+                                         bounds=self.rtm_inputs.bounds,
+                                         k2_prime=self.rtm_inputs.k2_prime,
+                                         t_thresh_in_mins=self.rtm_inputs.t_thresh_in_mins)
+        return rtm_kwargs_dict
+
+
     def fit_tac_to_model(self, target_tac_vals):
         r"""Fits TAC vals to model
 
@@ -641,15 +655,11 @@ class FitTACsWithRTMs:
             * :func:`fit_mrtm2_2003_to_tac`
 
         """
-        rtm_method = get_rtm_method(method=self.rtm_inputs.method,bounds=self.rtm_inputs.bounds)
-        rtm_kwargs = get_rtm_kwargs(method=rtm_method,
-                                    bounds=self.rtm_inputs.bounds,
-                                    k2_prime=self.rtm_inputs.k2_prime,
-                                    t_thresh_in_mins=self.rtm_inputs.t_thresh_in_mins)
-        self.fit_results = rtm_method(tgt_tac_vals=target_tac_vals,
-                                      ref_tac_times=self.reference_tac.tac_times_in_minutes,
-                                      ref_tac_vals=self.reference_tac.tac_vals,
-                                      **rtm_kwargs)
+
+        self.fit_results = self.rtm_inputs.method(tgt_tac_vals=target_tac_vals,
+                                                  ref_tac_times=self.reference_tac.tac_times_in_minutes,
+                                                  ref_tac_vals=self.reference_tac.tac_vals,
+                                                  **self.kwargs_dict)
 
 
     def fit_many_tacs_to_model(self, target_tac_vals):
