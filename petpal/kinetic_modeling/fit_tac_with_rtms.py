@@ -662,7 +662,7 @@ class FitTACsWithRTMs:
                                                   **self.kwargs_dict)
 
 
-    def fit_many_tacs_to_model(self, target_tac_vals_list):
+    def fit_many_tacs_to_model(self):
         r"""Fits many target TACs to a model
 
         This method fits the target TAC values to the model depending on the chosen method in the
@@ -694,6 +694,9 @@ class FitTACsWithRTMs:
 
         """
         ref_tac = self.reference_tac
+        tacs_file_list = self.get_tacs_file_list()
+        tacs_object_list = self.get_tacs_object_list(tacs_file_list=tacs_file_list)
+        target_tac_vals_list = self.get_tacs_vals_list_from_object(tacs_object_list=tacs_object_list)
         fit_results = []
         for target_tac_vals in target_tac_vals_list:
             fit_results += [self.rtm_inputs.method(tgt_tac_vals=target_tac_vals,
