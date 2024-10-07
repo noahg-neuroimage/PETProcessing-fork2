@@ -581,12 +581,12 @@ class FitTACsWithRTMs:
                                  f"provided. Got {self.method}.")
 
 
-    def get_tacs_list(self):
+    def get_tacs_file_list(self):
         """
         Get a list of TAC paths from a directory. Assume .tsv files.
         """
-
-        return self.tacs_dir
+        tacs_file_list = glob.glob(f"{self.tacs_dir}/*.tsv")
+        return tacs_file_list
 
 
     def fit_tac_to_model(self, target_tac_vals):
