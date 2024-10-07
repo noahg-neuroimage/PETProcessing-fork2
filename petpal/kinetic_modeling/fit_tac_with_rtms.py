@@ -3,6 +3,7 @@ This module contains the FitTacWithRTMs class, used to fit kinetic models to a t
 reference Time Activity Curve.
 """
 from typing import Union, Callable
+import glob
 import numpy as np
 from petpal.kinetic_modeling.reference_tissue_models import (fit_frtm2_to_tac,
                                                              fit_frtm2_to_tac_with_bounds,
@@ -15,7 +16,7 @@ from petpal.kinetic_modeling.reference_tissue_models import (fit_frtm2_to_tac,
                                                              fit_srtm2_to_tac_with_bounds,
                                                              fit_srtm_to_tac,
                                                              fit_srtm_to_tac_with_bounds)
-from petpal.utils.tissue_activity_curve import TissueActivityCurve
+from petpal.utils.time_activity_curve import TimeActivityCurve
 
 
 def get_rtm_method(method: str, bounds=None):
@@ -451,7 +452,8 @@ class FitTACsWithRTMs:
 
     """
     def __init__(self,
-                 reference_tac: TissueActivityCurve,
+                 reference_tac: TimeActivityCurve,
+                 tacs_dir: str,
                  method: str = 'mrtm',
                  bounds: Union[None, np.ndarray] = None,
                  t_thresh_in_mins: float = None,
@@ -480,6 +482,7 @@ class FitTACsWithRTMs:
             AssertionError: If rate constant k2_prime is non-positive.
         """
         self.reference_tac = reference_tac
+        self.tacs_dir = tacs_dir
         self.method: str = method.lower()
         self.bounds: Union[None, np.ndarray] = bounds
         self.validate_bounds()
@@ -577,6 +580,15 @@ class FitTACsWithRTMs:
                                  "'frtm2' if bounds are "
                                  f"provided. Got {self.method}.")
 
+
+    def get_tacs_list(self):
+        """
+        Get a list of TAC paths from a directory. Assume .tsv files.
+        """
+
+        return self.tacs_dir
+
+
     def fit_tac_to_model(self, target_tac_vals):
         r"""Fits TAC vals to model
 
@@ -617,3 +629,45 @@ class FitTACsWithRTMs:
                                       ref_tac_times=self.reference_tac.tac_times_in_minutes,
                                       ref_tac_vals=self.reference_tac.tac_vals,
                                       **rtm_kwargs)
+
+
+    def fit_many_tacs_to_model(self, target_tac_vals):
+        r"""Fits many target TACs to a model
+
+        This method fits the target TAC values to the model depending on the chosen method in the
+        object.
+
+        - If the method is 'srtm' or 'frtm', and bounds are provided, fitting functions with bounds
+            are used.
+        - If the method is 'srtm' or 'frtm', and bounds are not provided, fitting functions without
+            bounds are used.
+        - If the method is 'mrtm-original', 'mrtm' or 'mrtm2', related fitting methods are utilized.
+
+        Raises:
+            ValueError: If the method name is invalid and not one of 'srtm', 'frtm',
+                'mrtm-original', 'mrtm' or 'mrtm2'.
+
+
+        See Also:
+            * :func:`fit_srtm_to_tac_with_bounds`
+            * :func:`fit_srtm_to_tac`
+            * :func:`fit_frtm_to_tac_with_bounds`
+            * :func:`fit_frtm_to_tac`
+            * :func:`fit_srtm2_to_tac_with_bounds`
+            * :func:`fit_srtm2_to_tac`
+            * :func:`fit_frtm2_to_tac_with_bounds`
+            * :func:`fit_frtm2_to_tac`
+            * :func:`fit_mrtm_original_to_tac`
+            * :func:`fit_mrtm_2003_to_tac`
+            * :func:`fit_mrtm2_2003_to_tac`
+
+        """
+        rtm_method = get_rtm_method(method=self.method,bounds=self.bounds)
+        rtm_kwargs = get_rtm_kwargs(method=rtm_method,
+                                    bounds=self.bounds,
+                                    k2_prime=self.k2_prime,
+                                    t_thresh_in_mins=self.t_thresh_in_mins)
+        self.fit_results = rtm_method(tgt_tac_vals=target_tac_vals,
+                                    ref_tac_times=self.reference_tac.tac_times_in_minutes,
+                                    ref_tac_vals=self.reference_tac.tac_vals,
+                                    **rtm_kwargs)
