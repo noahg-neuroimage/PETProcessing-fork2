@@ -25,7 +25,7 @@ def write_dict_to_json(meta_data_dict: dict, out_path: str):
 
 def convert_ctab_to_dseg(ctab_path: str,
                          dseg_path: str,
-                         column_names: list[str]=['mapping','name','r','g','b','a','ttype']):
+                         column_names: list[str]=None):
     """
     Convert a FreeSurfer compatible color table into a BIDS compatible label
     map ``dseg.tsv``.
@@ -36,15 +36,18 @@ def convert_ctab_to_dseg(ctab_path: str,
         column_names (list[str]): List of columns present in color table. Must
             include 'mapping' and 'name'.
     """
+    if column_names==None:
+        column_names = ['mapping','name','r','g','b','a','ttype']
     fs_ctab = pd.read_csv(ctab_path,
                           delim_whitespace=True,
                           header=None,
                           comment='#',
                           names=column_names)
-    label_map = pd.DataFrame(columns=['name','abbreviation','mapping']).rename_axis('index')
-    label_map['name'] = fs_ctab['name']
-    label_map['mapping'] = fs_ctab['mapping']
-    label_map['abbreviation'] = useful_functions.build_label_map(fs_ctab['name'])
+    label_names = {'name': fs_ctab['name'],
+                   'mapping': fs_ctab['mapping'],
+                   'abbreviation': useful_functions.build_label_map(fs_ctab['name'])}
+    label_map = pd.DataFrame(data=label_names,
+                             columns=['name','abbreviation','mapping']).rename_axis('index')
     label_map = label_map.sort_values(by=['mapping'])
     label_map.to_csv(dseg_path,sep='\t')
     return label_map
