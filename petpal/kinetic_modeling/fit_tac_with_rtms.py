@@ -699,8 +699,11 @@ class FitTACsWithRTMs:
         target_tac_vals_list = self.get_tacs_vals_list_from_object(tacs_object_list=tacs_object_list)
         fit_results = []
         for target_tac_vals in target_tac_vals_list:
-            fit_results += [self.rtm_inputs.method(tgt_tac_vals=target_tac_vals,
-                                                  ref_tac_times=ref_tac.tac_times_in_minutes,
-                                                  ref_tac_vals=ref_tac.tac_vals,
-                                                  **self.kwargs_dict)]
+            try:
+                fit_results += [self.rtm_method(tac_times_in_minutes=ref_tac.tac_times_in_minutes,
+                                                tgt_tac_vals=target_tac_vals,
+                                                ref_tac_vals=ref_tac.tac_vals,
+                                                **self.kwargs_dict)]
+            except ValueError:
+                fit_results += [np.nan]
         return fit_results
