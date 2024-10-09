@@ -496,7 +496,7 @@ class FitTACsWithRTMs:
         self.validate_bounds()
         self.validate_method_inputs()
         self.kwargs_dict = self.get_rtm_kwargs_dict_from_class()
-        self.fit_results: Union[None, np.ndarray] = None
+        self.fit_results = self.fit_many_tacs_to_model()
 
     def validate_method_inputs(self):
         r"""Validates the inputs for different methods
