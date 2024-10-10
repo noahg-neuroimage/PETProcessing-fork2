@@ -13,7 +13,7 @@ from ..kinetic_modeling import graphical_analysis as pet_grph
 from .pipelines import ArgsDict
 
 
-class BaseFunctionBasedStep():
+class FunctionBasedStep():
     def __init__(self, name: str, function: Callable, *args, **kwargs) -> None:
         self.name = name
         self.function = function
@@ -73,7 +73,7 @@ class BaseFunctionBasedStep():
         return '\n'.join(info_str)
     
     
-class BaseObjectBasedStep():
+class ObjectBasedStep():
     def __init__(self,
                  name: str,
                  class_type: type,
@@ -147,7 +147,7 @@ class BaseObjectBasedStep():
         return '\n'.join(info_str)
 
     
-class ImageToImageStep(BaseFunctionBasedStep):
+class ImageToImageStep(FunctionBasedStep):
     def __init__(self,
                  name: str,
                  function: Callable,
@@ -181,7 +181,7 @@ class ImageToImageStep(BaseFunctionBasedStep):
         
         return "\n".join(sup_str_list)
     
-    def set_input_as_output_from(self, sending_step: BaseFunctionBasedStep) -> None:
+    def set_input_as_output_from(self, sending_step: FunctionBasedStep) -> None:
         if isinstance(sending_step, ImageToImageStep):
             self.input_image_path = sending_step.output_image_path
         else:
@@ -190,7 +190,7 @@ class ImageToImageStep(BaseFunctionBasedStep):
                     f"It is of type {type(sending_step)}.")
         
 
-class GraphicalAnalysisStep(BaseObjectBasedStep):
+class GraphicalAnalysisStep(ObjectBasedStep):
     def __init__(self,
                  input_tac_path: str,
                  roi_tac_path: str,
