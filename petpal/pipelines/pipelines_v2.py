@@ -175,6 +175,10 @@ class ImageToImageStep(BaseFunctionBasedStep):
         sup_str_list = super().__str__().split('\n')
         args_ind = sup_str_list.index("Arguments Passed:")
         sup_str_list.insert(args_ind, f"Input & Output Paths:\n{io_dict}")
+        def_args_ind = sup_str_list.index("Default Arguments:")
+        sup_str_list.pop(def_args_ind + 1)
+        sup_str_list.pop(def_args_ind + 1)
+        
         return "\n".join(sup_str_list)
     
     def set_input_as_output_from(self, sending_step: BaseFunctionBasedStep) -> None:
