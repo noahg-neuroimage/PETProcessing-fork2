@@ -145,7 +145,7 @@ class BaseObjectBasedStep():
                     'Default Call Arguments:',
                     f'{unset_call_args if unset_call_args else "N/A"}']
         return '\n'.join(info_str)
-    
+
     
 class ImageToImageStep(BaseFunctionBasedStep):
     def __init__(self,
@@ -188,3 +188,21 @@ class ImageToImageStep(BaseFunctionBasedStep):
             raise TypeError(
                     f"The provided step: {sending_step}\n is not an instance of ImageToImageStep. "
                     f"It is of type {type(sending_step)}.")
+        
+
+class GraphicalAnalysisStep(BaseObjectBasedStep):
+    def __init__(self,
+                 input_tac_path: str,
+                 roi_tac_path: str,
+                 output_directory: str,
+                 output_prefix: str,
+                 method: str,
+                 fit_threshold_in_mins: float = 30.0,):
+        super().__init__(name=f'{method}-analysis',
+                         class_type=pet_grph.GraphicalAnalysis,
+                         init_kwargs=dict(input_tac_path=input_tac_path,
+                                          roi_tac_path=roi_tac_path,
+                                          output_directory=output_directory,
+                                          output_filename_prefix=output_prefix),
+                         call_kwargs=dict(method_name=method, t_thresh_in_mins=fit_threshold_in_mins))
+        
