@@ -680,7 +680,8 @@ def fit_frtm2_to_tac_with_bounds(tac_times_in_minutes: np.ndarray,
 def fit_mrtm_original_to_tac(tac_times_in_minutes: np.ndarray,
                              tgt_tac_vals: np.ndarray,
                              ref_tac_vals: np.ndarray,
-                             t_thresh_in_mins: float):
+                             t_thresh_in_mins: float,
+                             weights: np.ndarray=None):
     r"""
     Fit the original (1996) Multilinear Reference Tissue Model (MRTM) to the provided target Time
     Activity Curve (TAC) values given the reference TAC, times, and threshold time (in minutes).
@@ -715,6 +716,8 @@ def fit_mrtm_original_to_tac(tac_times_in_minutes: np.ndarray,
         This function is implemented with numba for improved performance.
 
     """
+    if weights is None:
+        weights = np.ones_like(tac_times_in_minutes)
 
     non_zero_indices = np.argwhere(tgt_tac_vals != 0.).T[0]
 
@@ -727,7 +730,7 @@ def fit_mrtm_original_to_tac(tac_times_in_minutes: np.ndarray,
     if len(tac_times_in_minutes[non_zero_indices][t_thresh:]) <= 2:
         return np.asarray([np.nan, np.nan, np.nan])
 
-    y = cum_trapz(xdata=tac_times_in_minutes, ydata=tgt_tac_vals, initial=0.0)
+    y = cum_trapz(xdata=tac_times_in_minutes, ydata=tgt_tac_vals, initial=0.0)*weights
     y = y[non_zero_indices] / tgt_tac_vals[non_zero_indices]
 
     x1 = cum_trapz(xdata=tac_times_in_minutes, ydata=ref_tac_vals, initial=0.0)
@@ -736,8 +739,8 @@ def fit_mrtm_original_to_tac(tac_times_in_minutes: np.ndarray,
     x2 = ref_tac_vals[non_zero_indices] / tgt_tac_vals[non_zero_indices]
 
     x_matrix = np.ones((len(y), 3), float)
-    x_matrix[:, 0] = x1[:]
-    x_matrix[:, 1] = x2[:]
+    x_matrix[:, 0] = x1[:]*weights
+    x_matrix[:, 1] = x2[:]*weights
 
     fit_ans = np.linalg.lstsq(x_matrix[t_thresh:], y[t_thresh:])[0]
     return fit_ans
@@ -805,7 +808,8 @@ def fit_mrtm2_2003_to_tac(tac_times_in_minutes: np.ndarray,
                           tgt_tac_vals: np.ndarray,
                           ref_tac_vals: np.ndarray,
                           t_thresh_in_mins: float,
-                          k2_prime: float):
+                          k2_prime: float,
+                          weights: np.ndarray=None):
     r"""
     Fit the second version of Multilinear Reference Tissue Model (MRTM2) to the provided target
     Time Activity Curve (TAC) values given the reference TAC, times, threshold time (in minutes),
@@ -840,8 +844,11 @@ def fit_mrtm2_2003_to_tac(tac_times_in_minutes: np.ndarray,
         This function is implemented with numba for improved performance.
 
     """
+    if weights is None:
+        weights = np.ones_like(tac_times_in_minutes)
 
-    t_thresh = get_index_from_threshold(times_in_minutes=tac_times_in_minutes, t_thresh_in_minutes=t_thresh_in_mins)
+    t_thresh = get_index_from_threshold(times_in_minutes=tac_times_in_minutes,
+                                        t_thresh_in_minutes=t_thresh_in_mins)
     if t_thresh == -1:
         return np.asarray([np.nan, np.nan])
 
@@ -849,10 +856,10 @@ def fit_mrtm2_2003_to_tac(tac_times_in_minutes: np.ndarray,
     x1 += ref_tac_vals / k2_prime
     x2 = cum_trapz(xdata=tac_times_in_minutes, ydata=tgt_tac_vals, initial=0.0)
 
-    y = tgt_tac_vals
+    y = tgt_tac_vals*weights
     x_matrix = np.ones((len(y), 2), float)
-    x_matrix[:, 0] = x1[:]
-    x_matrix[:, 1] = x2[:]
+    x_matrix[:, 0] = x1[:]*weights
+    x_matrix[:, 1] = x2[:]*weights
 
     fit_ans = np.linalg.lstsq(x_matrix[t_thresh:], y[t_thresh:])[0]
     return fit_ans
