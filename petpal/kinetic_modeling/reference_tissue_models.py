@@ -747,7 +747,8 @@ def fit_mrtm_original_to_tac(tac_times_in_minutes: np.ndarray,
 def fit_mrtm_2003_to_tac(tac_times_in_minutes: np.ndarray,
                          tgt_tac_vals: np.ndarray,
                          ref_tac_vals: np.ndarray,
-                         t_thresh_in_mins: float):
+                         t_thresh_in_mins: float,
+                         weights: np.ndarray=None):
     r"""
     Fit the 2003 Multilinear Reference Tissue Model (MRTM) to the provided target Time Activity
     Curve (TAC) values given the reference TAC, times, and threshold time (in minutes). The data
@@ -771,6 +772,7 @@ def fit_mrtm_2003_to_tac(tac_times_in_minutes: np.ndarray,
         tgt_tac_vals (np.ndarray): Target TAC values to fit the MRTM.
         ref_tac_vals (np.ndarray): Reference TAC values.
         t_thresh_in_mins (float): Threshold time in minutes.
+        weights (np.ndarray): Weights applied to each frame.
 
     Returns:
         np.ndarray: Array containing fit results. (:math:`-\frac{V}{V^{\prime}b}`,
@@ -780,16 +782,19 @@ def fit_mrtm_2003_to_tac(tac_times_in_minutes: np.ndarray,
         This function is implemented with numba for improved performance.
 
     """
+    if weights is None:
+        weights = np.ones_like(tac_times_in_minutes)
 
-    t_thresh = get_index_from_threshold(times_in_minutes=tac_times_in_minutes, t_thresh_in_minutes=t_thresh_in_mins)
+    t_thresh = get_index_from_threshold(times_in_minutes=tac_times_in_minutes,
+                                        t_thresh_in_minutes=t_thresh_in_mins)
     if t_thresh == -1:
         return np.asarray([np.nan, np.nan, np.nan])
 
-    y = tgt_tac_vals
+    y = tgt_tac_vals*weights
     x_matrix = np.ones((len(y), 3), float)
-    x_matrix[:, 0] = cum_trapz(xdata=tac_times_in_minutes, ydata=ref_tac_vals, initial=0.0)
-    x_matrix[:, 1] = cum_trapz(xdata=tac_times_in_minutes, ydata=tgt_tac_vals, initial=0.0)
-    x_matrix[:, 2] = ref_tac_vals
+    x_matrix[:, 0] = cum_trapz(xdata=tac_times_in_minutes, ydata=ref_tac_vals, initial=0.0)*weights
+    x_matrix[:, 1] = cum_trapz(xdata=tac_times_in_minutes, ydata=tgt_tac_vals, initial=0.0)*weights
+    x_matrix[:, 2] = ref_tac_vals*weights
 
     fit_ans = np.linalg.lstsq(x_matrix[t_thresh:], y[t_thresh:])[0]
     return fit_ans
