@@ -13,12 +13,16 @@ from .image_io import safe_load_tac
 
 @dataclass
 class TimeActivityCurve:
-    """Class to store time activity curve (TAC) data."""
-    tac_vals: np.ndarray
+    """Class to store time activity curve (TAC) data.
+    
+    Attributes:
+        tac_times_in_minutes (np.ndarray): Frame times for the TAC stored in an array.
+        tac_vals (np.ndarray): Activity values at each frame time stored in an array."""
     tac_times_in_minutes: np.ndarray
+    tac_vals: np.ndarray
 
 
-class TimeActivityCurveFromFile:
+class TimeActivityCurveFromFile(TimeActivityCurve):
     """
     Class to handle data related to time activity curves (TACs).
 
