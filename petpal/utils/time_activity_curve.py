@@ -8,9 +8,17 @@ TODO:
 
 """
 import numpy as np
+from dataclasses import dataclass
 from .image_io import safe_load_tac
 
+@dataclass
 class TimeActivityCurve:
+    """Class to store time activity curve (TAC) data."""
+    tac_vals: np.ndarray
+    tac_times_in_minutes: np.ndarray
+
+
+class TimeActivityCurveFromFile:
     """
     Class to handle data related to time activity curves (TACs).
 
