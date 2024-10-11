@@ -65,7 +65,7 @@ class TimeActivityCurveFromFile(TimeActivityCurve):
         to recover them.
 
         Returns:
-            tac_durations_in_minutes (np.ndarray): The estimated duration of 
+            tac_durations_in_minutes (np.ndarray): The estimated duration of each frame in minutes.
         """
         tac_times_in_minutes = self.tac_times_in_minutes
         tac_durations_in_minutes = np.zeros((len(tac_times_in_minutes)))
