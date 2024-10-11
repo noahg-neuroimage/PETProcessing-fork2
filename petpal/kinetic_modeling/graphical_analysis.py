@@ -26,6 +26,17 @@ import numpy as np
 from ..utils.image_io import safe_load_tac
 
 
+
+def weight_tac(tac_durations_in_minutes: np.ndarray,
+               tac_values: np.ndarray):
+    """
+    Weight a Time Activity Curve (TAC) based on variance. This function applies the simple frame
+    time length to activity ratio found in http://www.turkupetcentre.net/petanalysis/model_weighting.html.
+    """
+    return tac_durations_in_minutes/tac_values
+
+
+
 @numba.njit()
 def _line_fitting_make_rhs_matrix_from_xdata(xdata: np.ndarray) -> np.ndarray:
     """Generates the RHS matrix for linear least squares fitting

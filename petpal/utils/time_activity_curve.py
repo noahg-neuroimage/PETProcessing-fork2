@@ -7,6 +7,7 @@ TODO:
     * Refactor safe_load_tac to this module as a public method
 
 """
+import numpy as np
 from .image_io import safe_load_tac
 
 class TimeActivityCurve:
@@ -43,3 +44,19 @@ class TimeActivityCurve:
         """
         Writes TAC to file. Currently placeholder that does nothing.
         """
+
+    def get_frame_durations(self):
+        """
+        Get array containing the duration of each frame in minutes.
+
+        For a set of N frames, the first N-1 frame durations are estimated as the difference
+        between each frame time and the next frame time. Frame N is then inferred as being the same
+        duration as frame N-1.
+        """
+        tac_times_in_minutes = self.tac_times_in_minutes
+        tac_durations_in_minutes = np.zeros((len(tac_times_in_minutes)))
+
+        tac_durations_in_minutes[:-1] = tac_times_in_minutes[1:]-tac_times_in_minutes[:-1]
+        tac_durations_in_minutes[-1] = tac_durations_in_minutes[-2]
+
+        return tac_durations_in_minutes
