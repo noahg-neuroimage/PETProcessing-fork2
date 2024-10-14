@@ -745,13 +745,13 @@ def fit_mrtm_original_to_tac(tac_times_in_minutes: np.ndarray,
     non_zero_indices = np.argwhere(tgt_tac_vals != 0.).T[0]
 
     if len(non_zero_indices) <= 2:
-        return np.asarray([np.nan, np.nan, np.nan])
+        return np.asarray([np.nan, np.nan, np.nan]), np.asarray(len(tac_times_in_minutes)*[np.nan])
 
     t_thresh = get_index_from_threshold(times_in_minutes=tac_times_in_minutes[non_zero_indices],
                                         t_thresh_in_minutes=t_thresh_in_mins)
 
     if len(tac_times_in_minutes[non_zero_indices][t_thresh:]) <= 2:
-        return np.asarray([np.nan, np.nan, np.nan])
+        return np.asarray([np.nan, np.nan, np.nan]), np.asarray(len(tac_times_in_minutes)*[np.nan])
 
     y = cum_trapz(xdata=tac_times_in_minutes, ydata=tgt_tac_vals, initial=0.0)*weights
     y = y[non_zero_indices] / tgt_tac_vals[non_zero_indices]
@@ -766,7 +766,9 @@ def fit_mrtm_original_to_tac(tac_times_in_minutes: np.ndarray,
     x_matrix[:, 1] = x2[:]*weights
 
     fit_ans = np.linalg.lstsq(x_matrix[t_thresh:], y[t_thresh:])[0]
-    return fit_ans
+
+    y_fit = x_matrix[:,0]*fit_ans[0] + x_matrix[:,1]*fit_ans[1] + x_matrix[:,2]*fit_ans[2]
+    return fit_ans, y_fit
 
 
 @numba.njit(fastmath=True)
@@ -814,7 +816,7 @@ def fit_mrtm_2003_to_tac(tac_times_in_minutes: np.ndarray,
     t_thresh = get_index_from_threshold(times_in_minutes=tac_times_in_minutes,
                                         t_thresh_in_minutes=t_thresh_in_mins)
     if t_thresh == -1:
-        return np.asarray([np.nan, np.nan, np.nan])
+        return np.asarray([np.nan, np.nan, np.nan]), np.asarray(len(tac_times_in_minutes)*[np.nan])
 
     y = tgt_tac_vals*weights
     x_matrix = np.ones((len(y), 3), float)
@@ -876,7 +878,7 @@ def fit_mrtm2_2003_to_tac(tac_times_in_minutes: np.ndarray,
     t_thresh = get_index_from_threshold(times_in_minutes=tac_times_in_minutes,
                                         t_thresh_in_minutes=t_thresh_in_mins)
     if t_thresh == -1:
-        return np.asarray([np.nan, np.nan])
+        return np.asarray([np.nan, np.nan]), np.asarray(len(tac_times_in_minutes)*[np.nan])
 
     x1 = cum_trapz(xdata=tac_times_in_minutes, ydata=ref_tac_vals, initial=0.0)
     x1 += ref_tac_vals / k2_prime
@@ -888,7 +890,9 @@ def fit_mrtm2_2003_to_tac(tac_times_in_minutes: np.ndarray,
     x_matrix[:, 1] = x2[:]*weights
 
     fit_ans = np.linalg.lstsq(x_matrix[t_thresh:], y[t_thresh:])[0]
-    return fit_ans
+
+    y_fit = x_matrix[:,0]*fit_ans[0] + x_matrix[:,1]*fit_ans[1]
+    return fit_ans, y_fit
 
 
 def calc_bp_from_mrtm_original_fit(fit_vals: np.ndarray) -> float:
