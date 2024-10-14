@@ -635,7 +635,8 @@ def fit_frtm_to_tac_with_bounds(tac_times_in_minutes: np.ndarray,
 
     """
     def _fitting_frtm(tac_times_in_minutes, r1, k2, k3, k4):
-        return calc_frtm_tac(tac_times_in_minutes=tac_times_in_minutes, ref_tac_vals=ref_tac_vals, r1=r1, k2=k2, k3=k3, k4=k4)
+        return calc_frtm_tac(tac_times_in_minutes=tac_times_in_minutes,
+                             ref_tac_vals=ref_tac_vals, r1=r1, k2=k2, k3=k3, k4=k4)
 
     st_values = (r1_bounds[0], k2_bounds[0], k3_bounds[0], k4_bounds[0])
     lo_values = (r1_bounds[1], k2_bounds[1], k3_bounds[1], k4_bounds[1])
@@ -822,7 +823,9 @@ def fit_mrtm_2003_to_tac(tac_times_in_minutes: np.ndarray,
     x_matrix[:, 2] = ref_tac_vals*weights
 
     fit_ans = np.linalg.lstsq(x_matrix[t_thresh:], y[t_thresh:])[0]
-    return fit_ans
+
+    y_fit = x_matrix[:,0]*fit_ans[0] + x_matrix[:,1]*fit_ans[1] + x_matrix[:,2]*fit_ans[2]
+    return fit_ans, y_fit
 
 
 @numba.njit(fastmath=True)
