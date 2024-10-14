@@ -506,7 +506,8 @@ def fit_frtm_to_tac(tac_times_in_minutes: np.ndarray,
                     r1_start: float = 0.5,
                     k2_start: float = 0.5,
                     k3_start: float = 0.5,
-                    k4_start: float = 0.5) -> tuple:
+                    k4_start: float = 0.5,
+                    weights: np.ndarray=None) -> tuple:
     r"""
     Fit FRTM to the provided target Time Activity Curve (TAC), given the reference TAC, times, and
     starting guesses for the kinetic parameters.
@@ -539,10 +540,19 @@ def fit_frtm_to_tac(tac_times_in_minutes: np.ndarray,
 
     """
     def _fitting_frtm(tac_times_in_minutes, r1, k2, k3, k4):
-        return calc_frtm_tac(tac_times_in_minutes=tac_times_in_minutes, ref_tac_vals=ref_tac_vals, r1=r1, k2=k2, k3=k3, k4=k4)
+        return calc_frtm_tac(tac_times_in_minutes=tac_times_in_minutes,
+                             ref_tac_vals=ref_tac_vals, r1=r1, k2=k2, k3=k3, k4=k4)
 
+    if weights is None:
+        sigma = np.ones_like(tac_times_in_minutes)
+    else:
+        sigma = convert_weights_to_sigma(tac_weights=weights)
     starting_values = (r1_start, k2_start, k3_start, k4_start)
-    return sp_fit(f=_fitting_frtm, xdata=tac_times_in_minutes, ydata=tgt_tac_vals, p0=starting_values)
+    return sp_fit(f=_fitting_frtm,
+                  xdata=tac_times_in_minutes,
+                  ydata=tgt_tac_vals,
+                  p0=starting_values,
+                  sigma=sigma)
 
 
 def fit_frtm2_to_tac(tac_times_in_minutes: np.ndarray,
