@@ -7,8 +7,8 @@ TODO:
     * Refactor safe_load_tac to this module as a public method
 
 """
-import numpy as np
 from dataclasses import dataclass
+import numpy as np
 from .image_io import safe_load_tac
 
 @dataclass
@@ -22,7 +22,7 @@ class TimeActivityCurve:
     tac_vals: np.ndarray
 
 
-class TimeActivityCurveFromFile(TimeActivityCurve):
+class TimeActivityCurveFromFile:
     """
     Class to handle data related to time activity curves (TACs).
 
