@@ -17,7 +17,7 @@ from petpal.kinetic_modeling.reference_tissue_models import (fit_frtm2_to_tac,
                                                              fit_srtm2_to_tac_with_bounds,
                                                              fit_srtm_to_tac,
                                                              fit_srtm_to_tac_with_bounds)
-from petpal.utils.time_activity_curve import TimeActivityCurve
+from petpal.utils.time_activity_curve import TimeActivityCurveFromFile
 
 
 def get_rtm_method(method: str, bounds=None):
@@ -462,7 +462,7 @@ class FitTACsWithRTMs:
 
     """
     def __init__(self,
-                 reference_tac: TimeActivityCurve,
+                 reference_tac: TimeActivityCurveFromFile,
                  tacs_dir: str,
                  rtm_inputs: RTMKwargs):
         r"""
@@ -594,17 +594,18 @@ class FitTACsWithRTMs:
 
     def get_tacs_object_list(self, tacs_file_list: list):
         """
-        Get a list of TimeActivityCurve objects from a list of TAC paths.
+        Get a list of TimeActivityCurveFromFile objects from a list of TAC paths.
         """
         tacs_list = []
         for tac_file in tacs_file_list:
-            tacs_list += [TimeActivityCurve(tac_path=tac_file)]
+            tacs_list += [TimeActivityCurveFromFile(tac_path=tac_file)]
         return tacs_list
 
 
     def get_tacs_vals_list_from_object(self, tacs_object_list: list):
         """
-        Get a list of numpy arrays containing TAC values from a list of TimeActivityCurve objects.
+        Get a list of numpy arrays containing TAC values from a list of TimeActivityCurveFromFile
+        objects.
         """
         tac_vals_list = []
         for tac_object in tacs_object_list:
