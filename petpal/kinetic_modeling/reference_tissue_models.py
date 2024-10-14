@@ -728,6 +728,7 @@ def fit_mrtm_original_to_tac(tac_times_in_minutes: np.ndarray,
         tgt_tac_vals (np.ndarray): Target TAC values to fit the MRTM.
         ref_tac_vals (np.ndarray): Reference TAC values.
         t_thresh_in_mins (float): Threshold time in minutes.
+        weights (np.ndarray): Weights applied to each frame. Default None.
 
     Returns:
         np.ndarray: Array containing fit results. (:math:`\frac{V}{V^{\prime}}`,
@@ -796,7 +797,7 @@ def fit_mrtm_2003_to_tac(tac_times_in_minutes: np.ndarray,
         tgt_tac_vals (np.ndarray): Target TAC values to fit the MRTM.
         ref_tac_vals (np.ndarray): Reference TAC values.
         t_thresh_in_mins (float): Threshold time in minutes.
-        weights (np.ndarray): Weights applied to each frame.
+        weights (np.ndarray): Weights applied to each frame. Default None.
 
     Returns:
         np.ndarray: Array containing fit results. (:math:`-\frac{V}{V^{\prime}b}`,
@@ -856,6 +857,7 @@ def fit_mrtm2_2003_to_tac(tac_times_in_minutes: np.ndarray,
         ref_tac_vals (np.ndarray): Reference TAC values.
         t_thresh_in_mins (float): Threshold time in minutes.
         k2_prime (float): Kinetic parameter: washout rate for the reference region.
+        weights (np.ndarray): Weights applied to each frame. Default None.
 
     Returns:
         np.ndarray: Array containing fit results. (:math:`-\frac{V}{V^{\prime}b}`,
