@@ -7,12 +7,29 @@ TODO:
     * Refactor safe_load_tac to this module as a public method
 
 """
+from dataclasses import dataclass
 import numpy as np
 from .image_io import safe_load_tac
 
+@dataclass
 class TimeActivityCurve:
+    """Class to store time activity curve (TAC) data.
+    
+    Attributes:
+        tac_times_in_minutes (np.ndarray): Frame times for the TAC stored in an array.
+        tac_vals (np.ndarray): Activity values at each frame time stored in an array."""
+    tac_times_in_minutes: np.ndarray
+    tac_vals: np.ndarray
+
+
+class TimeActivityCurveFromFile:
     """
     Class to handle data related to time activity curves (TACs).
+
+    Attributes:
+        tac_path (str): Path to the original time activity curve file.
+        tac_times_in_minutes (np.ndarray): Frame times for the TAC stored in an array.
+        tac_vals (np.ndarray): Activity values at each frame time stored in an array.
     """
     def __init__(self,
                  tac_path: str):
@@ -35,23 +52,20 @@ class TimeActivityCurve:
         """
         return safe_load_tac(self.tac_path)
 
-    def safe_load_tac(self, file_path: str):
-        """
-        Reads TAC from file. Currently placeholder that does nothing.
-        """
-
-    def safe_write_tac(self, file_path: str):
-        """
-        Writes TAC to file. Currently placeholder that does nothing.
-        """
-
-    def get_frame_durations(self):
+    def get_frame_durations(self) -> np.ndarray:
         """
         Get array containing the duration of each frame in minutes.
 
         For a set of N frames, the first N-1 frame durations are estimated as the difference
         between each frame time and the next frame time. Frame N is then inferred as being the same
         duration as frame N-1.
+
+        The frame durations in the originating metadata is preferable to computing it here. 
+        However, if the frame durations are not present in the metadata this function is useful
+        to recover them.
+
+        Returns:
+            tac_durations_in_minutes (np.ndarray): The estimated duration of each frame in minutes.
         """
         tac_times_in_minutes = self.tac_times_in_minutes
         tac_durations_in_minutes = np.zeros((len(tac_times_in_minutes)))
