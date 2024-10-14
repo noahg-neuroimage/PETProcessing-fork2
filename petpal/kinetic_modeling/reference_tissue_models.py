@@ -60,8 +60,27 @@ def weight_tac_decay(tac_durations_in_minutes: np.ndarray,
     return tac_weights
 
 
+def convert_weights_to_sigma(tac_weights: np.ndarray) -> np.ndarray:
+    r"""
+    Convert TAC weights to sigma (standard deviation) values. Calculated as
+    :math:`\sigma=w^{-1/2}`. Returns zero as the sigma value if the weight at that time point is
+    zero.
 
-def calc_srtm_tac(tac_times_in_minutes: np.ndarray, ref_tac_vals: np.ndarray, r1: float, k2: float, bp: float) -> np.ndarray:
+    Args:
+        tac_weights (np.ndarray): Weights calculated using :meth:`weight_tac_simple` or
+        `weight_tac_decay`.
+    
+    Returns:
+        tac_sigma (np.ndarray): Array of sigmas calculated from the weights.
+    """
+    tac_sigma = np.power(tac_weights,-1/2)
+    tac_weights_where_zero = np.where(tac_weights==0)
+    tac_sigma[tac_weights_where_zero] = 0
+    return tac_sigma
+
+
+def calc_srtm_tac(tac_times_in_minutes: np.ndarray,
+                  ref_tac_vals: np.ndarray, r1: float, k2: float, bp: float) -> np.ndarray:
     r"""
     Calculate the Time Activity Curve (TAC) using the Simplified Reference Tissue Model (SRTM)
     with the given reference TAC and kinetic parameters.
@@ -86,9 +105,11 @@ def calc_srtm_tac(tac_times_in_minutes: np.ndarray, ref_tac_vals: np.ndarray, r1
 
     Args:
         tac_times_in_minutes (np.ndarray): The array representing the time-points for both TACs.
-        r1 (float): The ratio of the clearance rate of tracer from plasma to the reference to the transfer rate of the
-            tracer from plasma to the tissue; :math:`R_{1}\equiv\frac{k_1^\prime}{k_1}`.
-        k2 (float): The rate constant for the transfer of the tracer from tissue compartment to plasma.
+        r1 (float): The ratio of the clearance rate of tracer from plasma to the reference to the
+             transfer rate of the tracer from plasma to the tissue;
+             :math:`R_{1}\equiv\frac{k_1^\prime}{k_1}`.
+        k2 (float): The rate constant for the transfer of the tracer from tissue compartment to
+            plasma.
         bp (float): The binding potential of the tracer in the tissue.
         ref_tac_vals (np.ndarray): The values of the reference TAC.
 
@@ -99,13 +120,13 @@ def calc_srtm_tac(tac_times_in_minutes: np.ndarray, ref_tac_vals: np.ndarray, r1
     Raises:
         AssertionError: If the reference TAC and times are different dimensions.
 
-
     """
     first_term = r1 * ref_tac_vals
     bp_coeff = k2 / (1.0 + bp)
     exp_term = np.exp(-bp_coeff * tac_times_in_minutes)
     dt = tac_times_in_minutes[1] - tac_times_in_minutes[0]
-    second_term = (k2 - r1 * bp_coeff) * tcms_conv.calc_convolution_with_check(f=exp_term, g=ref_tac_vals, dt=dt)
+    convolution_term = tcms_conv.calc_convolution_with_check(f=exp_term,g=ref_tac_vals,dt=dt)
+    second_term = (k2 - r1 * bp_coeff) * convolution_term
 
     return first_term + second_term
 
