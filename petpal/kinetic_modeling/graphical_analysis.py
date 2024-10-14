@@ -13,6 +13,7 @@ TODO:
     * Check if it makes more sense to lift out the more mathy methods out into a separate module.
     * Add references for the TCMs and Patlak. Could maybe rely on Turku PET Center.
     * Handle cases when tac_vals = 0.0. Might be able to use t_thresh so that we are past the 0-values.
+    * Add more detailed documentation to patlak analysis.
     
 """
 
@@ -24,17 +25,6 @@ import json
 import numba
 import numpy as np
 from ..utils.image_io import safe_load_tac
-
-
-
-def weight_tac(tac_durations_in_minutes: np.ndarray,
-               tac_values: np.ndarray):
-    """
-    Weight a Time Activity Curve (TAC) based on variance. This function applies the simple frame
-    time length to activity ratio found in http://www.turkupetcentre.net/petanalysis/model_weighting.html.
-    """
-    return tac_durations_in_minutes/tac_values
-
 
 
 @numba.njit()
@@ -167,7 +157,6 @@ def get_index_from_threshold(times_in_minutes: np.ndarray, t_thresh_in_minutes: 
         return np.argwhere(times_in_minutes >= t_thresh_in_minutes)[0, 0]
 
 
-# TODO: Add more detailed documentation.
 @numba.njit()
 def patlak_analysis(tac_times_in_minutes: np.ndarray,
                     input_tac_values: np.ndarray,
