@@ -1,4 +1,4 @@
-"""
+r"""
 Todo:
     * Method to calculate chi-squared from fit, 
         :math:`\chi^2=\Sigma_{i=1}^{n}(x_i-x_{ti})^2/\sigma_i^2`
