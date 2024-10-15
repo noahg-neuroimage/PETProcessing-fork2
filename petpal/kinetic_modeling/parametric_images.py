@@ -17,6 +17,8 @@ import nibabel
 import numpy as np
 import numba
 
+from petpal.kinetic_modeling.reference_tissue_models import (fit_mrtm2_2003_to_tac,
+                                                             calc_bp_from_mrtm2_2003_fit)
 from petpal.utils.image_io import safe_load_4dpet_nifti
 from . import graphical_analysis
 from ..utils.image_io import safe_load_tac, safe_copy_meta
@@ -123,6 +125,40 @@ def generate_parametric_images_with_graphical_method(pTAC_times: np.ndarray,
                                                                        analysis_func=analysis_func)
 
     return slope_img, intercept_img
+
+
+def apply_mrtm2_to_all_voxels(tac_times_in_minutes: np.ndarray,
+                              tgt_image: np.ndarray,
+                              ref_tac_vals: np.ndarray,
+                              k2_prime: float,
+                              mask_img: np.ndarray,
+                              t_thresh_in_mins: float) -> Tuple[np.ndarray, np.ndarray]:
+    """
+    Generates parametric images for 4D-PET data using the MRTM2 reference tissue method.
+    """
+    img_dims = tgt_image.shape
+
+    bp_img = np.zeros((img_dims[0], img_dims[1], img_dims[2]), float)
+    simulation_img = np.zeros_like(tgt_image)
+
+    for i in range(0, img_dims[0], 1):
+        for j in range(0, img_dims[1], 1):
+            for k in range(0, img_dims[2], 1):
+                if mask_img[i,j,k]>0.5:
+                    analysis_vals = fit_mrtm2_2003_to_tac(tac_times_in_minutes=tac_times_in_minutes,
+                                                          ref_tac_vals=ref_tac_vals,
+                                                          tgt_tac_vals=tgt_image[i, j, k, :],
+                                                          k2_prime=k2_prime,
+                                                          t_thresh_in_mins=t_thresh_in_mins)
+                    try:
+                        bp_img[i, j, k] = calc_bp_from_mrtm2_2003_fit(analysis_vals[0])
+                    except ValueError as exc:
+                        print("Error in estimating BP from parameters, setting BP to NaN."
+                              f"See: {exc}")
+                        bp_img[i, j, k] = np.nan
+                    simulation_img[i, j, k, :] = analysis_vals[1]
+
+    return bp_img, simulation_img
 
 
 class GraphicalAnalysisParametricImage:
