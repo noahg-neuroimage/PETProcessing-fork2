@@ -19,6 +19,8 @@ import numba
 
 from petpal.kinetic_modeling.reference_tissue_models import (fit_mrtm2_2003_to_tac,
                                                              calc_bp_from_mrtm2_2003_fit)
+from petpal.kinetic_modeling.fit_tac_with_rtms import RTMKwargs
+from petpal.utils.time_activity_curve import TimeActivityCurveFromFile
 from petpal.utils.image_io import safe_load_4dpet_nifti
 from . import graphical_analysis
 from ..utils.image_io import safe_load_tac, safe_copy_meta
@@ -180,6 +182,77 @@ def apply_mrtm2_to_all_voxels(tac_times_in_minutes: np.ndarray,
                     simulation_img[i, j, k, :] = analysis_vals[1]
 
     return bp_img, simulation_img
+
+
+class ReferenceTissueParametricImage:
+    """
+    Class for generating parametric images of 4D-PET images using reference tissue model (RTM)
+    methods.
+    """
+    def __init__(self,
+                 reference_tac_path: str,
+                 pet_image_path: str,
+                 mask_image_path: str,
+                 output_directory: str,
+                 output_filename_prefix: str,
+                 rtm_inputs: RTMKwargs):
+        """
+        Initialize ReferenceTissueParametricImage
+        """
+        self.reference_tac = TimeActivityCurveFromFile(tac_path=reference_tac_path)
+        self.pet_image = safe_load_4dpet_nifti(pet_image_path)
+        self.mask_image = safe_load_4dpet_nifti(mask_image_path)
+        self.output_directory = output_directory
+        self.output_filename_prefix = output_filename_prefix
+        self.rtm_inputs = rtm_inputs
+        self.fit_results = self.run_parametric_analysis()
+        self.save_parametric_images()
+
+
+    def run_parametric_analysis(self):
+        """
+        Run the analysis
+        """
+        pet_np = self.pet_image.get_fdata()
+        mask_np = self.mask_image.get_fdata()
+        tac_times_in_minutes = self.reference_tac.tac_times_in_minutes
+        ref_tac_vals = self.reference_tac.tac_vals
+        rtm_inputs = self.rtm_inputs
+
+        fit_results = apply_mrtm2_to_all_voxels(tac_times_in_minutes=tac_times_in_minutes,
+                                                tgt_image=pet_np,
+                                                ref_tac_vals=ref_tac_vals,
+                                                k2_prime=rtm_inputs.k2_prime,
+                                                t_thresh_in_mins=rtm_inputs.t_thresh_in_mins,
+                                                mask_img=mask_np)
+        return fit_results
+
+
+    def save_parametric_images(self):
+        """
+        Save images
+        """
+        bp_img, simulation_img = self.fit_results
+        pet_image = self.pet_image
+        mask_image = self.mask_image
+        bp_nibabel = nibabel.nifti1.Nifti1Image(dataobj=bp_img,
+                                                affine=mask_image.affine,
+                                                header=mask_image.header)
+        simulation_nibabel = nibabel.nifti1.Nifti1Image(dataobj=simulation_img,
+                                                        affine=pet_image.affine,
+                                                        header=pet_image.header)
+
+        try:
+            bp_img_path = os.path.join(self.output_directory,
+                                    f"{self.output_filename_prefix}_desc-bp.nii.gz")
+            simulation_img_path = os.path.join(self.output_directory,
+                                            f"{self.output_filename_prefix}_desc-sim.nii.gz")
+
+            nibabel.save(bp_nibabel,bp_img_path)
+            nibabel.save(simulation_nibabel,simulation_img_path)
+        except IOError as exc:
+            print("An IOError occurred while attempting to write the NIfTI image files.")
+            raise exc from None
 
 
 class GraphicalAnalysisParametricImage:

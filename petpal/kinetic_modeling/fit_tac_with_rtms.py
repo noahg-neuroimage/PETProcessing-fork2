@@ -423,8 +423,8 @@ class RTMRegionalAnalysis:
         fit_results (np.ndarray): The result of the fit.
 
     Example:
-        The following example shows how to use the :class:`FitTACWithRTMs` class to fit the SRTM to
-        a target and reference TAC.
+        The following example shows how to use the :class:`RTMRegionalAnalysis` class to fit the
+        MRTM model to a target and reference TAC.
 
         .. code-block:: python
 
@@ -453,7 +453,7 @@ class RTMRegionalAnalysis:
 
         This method sets up input parameters and validates them. We check if the bounds are correct
         for the given 'method', and we make sure that any fitting threshold are defined for the
-        MRTM analyses.
+        MRTM analyses. Then, ROI tacs are selected and fitted with MRTM.
 
         Args:
             reference_tac_path (str): Path to reference region TAC file. Must be readable with
