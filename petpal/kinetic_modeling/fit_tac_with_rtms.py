@@ -148,7 +148,7 @@ def get_rtm_kwargs(method: Callable,
 @dataclass
 class RTMKwargs:
     """Class for handling RTM inputs and arguments"""
-    method: list
+    method: str
     bounds: list
     k2_prime: float
     t_thresh_in_mins: float
@@ -394,14 +394,14 @@ class FitTACWithRTMs:
                                       ref_tac_vals=self.reference_tac_vals,
                                       **rtm_kwargs)
 
-class FitTACsWithRTMs:
+class RTMRegionalAnalysis:
     r"""
-    A class used to fit a kinetic model to both a target and a reference Time Activity Curve (TAC).
+    A class used to fit a kinetic model to ROI and reference Time Activity Curves (TACs).
 
-    The :class:`FitTACWithRTMs` class simplifies the process of kinetic model fitting by providing
-    methods for validating input data, choosing a model to fit, and then performing the fit. It
-    takes in raw intensity values of TAC for both target and reference regions as inputs, which are
-    then used in curve fitting.
+    The :class:`RTMRegionalAnalysis` class simplifies the process of kinetic model fitting by 
+    providing methods for validating input data, choosing a model to fit, and then performing the
+    fits across all regions. It takes in the reference TAC path, the ROI TAC directory path, and
+    any necessary method arguments as inputs, which are then used in curve fitting.
 
     This class supports various kinetic models, including but not limited to: the simplified and
     full reference tissue models (SRTM & FRTM), and the multilinear reference tissue models
@@ -428,32 +428,15 @@ class FitTACsWithRTMs:
 
         .. code-block:: python
 
-            import numpy as np
-            import petpal.kinetic_modeling.tcms_as_convolutions as pet_tcm
-            import petpal.kinetic_modeling.reference_tissue_models as pet_rtms
+            ref_tac_example = "../../data/tcm_tacs/fdg_plasma_clamp_evenly_resampled.txt"
+            tacs_from_preproc = "/path/to/data/derivatives/PETPAL/sub-001/tacs/"
+            rtm_kwargs = RTMKwargs(method='mrtm', t_thresh_in_mins=30)
+            regional_mrtm = RTMRegionalAnalysis(reference_tac_path=ref_tac_example,
+                                                tacs_dir=tacs_from_preproc,
+                                                rtm_inputs=rtm_kwargs)
+            parameters_mrtm = regional_mrtm.fit_results
 
-            # loading the input tac to generate a reference region tac
-            input_tac_times, input_tac_vals = np.asarray(np.loadtxt("../../data/tcm_tacs/fdg_plasma_clamp_evenly_resampled.txt").T,
-                                                         float)
-
-            # generating a reference region tac
-            ref_tac_times, ref_tac_vals = pet_tcm.generate_tac_1tcm_c1_from_tac(tac_times_in_minutes=input_tac_times, tac_vals=input_tac_vals,
-                                                                                k1=1.0, k2=0.2)
-
-            # generating an SRTM tac
-            srtm_tac_vals = pet_rtms.calc_srtm_tac(tac_times_in_minutes=ref_tac_times, ref_tac_vals=ref_tac_vals, r1=1.0, k2=0.25, bp=3.0)
-
-            rtm_analysis = pet_rtms.FitTACWithRTMs(target_tac_vals=srtm_tac_vals,
-                                                tac_times_in_minutes=ref_tac_times,
-                                                reference_tac_vals=ref_tac_vals,
-                                                method='srtm')
-
-            # performing the fit
-            rtm_analysis.fit_tac_to_model()
-            fit_results = rtm_analysis.fit_results[1]
-
-
-    This will give you the kinetic parameter values of the SRTM for the provided TACs.
+    This will give you the kinetic parameter values of the MRTM for the provided TACs.
 
     See Also:
         * :meth:`validate_bounds`
@@ -462,7 +445,7 @@ class FitTACsWithRTMs:
 
     """
     def __init__(self,
-                 reference_tac: TimeActivityCurveFromFile,
+                 reference_tac_path: str,
                  tacs_dir: str,
                  rtm_inputs: RTMKwargs):
         r"""
@@ -473,25 +456,28 @@ class FitTACsWithRTMs:
         MRTM analyses.
 
         Args:
-            tac_times_in_minutes (np.ndarray): The array representing the time-points for both TACs.
-            target_tac_vals (np.ndarray): The array representing the target TAC values.
-            reference_tac_vals (np.ndarray): The array representing values of the reference TAC.
-            method (str, optional): The kinetics method to be used. Default is 'mrtm'.
-            bounds (Union[None, np.ndarray], optional): Bounds for kinetic parameters used in
-                optimization. None represents absence of bounds. Default is None.
-            t_thresh_in_mins (float, optional): Threshold for time separation in minutes. Default
-                is None.
-            k2_prime (float, optional): The estimated rate constant related to the flush-out rate
-                of the reference compartment. Default is None.
+            reference_tac_path (str): Path to reference region TAC file. Must be readable with
+                :class:`TimeActivityCurveFromFile`.
+            tacs_dir (str): Path to directory containing ROI TACs. Each TAC must have extension
+                *.tsv and be readable with :class:`TimeActivityCurveFromFile`.
+            rtm_inputs (RTMKwargs): An instance of dataclass :class:`RTMKwargs` containing the
+                values for `method`, `bounds`, `k2_prime`, and/or `t_thresh_in_mins` as necessary
+                for analysis. At least `method` must be specified.
 
         Raises:
             ValueError: If a parameter necessary for chosen method is not provided.
             AssertionError: If rate constant k2_prime is non-positive.
+
+        See also:
+            * :module:`petpal.kinetic_modeling.reference_tissue_models`
+            * :class:`TimeActivityCurveFromFile`
+
         """
-        self.reference_tac = reference_tac
+        self.reference_tac = TimeActivityCurveFromFile(tac_path=reference_tac_path)
         self.tacs_dir = tacs_dir
         self.rtm_inputs = rtm_inputs
-        self.rtm_method = get_rtm_method(method=self.rtm_inputs.method,bounds=self.rtm_inputs.bounds)
+        self.rtm_method = get_rtm_method(method=self.rtm_inputs.method,
+                                         bounds=self.rtm_inputs.bounds)
 
         self.validate_bounds()
         self.validate_method_inputs()
