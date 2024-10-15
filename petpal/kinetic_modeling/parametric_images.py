@@ -131,10 +131,31 @@ def apply_mrtm2_to_all_voxels(tac_times_in_minutes: np.ndarray,
                               tgt_image: np.ndarray,
                               ref_tac_vals: np.ndarray,
                               k2_prime: float,
-                              mask_img: np.ndarray,
-                              t_thresh_in_mins: float) -> Tuple[np.ndarray, np.ndarray]:
+                              t_thresh_in_mins: float,
+                              mask_img: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
     """
     Generates parametric images for 4D-PET data using the MRTM2 reference tissue method.
+
+    Args:
+        tac_times_in_minutes (np.ndarray): A 1D array representing the reference TAC and PET frame
+            times in minutes.
+        tgt_image (np.ndarray): A 4D array representing the 3D PET image over time.
+            The shape of this array should be (x, y, z, time).
+        ref_tac_vals (np.ndarray): A 1D array representing the reference TAC values. This array
+            should be of the same length as `tac_times_in_minutes`.
+        k2_prime (float): A float representing the k2' value to be used for MRTM2 analysis. This
+            is chosen based on the tracer or based on a regional MRTM1 analysis.
+        t_thresh_in_mins (float): A float representing the threshold time past which MRTM
+            parameters are calculated with a least squares fit.
+        mask_img (np.ndarray): A 3D array representing the brain mask for `tgt_image`, where brain
+            regions are labelled 1 and non-brain regions are labelled 0. This is made necessary in
+            order to save time during computation. 
+
+    Returns:
+        bp_img (np.ndarray): A 3D array with computed BP values based on the MRTM2 parameter fit
+            results. 
+        simulation_img (np.ndarray): A 4D array with the same shape as `tgt_image` where each voxel
+            is the best fit curve based on the solved parameters to the linear equation in MRTM2.
     """
     img_dims = tgt_image.shape
 
