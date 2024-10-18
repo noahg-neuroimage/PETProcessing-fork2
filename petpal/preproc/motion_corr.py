@@ -380,7 +380,7 @@ def motion_corr_frame_list_to_t1(input_image_4d_path: str,
         else:
             tmp_transform = ants.apply_transforms(fixed=motion_target_in_t1,
                                                   moving=this_frame,
-                                                  transforms=motion_transform_matrix,
+                                                  transformlist=motion_transform_matrix,
                                                   interpolator='linear')
             out_image.append(tmp_transform)
 
