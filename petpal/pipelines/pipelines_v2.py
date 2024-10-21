@@ -204,7 +204,28 @@ class GraphicalAnalysisStep(ObjectBasedStep):
                                           roi_tac_path=roi_tac_path,
                                           output_directory=output_directory,
                                           output_filename_prefix=output_prefix),
-                         call_kwargs=dict(method_name=method, t_thresh_in_mins=fit_threshold_in_mins))
+                         call_kwargs=dict(method_name=method,
+                                          t_thresh_in_mins=fit_threshold_in_mins))
+        
+        
+class TCMFittingStep(ObjectBasedStep):
+    def __init__(self,
+                 input_tac_path: str,
+                 roi_tac_path: str,
+                 output_directory: str,
+                 output_prefix: str,
+                 compartment_model='2tcm-k4zer0',
+                 **kwargs):
+        super().__init__(name=f'roi-{compartment_model}-fit',
+                         class_type=tac_fitting.FitTCMToTAC,
+                         init_kwargs=dict(input_tac_path=input_tac_path,
+                                          roi_tac_path=roi_tac_path,
+                                          output_directory=output_directory,
+                                          output_filename_prefix=output_prefix,
+                                          compartment_model=compartment_model,
+                                          **kwargs),
+                         call_kwargs=dict()
+                         )
         
         
 def get_template_steps():
@@ -243,8 +264,14 @@ def get_template_steps():
                                                raw_blood_tac='',
                                                out_tac_path=',',
                                                lin_fit_thresh_in_mins=30.0),
-            
-    
+            parametric_graphical = ObjectBasedStep(name='parametric_graphical',
+                                                class_type=parametric_images.GraphicalAnalysisParametricImage,
+                                                init_kwargs=dict(input_tac_path='',
+                                                                 pet4D_img_path='',
+                                                                 output_directory='',
+                                                                 output_filename_prefix='',),
+                                                call_kwargs=dict(method_name='',
+                                                                 t_thresh_in_mins=30.0,)),
             )
     
     return out_dict
