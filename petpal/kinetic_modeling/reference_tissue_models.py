@@ -947,7 +947,7 @@ def calc_bp_from_mrtm_2003_fit(fit_vals: np.ndarray) -> float:
         :func:`fit_mrtm_2003_to_tac` where the order of the regression coefficients is laid out.
 
     """
-    return -fit_vals[0]/fit_vals[1] + 1.0
+    return -(fit_vals[0]/fit_vals[1] + 1.0)
 
 
 def calc_bp_from_mrtm2_2003_fit(fit_vals: np.ndarray) -> float:
