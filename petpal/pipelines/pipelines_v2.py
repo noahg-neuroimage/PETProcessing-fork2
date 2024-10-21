@@ -208,7 +208,7 @@ class GraphicalAnalysisStep(ObjectBasedStep):
                                           t_thresh_in_mins=fit_threshold_in_mins))
         
         
-class TCMFittingStep(ObjectBasedStep):
+class TCMFittingAnalysisStep(ObjectBasedStep):
     def __init__(self,
                  input_tac_path: str,
                  roi_tac_path: str,
@@ -228,6 +228,25 @@ class TCMFittingStep(ObjectBasedStep):
                          )
         
         
+class ParametricGraphicalAnalysisStep(ObjectBasedStep):
+    def __init__(self,
+                 input_tac_path: str,
+                 input_image_path: str,
+                 output_directory: str,
+                 output_prefix: str,
+                 method: str,
+                 fit_threshold_in_mins: float = 30.0,
+                ):
+        super().__init__(name=f'parametric-{method}',
+                         class_type=parametric_images.GraphicalAnalysisParametricImage,
+                         init_kwargs=dict(input_tac_path=input_tac_path,
+                                          pet4D_img_path=input_image_path,
+                                          output_directory=output_directory,
+                                          output_filename_prefix=output_prefix),
+                         call_kwargs=dict(method_name='',
+                                          t_thresh_in_mins=fit_threshold_in_mins,))
+        
+
 def get_template_steps():
     
     out_dict = dict(
@@ -264,14 +283,6 @@ def get_template_steps():
                                                raw_blood_tac='',
                                                out_tac_path=',',
                                                lin_fit_thresh_in_mins=30.0),
-            parametric_graphical = ObjectBasedStep(name='parametric_graphical',
-                                                class_type=parametric_images.GraphicalAnalysisParametricImage,
-                                                init_kwargs=dict(input_tac_path='',
-                                                                 pet4D_img_path='',
-                                                                 output_directory='',
-                                                                 output_filename_prefix='',),
-                                                call_kwargs=dict(method_name='',
-                                                                 t_thresh_in_mins=30.0,)),
             )
     
     return out_dict
