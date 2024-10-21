@@ -17,12 +17,14 @@ TODOs:
 
 """
 import os
-from scipy.ndimage import center_of_mass
+
+import ants
 import nibabel
 import numpy as np
-import ants
-from ..utils import image_io, math_lib
+from scipy.ndimage import center_of_mass
+
 from ..preproc import motion_corr
+from ..utils import image_io, math_lib
 
 
 def crop_image(input_image_path: str,
@@ -301,13 +303,13 @@ def roi_tac(input_image_4d_path: str,
     np.savetxt(out_tac_path,region_tac_file,delimiter='\t',header=header_text,comments='')
 
 
-def write_tacs(input_image_4d_path: str,
+def write_tacs(input_image_path: str,
                label_map_path: str,
                segmentation_image_path: str,
                out_tac_dir: str,
                verbose: bool,
                time_frame_keyword: str = 'FrameReferenceTime',
-               out_tac_prefix: str = '',):
+               out_tac_prefix: str = '', ):
     """
     Function to write Tissue Activity Curves for each region, given a segmentation,
     4D PET image, and label map. Computes the average of the PET image within each
@@ -319,13 +321,13 @@ def write_tacs(input_image_4d_path: str,
         raise ValueError("'time_frame_keyword' must be one of "
                          "'FrameReferenceTime' or 'FrameTimesStart'")
 
-    pet_meta = image_io.load_metadata_for_nifty_with_same_filename(input_image_4d_path)
+    pet_meta = image_io.load_metadata_for_nifty_with_same_filename(input_image_path)
     label_map = image_io.ImageIO.read_label_map_tsv(label_map_file=label_map_path)
     regions_abrev = label_map['abbreviation']
     regions_map = label_map['mapping']
 
     tac_extraction_func = extract_tac_from_nifty_using_mask
-    pet_numpy = nibabel.load(input_image_4d_path).get_fdata()
+    pet_numpy = nibabel.load(input_image_path).get_fdata()
     seg_numpy = nibabel.load(segmentation_image_path).get_fdata()
 
     for i, _maps in enumerate(label_map['mapping']):

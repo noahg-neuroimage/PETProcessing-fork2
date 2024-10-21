@@ -206,3 +206,39 @@ class GraphicalAnalysisStep(ObjectBasedStep):
                                           output_filename_prefix=output_prefix),
                          call_kwargs=dict(method_name=method, t_thresh_in_mins=fit_threshold_in_mins))
         
+        
+def get_template_steps():
+    
+    out_dict = dict(
+            thresh_crop_step = ImageToImageStep(name='thresh_crop',
+                                                function=preproc.image_operations_4d.SimpleAutoImageCropper,
+                                                input_image_path='',
+                                                output_image_path='',),
+            moco_frames_above_mean = ImageToImageStep(name='moco_frames_above_mean',
+                                                      function=preproc.motion_corr.motion_corr_frames_above_mean_value,
+                                                      input_image_path='',
+                                                      output_image_path='',
+                                                      motion_targe_option='mean_image',
+                                                      verbose=True),
+            register_pet_to_t1 = ImageToImageStep(name='register_pet_to_t1',
+                                                  function=preproc.register.register_pet,
+                                                  input_image_path='',
+                                                  output_image_path='',
+                                                  reference_image_path='',
+                                                  motion_targe_option='weighted_series_sum',
+                                                  half_life='',
+                                                  verbose=True),
+            write_roi_tacs = FunctionBasedStep(name='write_roi_tacs',
+                                               function=preproc.image_operations_4d.write_tacs,
+                                               input_image_path='',
+                                               label_map_path='',
+                                               segmentation_image_path='',
+                                               out_tac_dir='',
+                                               verbose=True,
+                                               time_frame_keyword='FrameReferenceTime',
+                                               out_tac_prefix='')
+    
+            )
+    
+    return out_dict
+
