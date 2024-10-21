@@ -243,7 +243,7 @@ class ParametricGraphicalAnalysisStep(ObjectBasedStep):
                                           pet4D_img_path=input_image_path,
                                           output_directory=output_directory,
                                           output_filename_prefix=output_prefix),
-                         call_kwargs=dict(method_name='',
+                         call_kwargs=dict(method_name=method,
                                           t_thresh_in_mins=fit_threshold_in_mins,))
         
 
