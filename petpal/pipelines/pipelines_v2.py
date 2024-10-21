@@ -28,7 +28,7 @@ class FunctionBasedStep():
         func_params = self.func_sig.parameters
         arg_names = list(func_params)
         for arg_name in arg_names[len(self.args):]:
-            if arg_name not in self.kwargs:
+            if arg_name not in self.kwargs and arg_name != 'kwargs':
                 unset_args_dict[arg_name] = func_params[arg_name].default
         return unset_args_dict
     
@@ -218,14 +218,14 @@ def get_template_steps():
                                                       function=preproc.motion_corr.motion_corr_frames_above_mean_value,
                                                       input_image_path='',
                                                       output_image_path='',
-                                                      motion_targe_option='mean_image',
+                                                      motion_target_option='mean_image',
                                                       verbose=True),
             register_pet_to_t1 = ImageToImageStep(name='register_pet_to_t1',
                                                   function=preproc.register.register_pet,
                                                   input_image_path='',
                                                   output_image_path='',
                                                   reference_image_path='',
-                                                  motion_targe_option='weighted_series_sum',
+                                                  motion_target_option='weighted_series_sum',
                                                   half_life='',
                                                   verbose=True),
             write_roi_tacs = FunctionBasedStep(name='write_roi_tacs',
@@ -236,7 +236,14 @@ def get_template_steps():
                                                out_tac_dir='',
                                                verbose=True,
                                                time_frame_keyword='FrameReferenceTime',
-                                               out_tac_prefix='')
+                                               out_tac_prefix=''),
+            resample_blood = FunctionBasedStep(name='resample_bTAC',
+                                               function=blood_input.resample_blood_data_on_scanner_times,
+                                               pet4d_path='',
+                                               raw_blood_tac='',
+                                               out_tac_path=',',
+                                               lin_fit_thresh_in_mins=30.0),
+            
     
             )
     
