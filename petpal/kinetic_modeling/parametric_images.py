@@ -272,8 +272,11 @@ class GraphicalAnalysisParametricImage:
                 "'run_analysis' method must be called before 'save_analysis'.")
         self.save_parametric_images()
         self.save_analysis_properties()
-    
         
+    def __call__(self, method_name: str, t_thresh_in_mins: float, image_scale: float=1./37000):
+        self.run_analysis(method_name=method_name, t_thresh_in_mins=t_thresh_in_mins, image_scale=image_scale)
+        self.save_analysis()
+    
     def calculate_analysis_properties(self,
                                       method_name: str,
                                       t_thresh_in_mins: float):
@@ -408,7 +411,6 @@ class GraphicalAnalysisParametricImage:
         self.analysis_props['InterceptMinimum'] = np.min(self.intercept_image)
         self.analysis_props['InterceptMean'] = np.mean(self.intercept_image)
         self.analysis_props['InterceptVariance'] = np.var(self.intercept_image)
-
 
     def calculate_parametric_images(self,
                                     method_name: str,

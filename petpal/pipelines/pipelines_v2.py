@@ -197,7 +197,8 @@ class GraphicalAnalysisStep(ObjectBasedStep):
                  output_directory: str,
                  output_prefix: str,
                  method: str,
-                 fit_threshold_in_mins: float = 30.0,):
+                 fit_threshold_in_mins: float = 30.0,
+                 image_rescale: float = 1.0/37000.0):
         super().__init__(name=f'{method}-analysis',
                          class_type=pet_grph.GraphicalAnalysis,
                          init_kwargs=dict(input_tac_path=input_tac_path,
@@ -205,7 +206,8 @@ class GraphicalAnalysisStep(ObjectBasedStep):
                                           output_directory=output_directory,
                                           output_filename_prefix=output_prefix),
                          call_kwargs=dict(method_name=method,
-                                          t_thresh_in_mins=fit_threshold_in_mins))
+                                          t_thresh_in_mins=fit_threshold_in_mins,
+                                          image_scale=image_rescale))
         
         
 class TCMFittingAnalysisStep(ObjectBasedStep):
