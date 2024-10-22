@@ -247,6 +247,28 @@ class ParametricGraphicalAnalysisStep(ObjectBasedStep):
                                           t_thresh_in_mins=fit_threshold_in_mins,))
         
 
+class RTMFittingAnalysisStep(ObjectBasedStep):
+    def __init__(self,
+                 ref_tac_path: str,
+                 roi_tac_path: str,
+                 output_directory: str,
+                 output_prefix: str,
+                 rtm_model: str,
+                 bounds = None,
+                 k2_prime = None,
+                 fit_threshold_in_mins: float = 30.0,):
+        super().__init__(name=f'roi-fit-{rtm_model}',
+                         class_type=pet_rtms.RTMAnalysis,
+                         init_kwargs=dict(ref_tac_path=ref_tac_path,
+                                          roi_tac_path=roi_tac_path,
+                                          output_directory=output_directory,
+                                          output_filename_prefix=output_prefix,
+                                          method=rtm_model),
+                         call_kwargs=dict(bounds=bounds,
+                                          t_thresh_in_mins=fit_threshold_in_mins,
+                                          k2_prime=k2_prime))
+
+
 def get_template_steps():
     
     out_dict = dict(

@@ -895,6 +895,7 @@ def calc_k2prime_from_mrtm_2003_fit(fit_vals: np.ndarray):
     """
     return fit_vals[0]/fit_vals[-1]
 
+IMPLEMENTED_MODELS = ['frtm', 'frtm2', 'srtm', 'srtm2', 'mrtm-original', 'mrtm', 'mrtm2']
 
 class FitTACWithRTMs:
     r"""
@@ -1254,9 +1255,21 @@ class RTMAnalysis:
         self.roi_tac_path: str = os.path.abspath(roi_tac_path)
         self.output_directory: str = os.path.abspath(output_directory)
         self.output_filename_prefix: str = output_filename_prefix
-        self.method = method.lower()
+        self.method = ''
+        self.rtm_model = method.lower()
         self.analysis_props: dict = self.init_analysis_props(self.method)
         self._has_analysis_been_run: bool = False
+
+    @property
+    def rtm_model(self):
+        return self.method
+    
+    @rtm_model.setter
+    def rtm_model(self, model: str):
+        if model in IMPLEMENTED_MODELS:
+            self.method = model
+        else:
+            raise KeyError(f"{model} has not been implemented. Must be one of {IMPLEMENTED_MODELS}")
 
     def init_analysis_props(self, method: str) -> dict:
         r"""
