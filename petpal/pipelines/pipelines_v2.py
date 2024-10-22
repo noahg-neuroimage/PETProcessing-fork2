@@ -13,7 +13,7 @@ from ..kinetic_modeling import graphical_analysis as pet_grph
 from .pipelines import ArgsDict
 
 
-class FunctionBasedStep():
+class FunctionBasedStep:
     def __init__(self, name: str, function: Callable, *args, **kwargs) -> None:
         self.name = name
         self.function = function
@@ -73,7 +73,7 @@ class FunctionBasedStep():
         return '\n'.join(info_str)
     
     
-class ObjectBasedStep():
+class ObjectBasedStep:
     def __init__(self,
                  name: str,
                  class_type: type,
@@ -309,3 +309,67 @@ def get_template_steps():
     
     return out_dict
 
+
+StepType = Union[FunctionBasedStep, ObjectBasedStep,
+                GraphicalAnalysisStep,
+                ParametricGraphicalAnalysisStep,
+                RTMFittingAnalysisStep,
+                TCMFittingAnalysisStep]
+
+class StepsContainer:
+    def __init__(self, name: str):
+        self.name = name
+        self.step_objs: list[StepType] = []
+        self.step_names: list[str] = []
+        
+    def add_step(self, step: StepType):
+        if step.name not in self.step_names:
+            self.step_objs.append(step)
+            self.step_names.append(step.name)
+        else:
+            raise KeyError("A step with this name already exists.")
+        
+    def print_step_details(self):
+        if not self.step_objs:
+            print("No steps in container.")
+        else:
+            print(f"({self.name} Pipeline Info):")
+            for step_id, a_step in enumerate(self.step_objs):
+                print('-' * 80)
+                print(f"Step Number {step_id + 1}")
+                print(a_step)
+                print('-' * 80)
+            print("*" * 90)
+            
+    def print_step_names(self) -> None:
+        if not self.step_objs:
+            print("No steps in container.")
+        else:
+            print(f"({self.name} pipeline info):")
+            print('-' * 80)
+            for step_id, step_name in enumerate(self.step_names):
+                print(f"Step Number {step_id+1}: {step_name}")
+            print('-' * 80)
+            
+    def __call__(self):
+        for step_id, (step_name, a_step) in enumerate(zip(self.step_names, self.step_objs)):
+            a_step.execute()
+            
+    def __getitem__(self, step: Union[int, str]):
+        if isinstance(step, int):
+            try:
+                return self.step_objs[step]
+            except IndexError:
+                raise IndexError(f"Step number {step} does not exist.")
+        elif isinstance(step, str):
+            if step not in self.step_names:
+                raise KeyError(f"Step name {step} does not exist.")
+            try:
+                step_index = self.step_names.index(step)
+                return self.step_objs[step_index]
+            except KeyError:
+                raise KeyError(f"Step name {step} does not exist.")
+        else:
+            raise TypeError(f"Key must be an integer or a string. Got {type(step)}")
+        
+    
