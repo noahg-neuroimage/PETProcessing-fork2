@@ -180,6 +180,26 @@ def threshold(input_image_numpy: np.ndarray,
     return bounded_image
 
 
+def binarize_image_with_threshold(input_image_numpy: np.ndarray,
+                                  lower_bound: float=-np.inf,
+                                  upper_bound: float=np.inf):
+    """
+    Threshold an image above and/or below a pair of values, and return a binary mask.
+
+    Args:
+        input_image_numpy (np.ndarray): Input image data to binarize with threshold (upper and/or lower).
+        lower_bound (float): Lower bound of the threshold.
+        upper_bound (float): Upper bound of the threshold.
+
+    Returns:
+        bounded_image (np.ndarray): Binary mask of original image where voxels within threshold are 1, and 0 elsewhere.
+    """
+    bounded_image = np.zeros(input_image_numpy.shape)
+    bounded_image_where = (input_image_numpy > lower_bound) & (input_image_numpy < upper_bound)
+    bounded_image[bounded_image_where] = 1
+    return bounded_image
+
+
 def suvr(input_image_path: str,
          segmentation_image_path: str,
          ref_region: int,
@@ -400,7 +420,7 @@ class SimpleAutoImageCropper(object):
             input_image_path (str): The file path to the input image.
             out_image_path (str): The file path to save the cropped image.
             thresh_val (float, optional): The threshold value used to determine the boundaries.
-                                          Must be less than 0.5. Defaults to 1e-2.
+                Must be less than 0.5. Defaults to 1e-2.
             verbose (bool, optional): If True, prints information about image shapes. Defaults to
                 True.
             copy_metadata (bool, optional): If True, copies metadata from the original image to the
@@ -506,10 +526,11 @@ class SimpleAutoImageCropper(object):
             .. code-block:: python
             
                 import numpy as np
-                from petpal.preproc.image_operations_4d import SimpleAutoImageCropper
-    
+                from petpal.preproc.image_operations_4d import SimpleAutoImageCropper as Crop
+
                 line_prof = np.random.rand(100)  # Example normalized line profile
-                left_index, right_index = SimpleAutoImageCropper.get_left_and_right_boundary_indices_for_threshold(line_prof=line_prof, thresh=0.01)
+                boundaries = Crop.get_left_and_right_boundary_indices_for_threshold
+                left_index, right_index = boundaries(line_prof=line_prof, thresh=0.01)
                 print(left_index, right_index)
         
         """

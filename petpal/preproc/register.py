@@ -33,9 +33,10 @@ def register_pet(input_reg_image_path: str,
             anatomical image to which PET image is registered.
         motion_target_option (str | tuple): Target image for computing
             transformation. See :meth:`determine_motion_target`.
-        type_of_transform (str): Type of transform to perform on the PET image, must be one of antspy's
-            transformation types, i.e. 'DenseRigid' or 'Translation'. Any transformation type that uses
-            >6 degrees of freedom is not recommended, use with caution. See :py:func:`ants.registration`.
+        type_of_transform (str): Type of transform to perform on the PET image, must be one of 
+            antspy's transformation types, i.e. 'DenseRigid' or 'Translation'. Any transformation 
+            type that uses >6 degrees of freedom is not recommended, use with caution. See 
+            :py:func:`ants.registration`.
         out_image_path (str): Path to a .nii or .nii.gz file to which the registered PET series
             is written.
         verbose (bool): Set to ``True`` to output processing information.
@@ -136,7 +137,8 @@ def warp_pet_atlas(input_image_path: str,
 def apply_xfm_ants(input_image_path: str,
                    ref_image_path: str,
                    out_image_path: str,
-                   xfm_paths: list[str]):
+                   xfm_paths: list[str],
+                   **kwargs):
     """
     Applies existing transforms in ANTs or ITK format to an input image, onto
     a reference image. This is useful for applying the same transform on
@@ -160,7 +162,8 @@ def apply_xfm_ants(input_image_path: str,
     xfm_image = ants.apply_transforms(fixed=ref_image_ants,
                                       moving=pet_image_ants,
                                       transformlist=xfm_paths,
-                                      imagetype=dim-1)
+                                      imagetype=dim-1,
+                                      **kwargs)
 
     ants.image_write(xfm_image,out_image_path)
 
@@ -241,7 +244,8 @@ def resample_nii_4dfp(input_image_path: str,
 
     Args:
         input_image_path (str): Path to PET image on which transform is applied.
-        resampled_image (str): Path to image with sampling needed for output. Often `rawavg.mgz` in FreeSurfer directory.
+        resampled_image (str): Path to image with sampling needed for output. Often `rawavg.mgz` in
+            FreeSurfer directory.
         mpr_image_path (str): Path to mpr (MPRAGE) image the PET will be transformed to.
     """
     input_image = nibabel.load(input_image_path)
