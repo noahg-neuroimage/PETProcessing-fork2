@@ -373,3 +373,42 @@ class StepsContainer:
             raise TypeError(f"Key must be an integer or a string. Got {type(step)}")
         
     
+    
+class StepsPipeline:
+    def __init__(self, name: str):
+        self.name = name
+        self.preproc = StepsContainer(name='preproc')
+        self.km = StepsContainer(name='km')
+        self.dependency_graph = nx.DiGraph()
+        
+    def __call__(self):
+        self.preproc()
+        self.km()
+        
+    def run_km(self):
+        self.km()
+        
+    def run_preproc(self):
+        self.preproc()
+    
+    def add_step(self, container_name: str, step: StepType):
+        if container_name == 'preproc':
+            self.preproc.add_step(step)
+        elif container_name == 'km':
+            self.km.add_step(step)
+        else:
+            raise KeyError(f"Container name {container_name} does not exist. "
+                           f"Must be 'preproc' or 'km'.")
+        
+    def print_steps_details(self, container_name: str = None):
+        if container_name is None:
+            self.preproc.print_step_details()
+            self.km.print_step_details()
+        elif container_name == 'preproc':
+            self.preproc.print_step_details()
+        elif container_name == 'km':
+            self.km.print_step_details()
+        else:
+            raise KeyError(f"Container name {container_name} does not exist.")
+        
+        
