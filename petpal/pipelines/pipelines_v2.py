@@ -8,7 +8,7 @@ from ..preproc import preproc
 from ..input_function import blood_input
 from ..kinetic_modeling import parametric_images
 from ..kinetic_modeling import tac_fitting
-from ..kinetic_modeling import reference_tissue_models as pet_rtms
+from ..kinetic_modeling import rtm_analysis as pet_rtms
 from ..kinetic_modeling import graphical_analysis as pet_grph
 from .pipelines import ArgsDict
 

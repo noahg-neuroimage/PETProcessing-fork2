@@ -274,6 +274,13 @@ class RTMAnalysis:
         with open(analysis_props_file, 'w',encoding='utf-8') as f:
             json.dump(obj=self.analysis_props, fp=f, indent=4)
 
+    def __call__(self,
+                 bounds = None,
+                 t_thresh_in_mins = None,
+                 k2_prime = None,):
+        self.run_analysis(bounds=bounds, t_thresh_in_mins=t_thresh_in_mins, k2_prime=k2_prime)
+        self.save_analysis()
+    
     def _calc_mrtm_fit_props(self, fit_results: np.ndarray,
                              k2_prime: float,
                              t_thresh_in_mins: float):
