@@ -402,6 +402,18 @@ class StepsPipeline:
             raise KeyError(f"Container name {container_name} does not exist. "
                            f"Must be 'preproc' or 'km'.")
         
+    def print_steps_names(self, container_name: str = None):
+        if container_name is None:
+            self.preproc.print_step_names()
+            self.km.print_step_names()
+        elif container_name == 'preproc':
+            self.preproc.print_step_names()
+        elif container_name == 'km':
+            self.km.print_step_names()
+        else:
+            raise KeyError(f"Container name {container_name} does not exist. "
+                           f"Must be 'preproc' or 'km'.")
+        
     def print_steps_details(self, container_name: str = None):
         if container_name is None:
             self.preproc.print_step_details()
@@ -411,6 +423,7 @@ class StepsPipeline:
         elif container_name == 'km':
             self.km.print_step_details()
         else:
-            raise KeyError(f"Container name {container_name} does not exist.")
+            raise KeyError(f"Container name {container_name} does not exist. "
+                           f"Must be 'preproc' or 'km'.")
         
         
