@@ -91,9 +91,70 @@ class FunctionBasedStep:
     
     def can_potentially_run(self):
         return self.all_args_non_empty_strings() and self.all_kwargs_non_empty_strings()
+   
+class TACsFromSegmentationStep(FunctionBasedStep):
+    def __init__(self,
+                 input_image_path: str,
+                 segmentation_image_path:str,
+                 segmentation_label_map_path: str,
+                 out_tacs_dir:str,
+                 out_tacs_prefix:str,
+                 time_keyword='FrameReferenceTime',
+                 verbose=False) -> None:
+        super().__init__(name='write_roi_tacs',
+                         function=preproc.image_operations_4d.write_tacs,
+                         input_image_path=input_image_path,
+                         segmentation_image_path=segmentation_image_path,
+                         label_map_path=segmentation_label_map_path,
+                         out_tac_dir=out_tacs_dir,
+                         out_tac_prefix=out_tacs_prefix,
+                         time_frame_keyword=time_keyword,
+                         verbose=verbose,
+                         )
+        self.out_tacs_path = out_tacs_dir
+        
+    @property
+    def out_tacs_path(self):
+        return self.kwargs['out_tac_dir']
     
+    @out_tacs_path.setter
+    def out_tacs_path(self, out_tacs_path: str):
+        self.kwargs['out_tac_dir'] = out_tacs_path
+        
+    def set_input_as_output_from(self, sending_step):
+        if isinstance(sending_step, ImageToImageStep):
+            self.kwargs['input_image_path'] = sending_step.output_image_path
+        
     
+class ResampleBloodTACStep(FunctionBasedStep):
+    def __init__(self,
+                 input_raw_blood_tac_path: str,
+                 input_image_path: str,
+                 out_tac_path:str,
+                 lin_fit_thresh_in_mins=30.0
+                 ):
+        super().__init__(name='resample_bTAC',
+                         function=blood_input.resample_blood_data_on_scanner_times,
+                         raw_blood_tac=input_raw_blood_tac_path,
+                         pet4d_path=input_image_path,
+                         out_tac_path=out_tac_path,
+                         lin_fit_thresh_in_mins=lin_fit_thresh_in_mins)
+        self.resampled_tac_path = out_tac_path
+        
+    @property
+    def resampled_tac_path(self):
+        return self.kwargs['out_tac_path']
     
+    @resampled_tac_path.setter
+    def resampled_tac_path(self, resampled_tac_path):
+        self.kwargs['out_tac_path'] = resampled_tac_path
+        
+    def set_input_as_output_from(self, sending_step):
+        if isinstance(sending_step, ImageToImageStep):
+            self.kwargs['pet4d_path'] = sending_step.output_image_path
+        else:
+            super().set_input_as_output_from(sending_step)
+        
 class ObjectBasedStep:
     def __init__(self,
                  name: str,
@@ -179,8 +240,8 @@ class ObjectBasedStep:
     def all_call_kwargs_non_empty_strings(self):
         for arg_name, arg_val in self.call_kwargs.items():
             if arg_val == '':
-                return True
-        return False
+                return False
+        return True
     
     def can_potentially_run(self):
         return self.all_init_kwargs_non_empty_strings() and self.all_call_kwargs_non_empty_strings()
@@ -231,9 +292,10 @@ class ImageToImageStep(FunctionBasedStep):
     def can_potentially_run(self):
         input_img_non_empty_str = False if self.input_image_path == '' else True
         output_img_non_empty_str = False if self.output_image_path == '' else True
-        
         return super().can_potentially_run() and input_img_non_empty_str and output_img_non_empty_str
         
+
+PreprocSteps = Union[TACsFromSegmentationStep, ResampleBloodTACStep, ImageToImageStep]
 
 class GraphicalAnalysisStep(ObjectBasedStep):
     def __init__(self,
@@ -253,6 +315,12 @@ class GraphicalAnalysisStep(ObjectBasedStep):
                          call_kwargs=dict(method_name=method,
                                           t_thresh_in_mins=fit_threshold_in_mins,
                                           image_scale=image_rescale))
+        
+    def set_input_as_output_from(self, sending_step: PreprocSteps) -> None:
+        if isinstance(sending_step, TACsFromSegmentationStep):
+            self.init_kwargs['roi_tac_path'] = sending_step.out_tacs_path
+        if isinstance(sending_step, ResampleBloodTACStep):
+            self.init_kwargs['input_tac_path'] = sending_step.resampled_tac_path
         
         
 class TCMFittingAnalysisStep(ObjectBasedStep):
@@ -274,6 +342,14 @@ class TCMFittingAnalysisStep(ObjectBasedStep):
                          call_kwargs=dict()
                          )
         
+    def set_input_as_output_from(self, sending_step: PreprocSteps) -> None:
+        if isinstance(sending_step, TACsFromSegmentationStep):
+            self.init_kwargs['roi_tac_path'] = sending_step.out_tacs_path
+        elif isinstance(sending_step, ResampleBloodTACStep):
+            self.init_kwargs['input_tac_path'] = sending_step.resampled_tac_path
+        else:
+            super().set_input_as_output_from(sending_step)
+        
         
 class ParametricGraphicalAnalysisStep(ObjectBasedStep):
     def __init__(self,
@@ -292,6 +368,15 @@ class ParametricGraphicalAnalysisStep(ObjectBasedStep):
                                           output_filename_prefix=output_prefix),
                          call_kwargs=dict(method_name=method,
                                           t_thresh_in_mins=fit_threshold_in_mins,))
+    
+    def set_input_as_output_from(self, sending_step: PreprocSteps) -> None:
+        if isinstance(sending_step, ResampleBloodTACStep):
+            self.init_kwargs['input_tac_path'] = sending_step.resampled_tac_path
+        elif isinstance(sending_step, ImageToImageStep):
+            self.init_kwargs['pet4D_img_path'] = sending_step.output_image_path
+        else:
+            super().set_input_as_output_from(sending_step)
+    
         
 
 class RTMFittingAnalysisStep(ObjectBasedStep):
@@ -315,6 +400,9 @@ class RTMFittingAnalysisStep(ObjectBasedStep):
                                           t_thresh_in_mins=fit_threshold_in_mins,
                                           k2_prime=k2_prime))
 
+    def set_input_as_output_from(self, sending_step: PreprocSteps) -> None:
+        if isinstance(sending_step, TACsFromSegmentationStep):
+            self.init_kwargs['roi_tac_path'] = sending_step.out_tacs_path
 
 def get_template_steps():
     
@@ -337,32 +425,30 @@ def get_template_steps():
                                                   motion_target_option='weighted_series_sum',
                                                   half_life='',
                                                   verbose=True),
-            write_roi_tacs = FunctionBasedStep(name='write_roi_tacs',
-                                               function=preproc.image_operations_4d.write_tacs,
-                                               input_image_path='',
-                                               label_map_path='',
-                                               segmentation_image_path='',
-                                               out_tac_dir='',
-                                               verbose=True,
-                                               time_frame_keyword='FrameReferenceTime',
-                                               out_tac_prefix=''),
-            resample_blood = FunctionBasedStep(name='resample_bTAC',
-                                               function=blood_input.resample_blood_data_on_scanner_times,
-                                               pet4d_path='',
-                                               raw_blood_tac='',
-                                               out_tac_path=',',
-                                               lin_fit_thresh_in_mins=30.0),
+            write_roi_tacs = TACsFromSegmentationStep(input_image_path='',
+                                                      segmentation_image_path='',
+                                                      segmentation_label_map_path='',
+                                                      out_tacs_dir='',
+                                                      out_tacs_prefix='',
+                                                      time_keyword='FrameReferenceTime',
+                                                      verbose=False),
+            resample_blood = ResampleBloodTACStep(input_raw_blood_tac_path='',
+                                                   input_image_path='',
+                                                   out_tac_path='',
+                                                   lin_fit_thresh_in_mins=30.0
+                                                   ),
+            
             )
     
     return out_dict
 
+KMStepType = Union[GraphicalAnalysisStep,
+                    TCMFittingAnalysisStep,
+                    ParametricGraphicalAnalysisStep,
+                    RTMFittingAnalysisStep]
 
 StepType = Union[FunctionBasedStep, ObjectBasedStep,
-                 ImageToImageStep,
-                 GraphicalAnalysisStep,
-                 ParametricGraphicalAnalysisStep,
-                 RTMFittingAnalysisStep,
-                 TCMFittingAnalysisStep]
+                 PreprocSteps, KMStepType]
 
 class StepsContainer:
     def __init__(self, name: str):
@@ -499,7 +585,7 @@ class StepsPipeline:
         else:
             raise KeyError(f"Container name {container_name} does not exist.")
     
-    def update_dependencies(self):
+    def update_dependencies(self, verbose=False):
         for node_name in nx.topological_sort(self.dependency_graph):
             sending_step = self.get_step_from_node_label(node_name)
             for an_edge in self.dependency_graph[node_name]:
@@ -507,11 +593,15 @@ class StepsPipeline:
                 try:
                     receiving_step.set_input_as_output_from(sending_step)
                 except NotImplementedError:
-                    warnings.warn(
-                        f"Step `{receiving_step.name}` of type `{type(receiving_step).__name__}` does not have a "
-                        f"set_input_as_output_from method implemented.\nSkipping.", RuntimeWarning, stacklevel=1)
+                    # warnings.warn(
+                    #     f"Step `{receiving_step.name}` of type `{type(receiving_step).__name__}` does not have a "
+                    #     f"set_input_as_output_from method implemented.\nSkipping.", RuntimeWarning, stacklevel=1)
+                    if verbose:
+                        print(f"Step `{receiving_step.name}` of type `{type(receiving_step).__name__}` does not have a "
+                              f"set_input_as_output_from method implemented.\nSkipping.")
                 else:
-                    print(f"Updated input-output dependency between {sending_step.name} and {receiving_step.name}")
+                    if verbose:
+                        print(f"Updated input-output dependency between {sending_step.name} and {receiving_step.name}")
 
     def get_steps_potential_run_state(self) -> dict:
         step_maybe_runnable = {}
