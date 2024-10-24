@@ -199,7 +199,7 @@ class GraphicalAnalysisStep(ObjectBasedStep):
                  method: str,
                  fit_threshold_in_mins: float = 30.0,
                  image_rescale: float = 1.0/37000.0):
-        super().__init__(name=f'{method}-analysis',
+        super().__init__(name=f'roi-{method}-fit',
                          class_type=pet_grph.GraphicalAnalysis,
                          init_kwargs=dict(input_tac_path=input_tac_path,
                                           roi_tac_path=roi_tac_path,
@@ -239,7 +239,7 @@ class ParametricGraphicalAnalysisStep(ObjectBasedStep):
                  method: str,
                  fit_threshold_in_mins: float = 30.0,
                 ):
-        super().__init__(name=f'parametric-{method}',
+        super().__init__(name=f'parametric-{method}-fit',
                          class_type=parametric_images.GraphicalAnalysisParametricImage,
                          init_kwargs=dict(input_tac_path=input_tac_path,
                                           pet4D_img_path=input_image_path,
@@ -259,7 +259,7 @@ class RTMFittingAnalysisStep(ObjectBasedStep):
                  bounds = None,
                  k2_prime = None,
                  fit_threshold_in_mins: float = 30.0,):
-        super().__init__(name=f'roi-fit-{rtm_model}',
+        super().__init__(name=f'roi-{rtm_model}-fit',
                          class_type=pet_rtms.RTMAnalysis,
                          init_kwargs=dict(ref_tac_path=ref_tac_path,
                                           roi_tac_path=roi_tac_path,
@@ -394,6 +394,9 @@ class StepsPipeline:
         self.preproc()
     
     def add_step(self, container_name: str, step: StepType):
+        if step.name in self.dependency_graph: #Ensures unique step names for now
+            raise KeyError(f"Step name {step.name} already exists.")
+        
         if container_name == 'preproc':
             self.preproc.add_step(step)
         elif container_name == 'km':
@@ -401,6 +404,8 @@ class StepsPipeline:
         else:
             raise KeyError(f"Container name {container_name} does not exist. "
                            f"Must be 'preproc' or 'km'.")
+        self.dependency_graph.add_node(f"{step.name}")
+        self.dependency_graph.nodes[f"{step.name}"]['grp'] = container_name
         
     def print_steps_names(self, container_name: str = None):
         if container_name is None:
@@ -426,4 +431,14 @@ class StepsPipeline:
             raise KeyError(f"Container name {container_name} does not exist. "
                            f"Must be 'preproc' or 'km'.")
         
+    def add_dependency(self, sending: str, receiving: str):
+        node_names = list(self.dependency_graph.nodes)
+        if sending not in node_names:
+            raise KeyError(f"Step name {sending} does not exist.")
+        if receiving not in node_names:
+            raise KeyError(f"Step name {receiving} does not exist.")
         
+        self.dependency_graph.add_edge(sending, receiving)
+        
+        if not nx.is_directed_acyclic_graph(self.dependency_graph):
+            raise RuntimeError(f"Adding dependency {sending} -> {receiving} creates a cycle!")
