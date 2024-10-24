@@ -1,5 +1,7 @@
 import copy
 import os.path
+import warnings
+
 import networkx as nx
 from ..utils.image_io import safe_copy_meta
 from typing import Callable, Union
@@ -71,6 +73,9 @@ class FunctionBasedStep:
                     'Default Arguments:',
                     f'{self.get_function_args_not_set_in_kwargs()}']
         return '\n'.join(info_str)
+    
+    def set_input_as_output_from(self, sending_step):
+        raise NotImplementedError
     
     
 class ObjectBasedStep:
@@ -145,6 +150,9 @@ class ObjectBasedStep:
                     'Default Call Arguments:',
                     f'{unset_call_args if unset_call_args else "N/A"}']
         return '\n'.join(info_str)
+    
+    def set_input_as_output_from(self, sending_step):
+        raise NotImplementedError
 
     
 class ImageToImageStep(FunctionBasedStep):
@@ -313,10 +321,11 @@ def get_template_steps():
 
 
 StepType = Union[FunctionBasedStep, ObjectBasedStep,
-                GraphicalAnalysisStep,
-                ParametricGraphicalAnalysisStep,
-                RTMFittingAnalysisStep,
-                TCMFittingAnalysisStep]
+                 ImageToImageStep,
+                 GraphicalAnalysisStep,
+                 ParametricGraphicalAnalysisStep,
+                 RTMFittingAnalysisStep,
+                 TCMFittingAnalysisStep]
 
 class StepsContainer:
     def __init__(self, name: str):
@@ -442,3 +451,29 @@ class StepsPipeline:
         
         if not nx.is_directed_acyclic_graph(self.dependency_graph):
             raise RuntimeError(f"Adding dependency {sending} -> {receiving} creates a cycle!")
+        
+    def get_step_from_node_label(self, node_label: str):
+        graph_nodes = self.dependency_graph.nodes(data=True)
+        container_name = graph_nodes[node_label]['grp']
+        if container_name == 'preproc':
+            return self.preproc[node_label]
+        elif container_name == 'km':
+            return self.km[node_label]
+        else:
+            raise KeyError(f"Container name {container_name} does not exist.")
+    
+    def update_dependencies(self):
+        for node_name in nx.topological_sort(self.dependency_graph):
+            sending_step = self.get_step_from_node_label(node_name)
+            for an_edge in self.dependency_graph[node_name]:
+                receiving_step = self.get_step_from_node_label(an_edge)
+                try:
+                    receiving_step.set_input_as_output_from(sending_step)
+                except NotImplementedError:
+                    warnings.warn(f"Step `{receiving_step.name}` of type `{type(receiving_step).__name__}` does not have a "
+                                  f"set_input_as_output_from method implemented.\nSkipping.", RuntimeWarning, stacklevel=1)
+                else:
+                    print(f"Updated input-output dependency between {sending_step.name} and {receiving_step.name}")
+                
+            
+        
