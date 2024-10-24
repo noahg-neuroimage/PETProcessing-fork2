@@ -77,6 +77,22 @@ class FunctionBasedStep:
     def set_input_as_output_from(self, sending_step):
         raise NotImplementedError
     
+    def all_args_non_empty_strings(self):
+        for arg in self.args:
+            if arg == '':
+                return False
+        return True
+    
+    def all_kwargs_non_empty_strings(self):
+        for arg_name, arg in self.kwargs.items():
+            if arg == '':
+                return False
+        return True
+    
+    def can_potentially_run(self):
+        return self.all_args_non_empty_strings() and self.all_kwargs_non_empty_strings()
+    
+    
     
 class ObjectBasedStep:
     def __init__(self,
@@ -153,6 +169,21 @@ class ObjectBasedStep:
     
     def set_input_as_output_from(self, sending_step):
         raise NotImplementedError
+    
+    def all_init_kwargs_non_empty_strings(self):
+        for arg_name, arg_val in self.init_kwargs.items():
+            if arg_val == '':
+                return False
+        return True
+    
+    def all_call_kwargs_non_empty_strings(self):
+        for arg_name, arg_val in self.call_kwargs.items():
+            if arg_val == '':
+                return True
+        return False
+    
+    def can_potentially_run(self):
+        return self.all_init_kwargs_non_empty_strings() and self.all_call_kwargs_non_empty_strings()
 
     
 class ImageToImageStep(FunctionBasedStep):
@@ -196,6 +227,12 @@ class ImageToImageStep(FunctionBasedStep):
             raise TypeError(
                     f"The provided step: {sending_step}\n is not an instance of ImageToImageStep. "
                     f"It is of type {type(sending_step)}.")
+        
+    def can_potentially_run(self):
+        input_img_non_empty_str = False if self.input_image_path == '' else True
+        output_img_non_empty_str = False if self.output_image_path == '' else True
+        
+        return super().can_potentially_run() and input_img_non_empty_str and output_img_non_empty_str
         
 
 class GraphicalAnalysisStep(ObjectBasedStep):
@@ -470,10 +507,24 @@ class StepsPipeline:
                 try:
                     receiving_step.set_input_as_output_from(sending_step)
                 except NotImplementedError:
-                    warnings.warn(f"Step `{receiving_step.name}` of type `{type(receiving_step).__name__}` does not have a "
-                                  f"set_input_as_output_from method implemented.\nSkipping.", RuntimeWarning, stacklevel=1)
+                    warnings.warn(
+                        f"Step `{receiving_step.name}` of type `{type(receiving_step).__name__}` does not have a "
+                        f"set_input_as_output_from method implemented.\nSkipping.", RuntimeWarning, stacklevel=1)
                 else:
                     print(f"Updated input-output dependency between {sending_step.name} and {receiving_step.name}")
-                
-            
+
+    def get_steps_potential_run_state(self) -> dict:
+        step_maybe_runnable = {}
+        for node_name in nx.topological_sort(self.dependency_graph):
+            step = self.get_step_from_node_label(node_name)
+            step_maybe_runnable[node_name] = step.can_potentially_run()
+        return step_maybe_runnable
+
+    def can_steps_potentially_run(self) -> bool:
+        steps_run_state = self.get_steps_potential_run_state()
+        for step_name, run_state in steps_run_state.items():
+            if not run_state:
+                return False
+        return True
+        
         
