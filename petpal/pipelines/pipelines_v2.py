@@ -111,19 +111,22 @@ class TACsFromSegmentationStep(FunctionBasedStep):
                          time_frame_keyword=time_keyword,
                          verbose=verbose,
                          )
-        self.out_tacs_path = out_tacs_dir
+        self._out_tacs_path = out_tacs_dir
         
     @property
     def out_tacs_path(self):
-        return self.kwargs['out_tac_dir']
+        return self._out_tacs_path
     
     @out_tacs_path.setter
     def out_tacs_path(self, out_tacs_path: str):
         self.kwargs['out_tac_dir'] = out_tacs_path
+        self._out_tacs_path = out_tacs_path
         
     def set_input_as_output_from(self, sending_step):
         if isinstance(sending_step, ImageToImageStep):
             self.kwargs['input_image_path'] = sending_step.output_image_path
+        else:
+            super().set_input_as_output_from(sending_step)
         
     
 class ResampleBloodTACStep(FunctionBasedStep):
@@ -285,9 +288,7 @@ class ImageToImageStep(FunctionBasedStep):
         if isinstance(sending_step, ImageToImageStep):
             self.input_image_path = sending_step.output_image_path
         else:
-            raise TypeError(
-                    f"The provided step: {sending_step}\n is not an instance of ImageToImageStep. "
-                    f"It is of type {type(sending_step)}.")
+            super().set_input_as_output_from(sending_step)
         
     def can_potentially_run(self):
         input_img_non_empty_str = False if self.input_image_path == '' else True
@@ -319,8 +320,10 @@ class GraphicalAnalysisStep(ObjectBasedStep):
     def set_input_as_output_from(self, sending_step: PreprocSteps) -> None:
         if isinstance(sending_step, TACsFromSegmentationStep):
             self.init_kwargs['roi_tac_path'] = sending_step.out_tacs_path
-        if isinstance(sending_step, ResampleBloodTACStep):
+        elif isinstance(sending_step, ResampleBloodTACStep):
             self.init_kwargs['input_tac_path'] = sending_step.resampled_tac_path
+        else:
+            super().set_input_as_output_from(sending_step)
         
         
 class TCMFittingAnalysisStep(ObjectBasedStep):
@@ -376,7 +379,6 @@ class ParametricGraphicalAnalysisStep(ObjectBasedStep):
             self.init_kwargs['pet4D_img_path'] = sending_step.output_image_path
         else:
             super().set_input_as_output_from(sending_step)
-    
         
 
 class RTMFittingAnalysisStep(ObjectBasedStep):
@@ -403,6 +405,8 @@ class RTMFittingAnalysisStep(ObjectBasedStep):
     def set_input_as_output_from(self, sending_step: PreprocSteps) -> None:
         if isinstance(sending_step, TACsFromSegmentationStep):
             self.init_kwargs['roi_tac_path'] = sending_step.out_tacs_path
+        else:
+            super().set_input_as_output_from(sending_step)
 
 def get_template_steps():
     
