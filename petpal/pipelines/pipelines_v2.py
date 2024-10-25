@@ -112,6 +112,7 @@ class TACsFromSegmentationStep(FunctionBasedStep):
                          verbose=verbose,
                          )
         self._out_tacs_path = out_tacs_dir
+        self._input_image = input_image_path
         
     @property
     def out_tacs_path(self):
@@ -122,9 +123,18 @@ class TACsFromSegmentationStep(FunctionBasedStep):
         self.kwargs['out_tac_dir'] = out_tacs_path
         self._out_tacs_path = out_tacs_path
         
+    @property
+    def input_image_path(self):
+        return self._input_image
+    
+    @input_image_path.setter
+    def input_image_path(self, input_image_path: str):
+        self.kwargs['input_image_path'] = input_image_path
+        self._input_image = input_image_path
+        
     def set_input_as_output_from(self, sending_step):
         if isinstance(sending_step, ImageToImageStep):
-            self.kwargs['input_image_path'] = sending_step.output_image_path
+            self.input_image_path = sending_step.output_image_path
         else:
             super().set_input_as_output_from(sending_step)
         
@@ -142,19 +152,30 @@ class ResampleBloodTACStep(FunctionBasedStep):
                          pet4d_path=input_image_path,
                          out_tac_path=out_tac_path,
                          lin_fit_thresh_in_mins=lin_fit_thresh_in_mins)
-        self.resampled_tac_path = out_tac_path
+        self._input_image_path = input_image_path
+        self._resampled_tac_path = out_tac_path
+        
+    @property
+    def input_image_path(self):
+        return self._input_image_path
+    
+    @input_image_path.setter
+    def input_image_path(self, input_image_path: str):
+        self.kwargs['pet4d_path'] = input_image_path
+        self._input_image_path = input_image_path
         
     @property
     def resampled_tac_path(self):
-        return self.kwargs['out_tac_path']
+        return self._resampled_tac_path
     
     @resampled_tac_path.setter
     def resampled_tac_path(self, resampled_tac_path):
         self.kwargs['out_tac_path'] = resampled_tac_path
+        self._resampled_tac_path = resampled_tac_path
         
     def set_input_as_output_from(self, sending_step):
         if isinstance(sending_step, ImageToImageStep):
-            self.kwargs['pet4d_path'] = sending_step.output_image_path
+            self.input_image_path = sending_step.output_image_path
         else:
             super().set_input_as_output_from(sending_step)
         
@@ -265,7 +286,7 @@ class ImageToImageStep(FunctionBasedStep):
     
     def execute(self, copy_meta_file: bool = True) -> None:
         print(f"(Info): Executing {self.name}")
-        self.function(self.input_image_path, self.output_image_path, self.args, **self.kwargs)
+        self.function(self.input_image_path, self.output_image_path, *self.args, **self.kwargs)
         if copy_meta_file:
             safe_copy_meta(input_image_path=self.input_image_path,
                            out_image_path=self.output_image_path)
