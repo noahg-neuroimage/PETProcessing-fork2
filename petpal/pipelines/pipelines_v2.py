@@ -458,8 +458,8 @@ class StepsContainer:
         
     def add_step(self, step: StepType):
         if step.name not in self.step_names:
-            self.step_objs.append(step)
-            self.step_names.append(step.name)
+            self.step_objs.append(copy.deepcopy(step))
+            self.step_names.append(self.step_objs[-1].name)
         else:
             raise KeyError("A step with this name already exists.")
         
