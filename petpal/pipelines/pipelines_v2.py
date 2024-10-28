@@ -344,6 +344,23 @@ class ImageToImageStep(FunctionBasedStep):
         except RuntimeError as err:
             warnings.warn(f"Invalid override: {err}. Using default instance instead.", stacklevel=2)
             return cls(**defaults)
+    
+    @classmethod
+    def default_register_pet_to_t1(cls, reference_image_path='', half_life='', verbose=False, **overrides):
+        defaults = dict(name='register_pet_to_t1',
+                        function=preproc.register.register_pet,
+                        input_image_path='',
+                        output_image_path='',
+                        reference_image_path=reference_image_path,
+                        motion_target_option='weighted_series_sum',
+                        verbose=verbose,
+                        half_life=half_life, )
+        override_dict = {**defaults, **overrides}
+        try:
+            return cls(**override_dict)
+        except RuntimeError as err:
+            warnings.warn(f"Invalid override: {err}. Using default instance instead.", stacklevel=2)
+            return cls(**defaults)
         
         
 
@@ -463,20 +480,8 @@ def get_template_steps():
     
     out_dict = dict(
             thresh_crop_step = ImageToImageStep.default_threshold_cropping(),
-            moco_frames_above_mean = ImageToImageStep(name='moco_frames_above_mean',
-                                                      function=preproc.motion_corr.motion_corr_frames_above_mean_value,
-                                                      input_image_path='',
-                                                      output_image_path='',
-                                                      motion_target_option='mean_image',
-                                                      verbose=True),
-            register_pet_to_t1 = ImageToImageStep(name='register_pet_to_t1',
-                                                  function=preproc.register.register_pet,
-                                                  input_image_path='',
-                                                  output_image_path='',
-                                                  reference_image_path='',
-                                                  motion_target_option='weighted_series_sum',
-                                                  half_life='',
-                                                  verbose=True),
+            moco_frames_above_mean = ImageToImageStep.default_moco_frames_above_mean(),
+            register_pet_to_t1 = ImageToImageStep.default_register_pet_to_t1(),
             write_roi_tacs = TACsFromSegmentationStep(input_image_path='',
                                                       segmentation_image_path='',
                                                       segmentation_label_map_path='',
