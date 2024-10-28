@@ -322,13 +322,29 @@ class ImageToImageStep(FunctionBasedStep):
                         function=preproc.image_operations_4d.SimpleAutoImageCropper,
                         input_image_path='',
                         output_image_path='',)
-        override_dict = copy.deepcopy(defaults)
-        override_dict.update(overrides)
+        override_dict = {**defaults, **overrides}
         try:
             return cls(**override_dict)
         except RuntimeError as err:
             warnings.warn(f"Invalid override: {err}. Using default instance instead.", stacklevel=2)
             return cls(**defaults)
+        
+    @classmethod
+    def default_moco_frames_above_mean(cls, half_life='', verbose=False, **overrides):
+        defaults = dict(name='moco_frames_above_mean',
+                        function=preproc.motion_corr.motion_corr_frames_above_mean_value,
+                        input_image_path='',
+                        output_image_path='',
+                        motion_target_option='mean_image',
+                        verbose=verbose,
+                        half_life=half_life,)
+        override_dict = {**defaults, **overrides}
+        try:
+            return cls(**override_dict)
+        except RuntimeError as err:
+            warnings.warn(f"Invalid override: {err}. Using default instance instead.", stacklevel=2)
+            return cls(**defaults)
+        
         
 
 PreprocSteps = Union[TACsFromSegmentationStep, ResampleBloodTACStep, ImageToImageStep]
