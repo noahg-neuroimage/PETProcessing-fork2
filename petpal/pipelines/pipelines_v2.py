@@ -463,74 +463,6 @@ class TCMFittingAnalysisStep(ObjectBasedStep):
         else:
             super().set_input_as_output_from(sending_step)
         
-        
-class ParametricGraphicalAnalysisStep(ObjectBasedStep):
-    def __init__(self,
-                 input_tac_path: str,
-                 input_image_path: str,
-                 output_directory: str,
-                 output_prefix: str,
-                 method: str,
-                 fit_threshold_in_mins: float = 30.0,
-                ):
-        super().__init__(name=f'parametric-{method}-fit',
-                         class_type=parametric_images.GraphicalAnalysisParametricImage,
-                         init_kwargs=dict(input_tac_path=input_tac_path,
-                                          pet4D_img_path=input_image_path,
-                                          output_directory=output_directory,
-                                          output_filename_prefix=output_prefix),
-                         call_kwargs=dict(method_name=method,
-                                          t_thresh_in_mins=fit_threshold_in_mins,))
-        self._input_tac_path = input_tac_path
-        self._output_directory = output_directory
-        self._output_prefix = output_prefix
-        self._input_image_path = input_image_path
-        
-    @property
-    def input_tac_path(self) -> str:
-        return self._input_tac_path
-    
-    @input_tac_path.setter
-    def input_tac_path(self, input_tac_path: str):
-        self._input_tac_path = input_tac_path
-        
-    @property
-    def input_image_path(self) -> str:
-        return self._input_image_path
-    
-    @input_image_path.setter
-    def input_image_path(self, input_image_path: str):
-        self._input_image_path = input_image_path
-        self.init_kwargs['pet4D_img_path'] = input_image_path
-        
-    @property
-    def output_directory(self) -> str:
-        return self._output_directory
-    
-    @output_directory.setter
-    def output_directory(self, output_directory: str):
-        self._output_directory = output_directory
-        self.init_kwargs['output_directory'] = output_directory
-        
-    @property
-    def output_prefix(self) -> str:
-        return self._output_prefix
-    
-    @output_prefix.setter
-    def output_prefix(self, output_prefix: str):
-        self._output_prefix = output_prefix
-        self.init_kwargs['output_filename_prefix'] = output_prefix
-    
-    
-    
-    def set_input_as_output_from(self, sending_step: PreprocSteps) -> None:
-        if isinstance(sending_step, ResampleBloodTACStep):
-            self.input_tac_path = sending_step.resampled_tac_path
-        elif isinstance(sending_step, ImageToImageStep):
-            self.input_image_path = sending_step.output_image_path
-        else:
-            super().set_input_as_output_from(sending_step)
-        
 
 class RTMFittingAnalysisStep(ObjectBasedStep):
     def __init__(self,
@@ -559,6 +491,66 @@ class RTMFittingAnalysisStep(ObjectBasedStep):
         else:
             super().set_input_as_output_from(sending_step)
 
+
+class ParametricGraphicalAnalysisStep(ObjectBasedStep):
+    def __init__(self,
+                 input_tac_path: str,
+                 input_image_path: str,
+                 output_directory: str,
+                 output_prefix: str,
+                 method: str,
+                 fit_threshold_in_mins: float = 30.0, ):
+        super().__init__(name=f'parametric-{method}-fit', class_type=parametric_images.GraphicalAnalysisParametricImage,
+                         init_kwargs=dict(input_tac_path=input_tac_path, pet4D_img_path=input_image_path,
+                                          output_directory=output_directory, output_filename_prefix=output_prefix),
+                         call_kwargs=dict(method_name=method, t_thresh_in_mins=fit_threshold_in_mins, ))
+        self._input_tac_path = input_tac_path
+        self._output_directory = output_directory
+        self._output_prefix = output_prefix
+        self._input_image_path = input_image_path
+    
+    @property
+    def input_tac_path(self) -> str:
+        return self._input_tac_path
+    
+    @input_tac_path.setter
+    def input_tac_path(self, input_tac_path: str):
+        self._input_tac_path = input_tac_path
+    
+    @property
+    def input_image_path(self) -> str:
+        return self._input_image_path
+    
+    @input_image_path.setter
+    def input_image_path(self, input_image_path: str):
+        self._input_image_path = input_image_path
+        self.init_kwargs['pet4D_img_path'] = input_image_path
+    
+    @property
+    def output_directory(self) -> str:
+        return self._output_directory
+    
+    @output_directory.setter
+    def output_directory(self, output_directory: str):
+        self._output_directory = output_directory
+        self.init_kwargs['output_directory'] = output_directory
+    
+    @property
+    def output_prefix(self) -> str:
+        return self._output_prefix
+    
+    @output_prefix.setter
+    def output_prefix(self, output_prefix: str):
+        self._output_prefix = output_prefix
+        self.init_kwargs['output_filename_prefix'] = output_prefix
+    
+    def set_input_as_output_from(self, sending_step: PreprocSteps) -> None:
+        if isinstance(sending_step, ResampleBloodTACStep):
+            self.input_tac_path = sending_step.resampled_tac_path
+        elif isinstance(sending_step, ImageToImageStep):
+            self.input_image_path = sending_step.output_image_path
+        else:
+            super().set_input_as_output_from(sending_step)
 
 def get_template_steps():
     
