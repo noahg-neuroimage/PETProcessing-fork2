@@ -403,12 +403,53 @@ class GraphicalAnalysisStep(ObjectBasedStep):
                          call_kwargs=dict(method_name=method,
                                           t_thresh_in_mins=fit_threshold_in_mins,
                                           image_scale=image_rescale))
+        self._input_tac_path = input_tac_path
+        self._roi_tac_path = roi_tac_path
+        self._output_directory = output_directory
+        self._output_prefix = output_prefix
         
+    
+    @property
+    def input_tac_path(self) -> str:
+        return self._input_tac_path
+    
+    @input_tac_path.setter
+    def input_tac_path(self, input_tac_path: str):
+        self._input_tac_path = input_tac_path
+        self.init_kwargs['input_tac_path'] = input_tac_path
+    
+    @property
+    def roi_tac_path(self) -> str:
+        return self._roi_tac_path
+    
+    @roi_tac_path.setter
+    def roi_tac_path(self, roi_tac_path: str):
+        self._roi_tac_path = roi_tac_path
+        self.init_kwargs['roi_tac_path'] = roi_tac_path
+    
+    @property
+    def output_directory(self) -> str:
+        return self._output_directory
+    
+    @output_directory.setter
+    def output_directory(self, output_directory: str):
+        self._output_directory = output_directory
+        self.init_kwargs['output_directory'] = output_directory
+    
+    @property
+    def output_prefix(self) -> str:
+        return self._output_prefix
+    
+    @output_prefix.setter
+    def output_prefix(self, output_prefix: str):
+        self._output_prefix = output_prefix
+        self.init_kwargs['output_filename_prefix'] = output_prefix
+    
     def set_input_as_output_from(self, sending_step: PreprocSteps) -> None:
         if isinstance(sending_step, TACsFromSegmentationStep):
-            self.init_kwargs['roi_tac_path'] = sending_step.out_tacs_path
+            self.roi_tac_path = sending_step.out_tacs_path
         elif isinstance(sending_step, ResampleBloodTACStep):
-            self.init_kwargs['input_tac_path'] = sending_step.resampled_tac_path
+            self.input_tac_path = sending_step.resampled_tac_path
         else:
             super().set_input_as_output_from(sending_step)
         
@@ -434,7 +475,8 @@ class TCMFittingAnalysisStep(ObjectBasedStep):
         
         self._input_tac_path = input_tac_path
         self._roi_tac_path = roi_tac_path
-        
+        self._output_directory = output_directory
+        self._output_prefix = output_prefix
         
     @property
     def input_tac_path(self) -> str:
@@ -443,7 +485,7 @@ class TCMFittingAnalysisStep(ObjectBasedStep):
     @input_tac_path.setter
     def input_tac_path(self, input_tac_path: str):
         self._input_tac_path = input_tac_path
-        self.init_kwargs['roi_tac_path'] = input_tac_path
+        self.init_kwargs['input_tac_path'] = input_tac_path
         
     @property
     def roi_tac_path(self) -> str:
@@ -453,6 +495,24 @@ class TCMFittingAnalysisStep(ObjectBasedStep):
     def roi_tac_path(self, roi_tac_path: str):
         self._roi_tac_path = roi_tac_path
         self.init_kwargs['roi_tac_path'] = roi_tac_path
+    
+    @property
+    def output_directory(self) -> str:
+        return self._output_directory
+    
+    @output_directory.setter
+    def output_directory(self, output_directory: str):
+        self._output_directory = output_directory
+        self.init_kwargs['output_directory'] = output_directory
+    
+    @property
+    def output_prefix(self) -> str:
+        return self._output_prefix
+    
+    @output_prefix.setter
+    def output_prefix(self, output_prefix: str):
+        self._output_prefix = output_prefix
+        self.init_kwargs['output_filename_prefix'] = output_prefix
         
         
     def set_input_as_output_from(self, sending_step: PreprocSteps) -> None:
@@ -484,10 +544,51 @@ class RTMFittingAnalysisStep(ObjectBasedStep):
                          call_kwargs=dict(bounds=bounds,
                                           t_thresh_in_mins=fit_threshold_in_mins,
                                           k2_prime=k2_prime))
+        
+        self._ref_tac_path = ref_tac_path
+        self._roi_tac_path = roi_tac_path
+        self._output_directory = output_directory
+        self._output_prefix = output_prefix
+        
+    @property
+    def ref_tac_path(self) -> str:
+        return self._ref_tac_path
+    
+    @ref_tac_path.setter
+    def ref_tac_path(self, ref_tac_path: str):
+        self._ref_tac_path = ref_tac_path
+        self.init_kwargs['ref_tac_path'] = ref_tac_path
+        
+    @property
+    def roi_tac_path(self) -> str:
+        return self._roi_tac_path
+    
+    @roi_tac_path.setter
+    def roi_tac_path(self, roi_tac_path: str):
+        self._roi_tac_path = roi_tac_path
+        self.init_kwargs['roi_tac_path'] = roi_tac_path
+    
+    @property
+    def output_directory(self) -> str:
+        return self._output_directory
+    
+    @output_directory.setter
+    def output_directory(self, output_directory: str):
+        self._output_directory = output_directory
+        self.init_kwargs['output_directory'] = output_directory
+    
+    @property
+    def output_prefix(self) -> str:
+        return self._output_prefix
+    
+    @output_prefix.setter
+    def output_prefix(self, output_prefix: str):
+        self._output_prefix = output_prefix
+        self.init_kwargs['output_filename_prefix'] = output_prefix
 
     def set_input_as_output_from(self, sending_step: PreprocSteps) -> None:
         if isinstance(sending_step, TACsFromSegmentationStep):
-            self.init_kwargs['roi_tac_path'] = sending_step.out_tacs_path
+            self.roi_tac_path = sending_step.out_tacs_path
         else:
             super().set_input_as_output_from(sending_step)
 
@@ -551,6 +652,7 @@ class ParametricGraphicalAnalysisStep(ObjectBasedStep):
             self.input_image_path = sending_step.output_image_path
         else:
             super().set_input_as_output_from(sending_step)
+
 
 def get_template_steps():
     
