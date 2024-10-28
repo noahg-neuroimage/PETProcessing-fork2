@@ -54,6 +54,21 @@ def convert_ctab_to_dseg(ctab_path: str,
     label_map.to_csv(dseg_path,sep='\t')
     return label_map
 
+def _gen_meta_data_filepath_for_nifty(nifty_path:str):
+    """
+    Generates the corresponding metadata file path for a given nifti file path.
+
+    This function takes a nifti file path (with `.nii` or `.nii.gz` extension)
+    and replaces the extension with `.json` to derive the expected metadata file path.
+
+    Args:
+        nifty_path (str): Path to the nifti file (with `.nii` or `.nii.gz` extension).
+
+    Returns:
+        str: The generated metadata file path with a `.json` extension.
+    """
+    meta_data_path = re.sub(r'\.nii\.gz$|\.nii$', '.json', nifty_path)
+    return meta_data_path
 
 def load_metadata_for_nifty_with_same_filename(image_path) -> dict:
     """
@@ -74,7 +89,7 @@ def load_metadata_for_nifty_with_same_filename(image_path) -> dict:
     if not os.path.exists(image_path):
         raise FileNotFoundError(f"Image file {image_path} not found")
 
-    meta_path = re.sub(r'\.nii\.gz$|\.nii$', '.json', image_path)
+    meta_path = _gen_meta_data_filepath_for_nifty(image_path)
 
     if not os.path.exists(meta_path):
         raise FileNotFoundError(f"Metadata file {meta_path} not found. Does it have a different path?")
@@ -122,7 +137,7 @@ def safe_copy_meta(input_image_path: str,
             generating a new image.
         out_image_path (str): Path to the output file written by the function.
     """
-    copy_meta_path = re.sub('.nii.gz|.nii', '.json', out_image_path)
+    copy_meta_path = _gen_meta_data_filepath_for_nifty(out_image_path)
     meta_data_dict = load_metadata_for_nifty_with_same_filename(input_image_path)
     write_dict_to_json(meta_data_dict=meta_data_dict, out_path=copy_meta_path)
 
