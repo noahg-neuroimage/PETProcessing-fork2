@@ -127,6 +127,29 @@ def safe_copy_meta(input_image_path: str,
     write_dict_to_json(meta_data_dict=meta_data_dict, out_path=copy_meta_path)
 
 
+def get_half_life_from_meta(meta_data_file_path: str):
+    """
+    Extracts the radionuclide half-life (usually in seconds) from a nifti metadata file.
+
+    Args:
+        meta_data_file_path (str): Path to the nifti metadata file.
+
+    Returns:
+        float: The radionuclide half-life extracted from the metadata file.
+
+    Raises:
+        FileNotFoundError: If the metadata file does not exist at the provided path.
+        KeyError: If the 'RadionuclideHalfLife' key is not found in the metadata file.
+    """
+    if not os.path.exists(meta_data_file_path):
+        raise FileNotFoundError(f"Metadata file {meta_data_file_path} not found")
+    with open(meta_data_file_path, 'r') as m_file:
+        meta_data = json.load(m_file)
+    try:
+        half_life = meta_data['RadionuclideHalfLife']
+        return half_life
+    except KeyError:
+        raise KeyError("RadionuclideHalfLife not found in meta-data file.")
 
 class ImageIO:
     """
