@@ -315,6 +315,20 @@ class ImageToImageStep(FunctionBasedStep):
         input_img_non_empty_str = False if self.input_image_path == '' else True
         output_img_non_empty_str = False if self.output_image_path == '' else True
         return super().can_potentially_run() and input_img_non_empty_str and output_img_non_empty_str
+    
+    @classmethod
+    def default_threshold_cropping(cls, **overrides):
+        defaults = dict(name='thresh_crop',
+                        function=preproc.image_operations_4d.SimpleAutoImageCropper,
+                        input_image_path='',
+                        output_image_path='',)
+        override_dict = copy.deepcopy(defaults)
+        override_dict.update(overrides)
+        try:
+            return cls(**override_dict)
+        except RuntimeError as err:
+            warnings.warn(f"Invalid override: {err}. Using default instance instead.", stacklevel=2)
+            return cls(**defaults)
         
 
 PreprocSteps = Union[TACsFromSegmentationStep, ResampleBloodTACStep, ImageToImageStep]
@@ -432,10 +446,7 @@ class RTMFittingAnalysisStep(ObjectBasedStep):
 def get_template_steps():
     
     out_dict = dict(
-            thresh_crop_step = ImageToImageStep(name='thresh_crop',
-                                                function=preproc.image_operations_4d.SimpleAutoImageCropper,
-                                                input_image_path='',
-                                                output_image_path='',),
+            thresh_crop_step = ImageToImageStep.default_threshold_cropping(),
             moco_frames_above_mean = ImageToImageStep(name='moco_frames_above_mean',
                                                       function=preproc.motion_corr.motion_corr_frames_above_mean_value,
                                                       input_image_path='',
