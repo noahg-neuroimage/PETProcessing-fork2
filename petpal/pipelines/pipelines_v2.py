@@ -112,8 +112,29 @@ class TACsFromSegmentationStep(FunctionBasedStep):
                          time_frame_keyword=time_keyword,
                          verbose=verbose,
                          )
-        self._out_tacs_path = out_tacs_dir
         self._input_image = input_image_path
+        self._segmentation_image = segmentation_image_path
+        self._segmentation_label_map = segmentation_label_map_path
+        self._out_tacs_path = out_tacs_dir
+        self._out_tacs_prefix = out_tacs_prefix
+        
+    @property
+    def segmentation_image_path(self):
+        return self._segmentation_image
+    
+    @segmentation_image_path.setter
+    def segmentation_image_path(self, segmentation_image_path):
+        self._segmentation_image = segmentation_image_path
+        self.kwargs['segmentation_image_path'] = segmentation_image_path
+        
+    @property
+    def segmentation_label_map_path(self):
+        return self._segmentation_label_map
+    
+    @segmentation_label_map_path.setter
+    def segmentation_label_map_path(self, segmentation_label_map_path):
+        self._segmentation_label_map = segmentation_label_map_path
+        self.kwargs['label_map_path'] = segmentation_label_map_path
         
     @property
     def out_tacs_path(self):
@@ -123,6 +144,30 @@ class TACsFromSegmentationStep(FunctionBasedStep):
     def out_tacs_path(self, out_tacs_path: str):
         self.kwargs['out_tac_dir'] = out_tacs_path
         self._out_tacs_path = out_tacs_path
+    
+    @property
+    def out_tacs_prefix(self):
+        return self._out_tacs_prefix
+    
+    @out_tacs_prefix.setter
+    def out_tacs_prefix(self, out_tacs_prefix: str):
+        self.kwargs['out_tac_prefix'] = out_tacs_prefix
+        self._out_tacs_prefix = out_tacs_prefix
+    
+    
+    @property
+    def out_path_and_prefix(self):
+        return self._out_tacs_path, self._out_tacs_prefix
+    
+    @out_path_and_prefix.setter
+    def out_path_and_prefix(self, out_dir_and_prefix):
+        try:
+            out_dir, out_prefix = out_dir_and_prefix
+        except ValueError:
+            raise ValueError("Pass a tuple with two items: `(out_dir, out_prefix)`")
+        else:
+            self.out_tacs_path = out_dir
+            self.out_tacs_prefix = out_prefix
         
     @property
     def input_image_path(self):
