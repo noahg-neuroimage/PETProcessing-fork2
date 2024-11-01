@@ -606,9 +606,7 @@ class RTMRegionalAnalysis:
         Get a list of numpy arrays containing TAC values from a list of TimeActivityCurveFromFile
         objects.
         """
-        tac_vals_list = []
-        for tac_object in tacs_object_list:
-            tac_vals_list += [tac_object.tac_vals]
+        tac_vals_list = [tac_object.tac_vals for tac_object in tacs_object_list]
         return tac_vals_list
 
 
