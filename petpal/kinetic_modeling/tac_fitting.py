@@ -29,7 +29,8 @@ from scipy.optimize import curve_fit as sp_cv_fit
 from . import tcms_as_convolutions as pet_tcms
 from ..input_function import blood_input as pet_bld
 from ..utils.image_io import safe_load_tac
-
+from ..utils.time_activity_curve import TimeActivityCurveFromFile, MultiTACAnalysisMixin
+import glob
 
 def _get_fitting_params_for_tcm_func(f: Callable) -> list:
     r"""
@@ -943,3 +944,60 @@ class FitTCMToTAC(object):
                                      'hi': val[2]} for param, val in
                         zip(param_names, bounds)}
         return param_bounds
+    
+    def __call__(self):
+        self.run_analysis()
+        self.save_analysis()
+
+
+class FitTCMToManyTACs(FitTCMToTAC, MultiTACAnalysisMixin):
+    def __init__(self,
+                 input_tac_path: str,
+                 roi_tacs_dir: str,
+                 output_directory: str,
+                 output_filename_prefix: str,
+                 compartment_model: str,
+                 parameter_bounds: Union[None, np.ndarray] = None,
+                 weights: Union[float, None, np.ndarray] = None,
+                 resample_num: int = 512,
+                 aif_fit_thresh_in_mins: float = 40.0,
+                 max_func_iters: int = 2500,
+                 ignore_blood_volume: bool = False):
+        FitTCMToTAC.__init__(self,
+                             input_tac_path=input_tac_path,
+                             roi_tac_path=roi_tacs_dir,
+                             output_directory=output_directory,
+                             output_filename_prefix=output_filename_prefix,
+                             compartment_model=compartment_model,
+                             parameter_bounds=parameter_bounds,
+                             weights=weights,
+                             resample_num=resample_num,
+                             aif_fit_thresh_in_mins=aif_fit_thresh_in_mins,
+                             max_func_iters=max_func_iters,
+                             ignore_blood_volume=ignore_blood_volume)
+        MultiTACAnalysisMixin.__init__(self,
+                                       input_tac_path=input_tac_path,
+                                       tacs_dir=roi_tacs_dir)
+        del self.fit_results
+        
+        
+    def calculate_fit(self):
+        p_tac = safe_load_tac(self.input_tac_path)
+        for a_tac in self.get_tacs_list_from_dir(self.tacs_dir):
+            t_tac = safe_load_tac(a_tac)
+            fit_obj = self.fitting_obj(pTAC=p_tac, tTAC=t_tac,
+                                        weights=self.weights,
+                                        tcm_func=self._tcm_func,
+                                        fit_bounds=self.bounds,
+                                        max_iters=self.max_func_iters,
+                                        aif_fit_thresh_in_mins=self.input_tac_fitting_thresh_in_mins,
+                                        resample_num=self.tac_resample_num)
+            fit_obj.run_fit()
+            self.multi_tacs_fit_results.append(fit_obj.fit_results)
+        if self.bounds is None:
+            self.bounds = fit_obj.bounds
+            
+            
+    
+    
+        

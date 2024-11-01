@@ -10,6 +10,7 @@ TODO:
 from dataclasses import dataclass
 import numpy as np
 from .image_io import safe_load_tac
+import os, glob
 
 @dataclass
 class TimeActivityCurve:
@@ -74,3 +75,71 @@ class TimeActivityCurveFromFile:
         tac_durations_in_minutes[-1] = tac_durations_in_minutes[-2]
 
         return tac_durations_in_minutes
+
+
+class MultiTACAnalysisMixin:
+    def __init__(self, input_tac_path: str, tacs_dir: str, ):
+        self._input_tac_path = None
+        self._tacs_dir = None
+        
+        self.input_tac_path = input_tac_path
+        self.tacs_dir = tacs_dir
+        self.multi_tacs_fit_results = []
+    
+    @property
+    def input_tac_path(self):
+        return self._input_tac_path
+    
+    @input_tac_path.setter
+    def input_tac_path(self, input_tac_path):
+        self._input_tac_path = input_tac_path
+    
+    @property
+    def reference_tac_path(self):
+        return self._input_tac_path
+    
+    @reference_tac_path.setter
+    def reference_tac_path(self, reference_tac_path):
+        self._input_tac_path = reference_tac_path
+    
+    @property
+    def tacs_dir(self):
+        return self._tacs_dir
+    
+    @tacs_dir.setter
+    def tacs_dir(self, tacs_dir):
+        if self.is_valid_tacs_dir(tacs_dir):
+            self._tacs_dir = tacs_dir
+        else:
+            raise FileNotFoundError("`tacs_dir` must contain at least one TAC file. Check the"
+                                    f" contents of the directory: {self.tacs_dir}.")
+    
+    def is_valid_tacs_dir(self, tacs_dir: str):
+        tacs_files_list = self.get_tacs_list_from_dir(tacs_dir)
+        if tacs_files_list:
+            return True
+        else:
+            return False
+    
+    @staticmethod
+    def get_tacs_list_from_dir(tacs_dir: str):
+        assert os.path.isdir(tacs_dir), f"`tacs_dir` must be a valid directory: {os.path.abspath(tacs_dir)}"
+        glob_path = os.path.join(tacs_dir, "*_tac.tsv")
+        tacs_files_list = glob.glob(glob_path)
+        return tacs_files_list
+    
+    @staticmethod
+    def get_tacs_objects_list_from_files_list(tacs_files_list: list[str]):
+        tacs_list = [TimeActivityCurveFromFile(tac_path=tac_file) for tac_file in tacs_files_list]
+        return tacs_list
+    
+    @staticmethod
+    def get_tacs_vals_from_objs_list(tacs_objects_list: list[TimeActivityCurveFromFile]):
+        tacs_vals = [tac.tac_vals for tac in tacs_objects_list]
+        return tacs_vals
+    
+    def get_tacs_vals_from_dir(self, tacs_dir: str):
+        tacs_files_list = self.get_tacs_list_from_dir(tacs_dir)
+        tacs_objects_list = self.get_tacs_objects_list_from_files_list(tacs_files_list)
+        tacs_vals = self.get_tacs_vals_from_objs_list(tacs_objects_list)
+        return tacs_vals
