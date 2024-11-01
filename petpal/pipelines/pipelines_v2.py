@@ -404,14 +404,14 @@ class ImageToImageStep(FunctionBasedStep):
             return cls(**defaults)
         
     @classmethod
-    def default_moco_frames_above_mean(cls, half_life='', verbose=False, **overrides):
+    def default_moco_frames_above_mean(cls, verbose=False, **overrides):
         defaults = dict(name='moco_frames_above_mean',
                         function=preproc.motion_corr.motion_corr_frames_above_mean_value,
                         input_image_path='',
                         output_image_path='',
                         motion_target_option='mean_image',
                         verbose=verbose,
-                        half_life=half_life,)
+                        half_life=None,)
         override_dict = {**defaults, **overrides}
         try:
             return cls(**override_dict)
