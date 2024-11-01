@@ -597,9 +597,7 @@ class RTMRegionalAnalysis:
         """
         Get a list of TimeActivityCurveFromFile objects from a list of TAC paths.
         """
-        tacs_list = []
-        for tac_file in tacs_file_list:
-            tacs_list += [TimeActivityCurveFromFile(tac_path=tac_file)]
+        tacs_list = [TimeActivityCurveFromFile(tac_path=tac_file) for tac_file in tacs_file_list]
         return tacs_list
 
 
