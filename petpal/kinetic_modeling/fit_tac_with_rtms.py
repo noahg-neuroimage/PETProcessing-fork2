@@ -479,10 +479,25 @@ class RTMRegionalAnalysis:
         self.rtm_method = get_rtm_method(method=self.rtm_inputs.method,
                                          bounds=self.rtm_inputs.bounds)
 
+        self.validate_tacs_dir()
         self.validate_bounds()
         self.validate_method_inputs()
         self.kwargs_dict = self.get_rtm_kwargs_dict_from_class()
         self.fit_results = self.fit_many_tacs_to_model()
+
+
+    def validate_tacs_dir(self):
+        """
+        Verifies the provided `tacs_dir` contains TAC files.
+
+        Raises:
+            FileNotFoundError: If there are no TAC files found in the directory.
+        """
+        tacs_file_list = self.get_tacs_file_list()
+        if len(tacs_file_list)<1:
+            raise FileNotFoundError("tacs_dir must contain at least one TAC file. Check the"
+                                    f"contents of the directory: {self.tacs_dir}.")
+
 
     def validate_method_inputs(self):
         r"""Validates the inputs for different methods
