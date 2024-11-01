@@ -593,7 +593,7 @@ class RTMRegionalAnalysis:
         return tacs_file_list
 
 
-    def get_tacs_object_list(self, tacs_file_list: list):
+    def get_tacs_object_list(self, tacs_file_list: list[str]):
         """
         Get a list of TimeActivityCurveFromFile objects from a list of TAC paths.
         """
@@ -601,7 +601,7 @@ class RTMRegionalAnalysis:
         return tacs_list
 
 
-    def get_tacs_vals_list_from_object(self, tacs_object_list: list):
+    def get_tacs_vals_list_from_object(self, tacs_object_list: list[TimeActivityCurveFromFile]):
         """
         Get a list of numpy arrays containing TAC values from a list of TimeActivityCurveFromFile
         objects.
@@ -622,7 +622,7 @@ class RTMRegionalAnalysis:
         return rtm_kwargs_dict
 
 
-    def fit_tac_to_model(self, target_tac_vals):
+    def fit_tac_to_model(self, target_tac_vals: np.ndarray):
         r"""Fits TAC vals to model
 
         This method fits the target TAC values to the model depending on the chosen method in the
