@@ -101,6 +101,7 @@ class BloodInputFunction(object):
         
         y[below_thresh] = self.below_func(t[below_thresh])
         y[above_thresh] = self.above_func(t[above_thresh])
+        y[y < 0] = 0
         
         return y
     
@@ -124,6 +125,7 @@ class BloodInputFunction(object):
         :return: A callable function that takes x-data as an input to compute the line values
         """
         
+        # noinspection PyTupleAssignmentBalance
         popt, _ = sp_fit(f=BloodInputFunction._linear_function, xdata=x_data, ydata=y_data, full_output=False)
         
         def fitted_line_function(x):

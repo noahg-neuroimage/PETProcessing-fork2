@@ -163,8 +163,18 @@ class ResampleBloodTACStep(FunctionBasedStep):
                          pet4d_path=input_image_path,
                          out_tac_path=out_tac_path,
                          lin_fit_thresh_in_mins=lin_fit_thresh_in_mins)
+        self._raw_blood_tac_path = input_raw_blood_tac_path
         self._input_image_path = input_image_path
         self._resampled_tac_path = out_tac_path
+        
+    @property
+    def raw_blood_tac_path(self):
+        return self._raw_blood_tac_path
+    
+    @raw_blood_tac_path.setter
+    def raw_blood_tac_path(self, raw_blood_tac_path):
+        self.kwargs['raw_blood_tac'] = raw_blood_tac_path
+        self._raw_blood_tac_path = raw_blood_tac_path
         
     @property
     def input_image_path(self):
