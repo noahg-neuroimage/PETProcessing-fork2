@@ -510,6 +510,20 @@ class TACAnalysisStepMixin:
     def output_prefix(self, output_prefix: str):
         self._output_prefix = output_prefix
         self.init_kwargs['output_filename_prefix'] = output_prefix
+    
+    @property
+    def out_path_and_prefix(self):
+        return self._output_directory, self._output_prefix
+    
+    @out_path_and_prefix.setter
+    def out_path_and_prefix(self, out_dir_and_prefix):
+        try:
+            out_dir, out_prefix = out_dir_and_prefix
+        except ValueError:
+            raise ValueError("Pass a tuple with two items: `(out_dir, out_prefix)`")
+        else:
+            self.output_directory = out_dir
+            self.output_prefix = out_prefix
 
 
 class GraphicalAnalysisStep(ObjectBasedStep, TACAnalysisStepMixin):
