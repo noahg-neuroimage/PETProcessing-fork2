@@ -848,7 +848,7 @@ class FitTCMToTAC(object):
         with open(analysis_props_file, 'w',encoding='utf-8') as f:
             json.dump(obj=self.analysis_props, fp=f, indent=4)
 
-    def update_props_with_formatted_fit_values(self, fit_results: list, fit_props_dict: dict):
+    def update_props_with_formatted_fit_values(self, fit_results, fit_props_dict: dict):
         fit_params, fit_covariances = fit_results
         fit_stderr = np.sqrt(np.diagonal(fit_covariances))
         format_func = self._generate_pretty_params
@@ -1008,7 +1008,10 @@ class FitTCMToManyTACs(FitTCMToTAC, MultiTACAnalysisMixin):
         if self.bounds is None:
             self.bounds = fit_obj.bounds
             
-            
+    
+    def calculate_fit_properties(self):
+        for fit_results, fit_props in zip(self.multi_tacs_fit_results, self.analysis_props):
+            self.update_props_with_formatted_fit_values(fit_results=fit_results, fit_props_dict=fit_props)
     
     
         
