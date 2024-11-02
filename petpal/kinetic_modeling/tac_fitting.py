@@ -845,7 +845,7 @@ class FitTCMToTAC(object):
                                         f"{self.output_filename_prefix}_analysis"
                                         f"-{self.analysis_props['TissueCompartmentModel']}")
         analysis_props_file = f"{file_name_prefix}_props.json"
-        with open(analysis_props_file, 'w',encoding='utf-8') as f:
+        with open(analysis_props_file, 'w', encoding='utf-8') as f:
             json.dump(obj=self.analysis_props, fp=f, indent=4)
 
     def update_props_with_formatted_fit_values(self, fit_results, fit_props_dict: dict):

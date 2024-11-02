@@ -10,7 +10,7 @@ TODO:
 from dataclasses import dataclass
 import numpy as np
 from .image_io import safe_load_tac
-import os, glob
+import os, glob, pathlib
 
 @dataclass
 class TimeActivityCurve:
@@ -145,3 +145,22 @@ class MultiTACAnalysisMixin:
         tacs_objects_list = self.get_tacs_objects_list_from_files_list(tacs_files_list)
         tacs_vals = self.get_tacs_vals_from_objs_list(tacs_objects_list)
         return tacs_vals
+    
+    @staticmethod
+    def infer_segmentation_label_from_tac_path(tac_path):
+        path = pathlib.Path(tac_path)
+        assert path.suffix == '.tsv', '`tac_path` must point to a TSV file (*.tsv)'
+        filename = path.name
+        fileparts = filename.split("_")
+        segname = 'XXXX'
+        for part in fileparts:
+            if 'seg-' in part:
+                segname = part.split('seg-')[-1]
+                break
+        if segname == 'XXXX':
+            return segname
+        else:
+            segparts = segname.split("-")
+            segparts_capped = [a_part.capitalize() for a_part in segparts]
+            segname = ''.join(segparts_capped)
+            return segname
