@@ -963,6 +963,9 @@ class FitTCMToManyTACs(FitTCMToTAC, MultiTACAnalysisMixin):
                  aif_fit_thresh_in_mins: float = 40.0,
                  max_func_iters: int = 2500,
                  ignore_blood_volume: bool = False):
+        MultiTACAnalysisMixin.__init__(self,
+                                       input_tac_path=input_tac_path,
+                                       tacs_dir=roi_tacs_dir)
         FitTCMToTAC.__init__(self,
                              input_tac_path=input_tac_path,
                              roi_tac_path=roi_tacs_dir,
@@ -975,23 +978,27 @@ class FitTCMToManyTACs(FitTCMToTAC, MultiTACAnalysisMixin):
                              aif_fit_thresh_in_mins=aif_fit_thresh_in_mins,
                              max_func_iters=max_func_iters,
                              ignore_blood_volume=ignore_blood_volume)
-        MultiTACAnalysisMixin.__init__(self,
-                                       input_tac_path=input_tac_path,
-                                       tacs_dir=roi_tacs_dir)
         del self.fit_results
+        
+        
+    def init_analysis_props(self):
+        num_of_tacs = self.num_of_tacs
+        analysis_props = [FitTCMToTAC.init_analysis_props(self) for a_tac in range(num_of_tacs)]
+        return analysis_props
         
         
     def calculate_fit(self):
         p_tac = safe_load_tac(self.input_tac_path)
         for a_tac in self.get_tacs_list_from_dir(self.tacs_dir):
             t_tac = safe_load_tac(a_tac)
-            fit_obj = self.fitting_obj(pTAC=p_tac, tTAC=t_tac,
-                                        weights=self.weights,
-                                        tcm_func=self._tcm_func,
-                                        fit_bounds=self.bounds,
-                                        max_iters=self.max_func_iters,
-                                        aif_fit_thresh_in_mins=self.input_tac_fitting_thresh_in_mins,
-                                        resample_num=self.tac_resample_num)
+            fit_obj = self.fitting_obj(pTAC=p_tac,
+                                       tTAC=t_tac,
+                                       weights=self.weights,
+                                       tcm_func=self._tcm_func,
+                                       fit_bounds=self.bounds,
+                                       max_iters=self.max_func_iters,
+                                       aif_fit_thresh_in_mins=self.input_tac_fitting_thresh_in_mins,
+                                       resample_num=self.tac_resample_num)
             fit_obj.run_fit()
             self.multi_tacs_fit_results.append(fit_obj.fit_results)
         if self.bounds is None:
