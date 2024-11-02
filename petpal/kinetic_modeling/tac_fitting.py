@@ -848,6 +848,17 @@ class FitTCMToTAC(object):
         with open(analysis_props_file, 'w',encoding='utf-8') as f:
             json.dump(obj=self.analysis_props, fp=f, indent=4)
 
+    def update_props_with_formatted_fit_values(self, fit_results: list, fit_props_dict: dict):
+        fit_params, fit_covariances = fit_results
+        fit_stderr = np.sqrt(np.diagonal(fit_covariances))
+        format_func = self._generate_pretty_params
+        
+        fit_props_dict["FitProperties"]["FitValues"] = format_func(fit_params.round(5))
+        fit_props_dict["FitProperties"]["FitStdErr"] = format_func(fit_stderr.round(5))
+        
+        format_func = self._generate_pretty_bounds
+        fit_props_dict["FitProperties"]["Bounds"] = format_func(self.bounds.round(5))
+
     def calculate_fit_properties(self):
         r"""
         Calculates the fit properties and updates the analysis properties.
@@ -856,15 +867,8 @@ class FitTCMToTAC(object):
         results, formats them for readability, and stores them in the analysis properties dictionary.
         Bounds to the fitting parameters are also formatted and stored.
         """
-        fit_params, fit_covariances = self.fit_results
-        fit_stderr = np.sqrt(np.diagonal(fit_covariances))
-        format_func = self._generate_pretty_params
-        
-        self.analysis_props["FitProperties"]["FitValues"] = format_func(fit_params.round(5))
-        self.analysis_props["FitProperties"]["FitStdErr"] = format_func(fit_stderr.round(5))
-        
-        format_func = self._generate_pretty_bounds
-        self.analysis_props["FitProperties"]["Bounds"] = format_func(self.bounds.round(5))
+        self.update_props_with_formatted_fit_values(fit_results=self.fit_results,
+                                                    fit_props_dict=self.analysis_props)
     
     def calculate_fit(self):
         r"""
