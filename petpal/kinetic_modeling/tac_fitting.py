@@ -993,6 +993,7 @@ class FitTCMToManyTACs(FitTCMToTAC, MultiTACAnalysisMixin):
         
     def calculate_fit(self):
         p_tac = safe_load_tac(self.input_tac_path)
+        fit_obj = None
         for a_tac in self.get_tacs_list_from_dir(self.tacs_dir):
             t_tac = safe_load_tac(a_tac)
             fit_obj = self.fitting_obj(pTAC=p_tac,
@@ -1005,7 +1006,7 @@ class FitTCMToManyTACs(FitTCMToTAC, MultiTACAnalysisMixin):
                                        resample_num=self.tac_resample_num)
             fit_obj.run_fit()
             self.multi_tacs_fit_results.append(fit_obj.fit_results)
-        if self.bounds is None:
+        if (self.bounds is None) and (fit_obj is not None):
             self.bounds = fit_obj.bounds
             
     
