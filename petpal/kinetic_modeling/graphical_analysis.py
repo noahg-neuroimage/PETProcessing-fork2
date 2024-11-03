@@ -619,7 +619,7 @@ class GraphicalAnalysis:
             Computes and updates the analysis-related properties in the object based on the provided method and threshold.
         """
         self.calculate_fit()
-        self.calculate_fit_properties(method_name=self.method, t_thresh_in_mins=self.fit_thresh_in_mins)
+        self.calculate_fit_properties()
 
     def calculate_fit(self):
         """
@@ -649,7 +649,7 @@ class GraphicalAnalysis:
         self.analysis_props['Intercept'] = intercept
         self.analysis_props['RSquared'] = rsquared
 
-    def calculate_fit_properties(self, method_name: str, t_thresh_in_mins: float):
+    def calculate_fit_properties(self):
         """
         Calculates and stores the properties related to the fitting process.
 
@@ -673,10 +673,10 @@ class GraphicalAnalysis:
         Returns:
             None. The results are stored within the instance's `analysis_props` variable.
         """
-        self.analysis_props['ThresholdTime'] = t_thresh_in_mins
-        self.analysis_props['MethodName'] = method_name
+        self.analysis_props['ThresholdTime'] = self.fit_thresh_in_mins
+        self.analysis_props['MethodName'] = self.method
         p_tac_times, _ = safe_load_tac(filename=self.input_tac_path)
-        t_thresh_index = get_index_from_threshold(times_in_minutes=p_tac_times, t_thresh_in_minutes=t_thresh_in_mins)
+        t_thresh_index = get_index_from_threshold(times_in_minutes=p_tac_times, t_thresh_in_minutes=self.fit_thresh_in_mins)
         self.analysis_props['StartFrameTime'] = p_tac_times[t_thresh_index]
         self.analysis_props['EndFrameTime'] = p_tac_times[-1]
         self.analysis_props['NumberOfPointsFit'] = len(p_tac_times[t_thresh_index:])
