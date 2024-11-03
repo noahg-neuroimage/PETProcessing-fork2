@@ -23,6 +23,7 @@ import os
 import json
 import numba
 import numpy as np
+from ..utils.time_activity_curve import MultiTACAnalysisMixin
 from ..utils.image_io import safe_load_tac
 
 
@@ -698,8 +699,8 @@ class GraphicalAnalysis:
         if self.analysis_props['RSquared'] is None:
             raise RuntimeError("'run_analysis' method must be called before 'save_analysis'.")
         file_name_prefix = os.path.join(self.output_directory,
-                                        f"{self.output_filename_prefix}_analysis-{self.analysis_props['MethodName']}")
-        analysis_props_file = f"{file_name_prefix}_props.json"
+                                        f"{self.output_filename_prefix}_desc-{self.analysis_props['MethodName']}")
+        analysis_props_file = f"{file_name_prefix}_fitprops.json"
         with open(analysis_props_file, 'w',encoding='utf-8') as f:
             json.dump(obj=self.analysis_props, fp=f, indent=4)
     
@@ -710,3 +711,59 @@ class GraphicalAnalysis:
         """
         self.run_analysis()
         self.save_analysis()
+        
+        
+class MultiTACGraphicalAnalysis(GraphicalAnalysis, MultiTACAnalysisMixin):
+    def __init__(self,
+                 input_tac_path: str,
+                 roi_tacs_dir:str,
+                 output_directory: str,
+                 output_filename_prefix: str,
+                 method:str,
+                 fit_thresh_in_mins=None):
+        MultiTACAnalysisMixin.__init__(self,
+                                       input_tac_path=input_tac_path,
+                                       tacs_dir=roi_tacs_dir)
+        GraphicalAnalysis.__init__(self,
+                                   input_tac_path=input_tac_path,
+                                   roi_tac_path=roi_tacs_dir,
+                                   output_directory=output_directory,
+                                   output_filename_prefix=output_filename_prefix,
+                                   method=method,
+                                   fit_thresh_in_mins=fit_thresh_in_mins
+                                   )
+        
+    def init_analysis_props(self):
+        num_of_tacs = self.num_of_tacs
+        analysis_props = [GraphicalAnalysis.init_analysis_props(self) for a_tac in range(num_of_tacs)]
+        for tac_id, a_prop_dict in enumerate(analysis_props):
+            a_prop_dict['FilePathTTAC'] = os.path.abspath(self.tacs_files_list[tac_id])
+        return analysis_props
+    
+    
+    def calculate_fit(self):
+        p_tac_times, p_tac_vals = safe_load_tac(self.input_tac_path)
+        for tac_id, a_tac in enumerate(self.tacs_files_list):
+            _, t_tac_vals = safe_load_tac(a_tac)
+            slope, intercept, rsquared = self.analysis_func(tac_times_in_minutes=p_tac_times,
+                                                            input_tac_values=p_tac_vals,
+                                                            region_tac_values=t_tac_vals,
+                                                            t_thresh_in_minutes=self.fit_thresh_in_mins)
+            self.analysis_props[tac_id]['Slope'] = slope
+            self.analysis_props[tac_id]['Intercept'] = intercept
+            self.analysis_props[tac_id]['RSquared'] = rsquared
+    
+    def calculate_fit_properties(self):
+        p_tac_times, _ = safe_load_tac(self.input_tac_path)
+        t_thresh_index = get_index_from_threshold(times_in_minutes=p_tac_times,
+                                                  t_thresh_in_minutes=self.fit_thresh_in_mins)
+        points_fit = len(p_tac_times[t_thresh_index:])
+        start_time=p_tac_times[t_thresh_index]
+        end_time=p_tac_times[-1]
+        
+        for tac_id, a_tac in enumerate(self.tacs_files_list):
+            self.analysis_props[tac_id]['ThresholdTime'] = self.fit_thresh_in_mins
+            self.analysis_props[tac_id]['MethodName'] = self.method
+            self.analysis_props[tac_id]['StartFrameTime'] = start_time
+            self.analysis_props[tac_id]['EndFrameTime'] = end_time
+            self.analysis_props[tac_id]['NumberOfPointsFit'] = points_fit
