@@ -166,7 +166,7 @@ class MultiTACAnalysisMixin:
         
     def infer_segmenation_labels_for_tacs(self):
         seg_labels = []
-        for tac_id, tac_file in enumerate(self.tacs_files_list)
+        for tac_id, tac_file in enumerate(self.tacs_files_list):
             tmp_seg = self.infer_segmentation_label_from_tac_path(tac_path=tac_file, tac_id=tac_id)
             seg_labels.append(tmp_seg)
             
