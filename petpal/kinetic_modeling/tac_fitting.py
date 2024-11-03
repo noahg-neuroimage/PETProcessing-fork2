@@ -983,8 +983,7 @@ class FitTCMToManyTACs(FitTCMToTAC, MultiTACAnalysisMixin):
                              aif_fit_thresh_in_mins=aif_fit_thresh_in_mins,
                              max_func_iters=max_func_iters,
                              ignore_blood_volume=ignore_blood_volume)
-        del self.fit_results
-        
+        self.fit_results = []
         
     def init_analysis_props(self):
         num_of_tacs = self.num_of_tacs
@@ -1006,13 +1005,13 @@ class FitTCMToManyTACs(FitTCMToTAC, MultiTACAnalysisMixin):
                                        aif_fit_thresh_in_mins=self.input_tac_fitting_thresh_in_mins,
                                        resample_num=self.tac_resample_num)
             fit_obj.run_fit()
-            self.multi_tacs_fit_results.append(fit_obj.fit_results)
+            self.fit_results.append(fit_obj.fit_results)
         if (self.bounds is None) and (fit_obj is not None):
             self.bounds = fit_obj.bounds
             
     
     def calculate_fit_properties(self):
-        for fit_results, fit_props, tac_path in zip(self.multi_tacs_fit_results,
+        for fit_results, fit_props, tac_path in zip(self.fit_results,
                                                     self.analysis_props,
                                                     self.tacs_files_list):
             self.update_props_with_formatted_fit_values(fit_results=fit_results, fit_props_dict=fit_props)
@@ -1023,7 +1022,6 @@ class FitTCMToManyTACs(FitTCMToTAC, MultiTACAnalysisMixin):
         if not self._has_analysis_been_run:
             raise RuntimeError("'run_analysis' method must be run before running this method.")
         
-         
         for seg_name, fit_props in zip(self.inferred_seg_labels, self.analysis_props):
             
             filename = [self.output_filename_prefix,

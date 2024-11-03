@@ -84,7 +84,6 @@ class MultiTACAnalysisMixin:
         
         self.input_tac_path = input_tac_path
         self.tacs_dir = tacs_dir
-        self.multi_tacs_fit_results = []
         self.tacs_files_list = self.get_tacs_list_from_dir(self.tacs_dir)
         self.num_of_tacs = len(self.tacs_files_list)
         self.inferred_seg_labels = self.infer_segmenation_labels_for_tacs()
