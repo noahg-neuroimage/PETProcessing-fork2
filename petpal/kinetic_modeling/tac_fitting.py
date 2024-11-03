@@ -702,6 +702,7 @@ class FitTCMToTAC(object):
         self.output_directory: str = os.path.abspath(output_directory)
         self.output_filename_prefix: str = output_filename_prefix
         self.compartment_model: str = self.validated_tcm(compartment_model)
+        self.short_tcm_name = "".join(self.compartment_model.split("-"))
         self._tcm_func: Callable = self._get_tcm_function(self.compartment_model)
         self.bounds: Union[None, np.ndarray] = parameter_bounds
         self.tac_resample_num: int = resample_num
@@ -842,9 +843,9 @@ class FitTCMToTAC(object):
             raise RuntimeError("'run_analysis' method must be run before running this method.")
 
         file_name_prefix = os.path.join(self.output_directory,
-                                        f"{self.output_filename_prefix}_analysis"
-                                        f"-{self.analysis_props['TissueCompartmentModel']}")
-        analysis_props_file = f"{file_name_prefix}_props.json"
+                                        f"{self.output_filename_prefix}_desc"
+                                        f"-{self.short_tcm_name}")
+        analysis_props_file = f"{file_name_prefix}_fitprops.json"
         with open(analysis_props_file, 'w', encoding='utf-8') as f:
             json.dump(obj=self.analysis_props, fp=f, indent=4)
 
@@ -1011,8 +1012,27 @@ class FitTCMToManyTACs(FitTCMToTAC, MultiTACAnalysisMixin):
             
     
     def calculate_fit_properties(self):
-        for fit_results, fit_props in zip(self.multi_tacs_fit_results, self.analysis_props):
+        for fit_results, fit_props, tac_path in zip(self.multi_tacs_fit_results,
+                                                    self.analysis_props,
+                                                    self.tacs_files_list):
             self.update_props_with_formatted_fit_values(fit_results=fit_results, fit_props_dict=fit_props)
+            fit_props['FilePathTTAC']=os.path.abspath(tac_path)
     
     
+    def save_analysis(self):
+        if not self._has_analysis_been_run:
+            raise RuntimeError("'run_analysis' method must be run before running this method.")
         
+         
+        for seg_name, fit_props in zip(self.inferred_seg_labels, self.analysis_props):
+            
+            filename = [self.output_filename_prefix,
+                        f'desc-{self.short_tcm_name}',
+                        f'seg-{seg_name}',
+                        'fitprops.json']
+            filename='_'.join(filename)
+            filepath = os.path.join(self.output_directory, filename)
+            
+            with open(filepath, 'w', encoding='utf-8') as f:
+                json.dump(obj=fit_props, fp=f, indent=4)
+            
