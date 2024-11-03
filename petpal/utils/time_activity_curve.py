@@ -146,7 +146,7 @@ class MultiTACAnalysisMixin:
         return tacs_vals
     
     @staticmethod
-    def infer_segmentation_label_from_tac_path(tac_path):
+    def infer_segmentation_label_from_tac_path(tac_path: str, tac_id:int):
         path = pathlib.Path(tac_path)
         assert path.suffix == '.tsv', '`tac_path` must point to a TSV file (*.tsv)'
         filename = path.name
@@ -157,7 +157,7 @@ class MultiTACAnalysisMixin:
                 segname = part.split('seg-')[-1]
                 break
         if segname == 'XXXX':
-            return segname
+            return f'UNK{tac_id:03}'
         else:
             segparts = segname.split("-")
             segparts_capped = [a_part.capitalize() for a_part in segparts]
@@ -166,8 +166,8 @@ class MultiTACAnalysisMixin:
         
     def infer_segmenation_labels_for_tacs(self):
         seg_labels = []
-        for tac_file in self.tacs_files_list:
-            tmp_seg = self.infer_segmentation_label_from_tac_path(tac_path=tac_file)
+        for tac_id, tac_file in enumerate(self.tacs_files_list)
+            tmp_seg = self.infer_segmentation_label_from_tac_path(tac_path=tac_file, tac_id=tac_id)
             seg_labels.append(tmp_seg)
             
         return seg_labels
