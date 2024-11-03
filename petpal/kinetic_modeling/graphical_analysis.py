@@ -767,3 +767,17 @@ class MultiTACGraphicalAnalysis(GraphicalAnalysis, MultiTACAnalysisMixin):
             self.analysis_props[tac_id]['StartFrameTime'] = start_time
             self.analysis_props[tac_id]['EndFrameTime'] = end_time
             self.analysis_props[tac_id]['NumberOfPointsFit'] = points_fit
+            
+    def save_analysis(self):
+        if self.analysis_props[0]['RSquared'] is None:
+            raise RuntimeError("'run_analysis' method must be called before 'save_analysis'.")
+        
+        for seg_name, fit_props in zip(self.inferred_seg_labels, self.analysis_props):
+            filename = [self.output_filename_prefix,
+                        f'desc-{self.method}',
+                        f'seg-{seg_name}',
+                        'fitprops.json']
+            filename = '_'.join(filename)
+            filepath = os.path.join(self.output_directory, filename)
+            with open(filepath, 'w', encoding='utf-8') as f:
+                json.dump(obj=fit_props, fp=f, indent=4)
