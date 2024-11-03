@@ -988,13 +988,15 @@ class FitTCMToManyTACs(FitTCMToTAC, MultiTACAnalysisMixin):
     def init_analysis_props(self):
         num_of_tacs = self.num_of_tacs
         analysis_props = [FitTCMToTAC.init_analysis_props(self) for a_tac in range(num_of_tacs)]
+        for tac_id, a_prop_dict in enumerate(analysis_props):
+            a_prop_dict['FilePathTTAC'] = os.path.abspath(self.tacs_files_list[tac_id])
         return analysis_props
         
         
     def calculate_fit(self):
         p_tac = safe_load_tac(self.input_tac_path)
         fit_obj = None
-        for a_tac in self.get_tacs_list_from_dir(self.tacs_dir):
+        for a_tac in self.tacs_files_list:
             t_tac = safe_load_tac(a_tac)
             fit_obj = self.fitting_obj(pTAC=p_tac,
                                        tTAC=t_tac,
@@ -1015,7 +1017,7 @@ class FitTCMToManyTACs(FitTCMToTAC, MultiTACAnalysisMixin):
                                                     self.analysis_props,
                                                     self.tacs_files_list):
             self.update_props_with_formatted_fit_values(fit_results=fit_results, fit_props_dict=fit_props)
-            fit_props['FilePathTTAC']=os.path.abspath(tac_path)
+            
     
     
     def save_analysis(self):

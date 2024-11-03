@@ -81,7 +81,6 @@ class MultiTACAnalysisMixin:
     def __init__(self, input_tac_path: str, tacs_dir: str, ):
         self._input_tac_path = input_tac_path
         self._tacs_dir = tacs_dir
-        
         self.input_tac_path = input_tac_path
         self.tacs_dir = tacs_dir
         self.tacs_files_list = self.get_tacs_list_from_dir(self.tacs_dir)
