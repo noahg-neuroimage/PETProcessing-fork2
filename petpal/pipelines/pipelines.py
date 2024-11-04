@@ -383,152 +383,152 @@ class ProcessingPipeline(object):
             raise RuntimeError(f"Error setting chaining outputs and inputs for steps: {e}")
 
         
-TEMPLATE_STEPS = {
-    'thresh_crop': ImageToImageStep(name='crop',
-                                    function=preproc.image_operations_4d.SimpleAutoImageCropper,
-                                    input_image_path='',
-                                    output_image_path=''
-                                   ),
-    'moco_frames_above_mean': ImageToImageStep(name='moco',
-                                              function=preproc.motion_corr.motion_corr_frames_above_mean_value,
-                                              input_image_path='',
-                                              output_image_path='',
-                                              motion_target_option='mean_image',
-                                              verbose=True),
-    'register_pet_to_t1' : ImageToImageStep(name='reg',
-                                           function=preproc.register.register_pet,
-                                           input_image_path='',
-                                           output_image_path='',
-                                           reference_image_path='',
-                                           motion_target_option='weighted_series_sum',
-                                            half_life='',
-                                           verbose=True),
-    'write_roi_tacs' : GenericStep(name='write_roi_tacs',
-                                   function=preproc.image_operations_4d.write_tacs,
-                                   input_image_path='',
-                                   label_map_path='',
-                                   segmentation_image_path='',
-                                   out_tac_dir='',
-                                   verbose=True),
-    'resample_blood' : GenericStep(name='resample_bTAC',
-                            function=blood_input.resample_blood_data_on_scanner_times,
-                            pet4d_path='',
-                            raw_blood_tac='',
-                            out_tac_path='',
-                            lin_fit_thresh_in_mins=30.0),
-    'parametric_patlak' : ObjectBasedStep(name='parametric_patlak',
-                              class_type=parametric_images.GraphicalAnalysisParametricImage,
-                              init_kwargs=dict(input_tac_path='',
-                                               pet4D_img_path='',
-                                               output_directory='',
-                                               output_filename_prefix=''
-                                              ),
-                              call_kwargs=dict(method_name='patlak',
-                                               t_thresh_in_mins=30.0)),
-    'parametric_cmrglc' : ImageToImageStep(name='parametric_cmrglc', # Clearly we need a path-to-path step as a more general step
-                                           function=parametric_images.generate_cmrglc_parametric_image_from_ki_image,
-                                           input_image_path='',
-                                           output_image_path='',
-                                           plasma_glucose_file_path='',
-                                           glucose_rescaling_constant=1.0/18.0,
-                                           lumped_constant=0.65,
-                                           rescaling_const=100.,
-                                           ),
-    'roi_2tcm-k4zero_fit' : ObjectBasedStep(name='roi_2tcm-k4zero_fit',
-                                           class_type=tac_fitting.FitTCMToTAC,
-                                           init_kwargs=dict(input_tac_path='',
-                                                            roi_tac_path='',
-                                                            output_directory='',
-                                                            output_filename_prefix='',
-                                                            compartment_model='2tcm-k4zero'),
-                                           call_kwargs=dict()),
-    'roi_frtm_fit' : ObjectBasedStep(name='roi_frtm_fit',
-                                     class_type=pet_rtms.RTMAnalysis,
-                                     init_kwargs=dict(ref_tac_path='',
-                                                      roi_tac_path='',
-                                                      output_directory='',
-                                                      output_filename_prefix='',
-                                                      method='frtm'),
-                                     call_kwargs=dict(bounds='',
-                                                      t_thresh_in_mins=None,
-                                                      k2_prime=None)),
-    'roi_patlak' : ObjectBasedStep(name='roi_patlak',
-                                   class_type=pet_grph.GraphicalAnalysis,
-                                   init_kwargs=dict(input_tac_path='',
-                                                    roi_tac_path='',
-                                                    output_directory='',
-                                                    output_filename_prefix='',),
-                                   call_kwargs=dict(method_name='patlak',
-                                                    t_thresh_in_mins=30.0,)
-                                   ),
-    }
-
-general_fdg_pipeline = ProcessingPipeline(name='general_fdg_pipeline',)
-
-general_fdg_pipeline.add_preproc_step(TEMPLATE_STEPS['thresh_crop'])
-general_fdg_pipeline.add_preproc_step(TEMPLATE_STEPS['moco_frames_above_mean'],
-                                      receives_output_from_previous_step_as_input=True)
-general_fdg_pipeline.add_preproc_step(TEMPLATE_STEPS['register_pet_to_t1'],
-                                      receives_output_from_previous_step_as_input=True)
-general_fdg_pipeline.add_preproc_step(TEMPLATE_STEPS['write_roi_tacs'],
-                                      receives_output_from_previous_step_as_input=False)
-general_fdg_pipeline.add_preproc_step(TEMPLATE_STEPS['resample_blood'])
-
-general_fdg_pipeline.add_kinetic_modeling_step(TEMPLATE_STEPS['parametric_patlak'])
-general_fdg_pipeline.add_kinetic_modeling_step(TEMPLATE_STEPS['parametric_cmrglc'],
-                                               receives_output_from_previous_step=False)
-general_fdg_pipeline.add_kinetic_modeling_step(TEMPLATE_STEPS['roi_2tcm-k4zero_fit'],
-                                               receives_output_from_previous_step=False)
-general_fdg_pipeline.add_kinetic_modeling_step(TEMPLATE_STEPS['roi_frtm_fit'],
-                                               receives_output_from_previous_step=False)
-general_fdg_pipeline.add_kinetic_modeling_step(TEMPLATE_STEPS['roi_patlak'],
-                                               receives_output_from_previous_step=False)
-
-
-class BIDsPipeline():
-    def __init__(self,
-                 sub_id: str,
-                 ses_id: str,
-                 bids_dir: str = '../',
-                 proc_pipeline: ProcessingPipeline = general_fdg_pipeline):
-        self.sub_id = sub_id
-        self.ses_id = ses_id
-        self.sub_ses_pre = f'sub-{self.sub_id}_ses-{self.ses_id}'
-        self.bids_root_dir = os.path.abspath(bids_dir)
-        
-        self.derivatives_dir = os.path.join(self.bids_root_dir, 'derivatives')
-        self.preproc_dir = os.path.join(self.derivatives_dir, 'preprocessing')
-        self.tacs_dir = os.path.join(self.derivatives_dir, 'tacs')
-        self.km_dir = os.path.join(self.derivatives_dir, 'kinetic-modeling')
-        
-        for dir in [self.preproc_dir, self.tacs_dir, self.km_dir]:
-            os.makedirs(dir, exist_ok=True)
-        
-        self.raw_pet_img_path = os.path.join(self.bids_root_dir, self.sub_id, self.ses_id,
-                                     'pet', f'{self.sub_ses_pre}_pet.nii.gz')
-        self.anat_path=os.path.join(self.bids_root_dir, self.sub_id, self.ses_id,
-                                    'anat', f'{self.sub_ses_pre}_MPRAGE.nii.gz')
-        
-        self.processing_pipeline = copy.deepcopy(proc_pipeline)
-        
-        self.preproc = self.processing_pipeline.preproc
-        self.km = self.processing_pipeline.km
-        
-        self.preproc['crop'].input_image_path = self.raw_pet_img_path
-        self.preproc['crop'].output_image_path = os.path.join(self.preproc_dir,
-                                                              f'{self.sub_ses_pre}_desc-cropped_pet.nii.gz')
-        self.preproc['moco'].output_image_path = os.path.join(self.preproc_dir,
-                                                              f'{self.sub_ses_pre}_desc-mocod_pet.nii.gz')
-        
-        self.preproc['reg'].output_image_path = os.path.join(self.preproc_dir,
-                                                             f'{self.sub_ses_pre}_desc-reg_pet.nii.gz')
-        self.preproc['reg'].kwargs['reference_image_path'] = self.anat_path
-        self.preproc['reg'].kwargs['half_life'] = 6584.04
-        
-        self.preproc['resample_bTAC'].kwargs['pet4d_path']=self.raw_pet_img_path
-        self.preproc['resample_bTAC'].kwargs['raw_blood_tac']=os.path.join(self.bids_root_dir, self.sub_id, self.ses_id,
-                                                                           f'{self.sub_ses_pre}_desc-decaycorrected_blood.tsv')
-        self.preproc['resample_bTAC'].kwargs['out_tac_path']=os.path.join(self.tacs_dir,
-                                                                          f"{self.sub_ses_pre}_desc-resampled_blood.tsv")
-        
-        self.processing_pipeline.update_step_dependencies()
+# TEMPLATE_STEPS = {
+#     'thresh_crop': ImageToImageStep(name='crop',
+#                                     function=preproc.image_operations_4d.SimpleAutoImageCropper,
+#                                     input_image_path='',
+#                                     output_image_path=''
+#                                    ),
+#     'moco_frames_above_mean': ImageToImageStep(name='moco',
+#                                               function=preproc.motion_corr.motion_corr_frames_above_mean_value,
+#                                               input_image_path='',
+#                                               output_image_path='',
+#                                               motion_target_option='mean_image',
+#                                               verbose=True),
+#     'register_pet_to_t1' : ImageToImageStep(name='reg',
+#                                            function=preproc.register.register_pet,
+#                                            input_image_path='',
+#                                            output_image_path='',
+#                                            reference_image_path='',
+#                                            motion_target_option='weighted_series_sum',
+#                                             half_life='',
+#                                            verbose=True),
+#     'write_roi_tacs' : GenericStep(name='write_roi_tacs',
+#                                    function=preproc.image_operations_4d.write_tacs,
+#                                    input_image_path='',
+#                                    label_map_path='',
+#                                    segmentation_image_path='',
+#                                    out_tac_dir='',
+#                                    verbose=True),
+#     'resample_blood' : GenericStep(name='resample_bTAC',
+#                             function=blood_input.resample_blood_data_on_scanner_times,
+#                             pet4d_path='',
+#                             raw_blood_tac='',
+#                             out_tac_path='',
+#                             lin_fit_thresh_in_mins=30.0),
+#     'parametric_patlak' : ObjectBasedStep(name='parametric_patlak',
+#                               class_type=parametric_images.GraphicalAnalysisParametricImage,
+#                               init_kwargs=dict(input_tac_path='',
+#                                                pet4D_img_path='',
+#                                                output_directory='',
+#                                                output_filename_prefix=''
+#                                               ),
+#                               call_kwargs=dict(method_name='patlak',
+#                                                t_thresh_in_mins=30.0)),
+#     'parametric_cmrglc' : ImageToImageStep(name='parametric_cmrglc', # Clearly we need a path-to-path step as a more general step
+#                                            function=parametric_images.generate_cmrglc_parametric_image_from_ki_image,
+#                                            input_image_path='',
+#                                            output_image_path='',
+#                                            plasma_glucose_file_path='',
+#                                            glucose_rescaling_constant=1.0/18.0,
+#                                            lumped_constant=0.65,
+#                                            rescaling_const=100.,
+#                                            ),
+#     'roi_2tcm-k4zero_fit' : ObjectBasedStep(name='roi_2tcm-k4zero_fit',
+#                                            class_type=tac_fitting.FitTCMToTAC,
+#                                            init_kwargs=dict(input_tac_path='',
+#                                                             roi_tac_path='',
+#                                                             output_directory='',
+#                                                             output_filename_prefix='',
+#                                                             compartment_model='2tcm-k4zero'),
+#                                            call_kwargs=dict()),
+#     'roi_frtm_fit' : ObjectBasedStep(name='roi_frtm_fit',
+#                                      class_type=pet_rtms.RTMAnalysis,
+#                                      init_kwargs=dict(ref_tac_path='',
+#                                                       roi_tac_path='',
+#                                                       output_directory='',
+#                                                       output_filename_prefix='',
+#                                                       method='frtm'),
+#                                      call_kwargs=dict(bounds='',
+#                                                       t_thresh_in_mins=None,
+#                                                       k2_prime=None)),
+#     'roi_patlak' : ObjectBasedStep(name='roi_patlak',
+#                                    class_type=pet_grph.GraphicalAnalysis,
+#                                    init_kwargs=dict(input_tac_path='',
+#                                                     roi_tac_path='',
+#                                                     output_directory='',
+#                                                     output_filename_prefix='',),
+#                                    call_kwargs=dict(method_name='patlak',
+#                                                     t_thresh_in_mins=30.0,)
+#                                    ),
+#     }
+#
+# general_fdg_pipeline = ProcessingPipeline(name='general_fdg_pipeline',)
+#
+# general_fdg_pipeline.add_preproc_step(TEMPLATE_STEPS['thresh_crop'])
+# general_fdg_pipeline.add_preproc_step(TEMPLATE_STEPS['moco_frames_above_mean'],
+#                                       receives_output_from_previous_step_as_input=True)
+# general_fdg_pipeline.add_preproc_step(TEMPLATE_STEPS['register_pet_to_t1'],
+#                                       receives_output_from_previous_step_as_input=True)
+# general_fdg_pipeline.add_preproc_step(TEMPLATE_STEPS['write_roi_tacs'],
+#                                       receives_output_from_previous_step_as_input=False)
+# general_fdg_pipeline.add_preproc_step(TEMPLATE_STEPS['resample_blood'])
+#
+# general_fdg_pipeline.add_kinetic_modeling_step(TEMPLATE_STEPS['parametric_patlak'])
+# general_fdg_pipeline.add_kinetic_modeling_step(TEMPLATE_STEPS['parametric_cmrglc'],
+#                                                receives_output_from_previous_step=False)
+# general_fdg_pipeline.add_kinetic_modeling_step(TEMPLATE_STEPS['roi_2tcm-k4zero_fit'],
+#                                                receives_output_from_previous_step=False)
+# general_fdg_pipeline.add_kinetic_modeling_step(TEMPLATE_STEPS['roi_frtm_fit'],
+#                                                receives_output_from_previous_step=False)
+# general_fdg_pipeline.add_kinetic_modeling_step(TEMPLATE_STEPS['roi_patlak'],
+#                                                receives_output_from_previous_step=False)
+#
+#
+# class BIDsPipeline():
+#     def __init__(self,
+#                  sub_id: str,
+#                  ses_id: str,
+#                  bids_dir: str = '../',
+#                  proc_pipeline: ProcessingPipeline = general_fdg_pipeline):
+#         self.sub_id = sub_id
+#         self.ses_id = ses_id
+#         self.sub_ses_pre = f'sub-{self.sub_id}_ses-{self.ses_id}'
+#         self.bids_root_dir = os.path.abspath(bids_dir)
+#
+#         self.derivatives_dir = os.path.join(self.bids_root_dir, 'derivatives')
+#         self.preproc_dir = os.path.join(self.derivatives_dir, 'preprocessing')
+#         self.tacs_dir = os.path.join(self.derivatives_dir, 'tacs')
+#         self.km_dir = os.path.join(self.derivatives_dir, 'kinetic-modeling')
+#
+#         for dir in [self.preproc_dir, self.tacs_dir, self.km_dir]:
+#             os.makedirs(dir, exist_ok=True)
+#
+#         self.raw_pet_img_path = os.path.join(self.bids_root_dir, self.sub_id, self.ses_id,
+#                                      'pet', f'{self.sub_ses_pre}_pet.nii.gz')
+#         self.anat_path=os.path.join(self.bids_root_dir, self.sub_id, self.ses_id,
+#                                     'anat', f'{self.sub_ses_pre}_MPRAGE.nii.gz')
+#
+#         self.processing_pipeline = copy.deepcopy(proc_pipeline)
+#
+#         self.preproc = self.processing_pipeline.preproc
+#         self.km = self.processing_pipeline.km
+#
+#         self.preproc['crop'].input_image_path = self.raw_pet_img_path
+#         self.preproc['crop'].output_image_path = os.path.join(self.preproc_dir,
+#                                                               f'{self.sub_ses_pre}_desc-cropped_pet.nii.gz')
+#         self.preproc['moco'].output_image_path = os.path.join(self.preproc_dir,
+#                                                               f'{self.sub_ses_pre}_desc-mocod_pet.nii.gz')
+#
+#         self.preproc['reg'].output_image_path = os.path.join(self.preproc_dir,
+#                                                              f'{self.sub_ses_pre}_desc-reg_pet.nii.gz')
+#         self.preproc['reg'].kwargs['reference_image_path'] = self.anat_path
+#         self.preproc['reg'].kwargs['half_life'] = 6584.04
+#
+#         self.preproc['resample_bTAC'].kwargs['pet4d_path']=self.raw_pet_img_path
+#         self.preproc['resample_bTAC'].kwargs['raw_blood_tac']=os.path.join(self.bids_root_dir, self.sub_id, self.ses_id,
+#                                                                            f'{self.sub_ses_pre}_desc-decaycorrected_blood.tsv')
+#         self.preproc['resample_bTAC'].kwargs['out_tac_path']=os.path.join(self.tacs_dir,
+#                                                                           f"{self.sub_ses_pre}_desc-resampled_blood.tsv")
+#
+#         self.processing_pipeline.update_step_dependencies()
