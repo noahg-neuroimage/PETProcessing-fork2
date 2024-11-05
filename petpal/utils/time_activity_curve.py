@@ -116,9 +116,6 @@ class MultiTACAnalysisMixin:
                                     f" contents of the directory: {self.tacs_dir}.")
     
     def is_valid_tacs_dir(self, tacs_dir: str):
-        if tacs_dir == '':
-            return True
-        
         tacs_files_list = self.get_tacs_list_from_dir(tacs_dir)
         if tacs_files_list:
             return True
@@ -127,9 +124,6 @@ class MultiTACAnalysisMixin:
     
     @staticmethod
     def get_tacs_list_from_dir(tacs_dir: str) -> list[str]:
-        if tacs_dir == '':
-            return []
-        
         assert os.path.isdir(tacs_dir), f"`tacs_dir` must be a valid directory: {os.path.abspath(tacs_dir)}"
         glob_path = os.path.join(tacs_dir, "*_tac.tsv")
         tacs_files_list = glob.glob(glob_path)

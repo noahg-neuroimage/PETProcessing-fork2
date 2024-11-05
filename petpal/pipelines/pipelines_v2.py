@@ -265,10 +265,7 @@ class ObjectBasedStep:
         self.init_sig: inspect.Signature = inspect.signature(self.class_type.__init__)
         self.call_sig: inspect.Signature = inspect.signature(self.class_type.__call__)
         self.validate_kwargs()
-        self.instance: type = self.class_type(**self.init_kwargs)
         
-    def remake_instance(self):
-        self.instance = self.class_type(**self.init_kwargs)
     
     def validate_kwargs(self):
         empty_init_kwargs = self.get_empty_default_kwargs(self.init_sig, self.init_kwargs)
@@ -301,11 +298,10 @@ class ObjectBasedStep:
                     empty_kwargs.append(arg_name)
         return empty_kwargs
         
-    def execute(self, remake_obj: bool = True) -> None:
-        if remake_obj:
-            self.remake_instance()
+    def execute(self) -> None:
         print(f"(Info): Executing {self.name}")
-        self.instance(**self.call_kwargs)
+        obj_instance = self.class_type(**self.init_kwargs)
+        obj_instance(**self.call_kwargs)
         print(f"(Info): Finished {self.name}")
     
     def __str__(self):
@@ -439,7 +435,7 @@ class ImageToImageStep(FunctionBasedStep):
 PreprocSteps = Union[TACsFromSegmentationStep, ResampleBloodTACStep, ImageToImageStep]
 
 
-class TACAnalysisStepMixin(MultiTACAnalysisMixin):
+class TACAnalysisStepMixin:
     def __init__(self,
                  input_tac_path: str,
                  roi_tacs_dir: str,
@@ -447,22 +443,19 @@ class TACAnalysisStepMixin(MultiTACAnalysisMixin):
                  output_prefix: str,
                  is_ref_tac_based_model:bool,
                  **kwargs):
+        common_init_kwargs = dict(roi_tacs_dir=roi_tacs_dir,
+                                  output_directory=output_directory,
+                                  output_filename_prefix=output_prefix,)
         if is_ref_tac_based_model:
             self.init_kwargs = dict(ref_tac_path=input_tac_path,
-                                    roi_tacs_dir=roi_tacs_dir,
-                                    output_directory=output_directory,
-                                    output_filename_prefix=output_prefix,
+                                    **common_init_kwargs,
                                     **kwargs)
         else:
             self.init_kwargs = dict(input_tac_path=input_tac_path,
-                                    roi_tacs_dir=roi_tacs_dir,
-                                    output_directory=output_directory,
-                                    output_filename_prefix=output_prefix,
+                                    **common_init_kwargs,
                                     **kwargs)
-        MultiTACAnalysisMixin.__init__(self,
-                                       input_tac_path=input_tac_path,
-                                       tacs_dir=roi_tacs_dir)
-        
+        self._tacs_dir = roi_tacs_dir
+        self._input_tac_path = input_tac_path
         self._output_directory = output_directory
         self._output_prefix = output_prefix
         
@@ -483,6 +476,14 @@ class TACAnalysisStepMixin(MultiTACAnalysisMixin):
     def reference_tac_path(self, ref_tac_path: str):
         self.input_tac_path = ref_tac_path
         self.init_kwargs['ref_tac_path'] = ref_tac_path
+        
+    @property
+    def tacs_dir(self) -> str:
+        return self._tacs_dir
+    
+    @tacs_dir.setter
+    def tacs_dir(self, tacs_dir: str):
+        self._tacs_dir = tacs_dir
     
     @property
     def roi_tacs_dir(self) -> str:
@@ -583,7 +584,7 @@ class TCMFittingAnalysisStep(ObjectBasedStep, TACAnalysisStepMixin):
         
     def set_input_as_output_from(self, sending_step: PreprocSteps) -> None:
         if isinstance(sending_step, TACsFromSegmentationStep):
-            self.roi_tac_path = sending_step.out_tacs_path
+            self.roi_tacs_dir = sending_step.out_tacs_path
         elif isinstance(sending_step, ResampleBloodTACStep):
             self.input_tac_path = sending_step.resampled_tac_path
         else:
@@ -593,7 +594,7 @@ class TCMFittingAnalysisStep(ObjectBasedStep, TACAnalysisStepMixin):
 class RTMFittingAnalysisStep(ObjectBasedStep, TACAnalysisStepMixin):
     def __init__(self,
                  ref_tac_path: str,
-                 roi_tac_path: str,
+                 roi_tacs_dir: str,
                  output_directory: str,
                  output_prefix: str,
                  rtm_model: str,
@@ -601,14 +602,15 @@ class RTMFittingAnalysisStep(ObjectBasedStep, TACAnalysisStepMixin):
                  k2_prime = None,
                  fit_threshold_in_mins: float = 30.0,):
         
-        TACAnalysisStepMixin.__init__(self, input_tac_path=ref_tac_path,
-                                      roi_tacs_dir=roi_tac_path,
+        TACAnalysisStepMixin.__init__(self,
+                                      input_tac_path=ref_tac_path,
+                                      roi_tacs_dir=roi_tacs_dir,
                                       output_directory=output_directory,
                                       output_prefix=output_prefix,
                                       is_ref_tac_based_model=True,
                                       method=rtm_model, )
         ObjectBasedStep.__init__(self, name=f'roi-{rtm_model}-fit',
-                                 class_type=pet_rtms.RTMAnalysis,
+                                 class_type=pet_rtms.MultiTACRTMAnalysis,
                                  init_kwargs=self.init_kwargs,
                                  call_kwargs=dict(bounds=bounds,
                                                   t_thresh_in_mins=fit_threshold_in_mins,
@@ -616,7 +618,7 @@ class RTMFittingAnalysisStep(ObjectBasedStep, TACAnalysisStepMixin):
 
     def set_input_as_output_from(self, sending_step: PreprocSteps) -> None:
         if isinstance(sending_step, TACsFromSegmentationStep):
-            self.roi_tac_path = sending_step.out_tacs_path
+            self.roi_tacs_dir = sending_step.out_tacs_path
         else:
             super().set_input_as_output_from(sending_step)
 
@@ -631,12 +633,13 @@ class ParametricGraphicalAnalysisStep(ObjectBasedStep, TACAnalysisStepMixin):
                  fit_threshold_in_mins: float = 30.0, ):
         TACAnalysisStepMixin.__init__(self, input_tac_path=input_tac_path,
                                       pet4D_img_path=input_image_path,
-                                      roi_tacs_dir=None,
+                                      roi_tacs_dir='',
                                       output_directory=output_directory,
                                       output_prefix=output_prefix,
                                       is_ref_tac_based_model=False,
                                       )
         del self.init_kwargs['roi_tacs_dir']
+        
         
         ObjectBasedStep.__init__(self, name=f'parametric-{method}-fit',
                                  class_type=parametric_images.GraphicalAnalysisParametricImage,
