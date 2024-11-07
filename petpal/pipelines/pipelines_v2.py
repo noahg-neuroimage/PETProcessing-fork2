@@ -858,12 +858,12 @@ class StepsPipeline:
         return True
         
         
-def gen_bids_like_filename(sub_id: str, ses_id: str, modality: str='pet', ext: str='.nii.gz', **extra_desc) -> str:
+def gen_bids_like_filename(sub_id: str, ses_id: str, suffix: str= 'pet', ext: str= '.nii.gz', **extra_desc) -> str:
     sub_ses_pre = f'sub-{sub_id}_ses-{ses_id}'
     file_parts = [sub_ses_pre, ]
     for name, val in extra_desc.items():
         file_parts.append(f'{name}-{val}')
-    file_parts.append(f'{modality}{ext}')
+    file_parts.append(f'{suffix}{ext}')
     file_name = "_".join(file_parts)
     return file_name
 
@@ -872,8 +872,8 @@ def gen_bids_like_dir_path(sub_id: str, ses_id: str, modality: str='pet', bids_d
     return os.path.join(*path_parts)
 
 def gen_bids_like_filepath(sub_id: str, ses_id: str, bids_dir:str ='../',
-                           modality: str='pet', ext='.nii.gz', **extra_desc) -> str:
-    filename = gen_bids_like_filename(sub_id=sub_id, ses_id=ses_id, modality=modality, ext=ext,  **extra_desc)
+                           modality: str='pet', suffix:str='pet', ext='.nii.gz', **extra_desc) -> str:
+    filename = gen_bids_like_filename(sub_id=sub_id, ses_id=ses_id, suffix=suffix, ext=ext, **extra_desc)
     filedir  = gen_bids_like_dir_path(sub_id=sub_id, ses_id=ses_id, bids_dir=bids_dir, modality=modality)
     return os.path.join(filedir, filename)
 
@@ -917,10 +917,27 @@ class BIDsyPathMixin:
                                                   modality='pet',
                                                   bids_dir=self.bids_dir,
                                                   ext='.nii.gz')
-                return filepath
+                self._raw_pet_path = filepath
             else:
                 if os.path.isfile(value):
                     self._raw_pet_path = value
+                else:
+                    raise FileNotFoundError(f"File does not exist: {value}")
+                
+        @property
+        def anat_path(self):
+            return self._raw_anat_path
+        
+        @anat_path.setter
+        def anat_path(self, value: str):
+            if value is None:
+                filepath = gen_bids_like_filepath(sub_id=self.sub_id, ses_id=self.ses_id,
+                                                  modality='anat', suffix='MPRAGE',
+                                                  bids_dir=self.bids_dir, ext='.nii.gz')
+                self._raw_anat_path =  filepath
+            else:
+                if os.path.isfile(value):
+                    self._raw_anat_path = value
                 else:
                     raise FileNotFoundError(f"File does not exist: {value}")
                 
