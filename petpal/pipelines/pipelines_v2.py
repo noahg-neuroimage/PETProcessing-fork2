@@ -1,7 +1,7 @@
 import copy
 import warnings
+import os
 import networkx as nx
-from ..utils.time_activity_curve import MultiTACAnalysisMixin
 from ..utils.image_io import safe_copy_meta
 from typing import Callable, Union
 import inspect
@@ -858,7 +858,7 @@ class StepsPipeline:
         return True
         
         
-def gen_bids_like_filename(sub_id, ses_id, modality='pet', ext='.nii.gz', **extra_desc):
+def gen_bids_like_filename(sub_id: str, ses_id: str, modality: str='pet', ext: str='.nii.gz', **extra_desc):
     sub_ses_pre = f'sub-{sub_id}_ses-{ses_id}'
     file_parts = [sub_ses_pre, ]
     for name, val in extra_desc.items():
@@ -867,3 +867,6 @@ def gen_bids_like_filename(sub_id, ses_id, modality='pet', ext='.nii.gz', **extr
     file_name = "_".join(file_parts)
     return file_name
 
+def gen_bids_like_dir_path(sub_id: str, ses_id: str, modality: str='pet', bids_dir: str='../'):
+    path_parts = [f'{bids_dir}',f'sub-{sub_id}', f'ses-{ses_id}', f'{modality}']
+    return os.path.join(*path_parts)
