@@ -340,7 +340,19 @@ class ObjectBasedStep:
     def can_potentially_run(self):
         return self.all_init_kwargs_non_empty_strings() and self.all_call_kwargs_non_empty_strings()
 
-    
+def parse_path_to_get_subject_and_session_id(path):
+    filename = pathlib.Path(path).name
+    if ('sub-' in filename) and ('ses-' in filename):
+        sub_ses_ids = filename.split("_")[:2]
+        sub_id = sub_ses_ids[0].split('sub-')[-1]
+        ses_id = sub_ses_ids[1].split('ses-')[-1]
+        return sub_id, ses_id
+    else:
+        return "XXXX", "XX"
+
+def snake_to_camel_case(snake_str):
+    return "".join(x.capitalize() for x in snake_str.lower().split("_"))
+
 class ImageToImageStep(FunctionBasedStep):
     def __init__(self,
                  name: str,
@@ -385,6 +397,21 @@ class ImageToImageStep(FunctionBasedStep):
         input_img_non_empty_str = False if self.input_image_path == '' else True
         output_img_non_empty_str = False if self.output_image_path == '' else True
         return super().can_potentially_run() and input_img_non_empty_str and output_img_non_empty_str
+    
+    def infer_output_image_path_from_input_path(self, out_dir: str ,
+                                                der_type='preproc',
+                                                suffix: str = 'pet',
+                                                **extra_desc):
+        sub_id, ses_id = parse_path_to_get_subject_and_session_id(self.input_image_path)
+        step_name_in_camel_case = snake_to_camel_case(self.name)
+        filepath = gen_bids_like_filepath(sub_id=sub_id,
+                                          ses_id=ses_id,
+                                          suffix=suffix,
+                                          bids_dir=out_dir,
+                                          modality=der_type,
+                                          ext='.nii.gz',
+                                          desc=step_name_in_camel_case, **extra_desc)
+        self.output_image_path = filepath
     
     @classmethod
     def default_threshold_cropping(cls, **overrides):
@@ -475,7 +502,7 @@ class TACAnalysisStepMixin:
     
     @reference_tac_path.setter
     def reference_tac_path(self, ref_tac_path: str):
-        self.input_tac_path = ref_tac_path
+        self._input_tac_path = ref_tac_path
         self.init_kwargs['ref_tac_path'] = ref_tac_path
         
     @property
@@ -526,6 +553,22 @@ class TACAnalysisStepMixin:
         else:
             self.output_directory = out_dir
             self.output_prefix = out_prefix
+            
+    def infer_prefix_from_input_tac_path(self):
+        sub_id, ses_id = parse_path_to_get_subject_and_session_id(self.input_tac_path)
+        self.output_prefix = f'sub-{sub_id}_ses-{ses_id}'
+        
+    def infer_output_directory_from_input_tac_path(self, out_dir:str, der_type:str='km'):
+        sub_id, ses_id = parse_path_to_get_subject_and_session_id(self.input_tac_path)
+        outpath = gen_bids_like_dir_path(sub_id=sub_id,
+                                         ses_id=ses_id,
+                                         modality=der_type,
+                                         bids_dir=out_dir)
+        self.output_directory = outpath
+        
+    def infer_prefix_and_output_directory(self, out_dir:str, der_type:str='km'):
+        self.infer_prefix_from_input_tac_path()
+        self.infer_output_directory_from_input_tac_path(out_dir=out_dir, der_type=der_type)
 
 
 class GraphicalAnalysisStep(ObjectBasedStep, TACAnalysisStepMixin):
