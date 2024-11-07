@@ -858,3 +858,12 @@ class StepsPipeline:
         return True
         
         
+def gen_bids_like_filename(sub_id, ses_id, modality='pet', ext='.nii.gz', **extra_desc):
+    sub_ses_pre = f'sub-{sub_id}_ses-{ses_id}'
+    file_parts = [sub_ses_pre, ]
+    for name, val in extra_desc.items():
+        file_parts.append(f'{name}-{val}')
+    file_parts.append(f'{modality}{ext}')
+    file_name = "_".join(file_parts)
+    return file_name
+
