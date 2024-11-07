@@ -193,6 +193,17 @@ class TACsFromSegmentationStep(FunctionBasedStep):
                    out_tacs_prefix='',
                    time_keyword='FrameReferenceTime',
                    verbose=False)
+    
+    def infer_out_path_and_prefix(self, out_dir: str):
+        sub_id, ses_id = parse_path_to_get_subject_and_session_id(self.input_image_path)
+        outpath = gen_bids_like_dir_path(sub_id=sub_id,
+                                         ses_id=ses_id,
+                                         bids_dir=out_dir,
+                                         modality='tacs')
+        self.out_tacs_path = outpath
+        step_name_in_camel_case = snake_to_camel_case(self.name)
+        self.out_tacs_prefix = f'sub-{sub_id}_ses-{ses_id}_desc-{step_name_in_camel_case}'
+        
         
     
 class ResampleBloodTACStep(FunctionBasedStep):
@@ -251,6 +262,18 @@ class ResampleBloodTACStep(FunctionBasedStep):
                    input_image_path='',
                    out_tac_path='',
                    lin_fit_thresh_in_mins=30.0)
+    
+    def infer_out_path_from_input_tac_path(self, out_dir: str):
+        sub_id, ses_id = parse_path_to_get_subject_and_session_id(self.raw_blood_tac_path)
+        filepath = gen_bids_like_filepath(sub_id=sub_id,
+                                          ses_id=ses_id,
+                                          bids_dir=out_dir,
+                                          modality='preproc',
+                                          suffix='blood',
+                                          ext='.tsv',
+                                          desc='OnScannerFrameTimes'
+                                          )
+        self.resampled_tac_path = filepath
    
         
 class ObjectBasedStep:
