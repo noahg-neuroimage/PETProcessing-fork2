@@ -746,8 +746,7 @@ class StepsContainer:
                 raise KeyError(f"Step name {step} does not exist.")
         else:
             raise TypeError(f"Key must be an integer or a string. Got {type(step)}")
-        
-    
+           
     
 class StepsPipeline:
     def __init__(self, name: str):
@@ -817,6 +816,8 @@ class StepsPipeline:
             raise RuntimeError(f"Adding dependency {sending} -> {receiving} creates a cycle!")
         
     def get_step_from_node_label(self, node_label: str):
+        if node_label not in self.dependency_graph.nodes:
+            raise KeyError(f"Step name {node_label} does not exist.")
         graph_nodes = self.dependency_graph.nodes(data=True)
         container_name = graph_nodes[node_label]['grp']
         if container_name == 'preproc':
@@ -826,23 +827,24 @@ class StepsPipeline:
         else:
             raise KeyError(f"Container name {container_name} does not exist.")
     
-    def update_dependencies(self, verbose=False):
-        for node_name in nx.topological_sort(self.dependency_graph):
-            sending_step = self.get_step_from_node_label(node_name)
-            for an_edge in self.dependency_graph[node_name]:
-                receiving_step = self.get_step_from_node_label(an_edge)
-                try:
-                    receiving_step.set_input_as_output_from(sending_step)
-                except NotImplementedError:
-                    # warnings.warn(
-                    #     f"Step `{receiving_step.name}` of type `{type(receiving_step).__name__}` does not have a "
-                    #     f"set_input_as_output_from method implemented.\nSkipping.", RuntimeWarning, stacklevel=1)
-                    if verbose:
-                        print(f"Step `{receiving_step.name}` of type `{type(receiving_step).__name__}` does not have a "
+    def update_dependencies_for(self, step_name, verbose=False):
+        sending_step = self.get_step_from_node_label(step_name)
+        for an_edge in self.dependency_graph[step_name]:
+            receiving_step = self.get_step_from_node_label(an_edge)
+            try:
+                receiving_step.set_input_as_output_from(sending_step)
+            except NotImplementedError:
+                if verbose:
+                    print(f"Step `{receiving_step.name}` of type `{type(receiving_step).__name__}` does not have a "
                               f"set_input_as_output_from method implemented.\nSkipping.")
                 else:
                     if verbose:
                         print(f"Updated input-output dependency between {sending_step.name} and {receiving_step.name}")
+    
+    
+    def update_dependencies(self, verbose=False):
+        for step_name in nx.topological_sort(self.dependency_graph):
+            self.update_dependencies_for(step_name=step_name, verbose=verbose)
 
     def get_steps_potential_run_state(self) -> dict:
         step_maybe_runnable = {}
