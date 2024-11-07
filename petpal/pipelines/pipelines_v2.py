@@ -941,3 +941,22 @@ class BIDsyPathMixin:
                 else:
                     raise FileNotFoundError(f"File does not exist: {value}")
                 
+        @property
+        def seg_img(self):
+            return self._segmentation_img_path
+        
+        @seg_img.setter
+        def seg_img(self, value: str):
+            if value is None:
+                seg_dir = os.path.join(self.derivatives_dir, 'ROI_mask')
+                filepath = gen_bids_like_filepath(sub_id=self.sub_id, ses_id=self.ses_id,
+                                                  modality='anat', bids_dir=seg_dir,
+                                                  suffix='ROImask',
+                                                  desc='lesionsincluded')
+                self._segmentation_img_path = filepath
+            else:
+                if os.path.isfile(value):
+                    self._segmentation_img_path = value
+                else:
+                    raise FileNotFoundError(f"File does not exist: {value}")
+                
