@@ -858,7 +858,7 @@ class StepsPipeline:
         return True
         
         
-def gen_bids_like_filename(sub_id: str, ses_id: str, modality: str='pet', ext: str='.nii.gz', **extra_desc):
+def gen_bids_like_filename(sub_id: str, ses_id: str, modality: str='pet', ext: str='.nii.gz', **extra_desc) -> str:
     sub_ses_pre = f'sub-{sub_id}_ses-{ses_id}'
     file_parts = [sub_ses_pre, ]
     for name, val in extra_desc.items():
@@ -867,6 +867,60 @@ def gen_bids_like_filename(sub_id: str, ses_id: str, modality: str='pet', ext: s
     file_name = "_".join(file_parts)
     return file_name
 
-def gen_bids_like_dir_path(sub_id: str, ses_id: str, modality: str='pet', bids_dir: str='../'):
+def gen_bids_like_dir_path(sub_id: str, ses_id: str, modality: str='pet', bids_dir: str='../') -> str:
     path_parts = [f'{bids_dir}',f'sub-{sub_id}', f'ses-{ses_id}', f'{modality}']
     return os.path.join(*path_parts)
+
+def gen_bids_like_filepath(sub_id: str, ses_id: str, bids_dir:str ='../',
+                           modality: str='pet', ext='.nii.gz', **extra_desc) -> str:
+    filename = gen_bids_like_filename(sub_id=sub_id, ses_id=ses_id, modality=modality, ext=ext,  **extra_desc)
+    filedir  = gen_bids_like_dir_path(sub_id=sub_id, ses_id=ses_id, bids_dir=bids_dir, modality=modality)
+    return os.path.join(filedir, filename)
+
+class BIDsyPathMixin:
+    def __init__(self,
+                 sub_id: str,
+                 ses_id: str,
+                 bids_root_dir: str,
+                 derivatives_dir: str,
+                 raw_pet_img_path: str = None,
+                 raw_anat_img_path: str = None,
+                 segmentation_img_path: str = None,
+                 segmentation_label_table_path: str = None,
+                 raw_blood_tac_path: str = None,):
+        self.sub_id = sub_id
+        self.ses_id = ses_id
+        self.bids_dir = bids_root_dir
+        self.derivatives_dir = derivatives_dir
+        self._raw_pet_path = raw_pet_img_path
+        self._raw_anat_path = raw_anat_img_path
+        self._segmentation_img_path = segmentation_img_path
+        self._segmentation_label_table_path = segmentation_label_table_path
+        self._raw_blood_tac_path = raw_blood_tac_path
+        
+        
+        self.pet_path = self._raw_pet_path
+        self.anat_path = self._raw_anat_path
+        self.seg_img = self._segmentation_img_path
+        self.seg_table = self._segmentation_label_table_path
+        self.blood_tac = self._raw_blood_tac_path
+        
+        @property
+        def pet_path(self):
+            return self._raw_pet_path
+        
+        @pet_path.setter
+        def pet_path(self, value: str):
+            if value is None:
+                filepath = gen_bids_like_filepath(sub_id=self.sub_id,
+                                                  ses_id=self.ses_id,
+                                                  modality='pet',
+                                                  bids_dir=self.bids_dir,
+                                                  ext='.nii.gz')
+                return filepath
+            else:
+                if os.path.isfile(value):
+                    self._raw_pet_path = value
+                else:
+                    raise FileNotFoundError(f"File does not exist: {value}")
+                
