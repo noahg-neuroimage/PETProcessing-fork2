@@ -1,4 +1,5 @@
 import copy
+import pathlib
 import warnings
 import os
 import networkx as nx
@@ -919,7 +920,9 @@ class BIDsyPathMixin:
                                               ext='.nii.gz')
             self._raw_pet_path = filepath
         else:
-            if os.path.isfile(value):
+            val_path = pathlib.Path(value)
+            val_suff = "".join(val_path.suffixes)
+            if val_path.is_file() and val_suff == '.nii.gz':
                 self._raw_pet_path = value
             else:
                 raise FileNotFoundError(f"File does not exist: {value}")
@@ -936,7 +939,9 @@ class BIDsyPathMixin:
                                               bids_dir=self.bids_dir, ext='.nii.gz')
             self._raw_anat_path =  filepath
         else:
-            if os.path.isfile(value):
+            val_path = pathlib.Path(value)
+            val_suff = "".join(val_path.suffixes)
+            if val_path.is_file() and val_suff == '.nii.gz':
                 self._raw_anat_path = value
             else:
                 raise FileNotFoundError(f"File does not exist: {value}")
@@ -952,11 +957,53 @@ class BIDsyPathMixin:
             filepath = gen_bids_like_filepath(sub_id=self.sub_id, ses_id=self.ses_id,
                                               modality='anat', bids_dir=seg_dir,
                                               suffix='ROImask',
+                                              ext='.nii.gz',
+                                              space='MPRAGE',
                                               desc='lesionsincluded')
             self._segmentation_img_path = filepath
         else:
             if os.path.isfile(value):
                 self._segmentation_img_path = value
+            else:
+                raise FileNotFoundError(f"File does not exist: {value}")
+            
+    @property
+    def seg_table(self):
+        return self._segmentation_label_table_path
+    
+    @seg_table.setter
+    def seg_table(self, value: str):
+        if value is None:
+            seg_dir = os.path.join(self.derivatives_dir, 'ROI_mask')
+            filename = 'dseg_forCMMS.tsv'
+            self._segmentation_label_table_path = os.path.join(seg_dir, filename)
+        else:
+            val_path = pathlib.Path(value)
+            if val_path.is_file() and (val_path.suffix == '.tsv'):
+                self._segmentation_label_table_path = value
+            else:
+                raise FileNotFoundError(f"File does not exist: {value}")
+            
+    @property
+    def blood_tac(self):
+        return self._raw_blood_tac_path
+    
+    @blood_tac.setter
+    def blood_tac(self, value: str):
+        if value is None:
+            filepath = gen_bids_like_filepath(sub_id=self.sub_id,
+                                              ses_id=self.ses_id,
+                                              bids_dir=self.bids_dir,
+                                              modality='pet',
+                                              suffix='blood',
+                                              ext='.tsv',
+                                              desc='decaycorrected'
+                                              )
+            self._raw_blood_tac_path = filepath
+        else:
+            val_path = pathlib.Path(value)
+            if val_path.is_file() and (val_path.suffix == '.tsv'):
+                self._raw_blood_tac = value
             else:
                 raise FileNotFoundError(f"File does not exist: {value}")
                 
