@@ -1045,6 +1045,16 @@ class StepsPipeline:
             if not run_state:
                 return False
         return True
+    
+    @classmethod
+    def default_steps_pipeline(cls):
+        obj = cls(name='PET-MR_analysis')
+        for step in StepsContainer.default_preprocess_steps():
+            obj.add_step(container_name='preproc', step=step)
+        for step in StepsContainer.default_kinetic_analysis_steps():
+            obj.add_step(container_name='km', step=step)
+        
+        return obj
         
         
 def gen_bids_like_filename(sub_id: str, ses_id: str, suffix: str= 'pet', ext: str= '.nii.gz', **extra_desc) -> str:
