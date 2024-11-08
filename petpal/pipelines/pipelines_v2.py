@@ -864,6 +864,18 @@ class StepsContainer:
                 raise KeyError(f"Step name {step} does not exist.")
         else:
             raise TypeError(f"Key must be an integer or a string. Got {type(step)}")
+    
+    def __add__(self, other: 'StepsContainer') -> 'StepsContainer':
+        if isinstance(other, StepsContainer):
+            new_container_name = f"{self.name}-{other.name}"
+            new_container = StepsContainer(new_container_name)
+            for step in self.step_objs:
+                new_container.add_step(step)
+            for step in other.step_objs:
+                new_container.add_step(step)
+            return new_container
+        else:
+            raise TypeError("Can only add another StepsContainer instance")
         
     @classmethod
     def default_preprocess_steps(cls):
