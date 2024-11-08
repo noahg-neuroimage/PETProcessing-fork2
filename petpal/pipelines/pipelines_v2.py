@@ -184,7 +184,7 @@ class TACsFromSegmentationStep(FunctionBasedStep):
             super().set_input_as_output_from(sending_step)
             
     @classmethod
-    def _empty_write_tacs_from_segmentation_rois(cls):
+    def default_write_tacs_from_segmentation_rois(cls):
         return cls(input_image_path='',
                    segmentation_image_path='',
                    segmentation_label_map_path='',
@@ -211,7 +211,7 @@ class ResampleBloodTACStep(FunctionBasedStep):
                  out_tac_path:str,
                  lin_fit_thresh_in_mins=30.0
                  ):
-        super().__init__(name='resample_bTAC',
+        super().__init__(name='resample_PTAC_on_scanner',
                          function=blood_input.resample_blood_data_on_scanner_times,
                          raw_blood_tac=input_raw_blood_tac_path,
                          pet4d_path=input_image_path,
@@ -255,7 +255,7 @@ class ResampleBloodTACStep(FunctionBasedStep):
             super().set_input_as_output_from(sending_step)
             
     @classmethod
-    def _empty_resample_blood_data_on_scanner_times(cls):
+    def default_resample_blood_tac_on_scanner_times(cls):
         return cls(input_raw_blood_tac_path='',
                    input_image_path='',
                    out_tac_path='',
@@ -622,7 +622,18 @@ class GraphicalAnalysisStep(ObjectBasedStep, TACAnalysisStepMixin):
             self.input_tac_path = sending_step.resampled_tac_path
         else:
             super().set_input_as_output_from(sending_step)
-        
+    
+    @classmethod
+    def default_patlak(cls):
+        return cls(input_tac_path='', roi_tacs_dir='', output_directory='', output_prefix='', method='patlak', )
+    
+    @classmethod
+    def default_logan(cls):
+        return cls(input_tac_path='', roi_tacs_dir='', output_directory='', output_prefix='', method='logan', )
+    
+    @classmethod
+    def default_alt_logan(cls):
+        return cls(input_tac_path='', roi_tacs_dir='', output_directory='', output_prefix='', method='alt_logan', )
         
 class TCMFittingAnalysisStep(ObjectBasedStep, TACAnalysisStepMixin):
     def __init__(self,
@@ -739,8 +750,8 @@ def get_template_steps():
             thresh_crop_step = ImageToImageStep.default_threshold_cropping(),
             moco_frames_above_mean = ImageToImageStep.default_moco_frames_above_mean(),
             register_pet_to_t1 = ImageToImageStep.default_register_pet_to_t1(),
-            write_roi_tacs = TACsFromSegmentationStep._empty_write_tacs_from_segmentation_rois(),
-            resample_blood = ResampleBloodTACStep._empty_resample_blood_data_on_scanner_times(),
+            write_roi_tacs = TACsFromSegmentationStep.default_write_tacs_from_segmentation_rois(),
+            resample_blood = ResampleBloodTACStep.default_resample_blood_tac_on_scanner_times(),
             )
     
     return out_dict
@@ -785,7 +796,6 @@ class StepsContainer:
             except Exception:
                 raise Exception
                 
-        
     def print_step_details(self):
         if not self.step_objs:
             print("No steps in container.")
@@ -828,7 +838,24 @@ class StepsContainer:
                 raise KeyError(f"Step name {step} does not exist.")
         else:
             raise TypeError(f"Key must be an integer or a string. Got {type(step)}")
-           
+        
+    @classmethod
+    def default_preprocess_steps(cls):
+        obj = cls(name='preproc')
+        obj.add_step(ImageToImageStep.default_threshold_cropping())
+        obj.add_step(ImageToImageStep.default_moco_frames_above_mean())
+        obj.add_step(ImageToImageStep.default_register_pet_to_t1())
+        obj.add_step(TACsFromSegmentationStep.default_write_tacs_from_segmentation_rois())
+        obj.add_step(ResampleBloodTACStep.default_resample_blood_tac_on_scanner_times())
+        return obj
+    
+    @classmethod
+    def default_graphical_analysis_steps(cls):
+        obj = cls(name='km_graphical_analysis')
+        obj.add_step(GraphicalAnalysisStep.default_patlak())
+        obj.add_step(GraphicalAnalysisStep.default_logan())
+        obj.add_step(GraphicalAnalysisStep.default_alt_logan())
+        return obj
     
 class StepsPipeline:
     def __init__(self, name: str):
@@ -874,7 +901,6 @@ class StepsPipeline:
             self.km.remove_step(step)
         else:
             raise KeyError(f"Container name {container_name} does not exist.")
-        
     
     def print_steps_names(self, container_name: str = None):
         if container_name is None:
