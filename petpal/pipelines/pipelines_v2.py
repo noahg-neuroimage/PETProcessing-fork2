@@ -945,7 +945,7 @@ def gen_bids_like_filepath(sub_id: str, ses_id: str, bids_dir:str ='../',
     filedir  = gen_bids_like_dir_path(sub_id=sub_id, ses_id=ses_id, sup_dir=bids_dir, modality=modality)
     return os.path.join(filedir, filename)
 
-class BIDsyPathsForRawData:
+class BIDSyPathsForRawData:
     def __init__(self,
                  sub_id: str,
                  ses_id: str,
@@ -1109,7 +1109,7 @@ class BIDsyPathsForRawData:
                 raise FileNotFoundError(f"File does not exist: {value}")
                 
                 
-class BIDSyPathForPipelines(BIDsyPathsForRawData):
+class BIDSyPathsForPipelines(BIDSyPathsForRawData):
     def __init__(self,
                  sub_id: str,
                  ses_id: str,
@@ -1121,7 +1121,7 @@ class BIDSyPathForPipelines(BIDsyPathsForRawData):
                  raw_anat_img_path: str = None,
                  segmentation_img_path: str = None,
                  segmentation_label_table_path: str = None,
-                 raw_blood_tac_path: str = None,):
+                 raw_blood_tac_path: str = None):
         super().__init__(sub_id=sub_id,
                          ses_id=ses_id,
                          bids_root_dir=bids_root_dir,
