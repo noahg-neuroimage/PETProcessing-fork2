@@ -945,7 +945,7 @@ def gen_bids_like_filepath(sub_id: str, ses_id: str, bids_dir:str ='../',
     filedir  = gen_bids_like_dir_path(sub_id=sub_id, ses_id=ses_id, sup_dir=bids_dir, modality=modality)
     return os.path.join(filedir, filename)
 
-class BIDsyPathMixin:
+class BIDsyPathsForRawData:
     def __init__(self,
                  sub_id: str,
                  ses_id: str,
@@ -1074,3 +1074,59 @@ class BIDsyPathMixin:
             else:
                 raise FileNotFoundError(f"File does not exist: {value}")
                 
+                
+class BIDSyPathForPipelines(BIDsyPathsForRawData):
+    def __init__(self,
+                 sub_id: str,
+                 ses_id: str,
+                 bids_root_dir: str,
+                 derivatives_dir: str,
+                 pipeline_dir:str,
+                 raw_pet_img_path: str = None,
+                 raw_anat_img_path: str = None,
+                 segmentation_img_path: str = None,
+                 segmentation_label_table_path: str = None,
+                 raw_blood_tac_path: str = None,):
+        super().__init__(sub_id=sub_id,
+                         ses_id=ses_id,
+                         bids_root_dir=bids_root_dir,
+                         derivatives_dir=derivatives_dir,
+                         raw_pet_img_path=raw_pet_img_path,
+                         raw_anat_img_path=raw_anat_img_path,
+                         segmentation_img_path=segmentation_img_path,
+                         segmentation_label_table_path=segmentation_label_table_path,
+                         raw_blood_tac_path=raw_blood_tac_path)
+        
+        self._pipeline_dir = pipeline_dir
+        self.pipeline_dir = self._pipeline_dir
+        self.analysis_dirs = {}
+        for a_name in ['preproc', 'km', 'tacs']:
+            self.analysis_dirs[a_name] = gen_bids_like_dir_path(sub_id=self.sub_id,
+                                                                 ses_id=self.ses_id,
+                                                                 modality=a_name,
+                                                                 sup_dir=self.pipeline_dir)
+        self.make_analysis_dirs()
+        
+        
+    @property
+    def pipeline_dir(self):
+        return self._pipeline_dir
+    
+    @pipeline_dir.setter
+    def pipeline_dir(self, value: str):
+        if value is None:
+            default_path = os.path.join(self.derivatives_dir, 'petpal', 'pipeline')
+            self._pipeline_dir = default_path
+        else:
+            pipe_path = pathlib.Path(value)
+            if pipe_path.is_relative_to(self.derivatives_dir):
+                self._pipeline_dir = value
+            else:
+                raise ValueError("Pipeline directory is not relative to the derivatives directory")
+            
+    def make_analysis_dirs(self):
+        for a_name, a_dir in self.analysis_dirs.items():
+            os.makedirs(a_dir, exist_ok=True)
+            
+    
+        
