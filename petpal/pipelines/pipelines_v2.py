@@ -204,7 +204,6 @@ class TACsFromSegmentationStep(FunctionBasedStep):
         step_name_in_camel_case = snake_to_camel_case(self.name)
         self.out_tacs_prefix = f'sub-{sub_id}_ses-{ses_id}_desc-{step_name_in_camel_case}'
         
-        
     
 class ResampleBloodTACStep(FunctionBasedStep):
     def __init__(self,
@@ -998,7 +997,7 @@ class BIDSyPathsForRawData:
         if value is None:
             self._derivatives_dir = os.path.abspath(os.path.join(self.bids_dir, 'derivatives'))
         else:
-            val_path = pathlib.Path(value)
+            val_path = pathlib.Path(value).absolute()
             if val_path.is_relative_to(self.bids_dir):
                 self._derivatives_dir = os.path.abspath(value)
             else:
@@ -1147,11 +1146,11 @@ class BIDSyPathsForPipelines(BIDSyPathsForRawData):
     def pipeline_dir(self, value: str):
         if value is None:
             default_path = os.path.join(self.derivatives_dir, 'petpal', 'pipelines', self.pipeline_name)
-            self._pipeline_dir = default_path
+            self._pipeline_dir = os.path.abspath(default_path)
         else:
-            pipe_path = pathlib.Path(value)
+            pipe_path = pathlib.Path(value).absolute()
             if pipe_path.is_relative_to(self.derivatives_dir):
-                self._pipeline_dir = value
+                self._pipeline_dir = os.path.abspath(value)
             else:
                 raise ValueError("Pipeline directory is not relative to the derivatives directory")
     
