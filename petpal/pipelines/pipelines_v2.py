@@ -769,6 +769,24 @@ class StepsContainer:
         else:
             raise KeyError("A step with this name already exists.")
         
+    def remove_step(self, step: Union[int, str]):
+        if isinstance(step, int):
+            try:
+                del self.step_objs[step]
+                del self.step_names[step]
+            except IndexError:
+                raise IndexError(f"Step number {step} does not exist.")
+        elif isinstance(step, str):
+            if step not in self.step_names:
+                raise KeyError(f"Step name {step} does not exist.")
+            try:
+                step_index = self.step_names.index(step)
+                del self.step_objs[step_index]
+                del self.step_names[step_index]
+            except Exception:
+                raise Exception
+                
+        
     def print_step_details(self):
         if not self.step_objs:
             print("No steps in container.")
@@ -831,7 +849,7 @@ class StepsPipeline:
         self.preproc()
     
     def add_step(self, container_name: str, step: StepType):
-        if step.name in self.dependency_graph: #Ensures unique step names for now
+        if step.name in self.dependency_graph:
             raise KeyError(f"Step name {step.name} already exists.")
         
         if container_name == 'preproc':
@@ -843,7 +861,22 @@ class StepsPipeline:
                            f"Must be 'preproc' or 'km'.")
         self.dependency_graph.add_node(f"{step.name}")
         self.dependency_graph.nodes[f"{step.name}"]['grp'] = container_name
+    
+    def remove_step(self, step: str):
+        node_names = list(self.dependency_graph.nodes)
+        if step not in node_names:
+            raise KeyError(f"Step name {step} does not exist.")
+        graph_nodes = self.dependency_graph.nodes(data=True)
+        container_name = graph_nodes[step]['grp']
+        self.dependency_graph.remove_node(step)
+        if container_name == 'preproc':
+            self.preproc.remove_step(step)
+        elif container_name == 'km':
+            self.km.remove_step(step)
+        else:
+            raise KeyError(f"Container name {container_name} does not exist.")
         
+    
     def print_steps_names(self, container_name: str = None):
         if container_name is None:
             self.preproc.print_step_names()
