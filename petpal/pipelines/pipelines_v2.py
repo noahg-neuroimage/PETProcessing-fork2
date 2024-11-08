@@ -734,7 +734,6 @@ class ParametricGraphicalAnalysisStep(ObjectBasedStep, TACAnalysisStepMixin):
         self._input_image_path = input_image_path
         self.init_kwargs['pet4D_img_path'] = input_image_path
     
-    
     def set_input_as_output_from(self, sending_step: PreprocSteps) -> None:
         if isinstance(sending_step, ResampleBloodTACStep):
             self.input_tac_path = sending_step.resampled_tac_path
@@ -742,6 +741,18 @@ class ParametricGraphicalAnalysisStep(ObjectBasedStep, TACAnalysisStepMixin):
             self.input_image_path = sending_step.output_image_path
         else:
             super().set_input_as_output_from(sending_step)
+            
+    @classmethod
+    def default_patlak(cls):
+        return cls(input_tac_path='', input_image_path='', output_directory='', output_prefix='', method='patlak')
+    
+    @classmethod
+    def default_logan(cls):
+        return cls(input_tac_path='', input_image_path='', output_directory='', output_prefix='', method='logan')
+    
+    @classmethod
+    def default_alt_logan(cls):
+        return cls(input_tac_path='', input_image_path='', output_directory='', output_prefix='', method='alt_logan')
 
 
 def get_template_steps():
@@ -856,6 +867,16 @@ class StepsContainer:
         obj.add_step(GraphicalAnalysisStep.default_logan())
         obj.add_step(GraphicalAnalysisStep.default_alt_logan())
         return obj
+    
+    @classmethod
+    def default_parametric_graphical_analysis_steps(cls):
+        obj = cls(name='km_parametric_graphical_analysis')
+        obj.add_step(ParametricGraphicalAnalysisStep.default_patlak())
+        obj.add_step(ParametricGraphicalAnalysisStep.default_logan())
+        obj.add_step(ParametricGraphicalAnalysisStep.default_alt_logan())
+        return obj
+    
+    
     
 class StepsPipeline:
     def __init__(self, name: str):
