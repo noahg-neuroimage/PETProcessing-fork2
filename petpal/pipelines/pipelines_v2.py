@@ -665,6 +665,21 @@ class TCMFittingAnalysisStep(ObjectBasedStep, TACAnalysisStepMixin):
             self.input_tac_path = sending_step.resampled_tac_path
         else:
             super().set_input_as_output_from(sending_step)
+            
+    @classmethod
+    def default_1tcm(cls, **kwargs):
+        return cls(input_tac_path='', roi_tacs_dir='', output_directory='',
+                   output_prefix='', compartment_model='1tcm', **kwargs)
+    
+    @classmethod
+    def default_serial2tcm(cls, **kwargs):
+        return cls(input_tac_path='', roi_tacs_dir='', output_directory='',
+                   output_prefix='', compartment_model='serial-2tcm', **kwargs)
+    
+    @classmethod
+    def default_irreversible_2tcm(cls, **kwargs):
+        return cls(input_tac_path='', roi_tacs_dir='', output_directory='',
+                   output_prefix='', compartment_model='2tcm-k4zero', **kwargs)
         
 
 class RTMFittingAnalysisStep(ObjectBasedStep, TACAnalysisStepMixin):
@@ -876,7 +891,13 @@ class StepsContainer:
         obj.add_step(ParametricGraphicalAnalysisStep.default_alt_logan())
         return obj
     
-    
+    @classmethod
+    def default_tcm_analysis_steps(cls):
+        obj = cls(name='km_tcm_analysis')
+        obj.add_step(TCMFittingAnalysisStep.default_1tcm())
+        obj.add_step(TCMFittingAnalysisStep.default_serial2tcm())
+        obj.add_step(TCMFittingAnalysisStep.default_irreversible_2tcm())
+        return obj
     
 class StepsPipeline:
     def __init__(self, name: str):
