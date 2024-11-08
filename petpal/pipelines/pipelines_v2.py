@@ -1047,12 +1047,25 @@ class StepsPipeline:
         return True
     
     @classmethod
-    def default_steps_pipeline(cls):
-        obj = cls(name='PET-MR_analysis')
+    def default_steps_pipeline(cls, name='PET-MR_analysis'):
+        obj = cls(name=name)
         for step in StepsContainer.default_preprocess_steps():
             obj.add_step(container_name='preproc', step=step)
         for step in StepsContainer.default_kinetic_analysis_steps():
             obj.add_step(container_name='km', step=step)
+        
+        obj.add_dependency(sending='thresh_crop', receiving='moco_frames_above_mean')
+        obj.add_dependency(sending='moco_frames_above_mean', receiving='register_pet_to_t1')
+        obj.add_dependency(sending='register_pet_to_t1', receiving='write_roi_tacs')
+        obj.add_dependency(sending='register_pet_to_t1', receiving='resample_PTAC_on_scanner')
+        
+        for method in ['patlak', 'logan', 'alt_logan']:
+            obj.add_dependency(sending='register_pet_to_t1', receiving=f'parametric_{method}_fit')
+            obj.add_dependency(sending='resample_PTAC_on_scanner', receiving=f'parametric_{method}_fit')
+        
+        for fit_model in ['1tcm', '2tcm-k4zero', 'serial-2tcm', 'patlak', 'logan']:
+            obj.add_dependency(sending='write_roi_tacs', receiving=f"roi_{fit_model}_fit")
+            obj.add_dependency(sending='resample_PTAC_on_scanner', receiving=f"roi_{fit_model}_fit")
         
         return obj
         
