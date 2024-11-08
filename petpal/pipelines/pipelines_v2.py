@@ -49,7 +49,6 @@ class FunctionBasedStep:
             unset_args = '\n'.join(empty_kwargs)
             raise RuntimeError(f"For {self._func_name}, the following arguments must be set:\n{unset_args}")
     
-    
     def execute(self):
         print(f"(Info): Executing {self.name}")
         self.function(*self.args, **self.kwargs)
@@ -611,7 +610,7 @@ class GraphicalAnalysisStep(ObjectBasedStep, TACAnalysisStepMixin):
                                       method=method,
                                       fit_thresh_in_mins = fit_threshold_in_mins,
                                       )
-        ObjectBasedStep.__init__(self, name=f'roi-{method}-fit',
+        ObjectBasedStep.__init__(self, name=f'roi_{method}_fit',
                                  class_type=pet_grph.MultiTACGraphicalAnalysis,
                                  init_kwargs=self.init_kwargs,
                                  call_kwargs=dict())
@@ -642,7 +641,7 @@ class TCMFittingAnalysisStep(ObjectBasedStep, TACAnalysisStepMixin):
                                       compartment_model=compartment_model,
                                       **kwargs)
         
-        ObjectBasedStep.__init__(self, name=f'roi-{compartment_model}-fit',
+        ObjectBasedStep.__init__(self, name=f'roi_{compartment_model}_fit',
                                  class_type=tac_fitting.FitTCMToManyTACs,
                                  init_kwargs=self.init_kwargs,
                                  call_kwargs=dict())
@@ -675,7 +674,7 @@ class RTMFittingAnalysisStep(ObjectBasedStep, TACAnalysisStepMixin):
                                       output_prefix=output_prefix,
                                       is_ref_tac_based_model=True,
                                       method=rtm_model, )
-        ObjectBasedStep.__init__(self, name=f'roi-{rtm_model}-fit',
+        ObjectBasedStep.__init__(self, name=f'roi_{rtm_model}_fit',
                                  class_type=pet_rtms.MultiTACRTMAnalysis,
                                  init_kwargs=self.init_kwargs,
                                  call_kwargs=dict(bounds=bounds,
@@ -707,7 +706,7 @@ class ParametricGraphicalAnalysisStep(ObjectBasedStep, TACAnalysisStepMixin):
         del self.init_kwargs['roi_tacs_dir']
         
         
-        ObjectBasedStep.__init__(self, name=f'parametric-{method}-fit',
+        ObjectBasedStep.__init__(self, name=f'parametric_{method}_fit',
                                  class_type=parametric_images.GraphicalAnalysisParametricImage,
                                  init_kwargs=self.init_kwargs,
                                  call_kwargs=dict(method_name=method,
