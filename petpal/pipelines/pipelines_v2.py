@@ -949,8 +949,8 @@ class BIDsyPathsForRawData:
     def __init__(self,
                  sub_id: str,
                  ses_id: str,
-                 bids_root_dir: str,
-                 derivatives_dir: str,
+                 bids_root_dir: str = None,
+                 derivatives_dir: str = None,
                  raw_pet_img_path: str = None,
                  raw_anat_img_path: str = None,
                  segmentation_img_path: str = None,
@@ -958,21 +958,55 @@ class BIDsyPathsForRawData:
                  raw_blood_tac_path: str = None,):
         self.sub_id = sub_id
         self.ses_id = ses_id
-        self.bids_dir = bids_root_dir
-        self.derivatives_dir = derivatives_dir
+        self._bids_dir = bids_root_dir
+        self._derivatives_dir = derivatives_dir
         self._raw_pet_path = raw_pet_img_path
         self._raw_anat_path = raw_anat_img_path
         self._segmentation_img_path = segmentation_img_path
         self._segmentation_label_table_path = segmentation_label_table_path
         self._raw_blood_tac_path = raw_blood_tac_path
         
-        
+        self.bids_dir = self._bids_dir
+        self.derivatives_dir = self._derivatives_dir
         self.pet_path = self._raw_pet_path
         self.anat_path = self._raw_anat_path
         self.seg_img = self._segmentation_img_path
         self.seg_table = self._segmentation_label_table_path
         self.blood_tac = self._raw_blood_tac_path
-        
+    
+    @property
+    def bids_dir(self):
+        return self._bids_dir
+    
+    @bids_dir.setter
+    def bids_dir(self, value):
+        if value is None:
+            self._bids_dir = os.path.abspath('../')
+        else:
+            val_path = pathlib.Path(value)
+            if val_path.is_dir():
+                self._bids_dir = os.path.abspath(value)
+            else:
+                raise ValueError("Given BIDS path is not a directory.")
+            
+    @property
+    def derivatives_dir(self):
+        return self._derivatives_dir
+    
+    @derivatives_dir.setter
+    def derivatives_dir(self, value):
+        if value is None:
+            self._derivatives_dir = os.path.abspath(os.path.join(self.bids_dir, 'derivatives'))
+        else:
+            val_path = pathlib.Path(value)
+            if val_path.is_relative_to(self.bids_dir):
+                self._derivatives_dir = os.path.abspath(value)
+            else:
+                raise ValueError(f"Given derivatives path is not a sub-directory of BIDS path."
+                                 f"\nBIDS:       {self.bids_dir}"
+                                 f"\nDerivatives:{os.path.abspath(value)}")
+    
+    
     @property
     def pet_path(self):
         return self._raw_pet_path
@@ -1079,9 +1113,10 @@ class BIDSyPathForPipelines(BIDsyPathsForRawData):
     def __init__(self,
                  sub_id: str,
                  ses_id: str,
-                 bids_root_dir: str,
-                 derivatives_dir: str,
-                 pipeline_dir:str,
+                 pipeline_dir: str,
+                 list_of_analysis_dir_names: Union[None, list[str]] = None,
+                 bids_root_dir: str = None,
+                 derivatives_dir: str = None,
                  raw_pet_img_path: str = None,
                  raw_anat_img_path: str = None,
                  segmentation_img_path: str = None,
@@ -1099,12 +1134,7 @@ class BIDSyPathForPipelines(BIDsyPathsForRawData):
         
         self._pipeline_dir = pipeline_dir
         self.pipeline_dir = self._pipeline_dir
-        self.analysis_dirs = {}
-        for a_name in ['preproc', 'km', 'tacs']:
-            self.analysis_dirs[a_name] = gen_bids_like_dir_path(sub_id=self.sub_id,
-                                                                 ses_id=self.ses_id,
-                                                                 modality=a_name,
-                                                                 sup_dir=self.pipeline_dir)
+        self.analysis_dirs = self.generate_analysis_dirs(list_of_dir_names=list_of_analysis_dir_names)
         self.make_analysis_dirs()
         
         
@@ -1123,7 +1153,17 @@ class BIDSyPathForPipelines(BIDsyPathsForRawData):
                 self._pipeline_dir = value
             else:
                 raise ValueError("Pipeline directory is not relative to the derivatives directory")
-            
+    
+    def generate_analysis_dirs(self, list_of_dir_names: Union[None, list[str]] = None) -> dict:
+        if list_of_dir_names is None:
+            list_of_dir_names = ['preproc', 'km', 'tacs']
+        path_gen = lambda name: gen_bids_like_dir_path(sub_id=self.sub_id,
+                                                       ses_id=self.ses_id,
+                                                       modality=name,
+                                                       sup_dir=self.pipeline_dir)
+        analysis_dirs = {name:path_gen(name) for name in list_of_dir_names}
+        return analysis_dirs
+    
     def make_analysis_dirs(self):
         for a_name, a_dir in self.analysis_dirs.items():
             os.makedirs(a_dir, exist_ok=True)
