@@ -1046,27 +1046,29 @@ class StepsPipeline:
                 return False
         return True
     
+    def _add_default_steps(self):
+        for step in StepsContainer.default_preprocess_steps():
+            self.add_step(container_name='preproc', step=step)
+        for step in StepsContainer.default_kinetic_analysis_steps():
+            self.add_step(container_name='km', step=step)
+        
+        self.add_dependency(sending='thresh_crop', receiving='moco_frames_above_mean')
+        self.add_dependency(sending='moco_frames_above_mean', receiving='register_pet_to_t1')
+        self.add_dependency(sending='register_pet_to_t1', receiving='write_roi_tacs')
+        self.add_dependency(sending='register_pet_to_t1', receiving='resample_PTAC_on_scanner')
+        
+        for method in ['patlak', 'logan', 'alt_logan']:
+            self.add_dependency(sending='register_pet_to_t1', receiving=f'parametric_{method}_fit')
+            self.add_dependency(sending='resample_PTAC_on_scanner', receiving=f'parametric_{method}_fit')
+        
+        for fit_model in ['1tcm', '2tcm-k4zero', 'serial-2tcm', 'patlak', 'logan']:
+            self.add_dependency(sending='write_roi_tacs', receiving=f"roi_{fit_model}_fit")
+            self.add_dependency(sending='resample_PTAC_on_scanner', receiving=f"roi_{fit_model}_fit")
+    
     @classmethod
     def default_steps_pipeline(cls, name='PET-MR_analysis'):
         obj = cls(name=name)
-        for step in StepsContainer.default_preprocess_steps():
-            obj.add_step(container_name='preproc', step=step)
-        for step in StepsContainer.default_kinetic_analysis_steps():
-            obj.add_step(container_name='km', step=step)
-        
-        obj.add_dependency(sending='thresh_crop', receiving='moco_frames_above_mean')
-        obj.add_dependency(sending='moco_frames_above_mean', receiving='register_pet_to_t1')
-        obj.add_dependency(sending='register_pet_to_t1', receiving='write_roi_tacs')
-        obj.add_dependency(sending='register_pet_to_t1', receiving='resample_PTAC_on_scanner')
-        
-        for method in ['patlak', 'logan', 'alt_logan']:
-            obj.add_dependency(sending='register_pet_to_t1', receiving=f'parametric_{method}_fit')
-            obj.add_dependency(sending='resample_PTAC_on_scanner', receiving=f'parametric_{method}_fit')
-        
-        for fit_model in ['1tcm', '2tcm-k4zero', 'serial-2tcm', 'patlak', 'logan']:
-            obj.add_dependency(sending='write_roi_tacs', receiving=f"roi_{fit_model}_fit")
-            obj.add_dependency(sending='resample_PTAC_on_scanner', receiving=f"roi_{fit_model}_fit")
-        
+        obj._add_default_steps()
         return obj
         
         
@@ -1314,4 +1316,73 @@ class BIDSyPathsForPipelines(BIDSyPathsForRawData):
             os.makedirs(a_dir, exist_ok=True)
             
     
+class BIDS_Pipeline(BIDSyPathsForPipelines, StepsPipeline):
+    def __init__(self,
+                 sub_id: str,
+                 ses_id: str,
+                 pipeline_name: str = 'generic_pipeline',
+                 list_of_analysis_dir_names: Union[None, list[str]] = None,
+                 bids_root_dir: str = None,
+                 derivatives_dir: str = None,
+                 raw_pet_img_path: str = None,
+                 raw_anat_img_path: str = None,
+                 segmentation_img_path: str = None,
+                 segmentation_label_table_path: str = None,
+                 raw_blood_tac_path: str = None):
+        BIDSyPathsForPipelines.__init__(self,
+                                        sub_id=sub_id,
+                                        ses_id=ses_id,
+                                        pipeline_name=pipeline_name,
+                                        list_of_analysis_dir_names=list_of_analysis_dir_names,
+                                        bids_root_dir=bids_root_dir,
+                                        derivatives_dir=derivatives_dir,
+                                        raw_pet_img_path=raw_pet_img_path,
+                                        raw_anat_img_path=raw_anat_img_path,
+                                        segmentation_img_path=segmentation_img_path,
+                                        segmentation_label_table_path=segmentation_label_table_path,
+                                        raw_blood_tac_path=raw_blood_tac_path)
+        StepsPipeline.__init__(self, name=pipeline_name)
         
+    def update_dependencies_for(self, step_name, verbose=False):
+        sending_step = self.get_step_from_node_label(step_name)
+        sending_step_grp_name = self.dependency_graph.nodes(data=True)[sending_step]['grp']
+        sending_step.infer_outputs_from_inputs(out_dir=self.pipeline_dir, der_type=sending_step_grp_name)
+        for an_edge in self.dependency_graph[step_name]:
+            receiving_step = self.get_step_from_node_label(an_edge)
+            try:
+                receiving_step.set_input_as_output_from(sending_step)
+            except NotImplementedError:
+                if verbose:
+                    print(f"Step `{receiving_step.name}` of type `{type(receiving_step).__name__}` does not have a "
+                          f"set_input_as_output_from method implemented.\nSkipping.")
+                else:
+                    if verbose:
+                        print(f"Updated input-output dependency between {sending_step.name} and {receiving_step.name}")
+    
+    
+    @classmethod
+    def default_bids_pipeline(cls,
+                              sub_id: str,
+                              ses_id: str,
+                              pipeline_name: str = 'generic_pipeline',
+                              list_of_analysis_dir_names: Union[None, list[str]] = None,
+                              bids_root_dir: str = None,
+                              derivatives_dir: str = None,
+                              raw_pet_img_path: str = None,
+                              raw_anat_img_path: str = None,
+                              segmentation_img_path: str = None,
+                              segmentation_label_table_path: str = None,
+                              raw_blood_tac_path: str = None):
+        obj = cls(sub_id=sub_id,
+                  ses_id=ses_id,
+                  pipeline_name=pipeline_name,
+                  list_of_analysis_dir_names=list_of_analysis_dir_names,
+                  bids_root_dir=bids_root_dir,
+                  derivatives_dir=derivatives_dir,
+                  raw_pet_img_path=raw_pet_img_path,
+                  raw_anat_img_path=raw_anat_img_path,
+                  segmentation_img_path=segmentation_img_path,
+                  segmentation_label_table_path=segmentation_label_table_path,
+                  raw_blood_tac_path=raw_blood_tac_path)
+        obj._add_default_steps()
+        return obj
