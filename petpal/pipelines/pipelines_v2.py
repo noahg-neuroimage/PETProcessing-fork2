@@ -1113,7 +1113,7 @@ class BIDSyPathForPipelines(BIDsyPathsForRawData):
     def __init__(self,
                  sub_id: str,
                  ses_id: str,
-                 pipeline_dir: str,
+                 pipeline_name: str ='generic_pipeline',
                  list_of_analysis_dir_names: Union[None, list[str]] = None,
                  bids_root_dir: str = None,
                  derivatives_dir: str = None,
@@ -1132,7 +1132,8 @@ class BIDSyPathForPipelines(BIDsyPathsForRawData):
                          segmentation_label_table_path=segmentation_label_table_path,
                          raw_blood_tac_path=raw_blood_tac_path)
         
-        self._pipeline_dir = pipeline_dir
+        self._pipeline_dir = None
+        self.pipeline_name = pipeline_name
         self.pipeline_dir = self._pipeline_dir
         self.analysis_dirs = self.generate_analysis_dirs(list_of_dir_names=list_of_analysis_dir_names)
         self.make_analysis_dirs()
@@ -1145,7 +1146,7 @@ class BIDSyPathForPipelines(BIDsyPathsForRawData):
     @pipeline_dir.setter
     def pipeline_dir(self, value: str):
         if value is None:
-            default_path = os.path.join(self.derivatives_dir, 'petpal', 'pipeline')
+            default_path = os.path.join(self.derivatives_dir, 'petpal', 'pipelines', self.pipeline_name)
             self._pipeline_dir = default_path
         else:
             pipe_path = pathlib.Path(value)
