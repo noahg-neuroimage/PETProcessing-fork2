@@ -911,6 +911,16 @@ class StepsContainer:
         obj.add_step(TCMFittingAnalysisStep.default_irreversible_2tcm())
         return obj
     
+    @classmethod
+    def default_kinetic_analysis_steps(cls):
+        parametric_graphical_analysis_steps = cls.default_parametric_graphical_analysis_steps()
+        graphical_analysis_steps = cls.default_graphical_analysis_steps()
+        tcm_analysis_steps = cls.default_tcm_analysis_steps()
+        
+        obj = parametric_graphical_analysis_steps + graphical_analysis_steps + tcm_analysis_steps
+        obj.name = 'km'
+        return obj
+    
 class StepsPipeline:
     def __init__(self, name: str):
         self.name = name
