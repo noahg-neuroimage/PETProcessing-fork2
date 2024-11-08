@@ -198,7 +198,7 @@ class TACsFromSegmentationStep(FunctionBasedStep):
         sub_id, ses_id = parse_path_to_get_subject_and_session_id(self.input_image_path)
         outpath = gen_bids_like_dir_path(sub_id=sub_id,
                                          ses_id=ses_id,
-                                         bids_dir=out_dir,
+                                         sup_dir=out_dir,
                                          modality='tacs')
         self.out_tacs_path = outpath
         step_name_in_camel_case = snake_to_camel_case(self.name)
@@ -586,7 +586,7 @@ class TACAnalysisStepMixin:
         outpath = gen_bids_like_dir_path(sub_id=sub_id,
                                          ses_id=ses_id,
                                          modality=der_type,
-                                         bids_dir=out_dir)
+                                         sup_dir=out_dir)
         self.output_directory = outpath
         
     def infer_prefix_and_output_directory(self, out_dir:str, der_type:str='km'):
@@ -907,7 +907,6 @@ class StepsPipeline:
                     if verbose:
                         print(f"Updated input-output dependency between {sending_step.name} and {receiving_step.name}")
     
-    
     def update_dependencies(self, verbose=False):
         for step_name in nx.topological_sort(self.dependency_graph):
             self.update_dependencies_for(step_name=step_name, verbose=verbose)
@@ -936,14 +935,14 @@ def gen_bids_like_filename(sub_id: str, ses_id: str, suffix: str= 'pet', ext: st
     file_name = "_".join(file_parts)
     return file_name
 
-def gen_bids_like_dir_path(sub_id: str, ses_id: str, modality: str='pet', bids_dir: str='../') -> str:
-    path_parts = [f'{bids_dir}',f'sub-{sub_id}', f'ses-{ses_id}', f'{modality}']
+def gen_bids_like_dir_path(sub_id: str, ses_id: str, modality: str='pet', sup_dir: str= '../') -> str:
+    path_parts = [f'{sup_dir}', f'sub-{sub_id}', f'ses-{ses_id}', f'{modality}']
     return os.path.join(*path_parts)
 
 def gen_bids_like_filepath(sub_id: str, ses_id: str, bids_dir:str ='../',
                            modality: str='pet', suffix:str='pet', ext='.nii.gz', **extra_desc) -> str:
     filename = gen_bids_like_filename(sub_id=sub_id, ses_id=ses_id, suffix=suffix, ext=ext, **extra_desc)
-    filedir  = gen_bids_like_dir_path(sub_id=sub_id, ses_id=ses_id, bids_dir=bids_dir, modality=modality)
+    filedir  = gen_bids_like_dir_path(sub_id=sub_id, ses_id=ses_id, sup_dir=bids_dir, modality=modality)
     return os.path.join(filedir, filename)
 
 class BIDsyPathMixin:
