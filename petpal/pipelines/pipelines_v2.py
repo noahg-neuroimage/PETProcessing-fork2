@@ -3,7 +3,7 @@ import pathlib
 import warnings
 import os
 import networkx as nx
-from ..utils.image_io import safe_copy_meta
+from ..utils.image_io import safe_copy_meta, get_half_life_from_nifty
 from typing import Callable, Union
 import inspect
 from ..preproc import preproc
@@ -14,8 +14,15 @@ from ..kinetic_modeling import rtm_analysis as pet_rtms
 from ..kinetic_modeling import graphical_analysis as pet_grph
 from .pipelines import ArgsDict
 
+class StepsAPI:
+    def set_input_as_output_from(self, sending_step):
+        raise NotImplementedError
+    
+    def infer_outputs_from_inputs(self, out_dir, der_type, suffix, ext, **extra_desc):
+        raise NotImplementedError
 
-class FunctionBasedStep:
+
+class FunctionBasedStep(StepsAPI):
     def __init__(self, name: str, function: Callable, *args, **kwargs) -> None:
         self.name = name
         self.function = function
@@ -72,9 +79,6 @@ class FunctionBasedStep:
                     'Default Arguments:',
                     f'{self.get_function_args_not_set_in_kwargs()}']
         return '\n'.join(info_str)
-    
-    def set_input_as_output_from(self, sending_step):
-        raise NotImplementedError
     
     def all_args_non_empty_strings(self):
         for arg in self.args:
@@ -193,7 +197,7 @@ class TACsFromSegmentationStep(FunctionBasedStep):
                    time_keyword='FrameReferenceTime',
                    verbose=False)
     
-    def infer_out_path_and_prefix(self, out_dir: str):
+    def infer_outputs_from_inputs(self, out_dir: str, der_type, suffix=None, ext=None, **extra_desc):
         sub_id, ses_id = parse_path_to_get_subject_and_session_id(self.input_image_path)
         outpath = gen_bids_like_dir_path(sub_id=sub_id,
                                          ses_id=ses_id,
@@ -261,20 +265,20 @@ class ResampleBloodTACStep(FunctionBasedStep):
                    out_tac_path='',
                    lin_fit_thresh_in_mins=30.0)
     
-    def infer_out_path_from_input_tac_path(self, out_dir: str):
+    def infer_outputs_from_inputs(self, out_dir: str, der_type, suffix='blood', ext='.tsv', **extra_desc):
         sub_id, ses_id = parse_path_to_get_subject_and_session_id(self.raw_blood_tac_path)
         filepath = gen_bids_like_filepath(sub_id=sub_id,
                                           ses_id=ses_id,
                                           bids_dir=out_dir,
                                           modality='preproc',
-                                          suffix='blood',
-                                          ext='.tsv',
+                                          suffix=suffix,
+                                          ext=ext,
                                           desc='OnScannerFrameTimes'
                                           )
         self.resampled_tac_path = filepath
    
         
-class ObjectBasedStep:
+class ObjectBasedStep(StepsAPI):
     def __init__(self,
                  name: str,
                  class_type: type,
@@ -343,9 +347,6 @@ class ObjectBasedStep:
                     f'{unset_call_args if unset_call_args else "N/A"}']
         return '\n'.join(info_str)
     
-    def set_input_as_output_from(self, sending_step):
-        raise NotImplementedError
-    
     def all_init_kwargs_non_empty_strings(self):
         for arg_name, arg_val in self.init_kwargs.items():
             if arg_val == '':
@@ -360,7 +361,7 @@ class ObjectBasedStep:
     
     def can_potentially_run(self):
         return self.all_init_kwargs_non_empty_strings() and self.all_call_kwargs_non_empty_strings()
-
+    
 def parse_path_to_get_subject_and_session_id(path):
     filename = pathlib.Path(path).name
     if ('sub-' in filename) and ('ses-' in filename):
@@ -419,10 +420,12 @@ class ImageToImageStep(FunctionBasedStep):
         output_img_non_empty_str = False if self.output_image_path == '' else True
         return super().can_potentially_run() and input_img_non_empty_str and output_img_non_empty_str
     
-    def infer_output_image_path_from_input_path(self, out_dir: str ,
-                                                der_type='preproc',
-                                                suffix: str = 'pet',
-                                                **extra_desc):
+    def infer_outputs_from_inputs(self,
+                                  out_dir: str ,
+                                  der_type='preproc',
+                                  suffix: str = 'pet',
+                                  ext: str = '.nii.gz',
+                                  **extra_desc):
         sub_id, ses_id = parse_path_to_get_subject_and_session_id(self.input_image_path)
         step_name_in_camel_case = snake_to_camel_case(self.name)
         filepath = gen_bids_like_filepath(sub_id=sub_id,
@@ -430,8 +433,9 @@ class ImageToImageStep(FunctionBasedStep):
                                           suffix=suffix,
                                           bids_dir=out_dir,
                                           modality=der_type,
-                                          ext='.nii.gz',
-                                          desc=step_name_in_camel_case, **extra_desc)
+                                          ext=ext,
+                                          desc=step_name_in_camel_case,
+                                          **extra_desc)
         self.output_image_path = filepath
     
     @classmethod
@@ -484,7 +488,7 @@ class ImageToImageStep(FunctionBasedStep):
 PreprocSteps = Union[TACsFromSegmentationStep, ResampleBloodTACStep, ImageToImageStep]
 
 
-class TACAnalysisStepMixin:
+class TACAnalysisStepMixin(StepsAPI):
     def __init__(self,
                  input_tac_path: str,
                  roi_tacs_dir: str,
@@ -587,10 +591,17 @@ class TACAnalysisStepMixin:
                                          sup_dir=out_dir)
         self.output_directory = outpath
         
-    def infer_prefix_and_output_directory(self, out_dir:str, der_type:str='km'):
+    def infer_outputs_from_inputs(self, out_dir: str, der_type, suffix=None, ext=None, **extra_desc):
         self.infer_prefix_from_input_tac_path()
         self.infer_output_directory_from_input_tac_path(out_dir=out_dir, der_type=der_type)
-
+        
+    def set_input_as_output_from(self, sending_step: PreprocSteps) -> None:
+        if isinstance(sending_step, TACsFromSegmentationStep):
+            self.roi_tacs_dir = sending_step.out_tacs_path
+        elif isinstance(sending_step, ResampleBloodTACStep):
+            self.input_tac_path = sending_step.resampled_tac_path
+        else:
+            super().set_input_as_output_from(sending_step)
 
 class GraphicalAnalysisStep(ObjectBasedStep, TACAnalysisStepMixin):
     def __init__(self,
@@ -615,14 +626,6 @@ class GraphicalAnalysisStep(ObjectBasedStep, TACAnalysisStepMixin):
                                  init_kwargs=self.init_kwargs,
                                  call_kwargs=dict())
     
-    def set_input_as_output_from(self, sending_step: PreprocSteps) -> None:
-        if isinstance(sending_step, TACsFromSegmentationStep):
-            self.roi_tacs_dir = sending_step.out_tacs_path
-        elif isinstance(sending_step, ResampleBloodTACStep):
-            self.input_tac_path = sending_step.resampled_tac_path
-        else:
-            super().set_input_as_output_from(sending_step)
-    
     @classmethod
     def default_patlak(cls):
         return cls(input_tac_path='', roi_tacs_dir='', output_directory='', output_prefix='', method='patlak', )
@@ -634,6 +637,7 @@ class GraphicalAnalysisStep(ObjectBasedStep, TACAnalysisStepMixin):
     @classmethod
     def default_alt_logan(cls):
         return cls(input_tac_path='', roi_tacs_dir='', output_directory='', output_prefix='', method='alt_logan', )
+        
         
 class TCMFittingAnalysisStep(ObjectBasedStep, TACAnalysisStepMixin):
     def __init__(self,
@@ -658,14 +662,6 @@ class TCMFittingAnalysisStep(ObjectBasedStep, TACAnalysisStepMixin):
                                  call_kwargs=dict())
         
         
-    def set_input_as_output_from(self, sending_step: PreprocSteps) -> None:
-        if isinstance(sending_step, TACsFromSegmentationStep):
-            self.roi_tacs_dir = sending_step.out_tacs_path
-        elif isinstance(sending_step, ResampleBloodTACStep):
-            self.input_tac_path = sending_step.resampled_tac_path
-        else:
-            super().set_input_as_output_from(sending_step)
-            
     @classmethod
     def default_1tcm(cls, **kwargs):
         return cls(input_tac_path='', roi_tacs_dir='', output_directory='',
@@ -706,12 +702,6 @@ class RTMFittingAnalysisStep(ObjectBasedStep, TACAnalysisStepMixin):
                                  call_kwargs=dict(bounds=bounds,
                                                   t_thresh_in_mins=fit_threshold_in_mins,
                                                   k2_prime=k2_prime))
-
-    def set_input_as_output_from(self, sending_step: PreprocSteps) -> None:
-        if isinstance(sending_step, TACsFromSegmentationStep):
-            self.roi_tacs_dir = sending_step.out_tacs_path
-        else:
-            super().set_input_as_output_from(sending_step)
 
 
 class ParametricGraphicalAnalysisStep(ObjectBasedStep, TACAnalysisStepMixin):
@@ -1061,7 +1051,7 @@ class StepsPipeline:
             self.add_dependency(sending='register_pet_to_t1', receiving=f'parametric_{method}_fit')
             self.add_dependency(sending='resample_PTAC_on_scanner', receiving=f'parametric_{method}_fit')
         
-        for fit_model in ['1tcm', '2tcm-k4zero', 'serial-2tcm', 'patlak', 'logan']:
+        for fit_model in ['1tcm', '2tcm-k4zero', 'serial-2tcm', 'patlak', 'logan', 'alt_logan']:
             self.add_dependency(sending='write_roi_tacs', receiving=f"roi_{fit_model}_fit")
             self.add_dependency(sending='resample_PTAC_on_scanner', receiving=f"roi_{fit_model}_fit")
     
@@ -1345,8 +1335,10 @@ class BIDS_Pipeline(BIDSyPathsForPipelines, StepsPipeline):
         
     def update_dependencies_for(self, step_name, verbose=False):
         sending_step = self.get_step_from_node_label(step_name)
-        sending_step_grp_name = self.dependency_graph.nodes(data=True)[sending_step]['grp']
-        sending_step.infer_outputs_from_inputs(out_dir=self.pipeline_dir, der_type=sending_step_grp_name)
+        sending_step_grp_name = self.dependency_graph.nodes(data=True)[step_name]['grp']
+        sending_step.infer_outputs_from_inputs(out_dir=self.pipeline_dir, der_type=sending_step_grp_name,
+                                               suffix=None,
+                                               ext=None)
         for an_edge in self.dependency_graph[step_name]:
             receiving_step = self.get_step_from_node_label(an_edge)
             try:
@@ -1385,4 +1377,13 @@ class BIDS_Pipeline(BIDSyPathsForPipelines, StepsPipeline):
                   segmentation_label_table_path=segmentation_label_table_path,
                   raw_blood_tac_path=raw_blood_tac_path)
         obj._add_default_steps()
+        obj.preproc[0].input_image_path = obj.pet_path
+        obj.preproc[1].kwargs['half_life'] = get_half_life_from_nifty(obj.pet_path)
+        obj.preproc[2].kwargs['reference_image_path'] = obj.anat_path
+        obj.preproc[2].kwargs['half_life'] = get_half_life_from_nifty(obj.pet_path)
+        obj.preproc[3].segmentation_label_map_path = obj.seg_table
+        obj.preproc[3].segmentation_image_path = obj.seg_img
+        obj.preproc[4].raw_blood_tac_path = obj.blood_tac
+        
+        obj.update_dependencies(verbose=False)
         return obj
