@@ -8,14 +8,11 @@ import json
 import os
 import shutil
 import warnings
-
 import numpy
+import pathlib
 from bids_validator import BIDSValidator
 from nibabel.filebasedimages import FileBasedImage
 from nibabel.nifti1 import Nifti1Image
-
-
-# from .registration_tools import ImageIO
 
 
 class BidsInstance:
@@ -717,3 +714,36 @@ def validate_directory_as_bids(project_path: str) -> bool:
         print("All files passed validation.")
 
     return all_passed
+
+
+def parse_path_to_get_subject_and_session_id(path):
+    filename = pathlib.Path(path).name
+    if ('sub-' in filename) and ('ses-' in filename):
+        sub_ses_ids = filename.split("_")[:2]
+        sub_id = sub_ses_ids[0].split('sub-')[-1]
+        ses_id = sub_ses_ids[1].split('ses-')[-1]
+        return sub_id, ses_id
+    else:
+        return "XXXX", "XX"
+
+def snake_to_camel_case(snake_str):
+    return "".join(x.capitalize() for x in snake_str.lower().split("_"))
+
+def gen_bids_like_filename(sub_id: str, ses_id: str, suffix: str= 'pet', ext: str= '.nii.gz', **extra_desc) -> str:
+    sub_ses_pre = f'sub-{sub_id}_ses-{ses_id}'
+    file_parts = [sub_ses_pre, ]
+    for name, val in extra_desc.items():
+        file_parts.append(f'{name}-{val}')
+    file_parts.append(f'{suffix}{ext}')
+    file_name = "_".join(file_parts)
+    return file_name
+
+def gen_bids_like_dir_path(sub_id: str, ses_id: str, modality: str='pet', sup_dir: str= '../') -> str:
+    path_parts = [f'{sup_dir}', f'sub-{sub_id}', f'ses-{ses_id}', f'{modality}']
+    return os.path.join(*path_parts)
+
+def gen_bids_like_filepath(sub_id: str, ses_id: str, bids_dir:str ='../',
+                           modality: str='pet', suffix:str='pet', ext='.nii.gz', **extra_desc) -> str:
+    filename = gen_bids_like_filename(sub_id=sub_id, ses_id=ses_id, suffix=suffix, ext=ext, **extra_desc)
+    filedir  = gen_bids_like_dir_path(sub_id=sub_id, ses_id=ses_id, sup_dir=bids_dir, modality=modality)
+    return os.path.join(filedir, filename)

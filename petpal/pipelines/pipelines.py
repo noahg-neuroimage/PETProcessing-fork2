@@ -6,17 +6,22 @@ import networkx as nx
 from ..utils.image_io import safe_copy_meta, get_half_life_from_nifty
 from typing import Callable, Union
 import inspect
-from ..preproc import preproc
+from ..preproc.image_operations_4d import SimpleAutoImageCropper, write_tacs
+from ..preproc.register import register_pet
+from ..preproc.motion_corr import motion_corr_frames_above_mean_value
 from ..input_function import blood_input
 from ..kinetic_modeling import parametric_images
 from ..kinetic_modeling import tac_fitting
 from ..kinetic_modeling import rtm_analysis as pet_rtms
 from ..kinetic_modeling import graphical_analysis as pet_grph
+from ..utils.bids_utils import parse_path_to_get_subject_and_session_id, snake_to_camel_case, gen_bids_like_dir_path, gen_bids_like_filepath
+
 
 class ArgsDict(dict):
     def __str__(self):
         rep_str = [f'    {arg}={val}' for arg, val in self.items()]
         return ',\n'.join(rep_str)
+
 
 class StepsAPI:
     def set_input_as_output_from(self, sending_step):
@@ -110,7 +115,7 @@ class TACsFromSegmentationStep(FunctionBasedStep):
                  time_keyword='FrameReferenceTime',
                  verbose=False) -> None:
         super().__init__(name='write_roi_tacs',
-                         function=preproc.image_operations_4d.write_tacs,
+                         function=write_tacs,
                          input_image_path=input_image_path,
                          segmentation_image_path=segmentation_image_path,
                          label_map_path=segmentation_label_map_path,
@@ -366,18 +371,6 @@ class ObjectBasedStep(StepsAPI):
     def can_potentially_run(self):
         return self.all_init_kwargs_non_empty_strings() and self.all_call_kwargs_non_empty_strings()
     
-def parse_path_to_get_subject_and_session_id(path):
-    filename = pathlib.Path(path).name
-    if ('sub-' in filename) and ('ses-' in filename):
-        sub_ses_ids = filename.split("_")[:2]
-        sub_id = sub_ses_ids[0].split('sub-')[-1]
-        ses_id = sub_ses_ids[1].split('ses-')[-1]
-        return sub_id, ses_id
-    else:
-        return "XXXX", "XX"
-
-def snake_to_camel_case(snake_str):
-    return "".join(x.capitalize() for x in snake_str.lower().split("_"))
 
 class ImageToImageStep(FunctionBasedStep):
     def __init__(self,
@@ -445,7 +438,7 @@ class ImageToImageStep(FunctionBasedStep):
     @classmethod
     def default_threshold_cropping(cls, **overrides):
         defaults = dict(name='thresh_crop',
-                        function=preproc.image_operations_4d.SimpleAutoImageCropper,
+                        function=SimpleAutoImageCropper,
                         input_image_path='',
                         output_image_path='',)
         override_dict = {**defaults, **overrides}
@@ -458,7 +451,7 @@ class ImageToImageStep(FunctionBasedStep):
     @classmethod
     def default_moco_frames_above_mean(cls, verbose=False, **overrides):
         defaults = dict(name='moco_frames_above_mean',
-                        function=preproc.motion_corr.motion_corr_frames_above_mean_value,
+                        function=motion_corr_frames_above_mean_value,
                         input_image_path='',
                         output_image_path='',
                         motion_target_option='mean_image',
@@ -474,7 +467,7 @@ class ImageToImageStep(FunctionBasedStep):
     @classmethod
     def default_register_pet_to_t1(cls, reference_image_path='', half_life='', verbose=False, **overrides):
         defaults = dict(name='register_pet_to_t1',
-                        function=preproc.register.register_pet,
+                        function=register_pet,
                         input_image_path='',
                         output_image_path='',
                         reference_image_path=reference_image_path,
@@ -1045,25 +1038,6 @@ class StepsPipeline:
         
         return obj
         
-        
-def gen_bids_like_filename(sub_id: str, ses_id: str, suffix: str= 'pet', ext: str= '.nii.gz', **extra_desc) -> str:
-    sub_ses_pre = f'sub-{sub_id}_ses-{ses_id}'
-    file_parts = [sub_ses_pre, ]
-    for name, val in extra_desc.items():
-        file_parts.append(f'{name}-{val}')
-    file_parts.append(f'{suffix}{ext}')
-    file_name = "_".join(file_parts)
-    return file_name
-
-def gen_bids_like_dir_path(sub_id: str, ses_id: str, modality: str='pet', sup_dir: str= '../') -> str:
-    path_parts = [f'{sup_dir}', f'sub-{sub_id}', f'ses-{ses_id}', f'{modality}']
-    return os.path.join(*path_parts)
-
-def gen_bids_like_filepath(sub_id: str, ses_id: str, bids_dir:str ='../',
-                           modality: str='pet', suffix:str='pet', ext='.nii.gz', **extra_desc) -> str:
-    filename = gen_bids_like_filename(sub_id=sub_id, ses_id=ses_id, suffix=suffix, ext=ext, **extra_desc)
-    filedir  = gen_bids_like_dir_path(sub_id=sub_id, ses_id=ses_id, sup_dir=bids_dir, modality=modality)
-    return os.path.join(filedir, filename)
 
 class BIDSyPathsForRawData:
     def __init__(self,
