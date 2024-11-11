@@ -197,14 +197,14 @@ class FitTACWithRTMs:
                                                          float)
 
             # generating a reference region tac
-            ref_tac_times, ref_tac_vals = pet_tcm.generate_tac_1tcm_c1_from_tac(tac_times_in_minutes=input_tac_times, tac_vals=input_tac_vals,
+            tac_times_in_minutes, ref_tac_vals = pet_tcm.generate_tac_1tcm_c1_from_tac(tac_times_in_minutes=input_tac_times, tac_vals=input_tac_vals,
                                                                                 k1=1.0, k2=0.2)
 
             # generating an SRTM tac
-            srtm_tac_vals = pet_rtms.calc_srtm_tac(tac_times_in_minutes=ref_tac_times, ref_tac_vals=ref_tac_vals, r1=1.0, k2=0.25, bp=3.0)
+            srtm_tac_vals = pet_rtms.calc_srtm_tac(tac_times_in_minutes=tac_times_in_minutes, ref_tac_vals=ref_tac_vals, r1=1.0, k2=0.25, bp=3.0)
 
             rtm_analysis = pet_rtms.FitTACWithRTMs(target_tac_vals=srtm_tac_vals,
-                                                tac_times_in_minutes=ref_tac_times,
+                                                tac_times_in_minutes=tac_times_in_minutes,
                                                 reference_tac_vals=ref_tac_vals,
                                                 method='srtm')
 
@@ -389,8 +389,8 @@ class FitTACWithRTMs:
                                     bounds=self.bounds,
                                     k2_prime=self.k2_prime,
                                     t_thresh_in_mins=self.t_thresh_in_mins)
-        self.fit_results = rtm_method(tgt_tac_vals=self.target_tac_vals,
-                                      ref_tac_times=self.tac_times_in_minutes,
+        self.fit_results = rtm_method(tac_times_in_minutes=self.tac_times_in_minutes,
+                                      tgt_tac_vals=self.target_tac_vals,
                                       ref_tac_vals=self.reference_tac_vals,
                                       **rtm_kwargs)
 
@@ -654,8 +654,8 @@ class RTMRegionalAnalysis:
 
         """
         ref_tac = self.reference_tac
-        self.fit_results = self.rtm_inputs.method(tgt_tac_vals=target_tac_vals,
-                                                  ref_tac_times=ref_tac.tac_times_in_minutes,
+        self.fit_results = self.rtm_inputs.method(tac_times_in_minutes=ref_tac.tac_times_in_minutes,
+                                                  tgt_tac_vals=target_tac_vals,
                                                   ref_tac_vals=ref_tac.tac_vals,
                                                   **self.kwargs_dict)
 
