@@ -869,8 +869,8 @@ class StepsContainer:
             raise TypeError("Can only add another StepsContainer instance")
         
     @classmethod
-    def default_preprocess_steps(cls):
-        obj = cls(name='preproc')
+    def default_preprocess_steps(cls, name:str='preproc'):
+        obj = cls(name=name)
         obj.add_step(ImageToImageStep.default_threshold_cropping())
         obj.add_step(ImageToImageStep.default_moco_frames_above_mean())
         obj.add_step(ImageToImageStep.default_register_pet_to_t1())
@@ -879,69 +879,74 @@ class StepsContainer:
         return obj
     
     @classmethod
-    def default_graphical_analysis_steps(cls):
-        obj = cls(name='km_graphical_analysis')
+    def default_graphical_analysis_steps(cls, name: str='km_graphical_analysis'):
+        obj = cls(name=name)
         obj.add_step(GraphicalAnalysisStep.default_patlak())
         obj.add_step(GraphicalAnalysisStep.default_logan())
         obj.add_step(GraphicalAnalysisStep.default_alt_logan())
         return obj
     
     @classmethod
-    def default_parametric_graphical_analysis_steps(cls):
-        obj = cls(name='km_parametric_graphical_analysis')
+    def default_parametric_graphical_analysis_steps(cls, name: str='km_parametric_graphical_analysis'):
+        obj = cls(name=name)
         obj.add_step(ParametricGraphicalAnalysisStep.default_patlak())
         obj.add_step(ParametricGraphicalAnalysisStep.default_logan())
         obj.add_step(ParametricGraphicalAnalysisStep.default_alt_logan())
         return obj
     
     @classmethod
-    def default_tcm_analysis_steps(cls):
-        obj = cls(name='km_tcm_analysis')
+    def default_tcm_analysis_steps(cls, name: str='km_tcm_analysis'):
+        obj = cls(name=name)
         obj.add_step(TCMFittingAnalysisStep.default_1tcm())
         obj.add_step(TCMFittingAnalysisStep.default_serial2tcm())
         obj.add_step(TCMFittingAnalysisStep.default_irreversible_2tcm())
         return obj
     
     @classmethod
-    def default_kinetic_analysis_steps(cls):
+    def default_kinetic_analysis_steps(cls, name: str='km'):
         parametric_graphical_analysis_steps = cls.default_parametric_graphical_analysis_steps()
         graphical_analysis_steps = cls.default_graphical_analysis_steps()
         tcm_analysis_steps = cls.default_tcm_analysis_steps()
         
         obj = parametric_graphical_analysis_steps + graphical_analysis_steps + tcm_analysis_steps
-        obj.name = 'km'
+        obj.name = name
         return obj
     
 class StepsPipeline:
-    def __init__(self, name: str):
-        self.name = name
-        self.preproc = StepsContainer(name='preproc')
-        self.km = StepsContainer(name='km')
+    def __init__(self, name: str, *step_containers):
+        self.name: str = name
+        self.step_containers: dict[str, StepsContainer] = {}
         self.dependency_graph = nx.DiGraph()
         
+        for container in step_containers:
+            self.add_container(container)
+        
+    def add_container(self, step_container: StepsContainer):
+        if not isinstance(step_container, StepsContainer):
+            raise TypeError("`step_container` must be an instance of StepsContainer")
+        
+        container_name = step_container.name
+        if container_name in self.step_containers.keys():
+            raise KeyError(f"Container name {container_name} already exists.")
+        
+        self.step_containers[container_name] = copy.deepcopy(step_container)
+        
+        step_objs = self.step_containers[container_name].step_objs
+        for step in step_objs:
+            self.dependency_graph.add_node(f"{step.name}", grp=container_name)
+        
     def __call__(self):
-        self.preproc()
-        self.km()
-        
-    def run_km(self):
-        self.km()
-        
-    def run_preproc(self):
-        self.preproc()
+        for name, container in self.step_containers.items():
+            container()
     
     def add_step(self, container_name: str, step: StepType):
+        if container_name not in self.step_containers.keys():
+            raise KeyError(f"Container name {container_name} does not exist.")
         if step.name in self.dependency_graph:
-            raise KeyError(f"Step name {step.name} already exists.")
+            raise KeyError(f"Step name {step.name} already exists. Steps must have unique names.")
         
-        if container_name == 'preproc':
-            self.preproc.add_step(step)
-        elif container_name == 'km':
-            self.km.add_step(step)
-        else:
-            raise KeyError(f"Container name {container_name} does not exist. "
-                           f"Must be 'preproc' or 'km'.")
-        self.dependency_graph.add_node(f"{step.name}")
-        self.dependency_graph.nodes[f"{step.name}"]['grp'] = container_name
+        self.step_containers[container_name].add_step(step)
+        self.dependency_graph.add_node(f"{step.name}", grp=container_name)
     
     def remove_step(self, step: str):
         node_names = list(self.dependency_graph.nodes)
@@ -950,36 +955,25 @@ class StepsPipeline:
         graph_nodes = self.dependency_graph.nodes(data=True)
         container_name = graph_nodes[step]['grp']
         self.dependency_graph.remove_node(step)
-        if container_name == 'preproc':
-            self.preproc.remove_step(step)
-        elif container_name == 'km':
-            self.km.remove_step(step)
-        else:
-            raise KeyError(f"Container name {container_name} does not exist.")
+        self.step_containers[container_name].remove_step(step)
     
-    def print_steps_names(self, container_name: str = None):
+    def print_steps_names(self, container_name: Union[str, None] = None):
         if container_name is None:
-            self.preproc.print_step_names()
-            self.km.print_step_names()
-        elif container_name == 'preproc':
-            self.preproc.print_step_names()
-        elif container_name == 'km':
-            self.km.print_step_names()
+            for name, container in self.step_containers.items():
+                container.print_step_names()
+        elif container_name in self.step_containers.keys():
+            self.step_containers[container_name].print_step_names()
         else:
-            raise KeyError(f"Container name {container_name} does not exist. "
-                           f"Must be 'preproc' or 'km'.")
+            raise KeyError(f"Container name {container_name} does not exist. ")
         
-    def print_steps_details(self, container_name: str = None):
+    def print_steps_details(self, container_name: Union[str, None] = None):
         if container_name is None:
-            self.preproc.print_step_details()
-            self.km.print_step_details()
-        elif container_name == 'preproc':
-            self.preproc.print_step_details()
-        elif container_name == 'km':
-            self.km.print_step_details()
+            for name, container in self.step_containers.items():
+                container.print_step_details()
+        elif container_name in self.step_containers.keys():
+            self.step_containers[container_name].print_step_details()
         else:
-            raise KeyError(f"Container name {container_name} does not exist. "
-                           f"Must be 'preproc' or 'km'.")
+            raise KeyError(f"Container name {container_name} does not exist. ")
         
     def add_dependency(self, sending: str, receiving: str):
         node_names = list(self.dependency_graph.nodes)
@@ -998,14 +992,9 @@ class StepsPipeline:
             raise KeyError(f"Step name {node_label} does not exist.")
         graph_nodes = self.dependency_graph.nodes(data=True)
         container_name = graph_nodes[node_label]['grp']
-        if container_name == 'preproc':
-            return self.preproc[node_label]
-        elif container_name == 'km':
-            return self.km[node_label]
-        else:
-            raise KeyError(f"Container name {container_name} does not exist.")
+        return self.step_containers[container_name][node_label]
     
-    def update_dependencies_for(self, step_name, verbose=False):
+    def update_dependencies_for(self, step_name: str, verbose=False):
         sending_step = self.get_step_from_node_label(step_name)
         for an_edge in self.dependency_graph[step_name]:
             receiving_step = self.get_step_from_node_label(an_edge)
@@ -1015,9 +1004,9 @@ class StepsPipeline:
                 if verbose:
                     print(f"Step `{receiving_step.name}` of type `{type(receiving_step).__name__}` does not have a "
                               f"set_input_as_output_from method implemented.\nSkipping.")
-                else:
-                    if verbose:
-                        print(f"Updated input-output dependency between {sending_step.name} and {receiving_step.name}")
+            else:
+                if verbose:
+                    print(f"Updated input-output dependency between {sending_step.name} and {receiving_step.name}")
     
     def update_dependencies(self, verbose=False):
         for step_name in nx.topological_sort(self.dependency_graph):
@@ -1037,29 +1026,25 @@ class StepsPipeline:
                 return False
         return True
     
-    def _add_default_steps(self):
-        for step in StepsContainer.default_preprocess_steps():
-            self.add_step(container_name='preproc', step=step)
-        for step in StepsContainer.default_kinetic_analysis_steps():
-            self.add_step(container_name='km', step=step)
-        
-        self.add_dependency(sending='thresh_crop', receiving='moco_frames_above_mean')
-        self.add_dependency(sending='moco_frames_above_mean', receiving='register_pet_to_t1')
-        self.add_dependency(sending='register_pet_to_t1', receiving='write_roi_tacs')
-        self.add_dependency(sending='register_pet_to_t1', receiving='resample_PTAC_on_scanner')
-        
-        for method in ['patlak', 'logan', 'alt_logan']:
-            self.add_dependency(sending='register_pet_to_t1', receiving=f'parametric_{method}_fit')
-            self.add_dependency(sending='resample_PTAC_on_scanner', receiving=f'parametric_{method}_fit')
-        
-        for fit_model in ['1tcm', '2tcm-k4zero', 'serial-2tcm', 'patlak', 'logan', 'alt_logan']:
-            self.add_dependency(sending='write_roi_tacs', receiving=f"roi_{fit_model}_fit")
-            self.add_dependency(sending='resample_PTAC_on_scanner', receiving=f"roi_{fit_model}_fit")
-    
     @classmethod
     def default_steps_pipeline(cls, name='PET-MR_analysis'):
         obj = cls(name=name)
-        obj._add_default_steps()
+        obj.add_container(StepsContainer.default_preprocess_steps(name='preproc'))
+        obj.add_container(StepsContainer.default_kinetic_analysis_steps(name='km'))
+        
+        obj.add_dependency(sending='thresh_crop', receiving='moco_frames_above_mean')
+        obj.add_dependency(sending='moco_frames_above_mean', receiving='register_pet_to_t1')
+        obj.add_dependency(sending='register_pet_to_t1', receiving='write_roi_tacs')
+        obj.add_dependency(sending='register_pet_to_t1', receiving='resample_PTAC_on_scanner')
+        
+        for method in ['patlak', 'logan', 'alt_logan']:
+            obj.add_dependency(sending='register_pet_to_t1', receiving=f'parametric_{method}_fit')
+            obj.add_dependency(sending='resample_PTAC_on_scanner', receiving=f'parametric_{method}_fit')
+        
+        for fit_model in ['1tcm', '2tcm-k4zero', 'serial-2tcm', 'patlak', 'logan', 'alt_logan']:
+            obj.add_dependency(sending='write_roi_tacs', receiving=f"roi_{fit_model}_fit")
+            obj.add_dependency(sending='resample_PTAC_on_scanner', receiving=f"roi_{fit_model}_fit")
+        
         return obj
         
         
@@ -1376,14 +1361,20 @@ class BIDS_Pipeline(BIDSyPathsForPipelines, StepsPipeline):
                   segmentation_img_path=segmentation_img_path,
                   segmentation_label_table_path=segmentation_label_table_path,
                   raw_blood_tac_path=raw_blood_tac_path)
-        obj._add_default_steps()
-        obj.preproc[0].input_image_path = obj.pet_path
-        obj.preproc[1].kwargs['half_life'] = get_half_life_from_nifty(obj.pet_path)
-        obj.preproc[2].kwargs['reference_image_path'] = obj.anat_path
-        obj.preproc[2].kwargs['half_life'] = get_half_life_from_nifty(obj.pet_path)
-        obj.preproc[3].segmentation_label_map_path = obj.seg_table
-        obj.preproc[3].segmentation_image_path = obj.seg_img
-        obj.preproc[4].raw_blood_tac_path = obj.blood_tac
+        
+        temp_pipeline = StepsPipeline.default_steps_pipeline()
+        obj.step_containers = copy.deepcopy(temp_pipeline.step_containers)
+        obj.dependency_graph = copy.deepcopy(temp_pipeline.dependency_graph)
+        
+        containers = obj.step_containers
+        
+        containers["preproc"][0].input_image_path = obj.pet_path
+        containers["preproc"][1].kwargs['half_life'] = get_half_life_from_nifty(obj.pet_path)
+        containers["preproc"][2].kwargs['reference_image_path'] = obj.anat_path
+        containers["preproc"][2].kwargs['half_life'] = get_half_life_from_nifty(obj.pet_path)
+        containers["preproc"][3].segmentation_label_map_path = obj.seg_table
+        containers["preproc"][3].segmentation_image_path = obj.seg_img
+        containers["preproc"][4].raw_blood_tac_path = obj.blood_tac
         
         obj.update_dependencies(verbose=False)
         return obj
