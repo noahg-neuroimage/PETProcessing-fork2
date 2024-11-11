@@ -784,10 +784,13 @@ StepType = Union[FunctionBasedStep, ObjectBasedStep,
 
 
 class StepsContainer:
-    def __init__(self, name: str):
+    def __init__(self, name: str, *steps: StepType):
         self.name = name
         self.step_objs: list[StepType] = []
         self.step_names: list[str] = []
+        for step in steps:
+            self.add_step(step)
+        
         
     def add_step(self, step: StepType):
         if step.name not in self.step_names:
