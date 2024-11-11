@@ -18,7 +18,7 @@ class StepsAPI:
     def set_input_as_output_from(self, sending_step):
         raise NotImplementedError
     
-    def infer_outputs_from_inputs(self, out_dir, der_type, suffix, ext, **extra_desc):
+    def infer_outputs_from_inputs(self, out_dir, der_type, suffix=None, ext=None, **extra_desc):
         raise NotImplementedError
 
 
@@ -602,6 +602,7 @@ class TACAnalysisStepMixin(StepsAPI):
             self.input_tac_path = sending_step.resampled_tac_path
         else:
             super().set_input_as_output_from(sending_step)
+
 
 class GraphicalAnalysisStep(ObjectBasedStep, TACAnalysisStepMixin):
     def __init__(self,
@@ -1336,9 +1337,8 @@ class BIDS_Pipeline(BIDSyPathsForPipelines, StepsPipeline):
     def update_dependencies_for(self, step_name, verbose=False):
         sending_step = self.get_step_from_node_label(step_name)
         sending_step_grp_name = self.dependency_graph.nodes(data=True)[step_name]['grp']
-        sending_step.infer_outputs_from_inputs(out_dir=self.pipeline_dir, der_type=sending_step_grp_name,
-                                               suffix=None,
-                                               ext=None)
+        sending_step.infer_outputs_from_inputs(out_dir=self.pipeline_dir,
+                                               der_type=sending_step_grp_name,)
         for an_edge in self.dependency_graph[step_name]:
             receiving_step = self.get_step_from_node_label(an_edge)
             try:
