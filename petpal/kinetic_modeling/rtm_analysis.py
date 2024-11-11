@@ -404,16 +404,16 @@ class MultiTACRTMAnalysis(RTMAnalysis, MultiTACAnalysisMixin):
                              output_directory=output_directory,
                              output_filename_prefix=output_filename_prefix,
                              method=method)
-        
-        
+
+
     def init_analysis_props(self, method: str) -> list[dict]:
         num_of_tacs = self.num_of_tacs
         analysis_props = [RTMAnalysis.init_analysis_props(self, method=method) for a_tac in range(num_of_tacs)]
         for tac_id, a_prop_dict in enumerate(analysis_props):
             a_prop_dict['FilePathTTAC'] = os.path.abspath(self.tacs_files_list[tac_id])
         return analysis_props
-    
-    
+
+
     def calculate_fit(self,
                       bounds: Union[None, np.ndarray] = None,
                       t_thresh_in_mins: float = None,
@@ -421,7 +421,7 @@ class MultiTACRTMAnalysis(RTMAnalysis, MultiTACAnalysisMixin):
                       **tac_load_kwargs) -> list:
         ref_tac_times, ref_tac_vals = safe_load_tac(self.ref_tac_path)
         fit_results = []
-        for tac_id, a_tac in enumerate(self.tacs_files_list):
+        for _, a_tac in enumerate(self.tacs_files_list):
             _, tgt_tac_vals = safe_load_tac(a_tac)
             analysis_obj = FitTACWithRTMs(tac_times_in_minutes=ref_tac_times,
                                           target_tac_vals=tgt_tac_vals,
@@ -432,27 +432,29 @@ class MultiTACRTMAnalysis(RTMAnalysis, MultiTACAnalysisMixin):
                                           k2_prime=k2_prime)
             analysis_obj.fit_tac_to_model()
             fit_results.append(analysis_obj.fit_results)
-            
+
         return fit_results
-        
+
     def calculate_fit_properties(self,
                                  fit_results: list[np.ndarray],
                                  t_thresh_in_mins: float = None,
                                  k2_prime: float = None):
         if self.method.startswith("frtm") or self.method.startswith("srtm"):
             for props_dict, fit_vals in zip(self.analysis_props, fit_results):
-                self._calc_frtm_or_srtm_fit_props(fit_results=fit_vals, k2_prime=k2_prime, props_dict=props_dict)
+                self._calc_frtm_or_srtm_fit_props(fit_results=fit_vals,
+                                                  k2_prime=k2_prime,
+                                                  props_dict=props_dict)
         else:
             for props_dict, fit_vals in zip(self.analysis_props, fit_results):
                 self._calc_mrtm_fit_props(fit_results=fit_vals,
                                           k2_prime=k2_prime,
                                           t_thresh_in_mins=t_thresh_in_mins,
                                           props_dict=props_dict)
-                
+
     def save_analysis(self):
         if not self._has_analysis_been_run:
             raise RuntimeError("'run_analysis' method must be called before 'save_analysis'.")
-        
+
         for seg_name, fit_props in zip(self.inferred_seg_labels, self.analysis_props):
             filename = [self.output_filename_prefix,
                         f'desc-{self.method}',
@@ -460,6 +462,6 @@ class MultiTACRTMAnalysis(RTMAnalysis, MultiTACAnalysisMixin):
                         'fitprops.json']
             filename = '_'.join(filename)
             filepath = os.path.join(self.output_directory, filename)
-            
+
             with open(filepath, 'w', encoding='utf-8') as f:
                 json.dump(obj=fit_props, fp=f, indent=4)
