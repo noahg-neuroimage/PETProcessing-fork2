@@ -125,6 +125,7 @@ class RTMAnalysis:
                 'EndFrameTime' : None,
                 'NumberOfPointsFit': None,
                 'RawFits': None,
+                'SimulatedFits': None,
                 **common_props
                 }
         elif method.startswith("srtm") or method.startswith("frtm"):
@@ -282,7 +283,7 @@ class RTMAnalysis:
         self.run_analysis(bounds=bounds, t_thresh_in_mins=t_thresh_in_mins, k2_prime=k2_prime)
         self.save_analysis()
 
-    def _calc_mrtm_fit_props(self, fit_results: np.ndarray,
+    def _calc_mrtm_fit_props(self, fit_results: Union[np.ndarray, tuple[np.ndarray, np.ndarray]],
                              k2_prime: float,
                              t_thresh_in_mins: float,
                              props_dict: dict):
@@ -297,18 +298,20 @@ class RTMAnalysis:
             t_thresh_in_mins (float): Threshold time for MRTM analyses.
         """
         self.validate_analysis_inputs(k2_prime=k2_prime, t_thresh_in_mins=t_thresh_in_mins)
+        fit_ans, y_fit = fit_results
         if self.method == 'mrtm-original':
-            bp_val = calc_bp_from_mrtm_original_fit(fit_results)
-            k2_val = calc_k2prime_from_mrtm_original_fit(fit_results)
+            bp_val = calc_bp_from_mrtm_original_fit(fit_ans)
+            k2_val = calc_k2prime_from_mrtm_original_fit(fit_ans)
         elif self.method == 'mrtm':
-            bp_val = calc_bp_from_mrtm_2003_fit(fit_results)
-            k2_val = calc_k2prime_from_mrtm_2003_fit(fit_results)
+            bp_val = calc_bp_from_mrtm_2003_fit(fit_ans)
+            k2_val = calc_k2prime_from_mrtm_2003_fit(fit_ans)
         else:
-            bp_val = calc_bp_from_mrtm2_2003_fit(fit_results)
+            bp_val = calc_bp_from_mrtm2_2003_fit(fit_ans)
             k2_val = None
         props_dict["k2Prime"] = k2_val.round(5)
         props_dict["BP"] = bp_val.round(5)
-        props_dict["RawFits"] = list(fit_results.round(5))
+        props_dict["RawFits"] = list(fit_ans.round(5))
+        props_dict["SimulatedFits"] = list(y_fit.round(7))
 
         ref_tac_times, _ = safe_load_tac(filename=self.ref_tac_path)
         t_thresh_index = get_index_from_threshold(times_in_minutes=ref_tac_times,
