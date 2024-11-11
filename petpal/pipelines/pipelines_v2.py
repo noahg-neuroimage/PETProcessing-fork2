@@ -761,19 +761,6 @@ class ParametricGraphicalAnalysisStep(ObjectBasedStep, TACAnalysisStepMixin):
         return cls(input_tac_path='', input_image_path='', output_directory='', output_prefix='', method='alt_logan')
 
 
-def get_template_steps():
-    
-    out_dict = dict(
-            thresh_crop_step = ImageToImageStep.default_threshold_cropping(),
-            moco_frames_above_mean = ImageToImageStep.default_moco_frames_above_mean(),
-            register_pet_to_t1 = ImageToImageStep.default_register_pet_to_t1(),
-            write_roi_tacs = TACsFromSegmentationStep.default_write_tacs_from_segmentation_rois(),
-            resample_blood = ResampleBloodTACStep.default_resample_blood_tac_on_scanner_times(),
-            )
-    
-    return out_dict
-
-
 KMStepType = Union[GraphicalAnalysisStep,
                     TCMFittingAnalysisStep,
                     ParametricGraphicalAnalysisStep,
@@ -793,6 +780,9 @@ class StepsContainer:
         
         
     def add_step(self, step: StepType):
+        if not isinstance(step, StepType.__args__):
+            raise TypeError("Step must be of type StepType")
+        
         if step.name not in self.step_names:
             self.step_objs.append(copy.deepcopy(step))
             self.step_names.append(self.step_objs[-1].name)
@@ -914,6 +904,7 @@ class StepsContainer:
         obj = parametric_graphical_analysis_steps + graphical_analysis_steps + tcm_analysis_steps
         obj.name = name
         return obj
+    
     
 class StepsPipeline:
     def __init__(self, name: str, *step_containers):
