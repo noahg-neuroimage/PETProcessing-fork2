@@ -236,7 +236,7 @@ def patlak_analysis_with_rsquared(tac_times_in_minutes: np.ndarray,
         return np.nan, np.nan, np.nan
 
     if not _is_region_tac_finite(region_tac_values=region_tac_values):
-        return np.asarray(np.nan, np.nan, np.nan)
+        return np.nan, np.nan, np.nan
 
     t_thresh = get_index_from_threshold(times_in_minutes=tac_times_in_minutes[non_zero_indices],
                                         t_thresh_in_minutes=t_thresh_in_minutes)
@@ -332,7 +332,7 @@ def logan_analysis_with_rsquared(tac_times_in_minutes: np.ndarray,
         return np.nan, np.nan, np.nan
 
     if not _is_region_tac_finite(region_tac_values=region_tac_values):
-        return np.asarray(np.nan, np.nan, np.nan)
+        return np.nan, np.nan, np.nan
 
     t_thresh = get_index_from_threshold(times_in_minutes=tac_times_in_minutes[non_zero_indices],
                                         t_thresh_in_minutes=t_thresh_in_minutes)
@@ -431,7 +431,7 @@ def alternative_logan_analysis_with_rsquared(tac_times_in_minutes: np.ndarray,
         return np.nan, np.nan, np.nan
 
     if not _is_region_tac_finite(region_tac_values=region_tac_values):
-        return np.asarray(np.nan, np.nan, np.nan)
+        return np.nan, np.nan, np.nan
 
     t_thresh = get_index_from_threshold(times_in_minutes=tac_times_in_minutes[non_zero_indices],
                                         t_thresh_in_minutes=t_thresh_in_minutes)
