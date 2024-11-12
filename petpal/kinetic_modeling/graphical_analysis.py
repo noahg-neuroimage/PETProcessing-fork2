@@ -29,6 +29,14 @@ from ..utils.image_io import safe_load_tac
 
 
 @numba.njit()
+def _is_region_tac_finite(region_tac_values):
+    for value in np.nditer(region_tac_values):
+        if not np.isfinite(value.item()):
+            return False
+    return True
+
+
+@numba.njit()
 def _line_fitting_make_rhs_matrix_from_xdata(xdata: np.ndarray) -> np.ndarray:
     """Generates the RHS matrix for linear least squares fitting
 
@@ -184,6 +192,9 @@ def patlak_analysis(tac_times_in_minutes: np.ndarray,
     if len(non_zero_indices) <= 2:
         return np.asarray([np.nan, np.nan])
 
+    if not _is_region_tac_finite(region_tac_values=region_tac_values):
+        return np.asarray([np.nan, np.nan])
+
     t_thresh = get_index_from_threshold(times_in_minutes=tac_times_in_minutes[non_zero_indices],
                                         t_thresh_in_minutes=t_thresh_in_minutes)
 
@@ -224,9 +235,12 @@ def patlak_analysis_with_rsquared(tac_times_in_minutes: np.ndarray,
     if len(non_zero_indices) <= 2:
         return np.nan, np.nan, np.nan
 
+    if not _is_region_tac_finite(region_tac_values=region_tac_values):
+        return np.asarray(np.nan, np.nan, np.nan)
+
     t_thresh = get_index_from_threshold(times_in_minutes=tac_times_in_minutes[non_zero_indices],
                                         t_thresh_in_minutes=t_thresh_in_minutes)
-    
+
     if len(tac_times_in_minutes[non_zero_indices][t_thresh:]) <= 2:
         return np.nan, np.nan, np.nan
 
@@ -268,6 +282,9 @@ def logan_analysis(tac_times_in_minutes: np.ndarray,
     non_zero_indices = np.argwhere(region_tac_values != 0.).T[0]
 
     if len(non_zero_indices) <= 2:
+        return np.asarray([np.nan, np.nan])
+
+    if not _is_region_tac_finite(region_tac_values=region_tac_values):
         return np.asarray([np.nan, np.nan])
 
     t_thresh = get_index_from_threshold(times_in_minutes=tac_times_in_minutes[non_zero_indices],
@@ -313,6 +330,9 @@ def logan_analysis_with_rsquared(tac_times_in_minutes: np.ndarray,
 
     if len(non_zero_indices) <= 2:
         return np.nan, np.nan, np.nan
+
+    if not _is_region_tac_finite(region_tac_values=region_tac_values):
+        return np.asarray(np.nan, np.nan, np.nan)
 
     t_thresh = get_index_from_threshold(times_in_minutes=tac_times_in_minutes[non_zero_indices],
                                         t_thresh_in_minutes=t_thresh_in_minutes)
@@ -364,6 +384,9 @@ def alternative_logan_analysis(tac_times_in_minutes: np.ndarray,
     if len(non_zero_indices) <= 2:
         return np.asarray([np.nan, np.nan])
 
+    if not _is_region_tac_finite(region_tac_values=region_tac_values):
+        return np.asarray([np.nan, np.nan])
+
     t_thresh = get_index_from_threshold(times_in_minutes=tac_times_in_minutes[non_zero_indices],
                                         t_thresh_in_minutes=t_thresh_in_minutes)
 
@@ -407,6 +430,9 @@ def alternative_logan_analysis_with_rsquared(tac_times_in_minutes: np.ndarray,
     if len(non_zero_indices) <= 2:
         return np.nan, np.nan, np.nan
 
+    if not _is_region_tac_finite(region_tac_values=region_tac_values):
+        return np.asarray(np.nan, np.nan, np.nan)
+
     t_thresh = get_index_from_threshold(times_in_minutes=tac_times_in_minutes[non_zero_indices],
                                         t_thresh_in_minutes=t_thresh_in_minutes)
 
@@ -418,9 +444,9 @@ def alternative_logan_analysis_with_rsquared(tac_times_in_minutes: np.ndarray,
 
     alt_logan_x = alt_logan_x[non_zero_indices][t_thresh:] / input_tac_values[non_zero_indices][t_thresh:]
     alt_logan_y = alt_logan_y[non_zero_indices][t_thresh:] / input_tac_values[non_zero_indices][t_thresh:]
-    
-    alt_logan_values = fit_line_to_data_using_lls_with_rsquared(xdata=alt_logan_x[t_thresh:],
-                                                                ydata=alt_logan_y[t_thresh:])
+
+    alt_logan_values = fit_line_to_data_using_lls_with_rsquared(xdata=alt_logan_x,
+                                                                ydata=alt_logan_y)
 
     return alt_logan_values
 
@@ -464,12 +490,11 @@ def get_graphical_analysis_method(method_name: str) -> Callable:
     """
     if method_name == "patlak":
         return patlak_analysis
-    elif method_name == "logan":
+    if method_name == "logan":
         return logan_analysis
-    elif method_name == "alt_logan":
+    if method_name == "alt_logan":
         return alternative_logan_analysis
-    else:
-        raise ValueError(f"Invalid method_name! Must be either 'patlak', 'logan', or 'alt_logan'. Got {method_name}")
+    raise ValueError(f"Invalid method_name! Must be either 'patlak', 'logan', or 'alt_logan'. Got {method_name}")
 
 
 def get_graphical_analysis_method_with_rsquared(method_name: str) -> Callable:
@@ -511,12 +536,11 @@ def get_graphical_analysis_method_with_rsquared(method_name: str) -> Callable:
     """
     if method_name == "patlak":
         return patlak_analysis_with_rsquared
-    elif method_name == "logan":
+    if method_name == "logan":
         return logan_analysis_with_rsquared
-    elif method_name == "alt_logan":
+    if method_name == "alt_logan":
         return alternative_logan_analysis_with_rsquared
-    else:
-        raise ValueError(f"Invalid method_name! Must be either 'patlak', 'logan', or 'alt_logan'. Got {method_name}")
+    raise ValueError(f"Invalid method_name! Must be either 'patlak', 'logan', or 'alt_logan'. Got {method_name}")
 
 
 class GraphicalAnalysis:
@@ -579,7 +603,7 @@ class GraphicalAnalysis:
         self.method = method
         self.fit_thresh_in_mins = fit_thresh_in_mins
         self.analysis_func = get_graphical_analysis_method_with_rsquared(method_name=self.method)
-        
+
     def init_analysis_props(self) -> dict:
         """
         Initializes analysis properties dictionary.
@@ -605,7 +629,7 @@ class GraphicalAnalysis:
                  'Intercept': None,
                  'RSquared': None}
         return props
-    
+
     def run_analysis(self):
         """
         Runs the graphical analysis on the data using the specified method.
@@ -703,7 +727,7 @@ class GraphicalAnalysis:
         analysis_props_file = f"{file_name_prefix}_fitprops.json"
         with open(analysis_props_file, 'w',encoding='utf-8') as f:
             json.dump(obj=self.analysis_props, fp=f, indent=4)
-    
+
     def __call__(self):
         """
         Runs :meth:`run_analysis` and :meth:`save_analysis` to run the analysis and save the analysis properties.
@@ -711,8 +735,8 @@ class GraphicalAnalysis:
         """
         self.run_analysis()
         self.save_analysis()
-        
-        
+
+
 class MultiTACGraphicalAnalysis(GraphicalAnalysis, MultiTACAnalysisMixin):
     def __init__(self,
                  input_tac_path: str,
@@ -732,15 +756,15 @@ class MultiTACGraphicalAnalysis(GraphicalAnalysis, MultiTACAnalysisMixin):
                                    method=method,
                                    fit_thresh_in_mins=fit_thresh_in_mins
                                    )
-        
+
     def init_analysis_props(self):
         num_of_tacs = self.num_of_tacs
         analysis_props = [GraphicalAnalysis.init_analysis_props(self) for a_tac in range(num_of_tacs)]
         for tac_id, a_prop_dict in enumerate(analysis_props):
             a_prop_dict['FilePathTTAC'] = os.path.abspath(self.tacs_files_list[tac_id])
         return analysis_props
-    
-    
+
+
     def calculate_fit(self):
         p_tac_times, p_tac_vals = safe_load_tac(self.input_tac_path)
         for tac_id, a_tac in enumerate(self.tacs_files_list):
@@ -760,18 +784,18 @@ class MultiTACGraphicalAnalysis(GraphicalAnalysis, MultiTACAnalysisMixin):
         points_fit = len(p_tac_times[t_thresh_index:])
         start_time=p_tac_times[t_thresh_index]
         end_time=p_tac_times[-1]
-        
+
         for tac_id, a_tac in enumerate(self.tacs_files_list):
             self.analysis_props[tac_id]['ThresholdTime'] = self.fit_thresh_in_mins
             self.analysis_props[tac_id]['MethodName'] = self.method
             self.analysis_props[tac_id]['StartFrameTime'] = start_time
             self.analysis_props[tac_id]['EndFrameTime'] = end_time
             self.analysis_props[tac_id]['NumberOfPointsFit'] = points_fit
-            
+
     def save_analysis(self):
         if self.analysis_props[0]['RSquared'] is None:
             raise RuntimeError("'run_analysis' method must be called before 'save_analysis'.")
-        
+
         for seg_name, fit_props in zip(self.inferred_seg_labels, self.analysis_props):
             filename = [self.output_filename_prefix,
                         f'desc-{self.method}',
