@@ -197,14 +197,14 @@ class FitTACWithRTMs:
                                                          float)
 
             # generating a reference region tac
-            ref_tac_times, ref_tac_vals = pet_tcm.generate_tac_1tcm_c1_from_tac(tac_times_in_minutes=input_tac_times, tac_vals=input_tac_vals,
+            tac_times_in_minutes, ref_tac_vals = pet_tcm.generate_tac_1tcm_c1_from_tac(tac_times_in_minutes=input_tac_times, tac_vals=input_tac_vals,
                                                                                 k1=1.0, k2=0.2)
 
             # generating an SRTM tac
-            srtm_tac_vals = pet_rtms.calc_srtm_tac(tac_times_in_minutes=ref_tac_times, ref_tac_vals=ref_tac_vals, r1=1.0, k2=0.25, bp=3.0)
+            srtm_tac_vals = pet_rtms.calc_srtm_tac(tac_times_in_minutes=tac_times_in_minutes, ref_tac_vals=ref_tac_vals, r1=1.0, k2=0.25, bp=3.0)
 
             rtm_analysis = pet_rtms.FitTACWithRTMs(target_tac_vals=srtm_tac_vals,
-                                                tac_times_in_minutes=ref_tac_times,
+                                                tac_times_in_minutes=tac_times_in_minutes,
                                                 reference_tac_vals=ref_tac_vals,
                                                 method='srtm')
 
@@ -353,6 +353,38 @@ class FitTACWithRTMs:
                                  "'frtm2' if bounds are "
                                  f"provided. Got {self.method}.")
 
+
+    def get_failed_output_nan_array(self) -> Union[np.array, tuple[np.ndarray]]:
+        """Returns a NaN-filled array. Used when the fit functions ends in a ValueError. The shape
+        of the array is the same as it would be if the fit function ended without raising an error.
+
+        Returns:
+            nan_array (np.ndarray): Array of NaNs with the same shape as a successful fit for the
+                given method.
+        """
+        method = self.method
+        nan_array = np.array([])
+
+        if method == 'srtm':
+            nan_array = np.array([np.nan, np.nan, np.nan])
+        elif method == 'frtm':
+            nan_array = np.array([np.nan, np.nan, np.nan, np.nan])
+        elif method == 'srtm2':
+            nan_array = np.array([np.nan, np.nan])
+        elif method == 'frtm2':
+            nan_array = np.array([np.nan, np.nan, np.nan])
+        elif method == 'mrtm':
+            nan_array = [np.array([np.nan, np.nan, np.nan]),
+                         np.array(len(self.tac_times_in_minutes)*[np.nan])]
+        elif method == 'mrtm-original':
+            nan_array = [np.array([np.nan, np.nan, np.nan]),
+                         np.array(len(self.tac_times_in_minutes)*[np.nan])]
+        elif method == 'mrtm2':
+            nan_array = [np.array([np.nan, np.nan]),
+                         np.array(len(self.tac_times_in_minutes)*[np.nan])]
+
+        return nan_array
+
     def fit_tac_to_model(self):
         r"""Fits TAC vals to model
 
@@ -389,10 +421,13 @@ class FitTACWithRTMs:
                                     bounds=self.bounds,
                                     k2_prime=self.k2_prime,
                                     t_thresh_in_mins=self.t_thresh_in_mins)
-        self.fit_results = rtm_method(tgt_tac_vals=self.target_tac_vals,
-                                      ref_tac_times=self.tac_times_in_minutes,
-                                      ref_tac_vals=self.reference_tac_vals,
-                                      **rtm_kwargs)
+        try:
+            self.fit_results = rtm_method(tac_times_in_minutes=self.tac_times_in_minutes,
+                                        tgt_tac_vals=self.target_tac_vals,
+                                        ref_tac_vals=self.reference_tac_vals,
+                                        **rtm_kwargs)
+        except ValueError:
+            self.fit_results = self.get_failed_output_nan_array()
 
 class RTMRegionalAnalysis:
     r"""
@@ -654,8 +689,8 @@ class RTMRegionalAnalysis:
 
         """
         ref_tac = self.reference_tac
-        self.fit_results = self.rtm_inputs.method(tgt_tac_vals=target_tac_vals,
-                                                  ref_tac_times=ref_tac.tac_times_in_minutes,
+        self.fit_results = self.rtm_inputs.method(tac_times_in_minutes=ref_tac.tac_times_in_minutes,
+                                                  tgt_tac_vals=target_tac_vals,
                                                   ref_tac_vals=ref_tac.tac_vals,
                                                   **self.kwargs_dict)
 
