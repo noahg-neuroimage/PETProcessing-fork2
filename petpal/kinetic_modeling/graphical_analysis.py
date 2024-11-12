@@ -29,14 +29,6 @@ from ..utils.image_io import safe_load_tac
 
 
 @numba.njit()
-def _is_region_tac_finite(region_tac_values):
-    for value in np.nditer(region_tac_values):
-        if not np.isfinite(value.item()):
-            return False
-    return True
-
-
-@numba.njit()
 def _line_fitting_make_rhs_matrix_from_xdata(xdata: np.ndarray) -> np.ndarray:
     """Generates the RHS matrix for linear least squares fitting
 
@@ -192,9 +184,6 @@ def patlak_analysis(tac_times_in_minutes: np.ndarray,
     if len(non_zero_indices) <= 2:
         return np.asarray([np.nan, np.nan])
 
-    if not _is_region_tac_finite(region_tac_values=region_tac_values):
-        return np.asarray([np.nan, np.nan])
-
     t_thresh = get_index_from_threshold(times_in_minutes=tac_times_in_minutes[non_zero_indices],
                                         t_thresh_in_minutes=t_thresh_in_minutes)
 
@@ -233,9 +222,6 @@ def patlak_analysis_with_rsquared(tac_times_in_minutes: np.ndarray,
     non_zero_indices = np.argwhere(input_tac_values != 0.).T[0]
 
     if len(non_zero_indices) <= 2:
-        return np.nan, np.nan, np.nan
-
-    if not _is_region_tac_finite(region_tac_values=region_tac_values):
         return np.nan, np.nan, np.nan
 
     t_thresh = get_index_from_threshold(times_in_minutes=tac_times_in_minutes[non_zero_indices],
@@ -284,9 +270,6 @@ def logan_analysis(tac_times_in_minutes: np.ndarray,
     if len(non_zero_indices) <= 2:
         return np.asarray([np.nan, np.nan])
 
-    if not _is_region_tac_finite(region_tac_values=region_tac_values):
-        return np.asarray([np.nan, np.nan])
-
     t_thresh = get_index_from_threshold(times_in_minutes=tac_times_in_minutes[non_zero_indices],
                                         t_thresh_in_minutes=t_thresh_in_minutes)
 
@@ -329,9 +312,6 @@ def logan_analysis_with_rsquared(tac_times_in_minutes: np.ndarray,
     non_zero_indices = np.argwhere(region_tac_values != 0.).T[0]
 
     if len(non_zero_indices) <= 2:
-        return np.nan, np.nan, np.nan
-
-    if not _is_region_tac_finite(region_tac_values=region_tac_values):
         return np.nan, np.nan, np.nan
 
     t_thresh = get_index_from_threshold(times_in_minutes=tac_times_in_minutes[non_zero_indices],
@@ -384,9 +364,6 @@ def alternative_logan_analysis(tac_times_in_minutes: np.ndarray,
     if len(non_zero_indices) <= 2:
         return np.asarray([np.nan, np.nan])
 
-    if not _is_region_tac_finite(region_tac_values=region_tac_values):
-        return np.asarray([np.nan, np.nan])
-
     t_thresh = get_index_from_threshold(times_in_minutes=tac_times_in_minutes[non_zero_indices],
                                         t_thresh_in_minutes=t_thresh_in_minutes)
 
@@ -428,9 +405,6 @@ def alternative_logan_analysis_with_rsquared(tac_times_in_minutes: np.ndarray,
     non_zero_indices = np.argwhere(input_tac_values != 0.).T[0]
 
     if len(non_zero_indices) <= 2:
-        return np.nan, np.nan, np.nan
-
-    if not _is_region_tac_finite(region_tac_values=region_tac_values):
         return np.nan, np.nan, np.nan
 
     t_thresh = get_index_from_threshold(times_in_minutes=tac_times_in_minutes[non_zero_indices],
@@ -705,7 +679,7 @@ class GraphicalAnalysis:
         self.analysis_props['StartFrameTime'] = p_tac_times[t_thresh_index]
         self.analysis_props['EndFrameTime'] = p_tac_times[-1]
         self.analysis_props['NumberOfPointsFit'] = len(p_tac_times[t_thresh_index:])
-    
+
     def save_analysis(self):
         """
         Saves the analysis properties to a JSON file.
@@ -769,14 +743,17 @@ class MultiTACGraphicalAnalysis(GraphicalAnalysis, MultiTACAnalysisMixin):
         p_tac_times, p_tac_vals = safe_load_tac(self.input_tac_path)
         for tac_id, a_tac in enumerate(self.tacs_files_list):
             _, t_tac_vals = safe_load_tac(a_tac)
-            slope, intercept, rsquared = self.analysis_func(tac_times_in_minutes=p_tac_times,
-                                                            input_tac_values=p_tac_vals,
-                                                            region_tac_values=t_tac_vals,
-                                                            t_thresh_in_minutes=self.fit_thresh_in_mins)
+            try:
+                slope, intercept, rsquared = self.analysis_func(tac_times_in_minutes=p_tac_times,
+                                                                input_tac_values=p_tac_vals,
+                                                                region_tac_values=t_tac_vals,
+                                                                t_thresh_in_minutes=self.fit_thresh_in_mins)
+            except np.linalg.LinAlgError:
+                slope, intercept, rsquared = np.nan, np.nan, np.nan
             self.analysis_props[tac_id]['Slope'] = slope
             self.analysis_props[tac_id]['Intercept'] = intercept
             self.analysis_props[tac_id]['RSquared'] = rsquared
-    
+
     def calculate_fit_properties(self):
         p_tac_times, _ = safe_load_tac(self.input_tac_path)
         t_thresh_index = get_index_from_threshold(times_in_minutes=p_tac_times,
