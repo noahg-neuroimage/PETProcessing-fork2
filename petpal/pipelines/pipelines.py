@@ -759,9 +759,9 @@ class ParametricGraphicalAnalysisStep(ObjectBasedStep, TACAnalysisStepMixin):
 
 
 KMStepType = Union[GraphicalAnalysisStep,
-                    TCMFittingAnalysisStep,
-                    ParametricGraphicalAnalysisStep,
-                    RTMFittingAnalysisStep]
+                   TCMFittingAnalysisStep,
+                   ParametricGraphicalAnalysisStep,
+                   RTMFittingAnalysisStep]
 
 StepType = Union[FunctionBasedStep, ObjectBasedStep,
                  PreprocSteps, KMStepType]

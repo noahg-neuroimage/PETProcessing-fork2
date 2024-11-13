@@ -419,8 +419,8 @@ def alternative_logan_analysis_with_rsquared(tac_times_in_minutes: np.ndarray,
     alt_logan_x = alt_logan_x[non_zero_indices][t_thresh:] / input_tac_values[non_zero_indices][t_thresh:]
     alt_logan_y = alt_logan_y[non_zero_indices][t_thresh:] / input_tac_values[non_zero_indices][t_thresh:]
     
-    alt_logan_values = fit_line_to_data_using_lls_with_rsquared(xdata=alt_logan_x[t_thresh:],
-                                                                ydata=alt_logan_y[t_thresh:])
+    alt_logan_values = fit_line_to_data_using_lls_with_rsquared(xdata=alt_logan_x,
+                                                                ydata=alt_logan_y)
 
     return alt_logan_values
 
