@@ -148,7 +148,28 @@ class TACsFromSegmentationStep(FunctionBasedStep):
         self._segmentation_label_map = segmentation_label_map_path
         self._out_tacs_path = out_tacs_dir
         self._out_tacs_prefix = out_tacs_prefix
+        self.time_keyword = time_keyword
+        self.verbose = verbose
+    
+    def __repr__(self):
+        cls_name = type(self).__name__
+        info_str = [f'{cls_name}(']
         
+        in_kwargs = ArgsDict(dict(input_image_path=self.input_image_path,
+                                  segmentation_image_path=self.segmentation_image_path,
+                                  segmentation_label_map_path=self.segmentation_label_map_path,
+                                  out_tacs_dir=self.out_tacs_dir,
+                                  out_tac_prefix=self.out_tacs_prefix,
+                                  time_keyword=self.time_keyword,
+                                  verbose=self.verbose))
+        
+        for arg_name, arg_val in in_kwargs.items():
+            info_str.append(f'{arg_name}={repr(arg_val)},')
+        info_str.append(')')
+        
+        return f'\n    '.join(info_str)
+    
+    
     @property
     def segmentation_image_path(self):
         return self._segmentation_image
@@ -252,6 +273,7 @@ class ResampleBloodTACStep(FunctionBasedStep):
         self._raw_blood_tac_path = input_raw_blood_tac_path
         self._input_image_path = input_image_path
         self._resampled_tac_path = out_tac_path
+        
         
     @property
     def raw_blood_tac_path(self):
