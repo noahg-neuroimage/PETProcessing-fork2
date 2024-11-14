@@ -930,6 +930,18 @@ class StepsContainer:
         self.step_names: list[str] = []
         for step in steps:
             self.add_step(step)
+            
+    def __repr__(self):
+        cls_name = type(self).__name__
+        info_str = [f'{cls_name}(', f'{repr(self.name)},']
+        
+        for step_obj in self.step_objs:
+            info_str.append(f'{repr(step_obj)},')
+        
+        info_str.append(')')
+        
+        return f'\n    '.join(info_str)
+        
         
     def add_step(self, step: StepType):
         if not isinstance(step, StepType.__args__):
