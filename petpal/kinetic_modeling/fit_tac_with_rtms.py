@@ -3,8 +3,6 @@ This module contains the FitTacWithRTMs class, used to fit kinetic models to a t
 reference Time Activity Curve.
 """
 from typing import Union, Callable
-from dataclasses import dataclass
-import glob
 import numpy as np
 from petpal.kinetic_modeling.reference_tissue_models import (fit_frtm2_to_tac,
                                                              fit_frtm2_to_tac_with_bounds,
@@ -17,7 +15,6 @@ from petpal.kinetic_modeling.reference_tissue_models import (fit_frtm2_to_tac,
                                                              fit_srtm2_to_tac_with_bounds,
                                                              fit_srtm_to_tac,
                                                              fit_srtm_to_tac_with_bounds)
-from petpal.utils.time_activity_curve import TimeActivityCurveFromFile
 
 
 def get_rtm_method(method: str, bounds=None):
