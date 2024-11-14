@@ -188,6 +188,22 @@ class ReferenceTissueParametricImage:
     """
     Class for generating parametric images of 4D-PET images using reference tissue model (RTM)
     methods.
+
+    Example:
+        .. code-block:: python
+            
+            from petpal.kinetic_modeling import parametric_images
+            
+            rtm_parametric = ReferenceTissueParametricImage(reference_tac_path='/path/to/tac.tsv',
+                                                            pet_image_path='/path/to/pet.nii.gz',
+                                                            mask_image_path='/path/to/mask.nii.gz',
+                                                            output_directory='/path/to/output,
+                                                            output_filename_prefix='sub-001_mrtm2')
+            rtm_parametric.run_parametric_analysis(method='mrtm2',
+                                                   k2_prime=0.01,
+                                                   t_thresh_in_mins=30)
+            rtm_parametric.save_parametric_images()
+
     """
     def __init__(self,
                  reference_tac_path: str,
@@ -196,7 +212,15 @@ class ReferenceTissueParametricImage:
                  output_directory: str,
                  output_filename_prefix: str):
         """
-        Initialize ReferenceTissueParametricImage
+        Initialize ReferenceTissueParametricImage with input values.
+
+        Args:
+            reference_tac_path (str): Path to the reference region TAC file.
+            pet_image_path (str): Path to the 4D PET image on which kinetic analysis is performed.
+            mask_image_path (str): Path to image that masks the brain in the same space as the PET
+                image.
+            output_directory (str): Path to folder where analysis is saved.
+            output_filename_prefix (str): Prefix for output files saved after analysis.
         """
         self.reference_tac = TimeActivityCurveFromFile(tac_path=reference_tac_path)
         self.pet_image = safe_load_4dpet_nifti(pet_image_path)
@@ -221,6 +245,10 @@ class ReferenceTissueParametricImage:
             k2_prime (float): k2' value set for all voxel-wise analysis. Default None.
             t_thresh_in_mins (float): Threshold time after which kinetic parameters are fit.
                 Default None.
+        
+        Returns:
+            fit_results (np.ndarray, Tuple[np.ndarray, np.ndarray]): Kinetic parameters and
+                simulated data returned as arrays. 
         """
         pet_np = self.pet_image.get_fdata()
         mask_np = self.mask_image.get_fdata()
@@ -243,12 +271,12 @@ class ReferenceTissueParametricImage:
                                         ref_tac_vals=ref_tac_vals,
                                         mask_img=mask_np,
                                         **analysis_kwargs)
-        return fit_results
+        self.fit_results = fit_results
 
 
     def save_parametric_images(self):
         """
-        Save images
+        Save parametric images.
         """
         bp_img, simulation_img = self.fit_results
         pet_image = self.pet_image
