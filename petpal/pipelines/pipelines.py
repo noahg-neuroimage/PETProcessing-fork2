@@ -375,6 +375,27 @@ class ObjectBasedStep(StepsAPI):
                     f'{unset_call_args if unset_call_args else "N/A"}']
         return '\n'.join(info_str)
     
+    def __repr__(self):
+        cls_name = type(self).__name__
+        full_func_name = f'{self.class_type.__module__}.{self.class_type.__name__}'
+        info_str = [f'{cls_name}(', f'name={repr(self.name)},', f'class_type={full_func_name},']
+        
+        if self.init_kwargs:
+            info_str.append('init_kwargs={')
+            for arg_name, arg_val in self.init_kwargs.items():
+                info_str.append(f'    {arg_name}={repr(arg_val)},')
+            info_str[-1] = f'{info_str[-1]}' + '}'
+        
+        if self.call_kwargs:
+            info_str.append('call_kwargs={')
+            for arg_name, arg_val in self.call_kwargs.items():
+                info_str.append(f'    {arg_name}={repr(arg_val)},')
+            info_str[-1] = f'{info_str[-1]}' + '}'
+        
+        info_str.append(')')
+        
+        return f'\n    '.join(info_str)
+    
     def all_init_kwargs_non_empty_strings(self):
         for arg_name, arg_val in self.init_kwargs.items():
             if arg_val == '':
