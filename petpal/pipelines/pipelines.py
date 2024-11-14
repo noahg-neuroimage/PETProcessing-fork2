@@ -89,6 +89,25 @@ class FunctionBasedStep(StepsAPI):
                     f'{self.get_function_args_not_set_in_kwargs()}']
         return '\n'.join(info_str)
     
+    def __repr__(self):
+        cls_name = type(self).__name__
+        full_func_name = f'{self.function.__module__}.{self._func_name}'
+        info_str = [f'{cls_name}(', f'name={repr(self.name)},', f'function={full_func_name},']
+        
+        init_params = inspect.signature(self.__init__).parameters
+        for arg_name in list(init_params)[2:-2]:
+            info_str.append(f'{arg_name}={repr(getattr(self, arg_name))},')
+        
+        for arg_name, arg_val in zip(list(self.func_sig.parameters), self.args):
+            info_str.append(f'{arg_name}={repr(arg_val)}', )
+        
+        for arg_name, arg_val in self.kwargs.items():
+            info_str.append(f'{arg_name}={repr(arg_val)},')
+        
+        info_str.append(')')
+        
+        return f'\n    '.join(info_str)
+    
     def all_args_non_empty_strings(self):
         for arg in self.args:
             if arg == '':
