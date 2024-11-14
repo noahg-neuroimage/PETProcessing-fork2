@@ -211,7 +211,16 @@ class ReferenceTissueParametricImage:
                                 k2_prime: float=None,
                                 t_thresh_in_mins: float=None):
         """
-        Run the analysis
+        Run the analysis.
+
+        Args:
+            method (str): The method to be used in voxel-wise analysis. Currently only mrtm2 is
+                implemented.
+            bounds (Union[None, np.ndarray]): Bounds on fit parameters. See
+                :py:func:`get_rtm_kwargs`. Default None.
+            k2_prime (float): k2' value set for all voxel-wise analysis. Default None.
+            t_thresh_in_mins (float): Threshold time after which kinetic parameters are fit.
+                Default None.
         """
         pet_np = self.pet_image.get_fdata()
         mask_np = self.mask_image.get_fdata()
