@@ -286,7 +286,8 @@ class RTMAnalysis:
     def _calc_mrtm_fit_props(self, fit_results: Union[np.ndarray, tuple[np.ndarray, np.ndarray]],
                              k2_prime: float,
                              t_thresh_in_mins: float,
-                             props_dict: dict):
+                             props_dict: dict,
+                             write_simulated: bool=False):
         r"""
         Internal function used to calculate additional fitting properties for 'mrtm' type analyses.
 
@@ -311,7 +312,9 @@ class RTMAnalysis:
         props_dict["k2Prime"] = k2_val.round(5)
         props_dict["BP"] = bp_val.round(5)
         props_dict["RawFits"] = list(fit_ans.round(5))
-        props_dict["SimulatedFits"] = list(y_fit.round(7))
+
+        if write_simulated:
+            props_dict["SimulatedFits"] = list(y_fit.round(7))
 
         ref_tac_times, _ = safe_load_tac(filename=self.ref_tac_path)
         t_thresh_index = get_index_from_threshold(times_in_minutes=ref_tac_times,
