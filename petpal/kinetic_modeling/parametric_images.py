@@ -12,14 +12,14 @@ various properties, and handling parametric image data.
 import os
 import warnings
 import json
-from typing import Tuple, Callable
+from typing import Tuple, Callable, Union
 import nibabel
 import numpy as np
 import numba
 
 from petpal.kinetic_modeling.reference_tissue_models import (fit_mrtm2_2003_to_tac,
                                                              calc_bp_from_mrtm2_2003_fit)
-from petpal.kinetic_modeling.fit_tac_with_rtms import RTMKwargs
+from petpal.kinetic_modeling.fit_tac_with_rtms import get_rtm_kwargs, get_rtm_method
 from petpal.utils.time_activity_curve import TimeActivityCurveFromFile
 from petpal.utils.image_io import safe_load_4dpet_nifti
 from . import graphical_analysis
@@ -194,8 +194,7 @@ class ReferenceTissueParametricImage:
                  pet_image_path: str,
                  mask_image_path: str,
                  output_directory: str,
-                 output_filename_prefix: str,
-                 rtm_inputs: RTMKwargs):
+                 output_filename_prefix: str):
         """
         Initialize ReferenceTissueParametricImage
         """
@@ -204,12 +203,13 @@ class ReferenceTissueParametricImage:
         self.mask_image = safe_load_4dpet_nifti(mask_image_path)
         self.output_directory = output_directory
         self.output_filename_prefix = output_filename_prefix
-        self.rtm_inputs = rtm_inputs
-        self.fit_results = self.run_parametric_analysis()
-        self.save_parametric_images()
+        self.fit_results = None, None
 
-
-    def run_parametric_analysis(self):
+    def run_parametric_analysis(self,
+                                method: str='mrtm2',
+                                bounds: Union[None, np.ndarray] = None,
+                                k2_prime: float=None,
+                                t_thresh_in_mins: float=None):
         """
         Run the analysis
         """
@@ -217,14 +217,23 @@ class ReferenceTissueParametricImage:
         mask_np = self.mask_image.get_fdata()
         tac_times_in_minutes = self.reference_tac.tac_times_in_minutes
         ref_tac_vals = self.reference_tac.tac_vals
-        rtm_inputs = self.rtm_inputs
+        rtm_method = get_rtm_method(method)
+        analysis_kwargs = get_rtm_kwargs(method=rtm_method,
+                                         bounds=bounds,
+                                         k2_prime=k2_prime,
+                                         t_thresh_in_mins=t_thresh_in_mins)
 
-        fit_results = apply_mrtm2_to_all_voxels(tac_times_in_minutes=tac_times_in_minutes,
-                                                tgt_image=pet_np,
-                                                ref_tac_vals=ref_tac_vals,
-                                                k2_prime=rtm_inputs.k2_prime,
-                                                t_thresh_in_mins=rtm_inputs.t_thresh_in_mins,
-                                                mask_img=mask_np)
+        if method=='mrtm2':
+            analysis_function = apply_mrtm2_to_all_voxels
+        else:
+            raise NotImplementedError(f"Method {method} is not yet implemented for voxel-wise"
+                                      f"analysis.")
+
+        fit_results = analysis_function(tac_times_in_minutes=tac_times_in_minutes,
+                                        tgt_image=pet_np,
+                                        ref_tac_vals=ref_tac_vals,
+                                        mask_img=mask_np,
+                                        **analysis_kwargs)
         return fit_results
 
 
