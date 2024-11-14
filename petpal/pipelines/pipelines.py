@@ -1078,6 +1078,17 @@ class StepsPipeline:
         
         for container in step_containers:
             self.add_container(container)
+            
+    def __repr__(self):
+        cls_name = type(self).__name__
+        info_str = [f'{cls_name}(', f'{repr(self.name)},']
+        
+        for _, container_obj in self.step_containers.items():
+            info_str.append(f'{repr(container_obj)},')
+        
+        info_str.append(')')
+        
+        return f'\n    '.join(info_str)
         
     def add_container(self, step_container: StepsContainer):
         if not isinstance(step_container, StepsContainer):
@@ -1233,7 +1244,7 @@ class BIDSyPathsForRawData:
         self.anat_path = self._raw_anat_path
         self.seg_img = self._segmentation_img_path
         self.seg_table = self._segmentation_label_table_path
-        self.blood_tac = self._raw_blood_tac_path
+        self.blood_path = self._raw_blood_tac_path
     
     @property
     def bids_dir(self):
@@ -1347,11 +1358,11 @@ class BIDSyPathsForRawData:
                 raise FileNotFoundError(f"File does not exist: {value}")
             
     @property
-    def blood_tac(self):
+    def blood_path(self):
         return self._raw_blood_tac_path
     
-    @blood_tac.setter
-    def blood_tac(self, value: str):
+    @blood_path.setter
+    def blood_path(self, value: str):
         if value is None:
             filepath = gen_bids_like_filepath(sub_id=self.sub_id,
                                               ses_id=self.ses_id,
@@ -1396,6 +1407,7 @@ class BIDSyPathsForPipelines(BIDSyPathsForRawData):
         self._pipeline_dir = None
         self.pipeline_name = pipeline_name
         self.pipeline_dir = self._pipeline_dir
+        self.list_of_analysis_dir_names = list_of_analysis_dir_names
         self.analysis_dirs = self.generate_analysis_dirs(list_of_dir_names=list_of_analysis_dir_names)
         self.make_analysis_dirs()
         
@@ -1458,6 +1470,31 @@ class BIDS_Pipeline(BIDSyPathsForPipelines, StepsPipeline):
                                         raw_blood_tac_path=raw_blood_tac_path)
         StepsPipeline.__init__(self, name=pipeline_name)
         
+
+    def __repr__(self):
+        cls_name = type(self).__name__
+        info_str = [f'{cls_name}(', ]
+        
+        in_kwargs = ArgsDict(dict(sub_id=self.sub_id,
+                                  ses_id=self.ses_id,
+                                  pipeline_name = self.name,
+                                  list_of_analysis_dir_names = self.list_of_analysis_dir_names,
+                                  bids_root_dir = self.bids_dir,
+                                  derivatives_dir = self.derivatives_dir,
+                                  raw_pet_img_path = self.pet_path,
+                                  raw_anat_img_path = self.anat_path,
+                                  segmentation_img_path = self.seg_img,
+                                  segmentation_label_table_path = self.seg_table,
+                                  raw_blood_tac_path = self.blood_path)
+                )
+        
+        for arg_name, arg_val in in_kwargs.items():
+            info_str.append(f'{arg_name}={repr(arg_val)},')
+        
+        info_str.append(')')
+        
+        return f'\n    '.join(info_str)
+        
     def update_dependencies_for(self, step_name, verbose=False):
         sending_step = self.get_step_from_node_label(step_name)
         sending_step_grp_name = self.dependency_graph.nodes(data=True)[step_name]['grp']
@@ -1513,7 +1550,7 @@ class BIDS_Pipeline(BIDSyPathsForPipelines, StepsPipeline):
         containers["preproc"][2].kwargs['half_life'] = get_half_life_from_nifty(obj.pet_path)
         containers["preproc"][3].segmentation_label_map_path = obj.seg_table
         containers["preproc"][3].segmentation_image_path = obj.seg_img
-        containers["preproc"][4].raw_blood_tac_path = obj.blood_tac
+        containers["preproc"][4].raw_blood_tac_path = obj.blood_path
         
         obj.update_dependencies(verbose=False)
         return obj

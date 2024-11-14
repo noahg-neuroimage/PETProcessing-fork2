@@ -165,7 +165,7 @@ def resample_blood_data_on_scanner_times(pet4d_path: str,
 
           resample_blood_data_on_scanner_times(
               pet4d_path='pet_image.nii.gz',
-              raw_blood_tac='blood_tac.csv',
+              raw_blood_tac='blood_path.csv',
               lin_fit_thresh_in_mins=0.5,
               out_tac_path='resampled_blood_tac.csv'
           )
