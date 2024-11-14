@@ -168,11 +168,11 @@ class TACsFromSegmentationStep(FunctionBasedStep):
         self.kwargs['label_map_path'] = segmentation_label_map_path
         
     @property
-    def out_tacs_path(self):
+    def out_tacs_dir(self):
         return self._out_tacs_path
     
-    @out_tacs_path.setter
-    def out_tacs_path(self, out_tacs_path: str):
+    @out_tacs_dir.setter
+    def out_tacs_dir(self, out_tacs_path: str):
         self.kwargs['out_tac_dir'] = out_tacs_path
         self._out_tacs_path = out_tacs_path
     
@@ -197,7 +197,7 @@ class TACsFromSegmentationStep(FunctionBasedStep):
         except ValueError:
             raise ValueError("Pass a tuple with two items: `(out_dir, out_prefix)`")
         else:
-            self.out_tacs_path = out_dir
+            self.out_tacs_dir = out_dir
             self.out_tacs_prefix = out_prefix
         
     @property
@@ -231,7 +231,7 @@ class TACsFromSegmentationStep(FunctionBasedStep):
                                          ses_id=ses_id,
                                          sup_dir=out_dir,
                                          modality='tacs')
-        self.out_tacs_path = outpath
+        self.out_tacs_dir = outpath
         step_name_in_camel_case = snake_to_camel_case(self.name)
         self.out_tacs_prefix = f'sub-{sub_id}_ses-{ses_id}_desc-{step_name_in_camel_case}'
         
@@ -634,7 +634,7 @@ class TACAnalysisStepMixin(StepsAPI):
         
     def set_input_as_output_from(self, sending_step: PreprocSteps) -> None:
         if isinstance(sending_step, TACsFromSegmentationStep):
-            self.roi_tacs_dir = sending_step.out_tacs_path
+            self.roi_tacs_dir = sending_step.out_tacs_dir
         elif isinstance(sending_step, ResampleBloodTACStep):
             self.input_tac_path = sending_step.resampled_tac_path
         else:
