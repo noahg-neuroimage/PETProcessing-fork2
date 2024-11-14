@@ -696,11 +696,32 @@ class GraphicalAnalysisStep(ObjectBasedStep, TACAnalysisStepMixin):
                                       is_ref_tac_based_model=False,
                                       method=method,
                                       fit_thresh_in_mins = fit_threshold_in_mins,
+                                      image_rescale=image_rescale
                                       )
         ObjectBasedStep.__init__(self, name=f'roi_{method}_fit',
                                  class_type=pet_grph.MultiTACGraphicalAnalysis,
                                  init_kwargs=self.init_kwargs,
                                  call_kwargs=dict())
+    
+    def __repr__(self):
+        cls_name = type(self).__name__
+        info_str = [f'{cls_name}(']
+        
+        in_kwargs = ArgsDict(
+                dict(input_tac_path=self.input_tac_path,
+                     roi_tacs_dir=self.roi_tacs_dir,
+                     output_directory=self.output_directory,
+                     output_prefix=self.output_prefix,
+                     method=self.init_kwargs['method'],
+                     fit_threshold_in_mins=self.init_kwargs['fit_thresh_in_mins'],
+                     image_rescale=self.init_kwargs['image_rescale'],))
+        
+        for arg_name, arg_val in in_kwargs.items():
+            info_str.append(f'{arg_name}={repr(arg_val)},')
+        info_str.append(')')
+        
+        return f'\n    '.join(info_str)
+    
     
     @classmethod
     def default_patlak(cls):

@@ -554,7 +554,8 @@ class GraphicalAnalysis:
                  output_directory: str,
                  output_filename_prefix: str,
                  method: str,
-                 fit_thresh_in_mins: float) -> None:
+                 fit_thresh_in_mins: float,
+                 image_rescale: float) -> None:
         """
         Initializes GraphicalAnalysis with provided paths and output details.
 
