@@ -757,8 +757,27 @@ class TCMFittingAnalysisStep(ObjectBasedStep, TACAnalysisStepMixin):
                                  class_type=tac_fitting.FitTCMToManyTACs,
                                  init_kwargs=self.init_kwargs,
                                  call_kwargs=dict())
+    
+    def __repr__(self):
+        cls_name = type(self).__name__
+        info_str = [f'{cls_name}(']
         
+        in_kwargs = ArgsDict(dict(input_tac_path=self.input_tac_path,
+                                  roi_tacs_dir=self.roi_tacs_dir,
+                                  output_directory=self.output_directory,
+                                  output_prefix=self.output_prefix,
+                                  compartment_model=self.init_kwargs['compartment_model']))
+        for arg_name, arg_val in in_kwargs.items():
+            info_str.append(f'{arg_name}={repr(arg_val)},')
         
+        for arg_name in list(self.init_kwargs)[5:]:
+            info_str.append(f'{arg_name}={repr(self.init_kwargs[arg_name])},')
+            
+        info_str.append(')')
+        
+        return f'\n    '.join(info_str)
+    
+    
     @classmethod
     def default_1tcm(cls, **kwargs):
         return cls(input_tac_path='', roi_tacs_dir='', output_directory='',
@@ -799,6 +818,26 @@ class RTMFittingAnalysisStep(ObjectBasedStep, TACAnalysisStepMixin):
                                  call_kwargs=dict(bounds=bounds,
                                                   t_thresh_in_mins=fit_threshold_in_mins,
                                                   k2_prime=k2_prime))
+    
+    def __repr__(self):
+        cls_name = type(self).__name__
+        info_str = [f'{cls_name}(']
+        
+        in_kwargs = ArgsDict(dict(ref_tac_path=self.reference_tac_path,
+                                  roi_tacs_dir=self.roi_tacs_dir,
+                                  output_directory=self.output_directory,
+                                  output_prefix=self.output_prefix,
+                                  rtm_model=self.init_kwargs['method'],
+                                  bounds=self.call_kwargs['bounds'],
+                                  k2_prime=self.call_kwargs['k2_prime'],
+                                  fit_threshold_in_mins=self.call_kwargs['t_thresh_in_mins']))
+        
+        for arg_name, arg_val in in_kwargs.items():
+            info_str.append(f'{arg_name}={repr(arg_val)},')
+        
+        info_str.append(')')
+        
+        return f'\n    '.join(info_str)
 
 
 class ParametricGraphicalAnalysisStep(ObjectBasedStep, TACAnalysisStepMixin):
@@ -825,6 +864,24 @@ class ParametricGraphicalAnalysisStep(ObjectBasedStep, TACAnalysisStepMixin):
                                  call_kwargs=dict(method_name=method,
                                                   t_thresh_in_mins=fit_threshold_in_mins,))
         self._input_image_path = input_image_path
+    
+    def __repr__(self):
+        cls_name = type(self).__name__
+        info_str = [f'{cls_name}(']
+        
+        in_kwargs = ArgsDict(dict(input_tac_path=self.input_tac_path,
+                                  input_image_path=self.input_image_path,
+                                  output_directory=self.output_directory,
+                                  output_prefix=self.output_prefix,
+                                  method=self.call_kwargs['method_name'],
+                                  fit_threshold_in_mins=self.call_kwargs['t_thresh_in_mins'],))
+        
+        for arg_name, arg_val in in_kwargs.items():
+            info_str.append(f'{arg_name}={repr(arg_val)},')
+        
+        info_str.append(')')
+        
+        return f'\n    '.join(info_str)
     
     
     @property
