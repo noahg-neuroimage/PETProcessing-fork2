@@ -16,8 +16,6 @@ TODO:
     
 """
 
-__version__ = '0.2'
-
 from typing import Callable, Tuple
 import os
 import json

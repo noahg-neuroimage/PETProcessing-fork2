@@ -38,19 +38,14 @@ def apply_linearized_analysis_to_all_voxels(pTAC_times: np.ndarray,
 
     Args:
         pTAC_times (np.ndarray): A 1D array representing the input TAC times in minutes.
-
         pTAC_vals (np.ndarray): A 1D array representing the input TAC values. This array should
                                 be of the same length as `pTAC_times`.
-
         tTAC_img (np.ndarray): A 4D array representing the 3D PET image over time.
                                The shape of this array should be (x, y, z, time).
-
         t_thresh_in_mins (float): A float representing the threshold time in minutes.
                                   It is applied when calling the `analysis_func`.
-
         analysis_func (Callable): A numba.jit function to apply to each voxel for given PET data.
                                   It should take the following arguments:
-
                                     - input_tac_values: 1D numpy array for input TAC values
                                     - region_tac_values: 1D numpy array for regional TAC values
                                     - tac_times_in_minutes: 1D numpy array for TAC times in minutes
@@ -93,15 +88,11 @@ def generate_parametric_images_with_graphical_method(pTAC_times: np.ndarray,
 
     Args:
         pTAC_times (np.ndarray): A 1D array representing the input TAC times in minutes.
-
         pTAC_vals (np.ndarray): A 1D array representing the input TAC values. This array should
                                 be of the same length as `pTAC_times`.
-
         tTAC_img (np.ndarray): A 4D array representing the 3D PET image over time.
                                The shape of this array should be (x, y, z, time).
-
         t_thresh_in_mins (float): A float representing the threshold time in minutes.
-
         method_name (str): The analysis method's name to apply. Must be one of: 'patlak', 'logan',
             or 'alt_logan'.
 
