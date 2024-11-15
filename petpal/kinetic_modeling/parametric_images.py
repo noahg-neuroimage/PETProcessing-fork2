@@ -210,7 +210,8 @@ class ReferenceTissueParametricImage:
                  pet_image_path: str,
                  mask_image_path: str,
                  output_directory: str,
-                 output_filename_prefix: str):
+                 output_filename_prefix: str,
+                 method: str='mrtm2'):
         """
         Initialize ReferenceTissueParametricImage with input values.
 
@@ -221,6 +222,7 @@ class ReferenceTissueParametricImage:
                 image.
             output_directory (str): Path to folder where analysis is saved.
             output_filename_prefix (str): Prefix for output files saved after analysis.
+            method (str): RTM method to run. Default 'mrtm2'.
         """
         self.reference_tac = TimeActivityCurveFromFile(tac_path=reference_tac_path)
         self.pet_image = safe_load_4dpet_nifti(pet_image_path)
@@ -230,7 +232,47 @@ class ReferenceTissueParametricImage:
 
         self.output_directory = output_directory
         self.output_filename_prefix = output_filename_prefix
+        self.analysis_props = self.init_analysis_props(method)
         self.fit_results = None, None
+
+
+    def init_analysis_props(self, method: str) -> dict:
+        r"""
+        Initializes the analysis properties dict based on the specified RTM analysis method.
+
+        Args:
+            method (str): RTM analysis method. Must be one of 'srtm', 'frtm', 'mrtm-original',
+                'mrtm' or 'mrtm2'.
+
+        Returns:
+            dict: A dictionary containing method-specific property keys and default values.
+
+        Raises:
+            ValueError: If input `method` is not one of the supported RTM methods.
+        """
+        common_props = {'MethodName': method.upper()}
+        if method.startswith("mrtm"):
+            props = {
+                'BP': None,
+                'k2Prime': None,
+                'ThresholdTime': None,
+                'StartFrameTime': None,
+                'EndFrameTime' : None,
+                'NumberOfPointsFit': None,
+                'RawFits': None,
+                **common_props
+                }
+        elif method.startswith("srtm") or method.startswith("frtm"):
+            props = {
+                'FitValues': None,
+                'FitStdErr': None,
+                **common_props
+                }
+        else:
+            raise ValueError(f"Invalid method! Must be either 'srtm', 'frtm', 'srtm2', 'frtm2', "
+                             f"'mrtm-original', 'mrtm' or 'mrtm2'. Got {method}.")
+        return props
+
 
     def run_parametric_analysis(self,
                                 method: str='mrtm2',
