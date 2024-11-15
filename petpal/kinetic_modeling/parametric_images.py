@@ -234,7 +234,6 @@ class ReferenceTissueParametricImage:
         self.output_filename_prefix = output_filename_prefix
         self.method = method
         self.analysis_props = self.init_analysis_props(method)
-        self.set_analysis_props(self.analysis_props)
         self.fit_results = None, None
 
 
@@ -403,6 +402,11 @@ class ReferenceTissueParametricImage:
                                      t_thresh_in_mins=t_thresh_in_mins,
                                      k2_prime=k2_prime,
                                      image_scale=image_scale)
+        self.set_analysis_props(props=self.analysis_props,
+                                bounds=bounds,
+                                k2_prime=k2_prime,
+                                t_thresh_in_mins=t_thresh_in_mins,
+                                image_scale=image_scale)
         self.save_parametric_images()
         self.save_analysis_properties()
 
