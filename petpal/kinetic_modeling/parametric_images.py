@@ -23,7 +23,7 @@ from petpal.kinetic_modeling.fit_tac_with_rtms import get_rtm_kwargs, get_rtm_me
 from petpal.utils.time_activity_curve import TimeActivityCurveFromFile
 from petpal.utils.image_io import safe_load_4dpet_nifti
 from . import graphical_analysis
-from ..utils.image_io import safe_load_tac, safe_copy_meta
+from ..utils.image_io import safe_load_tac, safe_copy_meta, validate_two_images_same_dimensions
 
 
 @numba.njit()
@@ -225,6 +225,9 @@ class ReferenceTissueParametricImage:
         self.reference_tac = TimeActivityCurveFromFile(tac_path=reference_tac_path)
         self.pet_image = safe_load_4dpet_nifti(pet_image_path)
         self.mask_image = safe_load_4dpet_nifti(mask_image_path)
+
+        validate_two_images_same_dimensions(self.pet_image,self.mask_image,check_4d=False)
+
         self.output_directory = output_directory
         self.output_filename_prefix = output_filename_prefix
         self.fit_results = None, None
