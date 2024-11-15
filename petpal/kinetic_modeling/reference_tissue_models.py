@@ -74,7 +74,7 @@ def convert_weights_to_sigma(tac_weights: np.ndarray) -> np.ndarray:
     """
     tac_sigma = np.power(tac_weights,-1/2)
     tac_weights_where_zero = np.where(tac_weights==0)
-    tac_sigma[tac_weights_where_zero] = 0
+    tac_sigma[tac_weights_where_zero] = np.inf
     return tac_sigma
 
 
