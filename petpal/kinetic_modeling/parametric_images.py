@@ -293,9 +293,9 @@ class ReferenceTissueParametricImage:
 
         try:
             bp_img_path = os.path.join(self.output_directory,
-                                    f"{self.output_filename_prefix}_desc-bp.nii.gz")
+                                    f"{self.output_filename_prefix}_desc-bp_pet.nii.gz")
             simulation_img_path = os.path.join(self.output_directory,
-                                            f"{self.output_filename_prefix}_desc-sim.nii.gz")
+                                            f"{self.output_filename_prefix}_desc-sim_pet.nii.gz")
 
             nibabel.save(bp_nibabel,bp_img_path)
             nibabel.save(simulation_nibabel,simulation_img_path)
