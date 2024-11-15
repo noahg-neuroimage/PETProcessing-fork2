@@ -232,7 +232,9 @@ class ReferenceTissueParametricImage:
 
         self.output_directory = output_directory
         self.output_filename_prefix = output_filename_prefix
+        self.method = method
         self.analysis_props = self.init_analysis_props(method)
+        self.set_analysis_props(self.analysis_props)
         self.fit_results = None, None
 
 
@@ -256,6 +258,7 @@ class ReferenceTissueParametricImage:
                 'BP': None,
                 'k2Prime': None,
                 'ThresholdTime': None,
+                'Bounds': None,
                 'StartFrameTime': None,
                 'EndFrameTime' : None,
                 'NumberOfPointsFit': None,
@@ -274,11 +277,29 @@ class ReferenceTissueParametricImage:
         return props
 
 
+    def set_analysis_props(self,
+                           props: dict,
+                           bounds: Union[None, np.ndarray] = None,
+                           k2_prime: float=None,
+                           t_thresh_in_mins: float=None,
+                           image_scale: float=None):
+        """
+        Set kwargs used for running parametric analysis.
+
+        Args:
+            rtm_kwargs (dict): Dictionary of kwargs fed into RTM analysis.
+        """
+        props['Bounds'] = bounds
+        props['k2Prime'] = k2_prime
+        props['ThresholdTime'] = t_thresh_in_mins
+        props['ImageScale'] = image_scale
+
+
     def run_parametric_analysis(self,
-                                method: str='mrtm2',
                                 bounds: Union[None, np.ndarray] = None,
                                 k2_prime: float=None,
-                                t_thresh_in_mins: float=None):
+                                t_thresh_in_mins: float=None,
+                                image_scale: float=1/37000):
         """
         Run the analysis.
 
@@ -299,20 +320,20 @@ class ReferenceTissueParametricImage:
         mask_np = self.mask_image.get_fdata()
         tac_times_in_minutes = self.reference_tac.tac_times_in_minutes
         ref_tac_vals = self.reference_tac.tac_vals
-        rtm_method = get_rtm_method(method)
+        rtm_method = get_rtm_method(self.method)
         analysis_kwargs = get_rtm_kwargs(method=rtm_method,
                                          bounds=bounds,
                                          k2_prime=k2_prime,
                                          t_thresh_in_mins=t_thresh_in_mins)
 
-        if method=='mrtm2':
+        if self.method=='mrtm2':
             analysis_function = apply_mrtm2_to_all_voxels
         else:
-            raise NotImplementedError(f"Method {method} is not yet implemented for voxel-wise"
+            raise NotImplementedError(f"Method {self.method} is not yet implemented for voxel-wise"
                                       f"analysis.")
 
         fit_results = analysis_function(tac_times_in_minutes=tac_times_in_minutes,
-                                        tgt_image=pet_np,
+                                        tgt_image=pet_np * image_scale,
                                         ref_tac_vals=ref_tac_vals,
                                         mask_img=mask_np,
                                         **analysis_kwargs)
@@ -345,6 +366,45 @@ class ReferenceTissueParametricImage:
             print("An IOError occurred while attempting to write the NIfTI image files.")
             raise exc from None
 
+
+    def save_analysis_properties(self):
+        """
+        Saves the analysis properties to a JSON file in the output directory.
+
+        This method involves saving a dictionary of analysis properties, which include file paths,
+        analysis method, start and end frame times, threshold time, number of points fitted, and 
+        various properties like the maximum, minimum, mean, and variance of slopes and intercepts
+        found in the analysis. These analysis properties are written to a JSON file in the output
+        directory with the name following the pattern
+        `{output_filename_prefix}-analysis-props.json`.
+
+        Args:
+            None
+
+        Returns:
+            None
+
+        Raises:
+            IOError: An error occurred accessing the output_directory or while writing to the JSON
+            file.
+
+        See Also:
+            * :func:`save_analysis_properties`
+        """
+        analysis_props_file = os.path.join(self.output_directory,
+                                           f"{self.output_filename_prefix}_desc-"
+                                           f"{self.analysis_props['MethodName']}_props.json")
+        with open(analysis_props_file, 'w', encoding='utf-8') as f:
+            json.dump(obj=self.analysis_props, fp=f, indent=4)
+
+
+    def __call__(self, bounds, t_thresh_in_mins, k2_prime, image_scale):
+        self.run_parametric_analysis(bounds=bounds,
+                                     t_thresh_in_mins=t_thresh_in_mins,
+                                     k2_prime=k2_prime,
+                                     image_scale=image_scale)
+        self.save_parametric_images()
+        self.save_analysis_properties()
 
 class GraphicalAnalysisParametricImage:
     """
