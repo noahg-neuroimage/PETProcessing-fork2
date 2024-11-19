@@ -3,7 +3,25 @@ from typing import Callable
 
 
 class ArgsDict(dict):
+    """
+    A specialized subclass of Python's built-in `dict` that provides a customized string representation.
+
+    Attributes:
+        None, since ArgsDict inherits directly from dict.
+
+    Methods:
+        __str__(): Returns a formatted string representation of the dictionary contents.
+
+    """
     def __str__(self):
+        """
+        Returns a formatted string representation of the dictionary.
+        
+        The string output will list each key-value pair on a new line with indentation to improve readability.
+        
+        Returns:
+            str: A string containing the formatted key-value pairs, indented for clarity.
+        """
         rep_str = [f'    {arg}={val}' for arg, val in self.items()]
         return ',\n'.join(rep_str)
 
