@@ -33,14 +33,12 @@ class StepsAPI:
     This class outlines methods that allow input and output management between different steps,
     and perform inference of output files based on input data and given parameters.
 
-    Methods
-    -------
-    set_input_as_output_from(sending_step):
-        Sets the input of the current step as the output from a specified sending step.
-
-    infer_outputs_from_inputs(out_dir, der_type, suffix=None, ext=None, **extra_desc):
-        Infers output files from input data based on the specified output directory,
-        derivative type, optional suffix and extension, plus any extra descriptions.
+    Methods:
+        set_input_as_output_from(sending_step):
+            Sets the input of the current step as the output from a specified sending step.
+        infer_outputs_from_inputs(out_dir, der_type, suffix=None, ext=None, **extra_desc):
+            Infers output files from input data based on the specified output directory,
+            derivative type, optional suffix and extension, plus any extra descriptions.
     """
     
     def set_input_as_output_from(self, sending_step):
@@ -74,7 +72,57 @@ class StepsAPI:
 
 
 class FunctionBasedStep(StepsAPI):
+    """
+    A step in a processing pipeline based on a callable function.
+
+    This class allows for the execution of a given function with specified arguments and keyword arguments,
+    validating that all mandatory parameters are provided.
+
+    Attributes:
+        name (str): The name of the step.
+        function (Callable): The function to be executed in this step.
+        args (tuple): Positional arguments to be passed to the function.
+        kwargs (ArgsDict): Keyword arguments to be passed to the function.
+        func_sig (inspect.Signature): The signature of the function for validating arguments.
+
+    Methods:
+         - set_input_as_output_from(sending_step):
+            Sets the input of the current step as the output from a specified sending step.
+         - infer_outputs_from_inputs(out_dir, der_type, suffix=None, ext=None, **extra_desc):
+            Infers output files from input data based on the specified output directory.
+         - get_function_args_not_set_in_kwargs():
+            Retrieves arguments of the function that are not set in the keyword arguments.
+         - get_empty_default_kwargs():
+            Identifies arguments that have not been provided and lack default values.
+         - validate_kwargs_for_non_default_have_been_set():
+            Validates that all mandatory arguments have been provided.
+         - execute():
+            Executes the function with the provided arguments and keyword arguments.
+         - generate_kwargs_from_args():
+            Converts positional arguments into keyword arguments.
+         - __str__():
+            Returns a detailed string representation of the FunctionBasedStep instance.
+         - __repr__():
+            Returns an unambiguous string representation of the FunctionBasedStep instance.
+         - all_args_non_empty_strings():
+            Checks if all positional arguments are non-empty strings.
+         - all_kwargs_non_empty_strings():
+            Checks if all keyword arguments are non-empty strings.
+         - can_potentially_run():
+            Determines if the step can potentially be executed based on argument validation.
+            
+    """
     def __init__(self, name: str, function: Callable, *args, **kwargs) -> None:
+        """
+        Initializes a function-based step in the processing pipeline.
+
+        Args:
+            name (str): The name of the step.
+            function (Callable): The function to be executed in this step.
+            *args: Positional arguments to be passed to the function.
+            **kwargs: Keyword arguments to be passed to the function.
+            
+        """
         self.name = name
         self.function = function
         self._func_name = function.__name__
@@ -84,6 +132,12 @@ class FunctionBasedStep(StepsAPI):
         self.validate_kwargs_for_non_default_have_been_set()
     
     def get_function_args_not_set_in_kwargs(self) -> ArgsDict:
+        """
+        Retrieves arguments of the function that are not set in the keyword arguments.
+
+        Returns:
+            ArgsDict: A dictionary of function arguments that have not been set in the keyword arguments.
+        """
         unset_args_dict = ArgsDict()
         func_params = self.func_sig.parameters
         arg_names = list(func_params)
@@ -93,6 +147,12 @@ class FunctionBasedStep(StepsAPI):
         return unset_args_dict
     
     def get_empty_default_kwargs(self) -> list:
+        """
+        Identifies arguments that have not been provided and lack default values.
+
+        Returns:
+            list: A list of argument names that have no default values and are not provided.
+        """
         unset_args_dict = self.get_function_args_not_set_in_kwargs()
         empty_kwargs = []
         for arg_name, arg_val in unset_args_dict.items():
@@ -102,23 +162,47 @@ class FunctionBasedStep(StepsAPI):
         return empty_kwargs
     
     def validate_kwargs_for_non_default_have_been_set(self) -> None:
+        """
+        Validates that all mandatory arguments have been provided.
+
+        Raises:
+            RuntimeError: If any mandatory arguments are missing.
+        """
         empty_kwargs = self.get_empty_default_kwargs()
         if empty_kwargs:
             unset_args = '\n'.join(empty_kwargs)
             raise RuntimeError(f"For {self._func_name}, the following arguments must be set:\n{unset_args}")
     
     def execute(self):
+        """
+        Executes the function with the provided arguments and keyword arguments.
+
+        Raises:
+            The function may raise any exceptions that its implementation can throw.
+        """
         print(f"(Info): Executing {self.name}")
         self.function(*self.args, **self.kwargs)
         print(f"(Info): Finished {self.name}")
     
     def generate_kwargs_from_args(self) -> ArgsDict:
+        """
+        Converts positional arguments into keyword arguments.
+
+        Returns:
+            ArgsDict: A dictionary where positional arguments are mapped to their corresponding parameter names.
+        """
         args_to_kwargs_dict = ArgsDict()
         for arg_name, arg_val in zip(list(self.func_sig.parameters), self.args):
             args_to_kwargs_dict[arg_name] = arg_val
         return args_to_kwargs_dict
     
     def __str__(self):
+        """
+        Returns a detailed string representation of the FunctionBasedStep instance.
+
+        Returns:
+            str: A string describing the step, including its name, function, arguments, and keyword arguments.
+        """
         args_to_kwargs_dict = self.generate_kwargs_from_args()
         info_str = [f'({type(self).__name__} Info):',
                     f'Step Name: {self.name}',
@@ -132,6 +216,12 @@ class FunctionBasedStep(StepsAPI):
         return '\n'.join(info_str)
     
     def __repr__(self):
+        """
+        Returns an unambiguous string representation of the FunctionBasedStep instance.
+
+        Returns:
+            str: A string representation showing how the FunctionBasedStep can be recreated.
+        """
         cls_name = type(self).__name__
         full_func_name = f'{self.function.__module__}.{self._func_name}'
         info_str = [f'{cls_name}(', f'name={repr(self.name)},', f'function={full_func_name},']
@@ -151,18 +241,37 @@ class FunctionBasedStep(StepsAPI):
         return f'\n    '.join(info_str)
     
     def all_args_non_empty_strings(self):
+        """
+        Checks if all positional arguments are non-empty strings.
+
+        Returns:
+            bool: True if all positional arguments are non-empty strings, False otherwise.
+        """
         for arg in self.args:
             if arg == '':
                 return False
         return True
     
     def all_kwargs_non_empty_strings(self):
+        """
+        Checks if all keyword arguments are non-empty strings.
+
+        Returns:
+            bool: True if all keyword arguments are non-empty strings, False otherwise.
+        """
         for arg_name, arg in self.kwargs.items():
             if arg == '':
                 return False
         return True
     
     def can_potentially_run(self):
+        """
+        Determines if the step can potentially be executed based on argument validation.
+        Very simply checks if all arguments and keyword arguments are non-empty strings.
+
+        Returns:
+            bool: True if the step can potentially run, False otherwise.
+        """
         return self.all_args_non_empty_strings() and self.all_kwargs_non_empty_strings()
 
 
