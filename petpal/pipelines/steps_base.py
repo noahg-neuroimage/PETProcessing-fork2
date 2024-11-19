@@ -27,10 +27,49 @@ class ArgsDict(dict):
 
 
 class StepsAPI:
+    """
+    StepsAPI provides an interface for defining steps in a processing pipeline.
+
+    This class outlines methods that allow input and output management between different steps,
+    and perform inference of output files based on input data and given parameters.
+
+    Methods
+    -------
+    set_input_as_output_from(sending_step):
+        Sets the input of the current step as the output from a specified sending step.
+
+    infer_outputs_from_inputs(out_dir, der_type, suffix=None, ext=None, **extra_desc):
+        Infers output files from input data based on the specified output directory,
+        derivative type, optional suffix and extension, plus any extra descriptions.
+    """
+    
     def set_input_as_output_from(self, sending_step):
+        """
+        Sets the input of the current step as the output from a specified sending step.
+
+        Args:
+            sending_step: The previous step from which the output will be used as input for the current step.
+
+        Raises:
+            NotImplementedError: This method should be implemented by subclasses.
+        """
         raise NotImplementedError
     
-    def infer_outputs_from_inputs(self, out_dir, der_type, suffix=None, ext=None, **extra_desc):
+    def infer_outputs_from_inputs(self, out_dir: str, der_type: str, suffix: str = None, ext: str = None, **extra_desc):
+        """
+        Infers output files from input data based on the specified output directory,
+        derivative type, optional suffix and extension, plus any extra descriptions.
+
+        Args:
+            out_dir (str): The directory where the output files will be saved.
+            der_type (str): The type of derivative being produced.
+            suffix (str, optional): An optional suffix for the output files.
+            ext (str, optional): An optional extension for the output files.
+            **extra_desc: Additional keyword arguments for extra descriptions to be included.
+
+        Raises:
+            NotImplementedError: This method should be implemented by subclasses.
+        """
         raise NotImplementedError
 
 
