@@ -5,7 +5,6 @@ import os
 import networkx as nx
 from ..utils.image_io import safe_copy_meta, get_half_life_from_nifty
 from typing import Callable, Union
-import inspect
 from ..preproc.image_operations_4d import SimpleAutoImageCropper, write_tacs
 from ..preproc.register import register_pet
 from ..preproc.motion_corr import motion_corr_frames_above_mean_value
@@ -15,115 +14,9 @@ from ..kinetic_modeling import tac_fitting
 from ..kinetic_modeling import rtm_analysis as pet_rtms
 from ..kinetic_modeling import graphical_analysis as pet_grph
 from ..utils.bids_utils import parse_path_to_get_subject_and_session_id, snake_to_camel_case, gen_bids_like_dir_path, gen_bids_like_filepath
+from .steps_base import StepsAPI, FunctionBasedStep, ObjectBasedStep, ArgsDict
 
 
-class ArgsDict(dict):
-    def __str__(self):
-        rep_str = [f'    {arg}={val}' for arg, val in self.items()]
-        return ',\n'.join(rep_str)
-
-
-class StepsAPI:
-    def set_input_as_output_from(self, sending_step):
-        raise NotImplementedError
-    
-    def infer_outputs_from_inputs(self, out_dir, der_type, suffix=None, ext=None, **extra_desc):
-        raise NotImplementedError
-
-
-class FunctionBasedStep(StepsAPI):
-    def __init__(self, name: str, function: Callable, *args, **kwargs) -> None:
-        self.name = name
-        self.function = function
-        self._func_name = function.__name__
-        self.args = args
-        self.kwargs = ArgsDict(kwargs)
-        self.func_sig = inspect.signature(self.function)
-        self.validate_kwargs_for_non_default_have_been_set()
-        
-    def get_function_args_not_set_in_kwargs(self) -> ArgsDict:
-        unset_args_dict = ArgsDict()
-        func_params = self.func_sig.parameters
-        arg_names = list(func_params)
-        for arg_name in arg_names[len(self.args):]:
-            if arg_name not in self.kwargs and arg_name != 'kwargs':
-                unset_args_dict[arg_name] = func_params[arg_name].default
-        return unset_args_dict
-    
-    def get_empty_default_kwargs(self) -> list:
-        unset_args_dict = self.get_function_args_not_set_in_kwargs()
-        empty_kwargs = []
-        for arg_name, arg_val in unset_args_dict.items():
-            if arg_val is inspect.Parameter.empty:
-                if arg_name not in self.kwargs:
-                    empty_kwargs.append(arg_name)
-        return empty_kwargs
-    
-    def validate_kwargs_for_non_default_have_been_set(self) -> None:
-        empty_kwargs = self.get_empty_default_kwargs()
-        if empty_kwargs:
-            unset_args = '\n'.join(empty_kwargs)
-            raise RuntimeError(f"For {self._func_name}, the following arguments must be set:\n{unset_args}")
-    
-    def execute(self):
-        print(f"(Info): Executing {self.name}")
-        self.function(*self.args, **self.kwargs)
-        print(f"(Info): Finished {self.name}")
-        
-    def generate_kwargs_from_args(self) -> ArgsDict:
-        args_to_kwargs_dict = ArgsDict()
-        for arg_name, arg_val in zip(list(self.func_sig.parameters), self.args):
-            args_to_kwargs_dict[arg_name] = arg_val
-        return args_to_kwargs_dict
-    
-    def __str__(self):
-        args_to_kwargs_dict = self.generate_kwargs_from_args()
-        info_str = [f'({type(self).__name__} Info):',
-                    f'Step Name: {self.name}',
-                    f'Function Name: {self._func_name}',
-                    f'Arguments Passed:',
-                    f'{args_to_kwargs_dict if args_to_kwargs_dict else "N/A"}',
-                    'Keyword-Arguments Set:',
-                    f'{self.kwargs if self.kwargs else "N/A"}',
-                    'Default Arguments:',
-                    f'{self.get_function_args_not_set_in_kwargs()}']
-        return '\n'.join(info_str)
-    
-    def __repr__(self):
-        cls_name = type(self).__name__
-        full_func_name = f'{self.function.__module__}.{self._func_name}'
-        info_str = [f'{cls_name}(', f'name={repr(self.name)},', f'function={full_func_name},']
-        
-        init_params = inspect.signature(self.__init__).parameters
-        for arg_name in list(init_params)[2:-2]:
-            info_str.append(f'{arg_name}={repr(getattr(self, arg_name))},')
-        
-        for arg_name, arg_val in zip(list(self.func_sig.parameters), self.args):
-            info_str.append(f'{arg_name}={repr(arg_val)}', )
-        
-        for arg_name, arg_val in self.kwargs.items():
-            info_str.append(f'{arg_name}={repr(arg_val)},')
-        
-        info_str.append(')')
-        
-        return f'\n    '.join(info_str)
-    
-    def all_args_non_empty_strings(self):
-        for arg in self.args:
-            if arg == '':
-                return False
-        return True
-    
-    def all_kwargs_non_empty_strings(self):
-        for arg_name, arg in self.kwargs.items():
-            if arg == '':
-                return False
-        return True
-    
-    def can_potentially_run(self):
-        return self.all_args_non_empty_strings() and self.all_kwargs_non_empty_strings()
-   
-   
 class TACsFromSegmentationStep(FunctionBasedStep):
     def __init__(self,
                  input_image_path: str,
@@ -256,7 +149,6 @@ class TACsFromSegmentationStep(FunctionBasedStep):
         step_name_in_camel_case = snake_to_camel_case(self.name)
         self.out_tacs_prefix = f'sub-{sub_id}_ses-{ses_id}_desc-{step_name_in_camel_case}'
         
-    
 class ResampleBloodTACStep(FunctionBasedStep):
     def __init__(self,
                  input_raw_blood_tac_path: str,
@@ -342,113 +234,6 @@ class ResampleBloodTACStep(FunctionBasedStep):
                                           desc='OnScannerFrameTimes'
                                           )
         self.resampled_tac_path = filepath
-   
-        
-class ObjectBasedStep(StepsAPI):
-    def __init__(self,
-                 name: str,
-                 class_type: type,
-                 init_kwargs: dict,
-                 call_kwargs: dict) -> None:
-        self.name: str = name
-        self.class_type: type = class_type
-        self.init_kwargs: ArgsDict = ArgsDict(init_kwargs)
-        self.call_kwargs: ArgsDict = ArgsDict(call_kwargs)
-        self.init_sig: inspect.Signature = inspect.signature(self.class_type.__init__)
-        self.call_sig: inspect.Signature = inspect.signature(self.class_type.__call__)
-        self.validate_kwargs()
-        
-    
-    def validate_kwargs(self):
-        empty_init_kwargs = self.get_empty_default_kwargs(self.init_sig, self.init_kwargs)
-        empty_call_kwargs = self.get_empty_default_kwargs(self.call_sig, self.call_kwargs)
-        
-        if empty_init_kwargs or empty_call_kwargs:
-            err_msg = [f"For {self.class_type.__name__}, the following arguments must be set:"]
-            if empty_init_kwargs:
-                err_msg.append("Initialization:")
-                err_msg.append(f"{empty_init_kwargs}")
-            if empty_call_kwargs:
-                err_msg.append("Calling:")
-                err_msg.append(f"{empty_call_kwargs}")
-            raise RuntimeError("\n".join(err_msg))
-    
-    @staticmethod
-    def get_args_not_set_in_kwargs(sig: inspect.Signature, kwargs: dict) -> dict:
-        unset_args_dict = ArgsDict()
-        for arg_name, arg_val in sig.parameters.items():
-            if arg_name not in kwargs and arg_name != 'self':
-                unset_args_dict[arg_name] = arg_val.default
-        return unset_args_dict
-    
-    def get_empty_default_kwargs(self, sig: inspect.Signature, set_kwargs: dict) -> list:
-        unset_kwargs = self.get_args_not_set_in_kwargs(sig=sig, kwargs=set_kwargs)
-        empty_kwargs = []
-        for arg_name, arg_val in unset_kwargs.items():
-            if arg_val is inspect.Parameter.empty:
-                if arg_name not in set_kwargs:
-                    empty_kwargs.append(arg_name)
-        return empty_kwargs
-        
-    def execute(self) -> None:
-        print(f"(Info): Executing {self.name}")
-        obj_instance = self.class_type(**self.init_kwargs)
-        obj_instance(**self.call_kwargs)
-        print(f"(Info): Finished {self.name}")
-    
-    def __str__(self):
-        unset_init_args = self.get_args_not_set_in_kwargs(self.init_sig, self.init_kwargs)
-        unset_call_args = self.get_args_not_set_in_kwargs(self.call_sig, self.call_kwargs)
-        
-        info_str = [f'({type(self).__name__} Info):',
-                    f'Step Name: {self.name}',
-                    f'Class Name: {self.class_type.__name__}',
-                    'Initialization Arguments:',
-                    f'{self.init_kwargs}',
-                    'Default Initialization Arguments:',
-                    f'{unset_init_args if unset_init_args else "N/A"}',
-                    'Call Arguments:',
-                    f'{self.call_kwargs if self.call_kwargs else "N/A"}',
-                    'Default Call Arguments:',
-                    f'{unset_call_args if unset_call_args else "N/A"}']
-        return '\n'.join(info_str)
-    
-    def __repr__(self):
-        cls_name = type(self).__name__
-        full_func_name = f'{self.class_type.__module__}.{self.class_type.__name__}'
-        info_str = [f'{cls_name}(', f'name={repr(self.name)},', f'class_type={full_func_name},']
-        
-        if self.init_kwargs:
-            info_str.append('init_kwargs={')
-            for arg_name, arg_val in self.init_kwargs.items():
-                info_str.append(f'    {arg_name}={repr(arg_val)},')
-            info_str[-1] = f'{info_str[-1]}' + '}'
-        
-        if self.call_kwargs:
-            info_str.append('call_kwargs={')
-            for arg_name, arg_val in self.call_kwargs.items():
-                info_str.append(f'    {arg_name}={repr(arg_val)},')
-            info_str[-1] = f'{info_str[-1]}' + '}'
-        
-        info_str.append(')')
-        
-        return f'\n    '.join(info_str)
-    
-    def all_init_kwargs_non_empty_strings(self):
-        for arg_name, arg_val in self.init_kwargs.items():
-            if arg_val == '':
-                return False
-        return True
-    
-    def all_call_kwargs_non_empty_strings(self):
-        for arg_name, arg_val in self.call_kwargs.items():
-            if arg_val == '':
-                return False
-        return True
-    
-    def can_potentially_run(self):
-        return self.all_init_kwargs_non_empty_strings() and self.all_call_kwargs_non_empty_strings()
-    
 
 class ImageToImageStep(FunctionBasedStep):
     def __init__(self,
@@ -558,7 +343,6 @@ class ImageToImageStep(FunctionBasedStep):
         except RuntimeError as err:
             warnings.warn(f"Invalid override: {err}. Using default instance instead.", stacklevel=2)
             return cls(**defaults)
-        
 
 PreprocSteps = Union[TACsFromSegmentationStep, ResampleBloodTACStep, ImageToImageStep]
 
@@ -942,7 +726,6 @@ class StepsContainer:
         
         return f'\n    '.join(info_str)
         
-        
     def add_step(self, step: StepType):
         if not isinstance(step, StepType.__args__):
             raise TypeError("Step must be of type StepType")
@@ -1071,7 +854,7 @@ class StepsContainer:
     
     
 class StepsPipeline:
-    def __init__(self, name: str, *step_containers):
+    def __init__(self, name: str, step_containers: list[StepsContainer]):
         self.name: str = name
         self.step_containers: dict[str, StepsContainer] = {}
         self.dependency_graph = nx.DiGraph()
@@ -1081,11 +864,11 @@ class StepsPipeline:
             
     def __repr__(self):
         cls_name = type(self).__name__
-        info_str = [f'{cls_name}(', f'{repr(self.name)},']
+        info_str = [f'{cls_name}(', f'name={repr(self.name)},' 'step_containers=[']
         
         for _, container_obj in self.step_containers.items():
             info_str.append(f'{repr(container_obj)},')
-        
+        info_str.append(']')
         info_str.append(')')
         
         return f'\n    '.join(info_str)
@@ -1197,7 +980,7 @@ class StepsPipeline:
     
     @classmethod
     def default_steps_pipeline(cls, name='PET-MR_analysis'):
-        obj = cls(name=name)
+        obj = cls(name=name, step_containers=[])
         obj.add_container(StepsContainer.default_preprocess_steps(name='preproc'))
         obj.add_container(StepsContainer.default_kinetic_analysis_steps(name='km'))
         
@@ -1455,7 +1238,8 @@ class BIDS_Pipeline(BIDSyPathsForPipelines, StepsPipeline):
                  raw_anat_img_path: str = None,
                  segmentation_img_path: str = None,
                  segmentation_label_table_path: str = None,
-                 raw_blood_tac_path: str = None):
+                 raw_blood_tac_path: str = None,
+                 step_containers: list[StepsContainer] = []):
         BIDSyPathsForPipelines.__init__(self,
                                         sub_id=sub_id,
                                         ses_id=ses_id,
@@ -1468,7 +1252,7 @@ class BIDS_Pipeline(BIDSyPathsForPipelines, StepsPipeline):
                                         segmentation_img_path=segmentation_img_path,
                                         segmentation_label_table_path=segmentation_label_table_path,
                                         raw_blood_tac_path=raw_blood_tac_path)
-        StepsPipeline.__init__(self, name=pipeline_name)
+        StepsPipeline.__init__(self, name=pipeline_name, step_containers=step_containers)
         
 
     def __repr__(self):
@@ -1491,6 +1275,12 @@ class BIDS_Pipeline(BIDSyPathsForPipelines, StepsPipeline):
         for arg_name, arg_val in in_kwargs.items():
             info_str.append(f'{arg_name}={repr(arg_val)},')
         
+        info_str.append('step_containers=[')
+        
+        for _, container in self.step_containers.items():
+            info_str.append(f'{repr(container)},')
+        
+        info_str.append(']')
         info_str.append(')')
         
         return f'\n    '.join(info_str)
@@ -1526,6 +1316,9 @@ class BIDS_Pipeline(BIDSyPathsForPipelines, StepsPipeline):
                               segmentation_img_path: str = None,
                               segmentation_label_table_path: str = None,
                               raw_blood_tac_path: str = None):
+        
+        temp_pipeline = StepsPipeline.default_steps_pipeline()
+        
         obj = cls(sub_id=sub_id,
                   ses_id=ses_id,
                   pipeline_name=pipeline_name,
@@ -1536,11 +1329,13 @@ class BIDS_Pipeline(BIDSyPathsForPipelines, StepsPipeline):
                   raw_anat_img_path=raw_anat_img_path,
                   segmentation_img_path=segmentation_img_path,
                   segmentation_label_table_path=segmentation_label_table_path,
-                  raw_blood_tac_path=raw_blood_tac_path)
+                  raw_blood_tac_path=raw_blood_tac_path,
+                  step_containers=list(temp_pipeline.step_containers.values())
+                  )
         
-        temp_pipeline = StepsPipeline.default_steps_pipeline()
-        obj.step_containers = copy.deepcopy(temp_pipeline.step_containers)
         obj.dependency_graph = copy.deepcopy(temp_pipeline.dependency_graph)
+        
+        del temp_pipeline
         
         containers = obj.step_containers
         
