@@ -276,7 +276,51 @@ class FunctionBasedStep(StepsAPI):
 
 
 class ObjectBasedStep(StepsAPI):
+    """
+    A step in a processing pipeline that is based on instantiating and invoking methods on an object.
+
+    This class allows for initialization and execution of a specified object with given arguments and keyword arguments,
+    validating that all mandatory parameters are provided.
+
+    Attributes:
+        name (str): The name of the step.
+        class_type (type): The class type to be instantiated in this step.
+        init_kwargs (ArgsDict): Keyword arguments for initializing the class.
+        call_kwargs (ArgsDict): Keyword arguments for invoking the class.
+        init_sig (inspect.Signature): The initialization signature of the class for validating arguments.
+        call_sig (inspect.Signature): The call signature of the class for validating arguments.
+
+    Methods:
+        set_input_as_output_from(sending_step): Sets the input of the current step as the output from a
+            specified sending step.
+        infer_outputs_from_inputs(out_dir, der_type, suffix=None, ext=None, **extra_desc): Infers output
+            files from input data based on the specified output directory.
+        validate_kwargs(): Validates that all mandatory initialization and call arguments have been
+            provided.
+        get_args_not_set_in_kwargs(sig, kwargs): Retrieves arguments of the signature that are not set
+            in the keyword arguments.
+        get_empty_default_kwargs(sig, set_kwargs): Identifies arguments that have not been provided
+            and lack default values.
+        execute(): Instantiates the class and invokes it with the provided arguments.
+        __str__(): Returns a detailed string representation of the ObjectBasedStep instance.
+        __repr__(): Returns an unambiguous string representation of the ObjectBasedStep instance.
+        all_init_kwargs_non_empty_strings(): Checks if all initialization keyword arguments are non-empty
+            strings.
+        all_call_kwargs_non_empty_strings(): Checks if all call keyword arguments are non-empty strings.
+        can_potentially_run(): Determines if the step can potentially be executed based on argument
+            validation.
+            
+    """
     def __init__(self, name: str, class_type: type, init_kwargs: dict, call_kwargs: dict) -> None:
+        """
+        Initializes an object-based step in the processing pipeline.
+
+        Args:
+            name (str): The name of the step.
+            class_type (type): The class type to be instantiated in this step.
+            init_kwargs (dict): Keyword arguments for initializing the class.
+            call_kwargs (dict): Keyword arguments for invoking the class.
+        """
         self.name: str = name
         self.class_type: type = class_type
         self.init_kwargs: ArgsDict = ArgsDict(init_kwargs)
@@ -286,6 +330,12 @@ class ObjectBasedStep(StepsAPI):
         self.validate_kwargs()
     
     def validate_kwargs(self):
+        """
+        Validates that all mandatory initialization and call arguments have been provided.
+
+        Raises:
+            RuntimeError: If any mandatory arguments are missing.
+        """
         empty_init_kwargs = self.get_empty_default_kwargs(self.init_sig, self.init_kwargs)
         empty_call_kwargs = self.get_empty_default_kwargs(self.call_sig, self.call_kwargs)
         
@@ -301,6 +351,16 @@ class ObjectBasedStep(StepsAPI):
     
     @staticmethod
     def get_args_not_set_in_kwargs(sig: inspect.Signature, kwargs: dict) -> dict:
+        """
+        Retrieves arguments of the signature that are not set in the keyword arguments.
+
+        Args:
+            sig (inspect.Signature): The signature of the function or method.
+            kwargs (dict): The keyword arguments provided.
+
+        Returns:
+            dict: A dictionary of arguments that are not set in the keyword arguments.
+        """
         unset_args_dict = ArgsDict()
         for arg_name, arg_val in sig.parameters.items():
             if arg_name not in kwargs and arg_name != 'self':
@@ -308,6 +368,16 @@ class ObjectBasedStep(StepsAPI):
         return unset_args_dict
     
     def get_empty_default_kwargs(self, sig: inspect.Signature, set_kwargs: dict) -> list:
+        """
+        Identifies arguments that have not been provided and lack default values.
+
+        Args:
+            sig (inspect.Signature): The signature of the function or method.
+            set_kwargs (dict): The keyword arguments provided.
+
+        Returns:
+            list: A list of argument names that have no default values and are not provided.
+        """
         unset_kwargs = self.get_args_not_set_in_kwargs(sig=sig, kwargs=set_kwargs)
         empty_kwargs = []
         for arg_name, arg_val in unset_kwargs.items():
@@ -317,12 +387,24 @@ class ObjectBasedStep(StepsAPI):
         return empty_kwargs
     
     def execute(self) -> None:
+        """
+        Instantiates the class and invokes it with the provided arguments.
+
+        Raises:
+            The function may raise any exceptions that its implementation can throw.
+        """
         print(f"(Info): Executing {self.name}")
         obj_instance = self.class_type(**self.init_kwargs)
         obj_instance(**self.call_kwargs)
         print(f"(Info): Finished {self.name}")
     
     def __str__(self):
+        """
+        Returns a detailed string representation of the ObjectBasedStep instance.
+
+        Returns:
+            str: A string describing the step, including its name, class, initialization, and call arguments.
+        """
         unset_init_args = self.get_args_not_set_in_kwargs(self.init_sig, self.init_kwargs)
         unset_call_args = self.get_args_not_set_in_kwargs(self.call_sig, self.call_kwargs)
         
@@ -334,6 +416,12 @@ class ObjectBasedStep(StepsAPI):
         return '\n'.join(info_str)
     
     def __repr__(self):
+        """
+        Returns an unambiguous string representation of the ObjectBasedStep instance.
+
+        Returns:
+            str: A string representation showing how the ObjectBasedStep can be recreated.
+        """
         cls_name = type(self).__name__
         full_func_name = f'{self.class_type.__module__}.{self.class_type.__name__}'
         info_str = [f'{cls_name}(', f'name={repr(self.name)},', f'class_type={full_func_name},']
@@ -355,17 +443,37 @@ class ObjectBasedStep(StepsAPI):
         return f'\n    '.join(info_str)
     
     def all_init_kwargs_non_empty_strings(self):
+        """
+        Checks if all initialization keyword arguments are non-empty strings.
+
+        Returns:
+            bool: True if all initialization keyword arguments are non-empty strings, False otherwise.
+        """
         for arg_name, arg_val in self.init_kwargs.items():
             if arg_val == '':
                 return False
         return True
     
     def all_call_kwargs_non_empty_strings(self):
+        """
+        Checks if all call keyword arguments are non-empty strings.
+
+        Returns:
+            bool: True if all call keyword arguments are non-empty strings, False otherwise.
+        """
         for arg_name, arg_val in self.call_kwargs.items():
             if arg_val == '':
                 return False
         return True
     
     def can_potentially_run(self):
+        """
+        Determines if the step can potentially be executed based on argument validation.
+        Very simply checks if all __init__ and __call__  keyword arguments for the object are
+        non-empty strings.
+        
+        Returns:
+            bool: True if the step can potentially run, False otherwise.
+        """
         return self.all_init_kwargs_non_empty_strings() and self.all_call_kwargs_non_empty_strings()
 
