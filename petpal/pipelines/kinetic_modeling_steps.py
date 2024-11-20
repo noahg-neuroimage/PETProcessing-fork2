@@ -8,6 +8,19 @@ from .preproc_steps import TACsFromSegmentationStep, ResampleBloodTACStep, Prepr
 from ..utils.bids_utils import parse_path_to_get_subject_and_session_id, gen_bids_like_dir_path
 
 class TACAnalysisStepMixin(StepsAPI):
+    """
+    A mixin class for TAC analysis steps.
+
+    This class manages initialization and properties related to TAC paths, directories, and output
+    configurations. It provides methods to infer output paths and prefixes based on input TAC paths.
+
+    Attributes:
+        input_tac_path (str): Path to the input TAC file. Doubles as the path to a reference tac if appropriate.
+        roi_tacs_dir (str): Directory containing the ROI TAC files to be analyzed.
+        output_directory (str): Directory where output files will be saved.
+        output_prefix (str): Prefix for the output files.
+        is_ref_tac_based_model (bool): Indicates if the model is reference TAC-based.
+    """
     def __init__(self,
                  input_tac_path: str,
                  roi_tacs_dir: str,
@@ -15,6 +28,17 @@ class TACAnalysisStepMixin(StepsAPI):
                  output_prefix: str,
                  is_ref_tac_based_model: bool,
                  **kwargs):
+        """
+        Initializes the TACAnalysisStepMixin with specified parameters.
+
+        Args:
+            input_tac_path (str): Path to the input TAC file.
+            roi_tacs_dir (str): Directory containing the ROI TAC files.
+            output_directory (str): Directory where output files will be saved.
+            output_prefix (str): Prefix for the output files.
+            is_ref_tac_based_model (bool): Indicates if the model is reference TAC-based.
+            **kwargs: Additional keyword arguments to be included in initialization.
+        """
         common_init_kwargs = dict(roi_tacs_dir=roi_tacs_dir, output_directory=output_directory,
                                   output_filename_prefix=output_prefix, )
         if is_ref_tac_based_model:
@@ -28,63 +52,150 @@ class TACAnalysisStepMixin(StepsAPI):
     
     @property
     def input_tac_path(self) -> str:
+        """
+        Gets the path to the input TAC file.
+
+        Returns:
+            str: Path to the input TAC file.
+        """
         return self._input_tac_path
     
     @input_tac_path.setter
     def input_tac_path(self, input_tac_path: str):
+        """
+        Sets the path to the input TAC file.
+
+        Args:
+            input_tac_path (str): Path to the input TAC file.
+        """
         self._input_tac_path = input_tac_path
         self.init_kwargs['input_tac_path'] = input_tac_path
     
     @property
     def reference_tac_path(self) -> str:
+        """
+        Gets the path to the reference TAC file.
+
+        Returns:
+            str: Path to the reference TAC file.
+        """
         return self.input_tac_path
     
     @reference_tac_path.setter
     def reference_tac_path(self, ref_tac_path: str):
+        """
+        Sets the path to the reference TAC file.
+
+        Args:
+            ref_tac_path (str): Path to the reference TAC file.
+        """
         self._input_tac_path = ref_tac_path
         self.init_kwargs['ref_tac_path'] = ref_tac_path
     
     @property
     def tacs_dir(self) -> str:
+        """
+        Gets the directory containing the TAC files to be analyzed.
+
+        Returns:
+            str: Directory containing the TAC files to be analyzed.
+        """
         return self._tacs_dir
     
     @tacs_dir.setter
     def tacs_dir(self, tacs_dir: str):
+        """
+        Sets the directory containing the TAC files to be analyzed.
+
+        Args:
+            tacs_dir (str): Directory containing the TAC files to be analyzed.
+        """
         self._tacs_dir = tacs_dir
     
     @property
     def roi_tacs_dir(self) -> str:
+        """
+        Gets the directory containing the ROI TAC files to be analyzed.
+
+        Returns:
+            str: Directory containing the ROI TAC files to be analyzed.
+        """
         return self.tacs_dir
     
     @roi_tacs_dir.setter
     def roi_tacs_dir(self, roi_tacs_dir: str):
+        """
+        Sets the directory containing the ROI TAC files to be analyzed.
+
+        Args:
+            roi_tacs_dir (str): Directory containing the ROI TAC files to be analyzed.
+        """
         self.tacs_dir = roi_tacs_dir
         self.init_kwargs['roi_tacs_dir'] = roi_tacs_dir
     
     @property
     def output_directory(self) -> str:
+        """
+        Gets the directory where output files will be saved.
+
+        Returns:
+            str: Directory where output files will be saved.
+        """
         return self._output_directory
     
     @output_directory.setter
     def output_directory(self, output_directory: str):
+        """
+        Sets the directory where output files will be saved.
+
+        Args:
+            output_directory (str): Directory where output files will be saved.
+        """
         self._output_directory = output_directory
         self.init_kwargs['output_directory'] = output_directory
     
     @property
     def output_prefix(self) -> str:
+        """
+        Gets the prefix for the output files. Usually something like ``sub-XXXX_ses-XX`` if BIDS compliant output.
+
+        Returns:
+            str: Prefix for the output files.
+        """
         return self._output_prefix
     
     @output_prefix.setter
     def output_prefix(self, output_prefix: str):
+        """
+        Sets the prefix for the output files.
+
+        Args:
+            output_prefix (str): Prefix for the output files.
+        """
         self._output_prefix = output_prefix
         self.init_kwargs['output_filename_prefix'] = output_prefix
     
     @property
     def out_path_and_prefix(self):
+        """
+        Gets the tuple of output directory and prefix.
+
+        Returns:
+            tuple: A tuple containing output directory and prefix.
+        """
         return self._output_directory, self._output_prefix
     
     @out_path_and_prefix.setter
     def out_path_and_prefix(self, out_dir_and_prefix):
+        """
+        Sets the output directory and prefix based on a tuple.
+
+        Args:
+            out_dir_and_prefix (tuple): A tuple containing output directory and prefix.
+
+        Raises:
+            ValueError: If the tuple does not contain exactly two items.
+        """
         try:
             out_dir, out_prefix = out_dir_and_prefix
         except ValueError:
@@ -94,19 +205,55 @@ class TACAnalysisStepMixin(StepsAPI):
             self.output_prefix = out_prefix
     
     def infer_prefix_from_input_tac_path(self):
+        """
+        Infers the output prefix based on the input/reference TAC file path. Gets the subject and session from the
+        path if possible.
+        
+        See Also:
+            :func:`parse_path_to_get_subject_and_session_id<petpal.utils.bids_utils.parse_path_to_get_subject_and_session_id>`
+        """
         sub_id, ses_id = parse_path_to_get_subject_and_session_id(self.input_tac_path)
         self.output_prefix = f'sub-{sub_id}_ses-{ses_id}'
     
     def infer_output_directory_from_input_tac_path(self, out_dir: str, der_type: str = 'km'):
+        """
+        Infers the output directory based on the input/reference TAC file path. Gets the subject and session from the
+        path is possible.
+
+        Args:
+            out_dir (str): Root output directory.
+            der_type (str): Type of derivatives. Defaults to 'km'.
+            
+        See Also:
+            :func:`parse_path_to_get_subject_and_session_id<petpal.utils.bids_utils.parse_path_to_get_subject_and_session_id>`
+            :func:`gen_bids_like_dir_path<petpal.utils.bids_utils.gen_bids_like_dir_path>`
+        """
         sub_id, ses_id = parse_path_to_get_subject_and_session_id(self.input_tac_path)
         outpath = gen_bids_like_dir_path(sub_id=sub_id, ses_id=ses_id, modality=der_type, sup_dir=out_dir)
         self.output_directory = outpath
     
     def infer_outputs_from_inputs(self, out_dir: str, der_type, suffix=None, ext=None, **extra_desc):
+        """
+        Infers the output directory and prefix based on the input/reference TAC file path. Gets the subject and session
+        from the path is possible.
+
+        Args:
+            out_dir (str): Root output directory.
+            der_type (str): Type of derivatives.
+            suffix (str, optional): Suffix for the output files.
+            ext (str, optional): Extension for the output files.
+            **extra_desc: Additional descriptive parameters.
+        """
         self.infer_prefix_from_input_tac_path()
         self.infer_output_directory_from_input_tac_path(out_dir=out_dir, der_type=der_type)
     
     def set_input_as_output_from(self, sending_step: PreprocStepType) -> None:
+        """
+        Sets the input parameters based on the output from a specified sending step.
+
+        Args:
+            sending_step (PreprocStepType): The step from which to derive the input parameters.
+        """
         if isinstance(sending_step, TACsFromSegmentationStep):
             self.roi_tacs_dir = sending_step.out_tacs_dir
         elif isinstance(sending_step, ResampleBloodTACStep):

@@ -19,5 +19,3 @@ Module contents
 
 .. automodule:: petpal.preproc
    :members:
-   :undoc-members:
-   :show-inheritance:
