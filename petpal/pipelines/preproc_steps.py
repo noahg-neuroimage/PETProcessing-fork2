@@ -430,6 +430,7 @@ class ImageToImageStep(FunctionBasedStep):
     and inferring output paths.
     
     .. attention::
+    
        The passed function must have the following arguments order:
        ``func(input_image, output_image, *args, **kwargs)`` where ``input_image`` and ``output_image``
        can be named something else. The first argument must be an input image path, and the second argument
@@ -478,13 +479,13 @@ class ImageToImageStep(FunctionBasedStep):
     def execute(self, copy_meta_file: bool = True) -> None:
         """
         Executes the function and optionally copies meta-data information using
-        :func:`safe_copy_meta<petpal.utils.image_io.safe_copy_meta>`
+        :func:`safe_copy_meta<petpal.utils.image_io.safe_copy_meta>`.
 
         Args:
             copy_meta_file (bool): Whether to copy meta information from input to output image. Defaults to True.
             
         Notes:
-            Function must have the following arguments order: (input_image_path, output_image_path, *args, **kwargs)
+            Function must have the following arguments order: ``(input_image_path, output_image_path, *args, **kwargs)``
             where ``input_image`` and ``output_image`` are abritrary names.
             
         """

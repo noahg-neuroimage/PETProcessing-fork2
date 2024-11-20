@@ -263,6 +263,23 @@ class TACAnalysisStepMixin(StepsAPI):
 
 
 class GraphicalAnalysisStep(ObjectBasedStep, TACAnalysisStepMixin):
+    """
+    A step for performing graphical analysis on TACs using various methods. Uses
+    :class:`MultiTACGraphicalAnalysis<petpal.kinetic_modeling.graphical_analysis.MultiTACGraphicalAnalysis>`.
+
+    This class sets up graphical analysis, initializes required paths and parameters,
+    and provides class methods for creating default steps with common graphical analysis
+    methods like Patlak, Logan, and Alternative Logan.
+
+    Attributes:
+        input_tac_path (str): Path to the input TAC file.
+        roi_tacs_dir (str): Directory containing the ROI TAC files.
+        output_directory (str): Directory where output files will be saved.
+        output_prefix (str): Prefix for the output files.
+        method (str): Graphical analysis method.
+        fit_threshold_in_mins (float): Threshold in minutes for fitting. Defaults to 30.0.
+        image_rescale (float): Scale for the image values. Defaults to 1.0 / 37000.0.
+    """
     def __init__(self,
                  input_tac_path: str,
                  roi_tacs_dir: str,
@@ -271,6 +288,19 @@ class GraphicalAnalysisStep(ObjectBasedStep, TACAnalysisStepMixin):
                  method: str,
                  fit_threshold_in_mins: float = 30.0,
                  image_rescale: float = 1.0 / 37000.0):
+        """
+        Initializes the GraphicalAnalysisStep with specified parameters.
+
+        Args:
+            input_tac_path (str): Path to the input TAC file.
+            roi_tacs_dir (str): Directory containing the ROI TAC files.
+            output_directory (str): Directory where output files will be saved.
+            output_prefix (str): Prefix for the output files.
+            method (str): Graphical analysis method.
+            fit_threshold_in_mins (float, optional): Threshold in minutes for fitting. Defaults to 30.0.
+            image_rescale (float, optional): Scale for the image values. Defaults to 1.0 / 37000.0.
+            
+        """
         TACAnalysisStepMixin.__init__(self, input_tac_path=input_tac_path, roi_tacs_dir=roi_tacs_dir,
                                       output_directory=output_directory, output_prefix=output_prefix,
                                       is_ref_tac_based_model=False, method=method,
@@ -279,6 +309,12 @@ class GraphicalAnalysisStep(ObjectBasedStep, TACAnalysisStepMixin):
                                  init_kwargs=self.init_kwargs, call_kwargs=dict())
     
     def __repr__(self):
+        """
+        Provides an unambiguous string representation of the ResampleBloodTACStep instance.
+
+        Returns:
+            str: A string representation showing how the instance can be recreated.
+        """
         cls_name = type(self).__name__
         info_str = [f'{cls_name}(']
         
@@ -296,14 +332,38 @@ class GraphicalAnalysisStep(ObjectBasedStep, TACAnalysisStepMixin):
     
     @classmethod
     def default_patlak(cls):
+        """
+        Creates a default instance for Patlak graphical analysis of ROI TACs in a directory using
+        :class:`MultiTACGraphicalAnalysis<petpal.kinetic_modeling.graphical_analysis.MultiTACGraphicalAnalysis>`.
+        All paths are set to empty strings.
+
+        Returns:
+            GraphicalAnalysisStep: A new instance for Patlak graphical analysis.
+        """
         return cls(input_tac_path='', roi_tacs_dir='', output_directory='', output_prefix='', method='patlak', )
     
     @classmethod
     def default_logan(cls):
+        """
+        Creates a default instance for Logan graphical analysis of ROI TACs in a directory using
+        :class:`MultiTACGraphicalAnalysis<petpal.kinetic_modeling.graphical_analysis.MultiTACGraphicalAnalysis>`.
+        All paths are set to empty strings.
+
+        Returns:
+            GraphicalAnalysisStep: A new instance for Logan graphical analysis.
+        """
         return cls(input_tac_path='', roi_tacs_dir='', output_directory='', output_prefix='', method='logan', )
     
     @classmethod
     def default_alt_logan(cls):
+        """
+        Creates a default instance for Alt-Logan (New Plot) graphical analysis of ROI TACs in a directory using
+        :class:`MultiTACGraphicalAnalysis<petpal.kinetic_modeling.graphical_analysis.MultiTACGraphicalAnalysis>`.
+        All paths are set to empty strings.
+
+        Returns:
+            GraphicalAnalysisStep: A new instance for Alt-Logan (New Plot) graphical analysis.
+        """
         return cls(input_tac_path='', roi_tacs_dir='', output_directory='', output_prefix='', method='alt_logan', )
 
 
