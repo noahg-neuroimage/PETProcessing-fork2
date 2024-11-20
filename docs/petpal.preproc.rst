@@ -13,7 +13,6 @@ Submodules
    petpal.preproc.preproc
    petpal.preproc.register
    petpal.preproc.symmetric_geometric_transfer_matrix
-   petpal.preproc.toolbox_preproc
 
 Module contents
 ---------------
