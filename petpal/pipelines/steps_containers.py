@@ -1,6 +1,7 @@
 import copy
 from typing import Union
 import networkx as nx
+from matplotlib import pyplot as plt
 from .steps_base import *
 from .preproc_steps import PreprocStepType, ImageToImageStep, TACsFromSegmentationStep, ResampleBloodTACStep
 from .kinetic_modeling_steps import KMStepType, GraphicalAnalysisStep, TCMFittingAnalysisStep, ParametricGraphicalAnalysisStep
@@ -573,6 +574,73 @@ class StepsPipeline:
             if not run_state:
                 return False
         return True
+    
+    def plot_dependency_graph(self,
+                              figsize: tuple = (12, 12),
+                              node_options: Union[dict, None] = None,
+                              label_options: Union[dict, None] = None,
+                              draw_options: Union[dict, None] = None) -> None:
+        """
+        Plots the dependency graph of the steps pipeline.
+
+        Args:
+            figsize (tuple, optional): Figure size for the plot. Defaults to (12, 12).
+            node_options (dict, optional): Additional options for drawing nodes. Defaults to None.
+            label_options (dict, optional): Additional options for node labels. Defaults to None.
+            draw_options (dict, optional): Additional options for the draw_networkx function. Defaults to None.
+        
+        Notes:
+            We have the following node options.
+            
+            
+            .. code-block:: python
+            
+                default_node_options = {'node_size': 2000, 'node_color': 'w', 'node_shape': 'o'}
+        
+                default_label_options = {'verticalalignment': 'center',
+                                         'clip_on': False,
+                                         'font_size': 15,
+                                         'bbox' : dict(facecolor='azure', edgecolor='blue',
+                                                       boxstyle='round', alpha=0.25, linewidth=2)
+                                        }
+                
+                default_draw_options = {'with_labels': True, 'arrows': True, 'arrowsize': 30, 'width': 2}
+            
+        """
+        dep_graph = self.dependency_graph
+        
+        for layer, nodes in enumerate(nx.topological_generations(dep_graph)):
+            for node in nodes:
+                dep_graph.nodes[node]['layer'] = layer
+        
+        dep_pos = nx.multipartite_layout(dep_graph, subset_key='layer', align='horizontal')
+        dep_labels = {a_lab: '\n'.join(a_lab.split("_")) for a_lab in dep_graph.nodes}
+        
+        default_node_options = {'node_size': 2000, 'node_color': 'w', 'node_shape': 'o'}
+        
+        default_label_options = {'verticalalignment': 'center',
+                                 'clip_on': False,
+                                 'font_size': 15,
+                                 'bbox' : dict(facecolor='azure', edgecolor='blue',
+                                               boxstyle='round', alpha=0.25, linewidth=2)
+                                }
+        
+        default_draw_options = {'with_labels': True, 'arrows': True, 'arrowsize': 30, 'width': 2}
+        
+        if node_options:
+            default_node_options = {**default_node_options, **node_options}
+        if label_options:
+            default_label_options = {**default_label_options, **label_options}
+        if draw_options:
+            default_draw_options = {**default_draw_options, **draw_options}
+        
+        myFig, myAx = plt.subplots(figsize=figsize, constrained_layout=True)
+        nx.draw_networkx(dep_graph, ax=myAx, pos=dep_pos, labels=dep_labels,
+                         **default_node_options,
+                         **default_label_options,
+                         **default_draw_options)
+        
+        plt.show()
     
     @classmethod
     def default_steps_pipeline(cls, name='PET-MR_analysis'):
