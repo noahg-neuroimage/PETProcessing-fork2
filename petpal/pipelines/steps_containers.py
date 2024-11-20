@@ -8,7 +8,25 @@ from .kinetic_modeling_steps import KMStepType, GraphicalAnalysisStep, TCMFittin
 StepType = Union[FunctionBasedStep, ObjectBasedStep, PreprocStepType, KMStepType]
 
 class StepsContainer:
+    """
+    A container for managing and executing a sequence of steps in a pipeline.
+
+    This class allows for the addition, removal, and execution of steps, as well as printing their
+    details and combining multiple step containers.
+
+    Attributes:
+        name (str): Name of the steps container.
+        step_objs (list[StepType]): List of step objects in the container.
+        step_names (list[str]): List of step names in the container.
+    """
     def __init__(self, name: str, *steps: StepType):
+        """
+        Initializes the StepsContainer with a name and an optional sequence of steps.
+
+        Args:
+            name (str): Name of the steps container.
+            *steps (StepType): Optional sequence of steps to add to the container.
+        """
         self.name = name
         self.step_objs: list[StepType] = []
         self.step_names: list[str] = []
@@ -16,6 +34,12 @@ class StepsContainer:
             self.add_step(step)
     
     def __repr__(self):
+        """
+        Provides an unambiguous string representation of the TACsFromSegmentationStep instance.
+
+        Returns:
+            str: A string representation showing how the instance can be recreated.
+        """
         cls_name = type(self).__name__
         info_str = [f'{cls_name}(', f'{repr(self.name)},']
         
@@ -27,6 +51,16 @@ class StepsContainer:
         return f'\n    '.join(info_str)
     
     def add_step(self, step: StepType):
+        """
+        Adds a step to the container if it is not already present.
+
+        Args:
+            step (StepType): The step to add.
+
+        Raises:
+            TypeError: If the step is not of the correct type.
+            KeyError: If a step with the same name already exists.
+        """
         if not isinstance(step, StepType.__args__):
             raise TypeError("Step must be of type StepType")
         
@@ -37,6 +71,16 @@ class StepsContainer:
             raise KeyError("A step with this name already exists.")
     
     def remove_step(self, step: Union[int, str]):
+        """
+        Removes a step from the container by index or name.
+
+        Args:
+            step (Union[int, str]): The index or name of the step to remove.
+
+        Raises:
+            IndexError: If the step index does not exist.
+            KeyError: If the step name does not exist.
+        """
         if isinstance(step, int):
             try:
                 del self.step_objs[step]
@@ -54,6 +98,9 @@ class StepsContainer:
                 raise Exception
     
     def print_step_details(self):
+        """
+        Prints the details of all steps in the container.
+        """
         if not self.step_objs:
             print("No steps in container.")
         else:
@@ -66,6 +113,9 @@ class StepsContainer:
             print("*" * 90)
     
     def print_step_names(self) -> None:
+        """
+        Prints the names of all steps in the container.
+        """
         if not self.step_objs:
             print("No steps in container.")
         else:
@@ -76,10 +126,27 @@ class StepsContainer:
             print('-' * 80)
     
     def __call__(self):
+        """
+        Executes all steps in the container in sequence.
+        """
         for step_id, (step_name, a_step) in enumerate(zip(self.step_names, self.step_objs)):
             a_step.execute()
     
     def __getitem__(self, step: Union[int, str]):
+        """
+        Gets a step from the container by index or name.
+
+        Args:
+            step (Union[int, str]): The index or name of the step to get.
+
+        Returns:
+            StepType: The requested step.
+
+        Raises:
+            IndexError: If the step index does not exist.
+            KeyError: If the step name does not exist.
+            TypeError: If the key is not an integer or string.
+        """
         if isinstance(step, int):
             try:
                 return self.step_objs[step]
@@ -97,6 +164,19 @@ class StepsContainer:
             raise TypeError(f"Key must be an integer or a string. Got {type(step)}")
     
     def __add__(self, other: 'StepsContainer') -> 'StepsContainer':
+        """
+        Combines this StepsContainer with another one. The other container cannot have steps with the same name.
+
+        Args:
+            other (StepsContainer): The other steps container to combine with.
+
+        Returns:
+            StepsContainer: A new StepsContainer containing steps from both containers.
+
+        Raises:
+            TypeError: If the other object is not a StepsContainer.
+            KeyError: If a step with the same name already exists.
+        """
         if isinstance(other, StepsContainer):
             new_container_name = f"{self.name}-{other.name}"
             new_container = StepsContainer(new_container_name)
@@ -110,6 +190,22 @@ class StepsContainer:
     
     @classmethod
     def default_preprocess_steps(cls, name: str = 'preproc'):
+        """
+        Creates a default StepsContainer with common preprocessing steps.
+        
+        We have the following steps in sequence:
+            - :meth:`Threshold Based Cropping<petpal.pipelines.preproc_steps.ImageToImageStep.default_threshold_cropping>`.
+            - :meth:`Motion correct frames brighter than mean-image<petpal.pipelines.preproc_steps.ImageToImageStep.default_moco_frames_above_mean>`.
+            - :meth:`Register PET to Anatomical<petpal.pipelines.preproc_steps.ImageToImageStep.default_register_pet_to_t1>`.
+            - :meth:`Write ROI TACs from segmentation<petpal.pipelines.preproc_steps.TACsFromSegmentationStep.default_write_tacs_from_segmentation_rois>`.
+            - :meth:`Resample blood on scanner frame times<petpal.pipelines.preproc_steps.ResampleBloodTACStep.default_resample_blood_tac_on_scanner_times>`.
+
+        Args:
+            name (str, optional): Name of the steps container. Defaults to 'preproc'.
+
+        Returns:
+            StepsContainer: A new StepsContainer with default preprocessing steps.
+        """
         obj = cls(name=name)
         obj.add_step(ImageToImageStep.default_threshold_cropping())
         obj.add_step(ImageToImageStep.default_moco_frames_above_mean())
@@ -120,6 +216,23 @@ class StepsContainer:
     
     @classmethod
     def default_graphical_analysis_steps(cls, name: str = 'km_graphical_analysis'):
+        """
+        Creates a default StepsContainer with common graphical analysis steps.
+        
+        We have the following steps in sequence:
+            - :meth:`Patlak<petpal.pipelines.kinetic_modeling_steps.GraphicalAnalysisStep.default_patlak>`.
+            - :meth:`Logan<petpal.pipelines.kinetic_modeling_steps.GraphicalAnalysisStep.default_logan>`.
+            - :meth:`Alt-Logan<petpal.pipelines.kinetic_modeling_steps.GraphicalAnalysisStep.default_alt_logan>`.
+
+        Args:
+            name (str, optional): Name of the steps container. Defaults to 'km_graphical_analysis'.
+
+        Returns:
+            StepsContainer: A new StepsContainer with default graphical analysis steps.
+            
+        Notes:
+            The steps do not technically depend on each other and can be run out of sequence.
+        """
         obj = cls(name=name)
         obj.add_step(GraphicalAnalysisStep.default_patlak())
         obj.add_step(GraphicalAnalysisStep.default_logan())
@@ -128,6 +241,23 @@ class StepsContainer:
     
     @classmethod
     def default_parametric_graphical_analysis_steps(cls, name: str = 'km_parametric_graphical_analysis'):
+        """
+        Creates a default StepsContainer with common parametric graphical analysis steps.
+        
+        We have the following steps in sequence:
+            - :meth:`Patlak<petpal.pipelines.kinetic_modeling_steps.ParametricGraphicalAnalysisStep.default_patlak>`.
+            - :meth:`Logan<petpal.pipelines.kinetic_modeling_steps.ParametricGraphicalAnalysisStep.default_logan>`.
+            - :meth:`Alt-Logan<petpal.pipelines.kinetic_modeling_steps.ParametricGraphicalAnalysisStep.default_alt_logan>`.
+
+        Args:
+            name (str, optional): Name of the steps container. Defaults to 'km_parametric_graphical_analysis'.
+
+        Returns:
+            StepsContainer: A new StepsContainer with default parametric graphical analysis steps.
+            
+        Notes:
+            The steps do not technically depend on each other and can be run out of sequence.
+        """
         obj = cls(name=name)
         obj.add_step(ParametricGraphicalAnalysisStep.default_patlak())
         obj.add_step(ParametricGraphicalAnalysisStep.default_logan())
@@ -136,6 +266,20 @@ class StepsContainer:
     
     @classmethod
     def default_tcm_analysis_steps(cls, name: str = 'km_tcm_analysis'):
+        """
+        Creates a default StepsContainer with common TCM analysis steps.
+        
+        We have the following steps in sequence:
+            - :meth:`1TCM<petpal.pipelines.kinetic_modeling_steps.TCMFittingAnalysisStep.default_1tcm>`.
+            - :meth:`Serial 2TCM<petpal.pipelines.kinetic_modeling_steps.TCMFittingAnalysisStep.default_serial2tcm>`.
+            - :meth:`Irreversible 2TCM<petpal.pipelines.kinetic_modeling_steps.TCMFittingAnalysisStep.default_irreversible_2tcm>`.
+
+        Args:
+            name (str, optional): Name of the steps container. Defaults to 'km_tcm_analysis'.
+
+        Returns:
+            StepsContainer: A new StepsContainer with default TCM analysis steps.
+        """
         obj = cls(name=name)
         obj.add_step(TCMFittingAnalysisStep.default_1tcm())
         obj.add_step(TCMFittingAnalysisStep.default_serial2tcm())
@@ -144,6 +288,30 @@ class StepsContainer:
     
     @classmethod
     def default_kinetic_analysis_steps(cls, name: str = 'km'):
+        """
+        Creates a default StepsContainer with common kinetic analysis steps.
+        
+        We have the following steps in sequence:
+            - :meth:`ROI TACs: Patlak<petpal.pipelines.kinetic_modeling_steps.GraphicalAnalysisStep.default_patlak>`.
+            - :meth:`ROI TACs: Logan<petpal.pipelines.kinetic_modeling_steps.GraphicalAnalysisStep.default_logan>`.
+            - :meth:`ROI TACs: Alt-Logan<petpal.pipelines.kinetic_modeling_steps.GraphicalAnalysisStep.default_alt_logan>`.
+            - :meth:`Parametric: Patlak<petpal.pipelines.kinetic_modeling_steps.ParametricGraphicalAnalysisStep.default_patlak>`.
+            - :meth:`Parametric: Logan<petpal.pipelines.kinetic_modeling_steps.ParametricGraphicalAnalysisStep.default_logan>`.
+            - :meth:`Parametric: Alt-Logan<petpal.pipelines.kinetic_modeling_steps.ParametricGraphicalAnalysisStep.default_alt_logan>`.
+            - :meth:`ROI TACs: 1TCM<petpal.pipelines.kinetic_modeling_steps.TCMFittingAnalysisStep.default_1tcm>`.
+            - :meth:`ROI TACs: Serial 2TCM<petpal.pipelines.kinetic_modeling_steps.TCMFittingAnalysisStep.default_serial2tcm>`.
+            - :meth:`ROI TACs: Irreversible 2TCM<petpal.pipelines.kinetic_modeling_steps.TCMFittingAnalysisStep.default_irreversible_2tcm>`.
+
+        Args:
+            name (str, optional): Name of the steps container. Defaults to 'km'.
+
+        Returns:
+            StepsContainer: A new StepsContainer with default kinetic analysis steps.
+            
+        Notes:
+            The steps do not technically depend on each other and can be run out of sequence.
+        """
+        
         parametric_graphical_analysis_steps = cls.default_parametric_graphical_analysis_steps()
         graphical_analysis_steps = cls.default_graphical_analysis_steps()
         tcm_analysis_steps = cls.default_tcm_analysis_steps()

@@ -10,3 +10,4 @@ Submodules
    steps_base
    preproc_steps
    kinetic_modeling_steps
+   steps_containers
