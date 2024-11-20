@@ -368,6 +368,22 @@ class GraphicalAnalysisStep(ObjectBasedStep, TACAnalysisStepMixin):
 
 
 class TCMFittingAnalysisStep(ObjectBasedStep, TACAnalysisStepMixin):
+    """
+    A step for fitting compartment models to TAC data using
+    :class:`FitTCMToManyTACs<petpal.kinetic_modeling.tac_fitting.FitTCMToManyTACs>`.
+
+    This class sets up the compartment model fitting, initializes required paths and parameters,
+    and provides class methods for creating default steps with common compartment models like 1TCM,
+    Serial 2TCM, and Irreversible 2TCM.
+
+    Attributes:
+        input_tac_path (str): Path to the input TAC file.
+        roi_tacs_dir (str): Directory containing the ROI TAC files.
+        output_directory (str): Directory where output files will be saved.
+        output_prefix (str): Prefix for the output files.
+        compartment_model (str): Compartment model to be used for fitting.
+        
+    """
     def __init__(self,
                  input_tac_path: str,
                  roi_tacs_dir: str,
@@ -375,6 +391,17 @@ class TCMFittingAnalysisStep(ObjectBasedStep, TACAnalysisStepMixin):
                  output_prefix: str,
                  compartment_model='2tcm-k4zer0',
                  **kwargs):
+        """
+        Initializes the TCMFittingAnalysisStep with specified parameters.
+
+        Args:
+            input_tac_path (str): Path to the input TAC file.
+            roi_tacs_dir (str): Directory containing the ROI TAC files.
+            output_directory (str): Directory where output files will be saved.
+            output_prefix (str): Prefix for the output files.
+            compartment_model (str, optional): Compartment model to be used for fitting. Defaults to '2tcm-k4zer0'.
+            **kwargs: Additional keyword arguments to be included in initialization for :class:`FitTCMToManyTACs<petpal.kinetic_modeling.tac_fitting.FitTCMToManyTACs>`.
+        """
         TACAnalysisStepMixin.__init__(self, input_tac_path=input_tac_path, roi_tacs_dir=roi_tacs_dir,
                                       output_directory=output_directory, output_prefix=output_prefix,
                                       is_ref_tac_based_model=False, compartment_model=compartment_model, **kwargs)
@@ -383,6 +410,12 @@ class TCMFittingAnalysisStep(ObjectBasedStep, TACAnalysisStepMixin):
                                  init_kwargs=self.init_kwargs, call_kwargs=dict())
     
     def __repr__(self):
+        """
+        Provides an unambiguous string representation of the ResampleBloodTACStep instance.
+
+        Returns:
+            str: A string representation showing how the instance can be recreated.
+        """
         cls_name = type(self).__name__
         info_str = [f'{cls_name}(']
         
@@ -401,16 +434,46 @@ class TCMFittingAnalysisStep(ObjectBasedStep, TACAnalysisStepMixin):
     
     @classmethod
     def default_1tcm(cls, **kwargs):
+        """
+        Creates a default instance for 1TCM compartment model fitting using
+        :class:`FitTCMToManyTACs<petpal.kinetic_modeling.tac_fitting.FitTCMToManyTACs>`.
+
+        Args:
+            **kwargs: Additional keyword arguments to be included in the initialization.
+
+        Returns:
+            TCMFittingAnalysisStep: A new instance for 1TCM compartment model fitting.
+        """
         return cls(input_tac_path='', roi_tacs_dir='', output_directory='', output_prefix='', compartment_model='1tcm',
                    **kwargs)
     
     @classmethod
     def default_serial2tcm(cls, **kwargs):
+        """
+        Creates a default instance for serial-2TCM compartment model fitting using
+        :class:`FitTCMToManyTACs<petpal.kinetic_modeling.tac_fitting.FitTCMToManyTACs>`.
+
+        Args:
+            **kwargs: Additional keyword arguments to be included in the initialization.
+
+        Returns:
+            TCMFittingAnalysisStep: A new instance for serial-2TCM compartment model fitting.
+        """
         return cls(input_tac_path='', roi_tacs_dir='', output_directory='', output_prefix='',
                    compartment_model='serial-2tcm', **kwargs)
     
     @classmethod
     def default_irreversible_2tcm(cls, **kwargs):
+        """
+        Creates a default instance for irreversible-2TCM compartment model fitting using
+        :class:`FitTCMToManyTACs<petpal.kinetic_modeling.tac_fitting.FitTCMToManyTACs>`.
+
+        Args:
+            **kwargs: Additional keyword arguments to be included in the initialization.
+
+        Returns:
+            TCMFittingAnalysisStep: A new instance for irreversible-2TCM compartment model fitting.
+        """
         return cls(input_tac_path='', roi_tacs_dir='', output_directory='', output_prefix='',
                    compartment_model='2tcm-k4zero', **kwargs)
 
