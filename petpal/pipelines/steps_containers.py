@@ -322,7 +322,28 @@ class StepsContainer:
 
 
 class StepsPipeline:
+    """
+    A pipeline for managing and executing a sequence of steps organized in containers, with support for dependencies.
+
+    This class allows for the addition, removal, and execution of step containers,
+    as well as managing dependencies between the steps.
+
+    Attributes:
+        name (str): Name of the steps pipeline.
+        step_containers (dict[str, StepsContainer]): Dictionary of step containers in the pipeline.
+        dependency_graph (nx.DiGraph): Directed acyclic graph representing dependencies between steps.
+        
+    See Also:
+        :class:`StepsContainer`
+    """
     def __init__(self, name: str, step_containers: list[StepsContainer]):
+        """
+        Initializes the StepsPipeline with a name and an optional list of step containers.
+
+        Args:
+            name (str): Name of the steps pipeline.
+            step_containers (list[StepsContainer]): Optional list of step containers to add to the pipeline.
+        """
         self.name: str = name
         self.step_containers: dict[str, StepsContainer] = {}
         self.dependency_graph = nx.DiGraph()
@@ -331,6 +352,12 @@ class StepsPipeline:
             self.add_container(container)
     
     def __repr__(self):
+        """
+        Provides an unambiguous string representation of the TACsFromSegmentationStep instance.
+
+        Returns:
+            str: A string representation showing how the instance can be recreated.
+        """
         cls_name = type(self).__name__
         info_str = [f'{cls_name}(', f'name={repr(self.name)},' 'step_containers=[']
         
@@ -342,6 +369,16 @@ class StepsPipeline:
         return f'\n    '.join(info_str)
     
     def add_container(self, step_container: StepsContainer):
+        """
+        Adds a step container to the pipeline.
+
+        Args:
+            step_container (StepsContainer): The step container to add.
+
+        Raises:
+            TypeError: If the step container is not an instance of StepsContainer.
+            KeyError: If a container with the same name already exists.
+        """
         if not isinstance(step_container, StepsContainer):
             raise TypeError("`step_container` must be an instance of StepsContainer")
         
@@ -356,10 +393,24 @@ class StepsPipeline:
             self.dependency_graph.add_node(f"{step.name}", grp=container_name)
     
     def __call__(self):
-        for name, container in self.step_containers.items():
-            container()
+        """
+        Executes all steps in the pipeline in topologically sorted order.
+        """
+        for step_name in nx.topological_sort(self.dependency_graph):
+            step = self.get_step_from_node_label(node_label=step_name)
+            step()
     
     def add_step(self, container_name: str, step: StepType):
+        """
+        Adds a step to a specified container in the pipeline.
+
+        Args:
+            container_name (str): The name of the container to add the step to.
+            step (StepType): The step to add.
+
+        Raises:
+            KeyError: If the container or step name does not exist or if the step name already exists.
+        """
         if container_name not in self.step_containers.keys():
             raise KeyError(f"Container name {container_name} does not exist.")
         if step.name in self.dependency_graph:
@@ -369,6 +420,15 @@ class StepsPipeline:
         self.dependency_graph.add_node(f"{step.name}", grp=container_name)
     
     def remove_step(self, step: str):
+        """
+        Removes a step from the pipeline based on its name.
+
+        Args:
+            step (str): The name of the step to remove.
+
+        Raises:
+            KeyError: If the step name does not exist.
+        """
         node_names = list(self.dependency_graph.nodes)
         if step not in node_names:
             raise KeyError(f"Step name {step} does not exist.")
@@ -378,6 +438,16 @@ class StepsPipeline:
         self.step_containers[container_name].remove_step(step)
     
     def print_steps_names(self, container_name: Union[str, None] = None):
+        """
+        Prints the names of all steps in the pipeline or a specific container.
+
+        Args:
+            container_name (Union[str, None], optional): The name of the container to print step names from.
+                If None, prints step names from all containers.
+
+        Raises:
+            KeyError: If the container name does not exist.
+        """
         if container_name is None:
             for name, container in self.step_containers.items():
                 container.print_step_names()
@@ -387,6 +457,16 @@ class StepsPipeline:
             raise KeyError(f"Container name {container_name} does not exist. ")
     
     def print_steps_details(self, container_name: Union[str, None] = None):
+        """
+        Prints the details of all steps in the pipeline or a specific container.
+
+        Args:
+            container_name (Union[str, None], optional): The name of the container to print step details from.
+                If None, prints step details from all containers.
+
+        Raises:
+            KeyError: If the container name does not exist.
+        """
         if container_name is None:
             for name, container in self.step_containers.items():
                 container.print_step_details()
@@ -396,6 +476,17 @@ class StepsPipeline:
             raise KeyError(f"Container name {container_name} does not exist. ")
     
     def add_dependency(self, sending: str, receiving: str):
+        """
+        Adds a dependency between two steps in the pipeline.
+
+        Args:
+            sending (str): The name of the sending step.
+            receiving (str): The name of the receiving step.
+
+        Raises:
+            KeyError: If either step name does not exist.
+            RuntimeError: If adding the dependency creates a cycle in the dependency graph.
+        """
         node_names = list(self.dependency_graph.nodes)
         if sending not in node_names:
             raise KeyError(f"Step name {sending} does not exist.")
@@ -408,6 +499,18 @@ class StepsPipeline:
             raise RuntimeError(f"Adding dependency {sending} -> {receiving} creates a cycle!")
     
     def get_step_from_node_label(self, node_label: str):
+        """
+        Retrieves a step object based on its node label in the dependency graph.
+
+        Args:
+            node_label (str): The label of the node representing the step.
+
+        Returns:
+            StepType: The step object.
+
+        Raises:
+            KeyError: If the step name does not exist in the graph.
+        """
         if node_label not in self.dependency_graph.nodes:
             raise KeyError(f"Step name {node_label} does not exist.")
         graph_nodes = self.dependency_graph.nodes(data=True)
@@ -415,6 +518,13 @@ class StepsPipeline:
         return self.step_containers[container_name][node_label]
     
     def update_dependencies_for(self, step_name: str, verbose=False):
+        """
+        Updates the dependencies for a specified step, setting inputs from the outputs of its dependencies.
+
+        Args:
+            step_name (str): The name of the step to update dependencies for.
+            verbose (bool, optional): If True, prints detailed information during the update process. Defaults to False.
+        """
         sending_step = self.get_step_from_node_label(step_name)
         for an_edge in self.dependency_graph[step_name]:
             receiving_step = self.get_step_from_node_label(an_edge)
@@ -429,10 +539,22 @@ class StepsPipeline:
                     print(f"Updated input-output dependency between {sending_step.name} and {receiving_step.name}")
     
     def update_dependencies(self, verbose=False):
+        """
+        Updates the dependencies for all steps in the pipeline.
+
+        Args:
+            verbose (bool, optional): If True, prints detailed information during the update process. Defaults to False.
+        """
         for step_name in nx.topological_sort(self.dependency_graph):
             self.update_dependencies_for(step_name=step_name, verbose=verbose)
     
     def get_steps_potential_run_state(self) -> dict:
+        """
+        Gets a dictionary representing the potential run state of all steps in topologically sorted order.
+
+        Returns:
+            dict: Dictionary mapping step names to their potential run state (True if the step can potentially run, False otherwise).
+        """
         step_maybe_runnable = {}
         for node_name in nx.topological_sort(self.dependency_graph):
             step = self.get_step_from_node_label(node_name)
@@ -440,6 +562,12 @@ class StepsPipeline:
         return step_maybe_runnable
     
     def can_steps_potentially_run(self) -> bool:
+        """
+        Checks if all steps in the pipeline can potentially run.
+
+        Returns:
+            bool: True if all steps can potentially run, False otherwise.
+        """
         steps_run_state = self.get_steps_potential_run_state()
         for step_name, run_state in steps_run_state.items():
             if not run_state:
@@ -448,9 +576,21 @@ class StepsPipeline:
     
     @classmethod
     def default_steps_pipeline(cls, name='PET-MR_analysis'):
-        obj = cls(name=name, step_containers=[])
-        obj.add_container(StepsContainer.default_preprocess_steps(name='preproc'))
-        obj.add_container(StepsContainer.default_kinetic_analysis_steps(name='km'))
+        """
+        Creates a default steps pipeline with predefined containers and dependencies.
+        
+        Contains the following step-containers:
+            - :meth:`Pre-processing<StepsContainer.default_preprocess_steps>`.
+            - :meth:`Kinetic modeling<StepsContainer.default_kinetic_analysis_steps>`.
+
+        Args:
+            name (str, optional): Name of the steps pipeline. Defaults to 'PET-MR_analysis'.
+
+        Returns:
+            StepsPipeline: A new StepsPipeline instance with default setup.
+        """
+        obj = cls(name=name, step_containers=[StepsContainer.default_preprocess_steps(name='preproc'),
+                                              StepsContainer.default_kinetic_analysis_steps(name='km')])
         
         obj.add_dependency(sending='thresh_crop', receiving='moco_frames_above_mean')
         obj.add_dependency(sending='moco_frames_above_mean', receiving='register_pet_to_t1')
