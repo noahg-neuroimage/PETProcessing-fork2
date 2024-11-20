@@ -271,11 +271,42 @@ class TACsFromSegmentationStep(FunctionBasedStep):
     
 
 class ResampleBloodTACStep(FunctionBasedStep):
+    """
+    A step in a processing pipeline for resampling blood Time Activity Curves (TACs) based on PET image timings.
+
+    This class facilitates the resampling of blood TACs to match the scanner's time frames, providing properties and
+    methods for handling the input and output paths, as well as the resampling thresholds. This class uses
+    :func:`resample_blood_data_on_scanner_times<blood_input.resample_blood_data_on_scanner_times>` to perform
+    the resampling.
+
+    Attributes:
+        raw_blood_tac_path (str): Path to the input raw blood TAC file.
+        input_image_path (str): Path to the 4D-PET image file.
+        resampled_tac_path (str): Path where the resampled TAC will be saved.
+        lin_fit_thresh_in_mins (float): Threshold in minutes for linear fitting.
+
+    Methods:
+        - set_input_as_output_from(sending_step): Sets the input image path based on the output from a specified
+          sending step.
+        - infer_outputs_from_inputs(out_dir, der_type, suffix='blood', ext='.tsv', **extra_desc): Infers the output
+          file path for resampled TAC based on the input raw blood TAC path.
+        - default_resample_blood_tac_on_scanner_times(): Provides a class method to create an instance with default
+          parameters.
+    """
     def __init__(self,
                  input_raw_blood_tac_path: str,
                  input_image_path: str,
                  out_tac_path: str,
                  lin_fit_thresh_in_mins=30.0):
+        """
+        Initializes a ResampleBloodTACStep with specified parameters.
+
+        Args:
+            input_raw_blood_tac_path (str): Path to the input raw blood TAC file.
+            input_image_path (str): Path to the PET image file.
+            out_tac_path (str): Path where the resampled TAC will be saved.
+            lin_fit_thresh_in_mins (float): Threshold in minutes for linear fitting.
+        """
         super().__init__(name='resample_PTAC_on_scanner', function=blood_input.resample_blood_data_on_scanner_times,
                          raw_blood_tac=input_raw_blood_tac_path, pet4d_path=input_image_path, out_tac_path=out_tac_path,
                          lin_fit_thresh_in_mins=lin_fit_thresh_in_mins)
@@ -285,6 +316,12 @@ class ResampleBloodTACStep(FunctionBasedStep):
         self.lin_fit_thresh_in_mins = lin_fit_thresh_in_mins
     
     def __repr__(self):
+        """
+        Provides an unambiguous string representation of the ResampleBloodTACStep instance.
+
+        Returns:
+            str: A string representation showing how the instance can be recreated.
+        """
         cls_name = type(self).__name__
         info_str = [f'{cls_name}(']
         
@@ -300,46 +337,106 @@ class ResampleBloodTACStep(FunctionBasedStep):
     
     @property
     def raw_blood_tac_path(self):
+        """
+        Gets the path to the input raw blood TAC file.
+
+        Returns:
+            str: The path to the input raw blood TAC file.
+        """
         return self._raw_blood_tac_path
     
     @raw_blood_tac_path.setter
     def raw_blood_tac_path(self, raw_blood_tac_path):
+        """
+        Sets the path to the input raw blood TAC file and updates the function arguments.
+
+        Args:
+            raw_blood_tac_path (str): The new path to the raw blood TAC file.
+        """
         self.kwargs['raw_blood_tac'] = raw_blood_tac_path
         self._raw_blood_tac_path = raw_blood_tac_path
     
     @property
     def input_image_path(self):
+        """
+        Gets the path to the PET image file.
+
+        Returns:
+            str: The path to the PET image file.
+        """
         return self._input_image_path
     
     @input_image_path.setter
     def input_image_path(self, input_image_path: str):
+        """
+        Sets the path to the PET image file and updates the function arguments.
+
+        Args:
+            input_image_path (str): The new path to the PET image file.
+        """
         self.kwargs['pet4d_path'] = input_image_path
         self._input_image_path = input_image_path
     
     @property
     def resampled_tac_path(self):
+        """
+        Gets the path where the resampled TAC will be saved.
+
+        Returns:
+            str: The path where the resampled TAC will be saved.
+        """
         return self._resampled_tac_path
     
     @resampled_tac_path.setter
     def resampled_tac_path(self, resampled_tac_path):
+        """
+        Sets the path where the resampled TAC will be saved and updates the function arguments.
+
+        Args:
+            resampled_tac_path (str): The new path where the resampled TAC will be saved.
+        """
         self.kwargs['out_tac_path'] = resampled_tac_path
         self._resampled_tac_path = resampled_tac_path
     
     def set_input_as_output_from(self, sending_step):
+        """
+        Sets the input image path based on the output from a specified sending step.
+
+        Args:
+            sending_step: The step from which to derive the input image path.
+        """
         if isinstance(sending_step, ImageToImageStep):
             self.input_image_path = sending_step.output_image_path
         else:
             super().set_input_as_output_from(sending_step)
     
-    @classmethod
-    def default_resample_blood_tac_on_scanner_times(cls):
-        return cls(input_raw_blood_tac_path='', input_image_path='', out_tac_path='', lin_fit_thresh_in_mins=30.0)
-    
     def infer_outputs_from_inputs(self, out_dir: str, der_type, suffix='blood', ext='.tsv', **extra_desc):
+        """
+        Infers the output file path for resampled TAC based on the input raw blood TAC path.
+
+        Args:
+            out_dir (str): Directory where the outputs will be saved.
+            der_type: Type of derivatives.
+            suffix (str, optional): Suffix for the output files. Defaults to 'blood'.
+            ext (str, optional): Extension for the output files. Defaults to '.tsv'.
+            **extra_desc: Additional descriptive parameters.
+        """
         sub_id, ses_id = parse_path_to_get_subject_and_session_id(self.raw_blood_tac_path)
         filepath = gen_bids_like_filepath(sub_id=sub_id, ses_id=ses_id, bids_dir=out_dir, modality='preproc',
                                           suffix=suffix, ext=ext, desc='OnScannerFrameTimes')
         self.resampled_tac_path = filepath
+    
+    @classmethod
+    def default_resample_blood_tac_on_scanner_times(cls):
+        """
+        Provides a class method to create an instance with default parameters. All paths are set to empty-strings
+        and the fitting threshold is set to 30 minutes.
+
+        Returns:
+            ResampleBloodTACStep: A new instance with default parameters.
+        """
+        return cls(input_raw_blood_tac_path='', input_image_path='', out_tac_path='', lin_fit_thresh_in_mins=30.0)
+    
 
 
 class ImageToImageStep(FunctionBasedStep):
