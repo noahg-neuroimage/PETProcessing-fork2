@@ -553,6 +553,22 @@ class RTMFittingAnalysisStep(ObjectBasedStep, TACAnalysisStepMixin):
 
 
 class ParametricGraphicalAnalysisStep(ObjectBasedStep, TACAnalysisStepMixin):
+    """
+    A step for performing parametric graphical analysis on TACs using various methods using
+    :class:`GraphicalAnalysisParametricImages<petpal.kinetic_modeling.parametric_images.GraphicalAnalysisParametricImages>`
+
+    This class sets up parametric graphical analysis, initializes required paths and parameters,
+    and provides class methods for creating default steps with common graphical analysis methods
+    like Patlak, Logan, and Alternative Logan.
+
+    Attributes:
+        input_tac_path (str): Path to the input TAC file.
+        input_image_path (str): Path to the input image file.
+        output_directory (str): Directory where output files will be saved.
+        output_prefix (str): Prefix for the output files.
+        method (str): Graphical analysis method.
+        fit_threshold_in_mins (float): Threshold in minutes for fitting. Defaults to 30.0.
+    """
     def __init__(self,
                  input_tac_path: str,
                  input_image_path: str,
@@ -560,6 +576,17 @@ class ParametricGraphicalAnalysisStep(ObjectBasedStep, TACAnalysisStepMixin):
                  output_prefix: str,
                  method: str,
                  fit_threshold_in_mins: float = 30.0, ):
+        """
+        Initializes the ParametricGraphicalAnalysisStep with specified parameters.
+
+        Args:
+            input_tac_path (str): Path to the input TAC file.
+            input_image_path (str): Path to the input image file.
+            output_directory (str): Directory where output files will be saved.
+            output_prefix (str): Prefix for the output files.
+            method (str): Graphical analysis method.
+            fit_threshold_in_mins (float, optional): Threshold in minutes for fitting. Defaults to 30.0.
+        """
         TACAnalysisStepMixin.__init__(self, input_tac_path=input_tac_path, pet4D_img_path=input_image_path,
                                       roi_tacs_dir='', output_directory=output_directory, output_prefix=output_prefix,
                                       is_ref_tac_based_model=False, )
@@ -572,6 +599,12 @@ class ParametricGraphicalAnalysisStep(ObjectBasedStep, TACAnalysisStepMixin):
         self._input_image_path = input_image_path
     
     def __repr__(self):
+        """
+        Provides an unambiguous string representation of the ResampleBloodTACStep instance.
+
+        Returns:
+            str: A string representation showing how the instance can be recreated.
+        """
         cls_name = type(self).__name__
         info_str = [f'{cls_name}(']
         
@@ -589,14 +622,37 @@ class ParametricGraphicalAnalysisStep(ObjectBasedStep, TACAnalysisStepMixin):
     
     @property
     def input_image_path(self) -> str:
+        """
+        Returns the path to the input image.
+
+        Returns:
+            str: Path to the input image.
+        """
         return self._input_image_path
     
     @input_image_path.setter
     def input_image_path(self, input_image_path: str):
+        """
+        Sets the path to the input image and updates the initialization arguments.
+
+        Args:
+            input_image_path (str): Path to the input image.
+        """
         self._input_image_path = input_image_path
         self.init_kwargs['pet4D_img_path'] = input_image_path
     
     def set_input_as_output_from(self, sending_step: PreprocStepType) -> None:
+        """
+        Sets the input paths based on the outputs of a sending preprocessing step.
+        
+        - Given a :class:`ResampleBloodTACStep<petpal.pipelines.preproc_steps.ResampleBloodTACStep>`,
+          we get the input TAC path.
+        - Given a :class:`ImageToImageStep<petpal.pipelines.preproc_steps.ImageToImageStep>`,
+          we get the output image path.
+
+        Args:
+            sending_step (PreprocStepType): The preprocessing step which provides the input paths.
+        """
         if isinstance(sending_step, ResampleBloodTACStep):
             self.input_tac_path = sending_step.resampled_tac_path
         elif isinstance(sending_step, ImageToImageStep):
@@ -606,14 +662,38 @@ class ParametricGraphicalAnalysisStep(ObjectBasedStep, TACAnalysisStepMixin):
     
     @classmethod
     def default_patlak(cls):
+        """
+        Creates a default instance for Patlak parametric graphical analysis using
+        :class:`GraphicalAnalysisParametricImages<petpal.kinetic_modeling.parametric_images.GraphicalAnalysisParametricImages>`.
+        All non-method arguments are set to empty-strings.
+        
+        Returns:
+            ParametricGraphicalAnalysisStep: A new instance for Patlak parametric graphical analysis.
+        """
         return cls(input_tac_path='', input_image_path='', output_directory='', output_prefix='', method='patlak')
     
     @classmethod
     def default_logan(cls):
+        """
+        Creates a default instance for Logan parametric graphical analysis using
+        :class:`GraphicalAnalysisParametricImages<petpal.kinetic_modeling.parametric_images.GraphicalAnalysisParametricImages>`.
+        All non-method arguments are set to empty-strings.
+
+        Returns:
+            ParametricGraphicalAnalysisStep: A new instance for Logan parametric graphical analysis.
+        """
         return cls(input_tac_path='', input_image_path='', output_directory='', output_prefix='', method='logan')
     
     @classmethod
     def default_alt_logan(cls):
+        """
+        Creates a default instance for Alt-Logan parametric graphical analysis using
+        :class:`GraphicalAnalysisParametricImages<petpal.kinetic_modeling.parametric_images.GraphicalAnalysisParametricImages>`.
+        All non-method arguments are set to empty-strings.
+
+        Returns:
+            ParametricGraphicalAnalysisStep: A new instance for Alt-Logan parametric graphical analysis.
+        """
         return cls(input_tac_path='', input_image_path='', output_directory='', output_prefix='', method='alt_logan')
     
 KMStepType = Union[GraphicalAnalysisStep,
