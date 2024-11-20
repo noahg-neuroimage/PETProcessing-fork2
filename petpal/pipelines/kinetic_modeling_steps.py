@@ -437,6 +437,7 @@ class TCMFittingAnalysisStep(ObjectBasedStep, TACAnalysisStepMixin):
         """
         Creates a default instance for 1TCM compartment model fitting using
         :class:`FitTCMToManyTACs<petpal.kinetic_modeling.tac_fitting.FitTCMToManyTACs>`.
+        All paths are set to empty-strings.
 
         Args:
             **kwargs: Additional keyword arguments to be included in the initialization.
@@ -452,6 +453,7 @@ class TCMFittingAnalysisStep(ObjectBasedStep, TACAnalysisStepMixin):
         """
         Creates a default instance for serial-2TCM compartment model fitting using
         :class:`FitTCMToManyTACs<petpal.kinetic_modeling.tac_fitting.FitTCMToManyTACs>`.
+        All paths are set to empty-strings.
 
         Args:
             **kwargs: Additional keyword arguments to be included in the initialization.
@@ -467,6 +469,7 @@ class TCMFittingAnalysisStep(ObjectBasedStep, TACAnalysisStepMixin):
         """
         Creates a default instance for irreversible-2TCM compartment model fitting using
         :class:`FitTCMToManyTACs<petpal.kinetic_modeling.tac_fitting.FitTCMToManyTACs>`.
+        All paths are set to empty-strings.
 
         Args:
             **kwargs: Additional keyword arguments to be included in the initialization.
@@ -479,6 +482,22 @@ class TCMFittingAnalysisStep(ObjectBasedStep, TACAnalysisStepMixin):
 
 
 class RTMFittingAnalysisStep(ObjectBasedStep, TACAnalysisStepMixin):
+    """
+    A step for fitting reference tissue models (RTMs) to TAC data using
+    :class:`MultiTACRTMAnalysis<petpal.kinetic_modeling.rtm_analysis.MultiTACRTMAnalysis>`.
+
+    This class sets up RTM fitting, initializes required paths and parameters.
+
+    Attributes:
+        ref_tac_path (str): Path to the reference TAC file.
+        roi_tacs_dir (str): Directory containing the ROI TAC files.
+        output_directory (str): Directory where output files will be saved.
+        output_prefix (str): Prefix for the output files.
+        rtm_model (str): Reference tissue model to be used for fitting.
+        bounds: Bounds for the fitting parameters. Defaults to None.
+        k2_prime: K2' value for the fitting. Defaults to None.
+        fit_threshold_in_mins (float): Threshold in minutes for fitting. Defaults to 30.0.
+    """
     def __init__(self,
                  ref_tac_path: str,
                  roi_tacs_dir: str,
@@ -488,7 +507,19 @@ class RTMFittingAnalysisStep(ObjectBasedStep, TACAnalysisStepMixin):
                  bounds=None,
                  k2_prime=None,
                  fit_threshold_in_mins: float = 30.0, ):
-        
+        r"""
+        Initializes the RTMFittingAnalysisStep with specified parameters.
+
+        Args:
+            ref_tac_path (str): Path to the reference TAC file.
+            roi_tacs_dir (str): Directory containing the ROI TAC files.
+            output_directory (str): Directory where output files will be saved.
+            output_prefix (str): Prefix for the output files.
+            rtm_model (str): Reference tissue model to be used for fitting.
+            bounds (optional): Bounds for the fitting parameters. Defaults to None.
+            k2_prime (optional): :math:`k_{2}^\prime` value for the fitting. Defaults to None.
+            fit_threshold_in_mins (float, optional): Threshold in minutes for fitting. Defaults to 30.0.
+        """
         TACAnalysisStepMixin.__init__(self, input_tac_path=ref_tac_path, roi_tacs_dir=roi_tacs_dir,
                                       output_directory=output_directory, output_prefix=output_prefix,
                                       is_ref_tac_based_model=True, method=rtm_model, )
@@ -498,6 +529,12 @@ class RTMFittingAnalysisStep(ObjectBasedStep, TACAnalysisStepMixin):
                                                   k2_prime=k2_prime))
     
     def __repr__(self):
+        """
+        Provides an unambiguous string representation of the ResampleBloodTACStep instance.
+
+        Returns:
+            str: A string representation showing how the instance can be recreated.
+        """
         cls_name = type(self).__name__
         info_str = [f'{cls_name}(']
         
