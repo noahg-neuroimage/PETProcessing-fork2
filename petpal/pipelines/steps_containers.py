@@ -650,6 +650,26 @@ class StepsPipeline:
         Contains the following step-containers:
             - :meth:`Pre-processing<StepsContainer.default_preprocess_steps>`.
             - :meth:`Kinetic modeling<StepsContainer.default_kinetic_analysis_steps>`.
+            
+        The pipeline has the following steps dependency:
+        
+        .. plot::
+            :include-source:
+            :caption: The dependency graph of the steps pipeline. From raw PET `.nii` images we crop the images
+                in each dimension based on a threshold, perform motion correction for each frame where the per-frame
+                mean-intensity is larger than the overall time-averaged intensity of the PET series, register the
+                PET series to anatomical space, extract all the TACs corresponding the ROIs defined via segmentation,
+                and resample the blood TAC onto the scanner frame times as part of pre-processing. Then, we perform
+                ROI-based graphical and full tissue compartment model fits, and parametric graphical analysis fits.
+                
+            from petpal.pipelines.steps_containers import StepsPipeline
+            
+            # Instantiate the default PET/MR pipeline
+            my_pipe = StepsPipeline.default_steps_pipeline()
+            
+            # Plot the dependency graph of the steps pipeline
+            my_pipe.plot_dependency_graph()
+        
 
         Args:
             name (str, optional): Name of the steps pipeline. Defaults to 'PET-MR_analysis'.
