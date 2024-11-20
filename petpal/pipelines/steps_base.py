@@ -8,10 +8,6 @@ class ArgsDict(dict):
 
     Attributes:
         None, since ArgsDict inherits directly from dict.
-
-    Methods:
-        __str__(): Returns a formatted string representation of the dictionary contents.
-
     """
     def __str__(self):
         """
@@ -33,12 +29,6 @@ class StepsAPI:
     This class outlines methods that allow input and output management between different steps,
     and perform inference of output files based on input data and given parameters.
 
-    Methods:
-        set_input_as_output_from(sending_step):
-            Sets the input of the current step as the output from a specified sending step.
-        infer_outputs_from_inputs(out_dir, der_type, suffix=None, ext=None, **extra_desc):
-            Infers output files from input data based on the specified output directory,
-            derivative type, optional suffix and extension, plus any extra descriptions.
     """
     
     def set_input_as_output_from(self, sending_step):
@@ -85,32 +75,6 @@ class FunctionBasedStep(StepsAPI):
         kwargs (ArgsDict): Keyword arguments to be passed to the function.
         func_sig (inspect.Signature): The signature of the function for validating arguments.
 
-    Methods:
-         - set_input_as_output_from(sending_step):
-            Sets the input of the current step as the output from a specified sending step.
-         - infer_outputs_from_inputs(out_dir, der_type, suffix=None, ext=None, **extra_desc):
-            Infers output files from input data based on the specified output directory.
-         - get_function_args_not_set_in_kwargs():
-            Retrieves arguments of the function that are not set in the keyword arguments.
-         - get_empty_default_kwargs():
-            Identifies arguments that have not been provided and lack default values.
-         - validate_kwargs_for_non_default_have_been_set():
-            Validates that all mandatory arguments have been provided.
-         - execute():
-            Executes the function with the provided arguments and keyword arguments.
-         - generate_kwargs_from_args():
-            Converts positional arguments into keyword arguments.
-         - __str__():
-            Returns a detailed string representation of the FunctionBasedStep instance.
-         - __repr__():
-            Returns an unambiguous string representation of the FunctionBasedStep instance.
-         - all_args_non_empty_strings():
-            Checks if all positional arguments are non-empty strings.
-         - all_kwargs_non_empty_strings():
-            Checks if all keyword arguments are non-empty strings.
-         - can_potentially_run():
-            Determines if the step can potentially be executed based on argument validation.
-            
     """
     def __init__(self, name: str, function: Callable, *args, **kwargs) -> None:
         """
@@ -290,26 +254,6 @@ class ObjectBasedStep(StepsAPI):
         init_sig (inspect.Signature): The initialization signature of the class for validating arguments.
         call_sig (inspect.Signature): The call signature of the class for validating arguments.
 
-    Methods:
-        set_input_as_output_from(sending_step): Sets the input of the current step as the output from a
-            specified sending step.
-        infer_outputs_from_inputs(out_dir, der_type, suffix=None, ext=None, **extra_desc): Infers output
-            files from input data based on the specified output directory.
-        validate_kwargs(): Validates that all mandatory initialization and call arguments have been
-            provided.
-        get_args_not_set_in_kwargs(sig, kwargs): Retrieves arguments of the signature that are not set
-            in the keyword arguments.
-        get_empty_default_kwargs(sig, set_kwargs): Identifies arguments that have not been provided
-            and lack default values.
-        execute(): Instantiates the class and invokes it with the provided arguments.
-        __str__(): Returns a detailed string representation of the ObjectBasedStep instance.
-        __repr__(): Returns an unambiguous string representation of the ObjectBasedStep instance.
-        all_init_kwargs_non_empty_strings(): Checks if all initialization keyword arguments are non-empty
-            strings.
-        all_call_kwargs_non_empty_strings(): Checks if all call keyword arguments are non-empty strings.
-        can_potentially_run(): Determines if the step can potentially be executed based on argument
-            validation.
-            
     """
     def __init__(self, name: str, class_type: type, init_kwargs: dict, call_kwargs: dict) -> None:
         """
