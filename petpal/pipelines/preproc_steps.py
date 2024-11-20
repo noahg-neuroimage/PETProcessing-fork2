@@ -14,7 +14,9 @@ class TACsFromSegmentationStep(FunctionBasedStep):
     A step in a processing pipeline for generating Time Activity Curves (TACs) from segmented images.
 
     This class is specialized for handling the input and output paths related to TAC generation,
-    extending the FunctionBasedStep with specific properties and methods for TACs.
+    extending the :class:`FunctionBasedStep<petpal.pipelines.steps_base.FunctionBasedStep>` with specific properties
+    and methods for TACs. The class uses :func:`write_tacs<petpal.preproc.image_operations_4d.write_tacs>` which
+    uses segmentation information to generate ROI TACs, and write them to disk.
 
     Attributes:
         input_image_path (str): Path to the input image.

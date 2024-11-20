@@ -17,6 +17,7 @@ Submodules
    petpal.cli.cli_tac_interpolation
    petpal.cli.brier_fdg_processing
    petpal.cli.cli_pib_processing
+   pipelines/preproc_steps
 
 
 Module contents
