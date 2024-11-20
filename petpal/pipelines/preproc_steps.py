@@ -425,17 +425,24 @@ class ResampleBloodTACStep(FunctionBasedStep):
 
 class ImageToImageStep(FunctionBasedStep):
     """
-    A step in a processing pipeline for processing and transforming image files.
-
-    This class handles input and output image paths, executes image transformation functions,
-    and provides methods for setting inputs from other steps and inferring output paths. The passed function
-    must have the following arguments order: ``func(input_image, output_image, *args, **kwargs)`` where
-    ``input_image`` and ``output_image`` can be named something else. The first argument must be an input
-    image path, and the second argument  must be an output image path.
+    A step in a processing pipeline for processing and transforming image files. This class handles input and output
+    image paths, executes image transformation functions, and provides methods for setting inputs from other steps
+    and inferring output paths.
+    
+    .. attention::
+       The passed function must have the following arguments order:
+       ``func(input_image, output_image, *args, **kwargs)`` where ``input_image`` and ``output_image``
+       can be named something else. The first argument must be an input image path, and the second argument
+       must be an output image path.
 
     Attributes:
         input_image_path (str): Path to the input image file.
         output_image_path (str): Path to the output image file.
+        
+    See Also:
+        - :meth:`default_threshold_cropping`
+        - :meth:`default_moco_frames_above_mean`
+        - :meth:`default_register_pet_to_t1`
 
     """
     def __init__(self,
@@ -470,11 +477,16 @@ class ImageToImageStep(FunctionBasedStep):
     
     def execute(self, copy_meta_file: bool = True) -> None:
         """
-        Executes the transformation function and optionally copies meta-data information using
+        Executes the function and optionally copies meta-data information using
         :func:`safe_copy_meta<petpal.utils.image_io.safe_copy_meta>`
 
         Args:
             copy_meta_file (bool): Whether to copy meta information from input to output image. Defaults to True.
+            
+        Notes:
+            Function must have the following arguments order: (input_image_path, output_image_path, *args, **kwargs)
+            where ``input_image`` and ``output_image`` are abritrary names.
+            
         """
         print(f"(Info): Executing {self.name}")
         self.function(self.input_image_path, self.output_image_path, *self.args, **self.kwargs)
