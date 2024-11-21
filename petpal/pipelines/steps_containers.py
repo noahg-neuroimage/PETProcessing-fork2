@@ -102,29 +102,35 @@ class StepsContainer:
         """
         Prints the details of all steps in the container.
         """
+        print(f"({self.name} Container Info):")
         if not self.step_objs:
             print("No steps in container.")
         else:
-            print(f"({self.name} Pipeline Info):")
+            print("*" * 80)
             for step_id, a_step in enumerate(self.step_objs):
-                print('-' * 80)
-                print(f"Step Number {step_id + 1}")
-                print(a_step)
-                print('-' * 80)
-            print("*" * 90)
+                print('-' * 70)
+                print(f"Step Number {step_id + 1:>02}")
+                print("  "+"    \n".join(str(a_step).split('\n')))
+                print('-' * 70)
+            print("*" * 80)
     
-    def print_step_names(self) -> None:
+    def __str__(self) -> str:
         """
-        Prints the names of all steps in the container.
+        Returns a detailed string representation of the StepsContainer instance.
+
+        Returns:
+            str: A string describing the steps-container, including its name, and the
+            names of the sequence of steps.
         """
+        info_str = [f"({self.name} pipeline info):"]
         if not self.step_objs:
-            print("No steps in container.")
+            info_str.append('No steps in container.')
         else:
-            print(f"({self.name} pipeline info):")
-            print('-' * 80)
+            info_str.append('-' * 70)
             for step_id, step_name in enumerate(self.step_names):
-                print(f"Step Number {step_id + 1}: {step_name}")
-            print('-' * 80)
+                info_str.append(f"  Step number {step_id + 1:>02}: {step_name}")
+            info_str.append('-' * 70)
+        return "\n".join(info_str)
     
     def __call__(self):
         """
