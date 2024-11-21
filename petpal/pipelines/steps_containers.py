@@ -102,7 +102,7 @@ class StepsContainer:
         """
         Prints the details of all steps in the container.
         """
-        print(f"({self.name} Container Info):")
+        print(f"({self.name} StepsContainer Info):")
         if not self.step_objs:
             print("No steps in container.")
         else:
@@ -122,7 +122,7 @@ class StepsContainer:
             str: A string describing the steps-container, including its name, and the
             names of the sequence of steps.
         """
-        info_str = [f"({self.name} pipeline info):"]
+        info_str = [f"({self.name} steps-container info):"]
         if not self.step_objs:
             info_str.append('No steps in container.')
         else:
@@ -362,6 +362,9 @@ class StepsPipeline:
         """
         Provides an unambiguous string representation of the TACsFromSegmentationStep instance.
 
+        .. important::
+            This ``repr`` does not include the dependency graph.
+
         Returns:
             str: A string representation showing how the instance can be recreated.
         """
@@ -374,6 +377,31 @@ class StepsPipeline:
         info_str.append(')')
         
         return f'\n    '.join(info_str)
+    
+    def __str__(self) -> str:
+        """
+        Returns a detailed string representation of the StepsPipeline instance.
+
+        Returns:
+            str: A string describing the steps-pipeline, including its name, the steps in
+            each of the steps-containers, and the output dependencies of each step.
+        """
+        sep_line_len = 50
+        info_str = [f'({self.name} pipeline info):', "*" * sep_line_len]
+        for con_name, con_obj in self.step_containers.items():
+            info_str.append(f"  ({con_name} steps-container info):")
+            for step_num, step_name in enumerate(con_obj.step_names):
+                info_str.append(f"    Step {step_num:>02}: {repr(step_name)}")
+                step_deps = list(self.dependency_graph[step_name].keys())
+                if step_deps:
+                    info_str.append(fr"      \> sends output to:")
+                    for dep_name in step_deps[:-1]:
+                        info_str.append(fr"            ├── {repr(dep_name)}")
+                    for dep_name in step_deps[-1:]:
+                        info_str.append(fr"            └── {repr(dep_name)}")
+            info_str.append("-" * sep_line_len)
+        info_str.append("*" * sep_line_len)
+        return "\n".join(info_str)
     
     def add_container(self, step_container: StepsContainer):
         """
@@ -457,9 +485,9 @@ class StepsPipeline:
         """
         if container_name is None:
             for name, container in self.step_containers.items():
-                container.print_step_names()
+                print(str(container))
         elif container_name in self.step_containers.keys():
-            self.step_containers[container_name].print_step_names()
+            print(str(self.step_containers[container_name]))
         else:
             raise KeyError(f"Container name {container_name} does not exist. ")
     
@@ -647,6 +675,46 @@ class StepsPipeline:
                          **default_draw_options)
         
         plt.show()
+    
+    def print_dependency_graph(self):
+        """
+        Prints a textual representation of the dependency graph for the steps pipeline.
+
+        This method outputs the steps in the pipeline in topologically sorted order,
+        showing their dependencies. For each step, it lists the subsequent steps
+        that depend on it, formatted in a tree-like structure.
+
+        Example output:
+            (ExamplePipelineName pipeline dependency info):
+            **************************************************
+            'step_1' sends output to
+              ├── 'step_2'
+              ├── 'step_3'
+              └── 'step_4'
+            'step_2' has no output dependencies
+            'step_3' sends output to
+              └── 'step_5'
+            'step_4' has no output dependencies
+            'step_5' has no output dependencies
+            **************************************************
+        """
+        sep_line_len = 50
+        info_str = [f'({self.name} pipeline dependency info):', "*" * sep_line_len]
+        for step_name in nx.topological_sort(self.dependency_graph):
+            info_str.append(f'{repr(step_name)}')
+            step_deps = list(self.dependency_graph[step_name].keys())
+            if step_deps:
+                info_str[-1] = f"{info_str[-1]} sends output to"
+                for dep_name in step_deps[:-1]:
+                    info_str.append(f"  ├── {repr(dep_name)}")
+                for dep_name in step_deps[-1:]:
+                    info_str.append(f"  └── {repr(dep_name)}")
+            else:
+                info_str[-1] = f"{info_str[-1]} has no output dependencies"
+        
+        info_str.append('*' * sep_line_len)
+        print('\n'.join(info_str))
+        
     
     @classmethod
     def default_steps_pipeline(cls, name='PET-MR_analysis'):
