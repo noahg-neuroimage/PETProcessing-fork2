@@ -69,6 +69,47 @@ class BIDSyPathsForRawData:
         self.seg_img = self._segmentation_img_path
         self.seg_table = self._segmentation_label_table_path
         self.blood_path = self._raw_blood_tac_path
+        
+    def __repr__(self):
+        """
+        Provides an unambiguous string representation of the BIDSyPathsForRawData instance.
+
+        Returns:
+            str: A string representation showing how the instance can be recreated.
+        """
+        type_name = type(self).__name__
+        name_len = len(type_name)+1
+        info_str = [f'{type(self).__name__}(sub_id={repr(self.sub_id)}',
+                    f'ses_id={repr(self.ses_id)}',
+                    f'bids_root_dir={repr(self.bids_dir)}',
+                    f'derivatives_dir={repr(self.derivatives_dir)}',
+                    f'raw_pet_img_path={repr(self.pet_path)}',
+                    f'raw_anat_img_path={repr(self.anat_path)}',
+                    f'segmentation_img_path={repr(self.seg_img)}',
+                    f'segmentation_label_table_path={repr(self.seg_table)}',
+                    f'raw_blood_tac_path={repr(self.blood_path)}',
+                    f')']
+        return (",\n"+" "*name_len).join(info_str)
+    
+    def __str__(self):
+        """
+        Returns a human-readable string representation of the object.
+
+        Returns:
+            str: A string representation of the object.
+        """
+        info_str = ["(BIDSyPaths info):",
+                    f"Subject ID: {self.sub_id}",
+                    f"Session ID: {self.ses_id}",
+                    f"BIDS root dir: {self.bids_dir}",
+                    f"Derivatives dir: {self.derivatives_dir}",
+                    f"4D-PET image: {repr(self.pet_path)}",
+                    f"Anatomical image: {repr(self.anat_path)}",
+                    f"Segmentation image: {repr(self.seg_img)}",
+                    f"Segmentation table: {repr(self.seg_table)}",
+                    f"Blood TAC: {repr(self.blood_path)}",]
+        return "\n".join(info_str)
+    
     
     @property
     def bids_dir(self) -> str:
@@ -290,6 +331,20 @@ class BIDSyPathsForRawData:
                 
                 
 class BIDSyPathsForPipelines(BIDSyPathsForRawData):
+    """
+    A class to manage and generate paths for BIDS data and pipeline-specific analysis directories.
+
+    Inherits from :class:`BIDSyPathsForRawData` and adds functionality to handle pipeline-specific directories
+    and analysis results.
+
+    Attributes:
+        sub_id (str): Subject ID.
+        ses_id (str): Session ID.
+        pipeline_name (str): Name of the pipeline. Defaults to 'generic_pipeline'.
+        list_of_analysis_dir_names (Union[None, list[str]]): List of names for analysis directories.
+        _pipeline_dir (Optional[str]): Directory for the pipeline.
+        analysis_dirs (dict): A dictionary containing paths to analysis directories.
+    """
     def __init__(self,
                  sub_id: str,
                  ses_id: str,
@@ -302,6 +357,23 @@ class BIDSyPathsForPipelines(BIDSyPathsForRawData):
                  segmentation_img_path: str = None,
                  segmentation_label_table_path: str = None,
                  raw_blood_tac_path: str = None):
+        """
+        Initializes the BIDSyPathsForPipelines object with the given subject and session IDs,
+        pipeline name, and paths for various types of data.
+
+        Args:
+            sub_id (str): Subject ID.
+            ses_id (str): Session ID.
+            pipeline_name (str, optional): Name of the pipeline. Defaults to 'generic_pipeline'.
+            list_of_analysis_dir_names (Union[None, list[str]], optional): List of names for analysis directories. Defaults to None.
+            bids_root_dir (Optional[str]): Optional path to the BIDS root directory. Defaults to None.
+            derivatives_dir (Optional[str]): Optional path to the derivatives directory. Defaults to None.
+            raw_pet_img_path (Optional[str]): Optional path to the raw PET image. Defaults to None.
+            raw_anat_img_path (Optional[str]): Optional path to the raw anatomical image. Defaults to None.
+            segmentation_img_path (Optional[str]): Optional path to the segmentation image. Defaults to None.
+            segmentation_label_table_path (Optional[str]): Optional path to the segmentation label table. Defaults to None.
+            raw_blood_tac_path (Optional[str]): Optional path to the raw blood TAC file. Defaults to None.
+        """
         super().__init__(sub_id=sub_id,
                          ses_id=ses_id,
                          bids_root_dir=bids_root_dir,
@@ -319,13 +391,59 @@ class BIDSyPathsForPipelines(BIDSyPathsForRawData):
         self.analysis_dirs = self.generate_analysis_dirs(list_of_dir_names=list_of_analysis_dir_names)
         self.make_analysis_dirs()
         
+    def __repr__(self):
+        """
+        Provides an unambiguous string representation of the BIDSyPathsForPipelines instance.
+
+        Returns:
+            str: A string representation showing how the instance can be recreated.
+            
+        See Also:
+            :func:`BIDSyPathsForRawData.__repr__`
+        """
+        type_name = type(self).__name__
+        name_len = len(type_name) + 1
+        info_str = super().__repr__().split("\n")
+        info_str[0] = f'{type(self).__name__}(sub_id={repr(self.sub_id)},'
+        info_str.insert(2," "*name_len+f"pipeline_name={repr(self.pipeline_name)},")
+        info_str.insert(3," "*name_len+f"list_of_analysis_dir_names={repr(self.list_of_analysis_dir_names)},")
+        return ("\n").join(info_str)
+    
+    def __str__(self):
+        """
+        Returns a human-readable string representation of the object.
+
+        Returns:
+            str: A string representation of the object.
+        """
+        info_str = super().__str__().split("\n")
+        info_str.append(f"Pipeline Name: {self.pipeline_name}")
+        info_str.append(f"Pipeline Dir: {self.pipeline_dir}")
+        info_str.append(f"Analysis Dirs:")
+        for dir_name, dir_path in self.analysis_dirs.items():
+            info_str.append(f"\t{dir_name}: {dir_path}")
+            
+        return "\n".join(info_str)
+        
         
     @property
     def pipeline_dir(self):
+        """
+        str: Property for the pipeline directory.
+        """
         return self._pipeline_dir
     
     @pipeline_dir.setter
     def pipeline_dir(self, value: str):
+        """
+        Sets the pipeline directory, validating if it is a sub-directory of the derivatives directory.
+
+        Args:
+            value (Optional[str]): Path to the pipeline directory. If None, a default path will be generated.
+
+        Raises:
+            ValueError: If the pipeline directory is not relative to the derivatives directory.
+        """
         if value is None:
             default_path = os.path.join(self.derivatives_dir, 'petpal', 'pipelines', self.pipeline_name)
             self._pipeline_dir = os.path.abspath(default_path)
@@ -337,6 +455,16 @@ class BIDSyPathsForPipelines(BIDSyPathsForRawData):
                 raise ValueError("Pipeline directory is not relative to the derivatives directory")
     
     def generate_analysis_dirs(self, list_of_dir_names: Union[None, list[str]] = None) -> dict:
+        """
+        Generates paths for analysis directories.
+
+        Args:
+            list_of_dir_names (Union[None, list[str]], optional): List of names for analysis directories.
+                Defaults to None, in which case default directories will be used.
+
+        Returns:
+            dict: A dictionary containing paths to analysis directories.
+        """
         if list_of_dir_names is None:
             list_of_dir_names = ['preproc', 'km', 'tacs']
         path_gen = lambda name: gen_bids_like_dir_path(sub_id=self.sub_id,
@@ -347,11 +475,35 @@ class BIDSyPathsForPipelines(BIDSyPathsForRawData):
         return analysis_dirs
     
     def make_analysis_dirs(self):
+        """
+        Creates the analysis directories if they do not already exist.
+        """
         for a_name, a_dir in self.analysis_dirs.items():
             os.makedirs(a_dir, exist_ok=True)
             
     
 class BIDS_Pipeline(BIDSyPathsForPipelines, StepsPipeline):
+    """
+    A class that combines BIDS data path management with a steps-based pipeline for processing.
+
+    Inherits from:
+        BIDSyPathsForPipelines: Manages paths for BIDS data and analysis directories.
+        StepsPipeline: Manages a series of processing steps in a pipeline.
+
+    Attributes:
+        sub_id (str): Subject ID.
+        ses_id (str): Session ID.
+        pipeline_name (str): Name of the pipeline. Defaults to 'generic_pipeline'.
+        list_of_analysis_dir_names (Union[None, list[str]]): List of names for analysis directories.
+        bids_root_dir (Optional[str]): Optional path to the BIDS root directory.
+        derivatives_dir (Optional[str]): Optional path to the derivatives directory.
+        raw_pet_img_path (Optional[str]): Optional path to the raw PET image.
+        raw_anat_img_path (Optional[str]): Optional path to the raw anatomical image.
+        segmentation_img_path (Optional[str]): Optional path to the segmentation image.
+        segmentation_label_table_path (Optional[str]): Optional path to the segmentation label table.
+        raw_blood_tac_path (Optional[str]): Optional path to the raw blood TAC file.
+        step_containers (list[StepsContainer]): List of step containers for the pipeline.
+    """
     def __init__(self,
                  sub_id: str,
                  ses_id: str,
@@ -365,6 +517,27 @@ class BIDS_Pipeline(BIDSyPathsForPipelines, StepsPipeline):
                  segmentation_label_table_path: str = None,
                  raw_blood_tac_path: str = None,
                  step_containers: list[StepsContainer] = []):
+        """
+        Initializes the BIDS_Pipeline object with the given subject and session IDs,
+        pipeline name, paths for various types of data, and step containers for processing.
+
+        Args:
+            sub_id (str): Subject ID.
+            ses_id (str): Session ID.
+            pipeline_name (str, optional): Name of the pipeline. Defaults to 'generic_pipeline'.
+            list_of_analysis_dir_names (Union[None, list[str]], optional): List of names for analysis
+                directories. Defaults to None.
+            bids_root_dir (Optional[str]): Optional path to the BIDS root directory. Defaults to None.
+            derivatives_dir (Optional[str]): Optional path to the derivatives directory. Defaults to None.
+            raw_pet_img_path (Optional[str]): Optional path to the raw PET image. Defaults to None.
+            raw_anat_img_path (Optional[str]): Optional path to the raw anatomical image. Defaults to None.
+            segmentation_img_path (Optional[str]): Optional path to the segmentation image. Defaults to None.
+            segmentation_label_table_path (Optional[str]): Optional path to the segmentation label table.
+                Defaults to None.
+            raw_blood_tac_path (Optional[str]): Optional path to the raw blood TAC file. Defaults to None.
+            step_containers (list[StepsContainer], optional): List of step containers for the pipeline.
+                Defaults to an empty list.
+        """
         BIDSyPathsForPipelines.__init__(self,
                                         sub_id=sub_id,
                                         ses_id=ses_id,
@@ -381,6 +554,17 @@ class BIDS_Pipeline(BIDSyPathsForPipelines, StepsPipeline):
         
 
     def __repr__(self):
+        """
+        Provides an unambiguous string representation of the BIDSyPathsForPipelines instance.
+
+        Returns:
+            str: A string representation showing how the instance can be recreated.
+
+        See Also:
+            - :meth:`BIDSyPathsForPipelines.__repr__`
+            - :meth:`StepsPipeline.__repr__`
+            
+        """
         cls_name = type(self).__name__
         info_str = [f'{cls_name}(', ]
         
@@ -409,23 +593,62 @@ class BIDS_Pipeline(BIDSyPathsForPipelines, StepsPipeline):
         info_str.append(')')
         
         return f'\n    '.join(info_str)
+    
+    def __str__(self):
+        """
+        Returns a human-readable string representation of the object. Lists all the directories
+        and paths, and the steps-containers with their dependencies.
+
+        Returns:
+            str: A string representation of the object.
+            
+        See Also:
+            - :meth:`BIDSyPathsForPipelines.__str__`
+            - :meth:`StepsPipeline.__str__`
+        """
+        pipeline_info_str = StepsPipeline.__str__(self).split("\n")
+        paths_info_str = BIDSyPathsForPipelines.__str__(self).split("\n")
+        info_str = ["*"*50]+paths_info_str + pipeline_info_str
+        return "\n".join(info_str)
+        
         
     def update_dependencies_for(self, step_name, verbose=False):
+        """
+        Updates the dependencies for a specified step in the pipeline. Overrides the method
+        :meth:`StepsPipeline.update_dependencies_for` to infer the outputs from input paths for
+        the sending steps before updating the dependencies.
+
+        Args:
+            step_name (str): The name of the step for which to update dependencies.
+            verbose (bool, optional): If True, print verbose updates. Defaults to False.
+        
+        See Also:
+              :meth:`StepsAPI.infer_outputs_from_inputs`
+              
+        Raises:
+            NotImplementedError: The `infer_outputs_from_inputs` for the sending step is not
+                implemented, OR, `set_input_as_output_from` for the recieving step is not
+                implemented.
+        
+        """
         sending_step = self.get_step_from_node_label(step_name)
         sending_step_grp_name = self.dependency_graph.nodes(data=True)[step_name]['grp']
-        sending_step.infer_outputs_from_inputs(out_dir=self.pipeline_dir,
-                                               der_type=sending_step_grp_name,)
+        try:
+            sending_step.infer_outputs_from_inputs(out_dir=self.pipeline_dir,
+                                                   der_type=sending_step_grp_name,)
+        except NotImplementedError:
+            raise NotImplementedError(f"Step {step_name} does have the `infer_outputs_from_inputs` "
+                                      f"method implemented.")
         for an_edge in self.dependency_graph[step_name]:
             receiving_step = self.get_step_from_node_label(an_edge)
             try:
                 receiving_step.set_input_as_output_from(sending_step)
             except NotImplementedError:
+                raise NotImplementedError(f"Step {receiving_step.name} does have the `set_input_as_output_from_inputs` "
+                                          f"method implemented.")
+            else:
                 if verbose:
-                    print(f"Step `{receiving_step.name}` of type `{type(receiving_step).__name__}` does not have a "
-                          f"set_input_as_output_from method implemented.\nSkipping.")
-                else:
-                    if verbose:
-                        print(f"Updated input-output dependency between {sending_step.name} and {receiving_step.name}")
+                    print(f"Updated input-output dependency between {sending_step.name} and {receiving_step.name}")
     
     
     @classmethod
@@ -441,7 +664,33 @@ class BIDS_Pipeline(BIDSyPathsForPipelines, StepsPipeline):
                               segmentation_img_path: str = None,
                               segmentation_label_table_path: str = None,
                               raw_blood_tac_path: str = None):
-        
+        """
+        Creates a default BIDS pipeline with predefined steps and dependencies.
+
+        Args:
+            sub_id (str): Subject ID.
+            ses_id (str): Session ID.
+            pipeline_name (str, optional): Name of the pipeline. Defaults to 'generic_pipeline'.
+            list_of_analysis_dir_names (Union[None, list[str]], optional): List of names for
+                analysis directories. Defaults to None.
+            bids_root_dir (Optional[str]): Optional path to the BIDS root directory. Defaults
+                to None.
+            derivatives_dir (Optional[str]): Optional path to the derivatives directory.
+                Defaults to None.
+            raw_pet_img_path (Optional[str]): Optional path to the raw PET image. Defaults
+                to None.
+            raw_anat_img_path (Optional[str]): Optional path to the raw anatomical image.
+                Defaults to None.
+            segmentation_img_path (Optional[str]): Optional path to the segmentation image.
+                Defaults to None.
+            segmentation_label_table_path (Optional[str]): Optional path to the segmentation
+                label table. Defaults to None.
+            raw_blood_tac_path (Optional[str]): Optional path to the raw blood TAC file.
+                Defaults to None.
+
+        Returns:
+            BIDS_Pipeline: A BIDS_Pipeline object with the default steps and dependencies set.
+        """
         temp_pipeline = StepsPipeline.default_steps_pipeline()
         
         obj = cls(sub_id=sub_id,

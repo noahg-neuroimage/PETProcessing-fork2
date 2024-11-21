@@ -683,20 +683,6 @@ class StepsPipeline:
         This method outputs the steps in the pipeline in topologically sorted order,
         showing their dependencies. For each step, it lists the subsequent steps
         that depend on it, formatted in a tree-like structure.
-
-        Example output:
-            (ExamplePipelineName pipeline dependency info):
-            **************************************************
-            'step_1' sends output to
-              ├── 'step_2'
-              ├── 'step_3'
-              └── 'step_4'
-            'step_2' has no output dependencies
-            'step_3' sends output to
-              └── 'step_5'
-            'step_4' has no output dependencies
-            'step_5' has no output dependencies
-            **************************************************
         """
         sep_line_len = 50
         info_str = [f'({self.name} pipeline dependency info):', "*" * sep_line_len]
