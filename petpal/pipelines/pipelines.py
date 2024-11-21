@@ -604,7 +604,7 @@ class BIDS_Pipeline(BIDSyPathsForPipelines, StepsPipeline):
             
         See Also:
             - :meth:`BIDSyPathsForPipelines.__str__`
-            - :meth:`StepsPipeline.__str__`
+            - :meth:`StepsPipeline.__str__<petpal.pipelines.steps_contaiers.StepsPipeline.__str__>`
         """
         pipeline_info_str = StepsPipeline.__str__(self).split("\n")
         paths_info_str = BIDSyPathsForPipelines.__str__(self).split("\n")
@@ -614,20 +614,17 @@ class BIDS_Pipeline(BIDSyPathsForPipelines, StepsPipeline):
         
     def update_dependencies_for(self, step_name, verbose=False):
         """
-        Updates the dependencies for a specified step in the pipeline. Overrides the method
-        :meth:`StepsPipeline.update_dependencies_for` to infer the outputs from input paths for
-        the sending steps before updating the dependencies.
+        Updates the dependencies for a specified step in the pipeline. Overrides
+        :meth:`StepsPipeline.update_dependencies_for<petpal.pipelines.steps_containers.StepsPipeline.update_dependencies_for>`
+        to infer the outputs from input paths for the sending steps before updating the dependencies.
 
         Args:
             step_name (str): The name of the step for which to update dependencies.
             verbose (bool, optional): If True, print verbose updates. Defaults to False.
-        
-        See Also:
-              :meth:`StepsAPI.infer_outputs_from_inputs`
-              
+            
         Raises:
-            NotImplementedError: The `infer_outputs_from_inputs` for the sending step is not
-                implemented, OR, `set_input_as_output_from` for the recieving step is not
+            NotImplementedError: The ``infer_outputs_from_inputs`` for the sending step is not
+                implemented, OR, ``set_input_as_output_from`` for the receiving step is not
                 implemented.
         
         """

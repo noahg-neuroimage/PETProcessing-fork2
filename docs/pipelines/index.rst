@@ -11,3 +11,4 @@ Submodules
    preproc_steps
    kinetic_modeling_steps
    steps_containers
+   pipelines

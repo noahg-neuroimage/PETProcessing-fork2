@@ -40,6 +40,10 @@ class StepsAPI:
 
         Raises:
             NotImplementedError: This method should be implemented by subclasses.
+            
+        Notes:
+            For a concrete example, take a look at:
+            :meth:`TACsFromSegmentationStep<petpal.pipelines.preproc_steps.TACsFromSegmentationStep.set_input_as_output_from>`
         """
         raise NotImplementedError
     
@@ -57,6 +61,10 @@ class StepsAPI:
 
         Raises:
             NotImplementedError: This method should be implemented by subclasses.
+            
+        Notes:
+            For a concrete example, take a look at:
+            :meth:`TACsFromSegmentationStep<petpal.pipelines.preproc_steps.TACsFromSegmentationStep.infer_outputs_from_inputs>`
         """
         raise NotImplementedError
 
