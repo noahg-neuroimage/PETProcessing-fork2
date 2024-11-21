@@ -5,10 +5,28 @@ from typing import Union
 from .steps_base import *
 from .steps_containers import StepsContainer, StepsPipeline
 from ..utils.image_io import get_half_life_from_nifty
-from ..utils.bids_utils import gen_bids_like_dir_path, gen_bids_like_filepath, gen_bids_like_filename
+from ..utils.bids_utils import gen_bids_like_dir_path, gen_bids_like_filepath
 
 
 class BIDSyPathsForRawData:
+    """
+    A class to manage and generate paths for raw BIDS data and its derivatives.
+
+    This class handles the generation and validation of paths for different types of raw data
+    (such as PET, anatomical images, and blood TAC files) and their derivatives, following the
+    BIDS format.
+
+    Attributes:
+        sub_id (str): Subject ID.
+        ses_id (str): Session ID.
+        _bids_dir (Optional[str]): Root directory for BIDS data.
+        _derivatives_dir (Optional[str]): Directory for derivative data.
+        _raw_pet_path (Optional[str]): Path for raw PET images.
+        _raw_anat_path (Optional[str]): Path for raw anatomical images.
+        _segmentation_img_path (Optional[str]): Path for segmentation images.
+        _segmentation_label_table_path (Optional[str]): Path for segmentation label tables.
+        _raw_blood_tac_path (Optional[str]): Path for raw blood TAC files.
+    """
     def __init__(self,
                  sub_id: str,
                  ses_id: str,
@@ -19,6 +37,21 @@ class BIDSyPathsForRawData:
                  segmentation_img_path: str = None,
                  segmentation_label_table_path: str = None,
                  raw_blood_tac_path: str = None,):
+        """
+        Initializes the BIDSyPathsForRawData object with the given subject and session IDs,
+        and paths for various types of data.
+
+        Args:
+            sub_id (str): Subject ID.
+            ses_id (str): Session ID.
+            bids_root_dir (Optional[str]): Optional path to the BIDS root directory. Defaults to None.
+            derivatives_dir (Optional[str]): Optional path to the derivatives directory. Defaults to None.
+            raw_pet_img_path (Optional[str]): Optional path to the raw PET image. Defaults to None.
+            raw_anat_img_path (Optional[str]): Optional path to the raw anatomical image. Defaults to None.
+            segmentation_img_path (Optional[str]): Optional path to the segmentation image. Defaults to None.
+            segmentation_label_table_path (Optional[str]): Optional path to the segmentation label table. Defaults to None.
+            raw_blood_tac_path (Optional[str]): Optional path to the raw blood TAC file. Defaults to None.
+        """
         self.sub_id = sub_id
         self.ses_id = ses_id
         self._bids_dir = bids_root_dir
@@ -38,11 +71,23 @@ class BIDSyPathsForRawData:
         self.blood_path = self._raw_blood_tac_path
     
     @property
-    def bids_dir(self):
+    def bids_dir(self) -> str:
+        """
+        str: Property for the BIDS root directory.
+        """
         return self._bids_dir
     
     @bids_dir.setter
     def bids_dir(self, value):
+        """
+        Sets the BIDS root directory, validating if it is a directory.
+
+        Args:
+            value (Optional[str]): Path to the BIDS root directory.
+
+        Raises:
+            ValueError: If the given path is not a directory.
+        """
         if value is None:
             self._bids_dir = os.path.abspath('../')
         else:
@@ -54,10 +99,22 @@ class BIDSyPathsForRawData:
             
     @property
     def derivatives_dir(self):
+        """
+        str: Property for the derivatives directory.
+        """
         return self._derivatives_dir
     
     @derivatives_dir.setter
     def derivatives_dir(self, value):
+        """
+        Sets the derivatives directory, validating if it is a sub-directory of the BIDS root directory.
+
+        Args:
+            value (Optional[str]): Path to the derivatives directory.
+
+        Raises:
+            ValueError: If the given path is not a sub-directory of the BIDS root directory.
+        """
         if value is None:
             self._derivatives_dir = os.path.abspath(os.path.join(self.bids_dir, 'derivatives'))
         else:
@@ -72,10 +129,22 @@ class BIDSyPathsForRawData:
     
     @property
     def pet_path(self):
+        """
+        str: Property for the raw PET image path.
+        """
         return self._raw_pet_path
     
     @pet_path.setter
     def pet_path(self, value: str):
+        """
+        Sets the raw PET image path, generating a path if None provided, and validating the file.
+
+        Args:
+            value (Optional[str]): Path to the raw PET image. If None, a path will be generated.
+
+        Raises:
+            FileNotFoundError: If the given file does not exist or does not have a .nii.gz extension.
+        """
         if value is None:
             filepath = gen_bids_like_filepath(sub_id=self.sub_id,
                                               ses_id=self.ses_id,
@@ -93,10 +162,22 @@ class BIDSyPathsForRawData:
             
     @property
     def anat_path(self):
+        """
+        str: Property for the raw anatomical image path.
+        """
         return self._raw_anat_path
     
     @anat_path.setter
     def anat_path(self, value: str):
+        """
+        Sets the raw anatomical image path, generating a path if None provided, and validating the file.
+
+        Args:
+            value (Optional[str]): Path to the raw anatomical image. If None, a path will be generated.
+
+        Raises:
+            FileNotFoundError: If the given file does not exist or does not have a .nii.gz extension.
+        """
         if value is None:
             filepath = gen_bids_like_filepath(sub_id=self.sub_id, ses_id=self.ses_id,
                                               modality='anat', suffix='MPRAGE',
@@ -112,10 +193,22 @@ class BIDSyPathsForRawData:
             
     @property
     def seg_img(self):
+        """
+        str: Property for the segmentation image path.
+        """
         return self._segmentation_img_path
     
     @seg_img.setter
     def seg_img(self, value: str):
+        """
+        Sets the segmentation image path, generating a path if None provided, and validating the file.
+
+        Args:
+            value (Optional[str]): Path to the segmentation image. If None, a path will be generated.
+
+        Raises:
+            FileNotFoundError: If the given file does not exist.
+        """
         if value is None:
             seg_dir = os.path.join(self.derivatives_dir, 'ROI_mask')
             filepath = gen_bids_like_filepath(sub_id=self.sub_id, ses_id=self.ses_id,
@@ -133,10 +226,22 @@ class BIDSyPathsForRawData:
             
     @property
     def seg_table(self):
+        """
+        str: Property for the segmentation label table path.
+        """
         return self._segmentation_label_table_path
     
     @seg_table.setter
     def seg_table(self, value: str):
+        """
+        Sets the segmentation label table path, generating a path if None provided, and validating the file.
+
+        Args:
+            value (Optional[str]): Path to the segmentation label table. If None, a path will be generated.
+
+        Raises:
+            FileNotFoundError: If the given file does not exist or does not have a .tsv extension.
+        """
         if value is None:
             seg_dir = os.path.join(self.derivatives_dir, 'ROI_mask')
             filename = 'dseg_forCMMS.tsv'
@@ -150,10 +255,22 @@ class BIDSyPathsForRawData:
             
     @property
     def blood_path(self):
+        """
+        str: Property for the raw blood TAC path.
+        """
         return self._raw_blood_tac_path
     
     @blood_path.setter
     def blood_path(self, value: str):
+        """
+        Sets the raw blood TAC path, generating a path if None provided, and validating the file.
+
+        Args:
+            value (Optional[str]): Path to the raw blood TAC file. If None, a path will be generated.
+
+        Raises:
+            FileNotFoundError: If the given file does not exist or does not have a .tsv extension.
+        """
         if value is None:
             filepath = gen_bids_like_filepath(sub_id=self.sub_id,
                                               ses_id=self.ses_id,
