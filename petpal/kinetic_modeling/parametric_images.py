@@ -17,6 +17,7 @@ import nibabel
 import numpy as np
 import numba
 from petpal.utils.image_io import safe_load_4dpet_nifti
+from ..utils.image_io import ImageIO
 from ..utils.image_io import safe_load_tac, safe_copy_meta
 from ..utils.useful_functions import read_plasma_glucose_concentration
 from . import graphical_analysis
@@ -215,7 +216,7 @@ class GraphicalAnalysisParametricImage:
         }
         return props
 
-    def run_analysis(self, method_name: str, t_thresh_in_mins: float, image_scale: float=1./37000):
+    def run_analysis(self, method_name: str, t_thresh_in_mins: float, image_scale: float=1.0):
         """
         Executes the complete analysis procedure.
 
@@ -264,7 +265,7 @@ class GraphicalAnalysisParametricImage:
         self.save_parametric_images()
         self.save_analysis_properties()
         
-    def __call__(self, method_name: str, t_thresh_in_mins: float, image_scale: float=1./37000):
+    def __call__(self, method_name: str, t_thresh_in_mins: float, image_scale: float=1.0):
         self.run_analysis(method_name=method_name, t_thresh_in_mins=t_thresh_in_mins, image_scale=image_scale)
         self.save_analysis()
     
@@ -554,7 +555,7 @@ def generate_cmrglc_parametric_image_from_ki_image(input_ki_image_path: str,
     Returns:
         None
     """
-    patlak_image = image_io.ImageIO(verbose=False).load_nii(image_path=input_ki_image_path)
+    patlak_image = ImageIO(verbose=False).load_nii(image_path=input_ki_image_path)
     patlak_affine = patlak_image.affine
     plasma_glucose = read_plasma_glucose_concentration(file_path=plasma_glucose_file_path,
                                                        correction_scale=glucose_rescaling_constant)
