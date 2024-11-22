@@ -119,8 +119,7 @@ def brain_mask(input_image_4d_path: str,
 def extract_tac_from_nifty_using_mask(input_image_4d_numpy: np.ndarray,
                                       segmentation_image_numpy: np.ndarray,
                                       region: int,
-                                      verbose: bool,
-                                      rescaling_const: float = 37000.0) -> np.ndarray:
+                                      verbose: bool) -> np.ndarray:
     """
     Creates a time-activity curve (TAC) by computing the average value within a region, for each 
     frame in a 4D PET image series. Takes as input a PET image, which has been registered to
@@ -159,13 +158,12 @@ def extract_tac_from_nifty_using_mask(input_image_4d_numpy: np.ndarray,
                          f'({pet_image_4d.shape[:3]}). Consider resampling '
                          'segmentation to PET or vice versa.')
 
-    tac_out = np.zeros(num_frames, float)
     if verbose:
         print(f'Running TAC for region index {region}')
     masked_voxels = (seg_image > region - 0.1) & (seg_image < region + 0.1)
     masked_image = pet_image_4d[masked_voxels].reshape((-1, num_frames))
     tac_out = np.mean(masked_image, axis=0)
-    return tac_out / rescaling_const
+    return tac_out
 
 
 def threshold(input_image_numpy: np.ndarray,

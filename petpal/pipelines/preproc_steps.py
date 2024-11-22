@@ -282,7 +282,8 @@ class ResampleBloodTACStep(FunctionBasedStep):
                  input_raw_blood_tac_path: str,
                  input_image_path: str,
                  out_tac_path: str,
-                 lin_fit_thresh_in_mins=30.0):
+                 lin_fit_thresh_in_mins=30.0,
+                 rescale_constant:float = 37000.0):
         """
         Initializes a ResampleBloodTACStep with specified parameters.
 
@@ -292,13 +293,18 @@ class ResampleBloodTACStep(FunctionBasedStep):
             out_tac_path (str): Path where the resampled TAC will be saved.
             lin_fit_thresh_in_mins (float): Threshold in minutes for linear fitting.
         """
-        super().__init__(name='resample_PTAC_on_scanner', function=blood_input.resample_blood_data_on_scanner_times,
-                         raw_blood_tac=input_raw_blood_tac_path, pet4d_path=input_image_path, out_tac_path=out_tac_path,
-                         lin_fit_thresh_in_mins=lin_fit_thresh_in_mins)
+        super().__init__(name='resample_PTAC_on_scanner',
+                         function=blood_input.resample_blood_data_on_scanner_times,
+                         blood_tac_path=input_raw_blood_tac_path,
+                         reference_4dpet_img_path=input_image_path,
+                         out_tac_path=out_tac_path,
+                         lin_fit_thresh_in_mins=lin_fit_thresh_in_mins,
+                         rescale_constant=rescale_constant)
         self._raw_blood_tac_path = input_raw_blood_tac_path
         self._input_image_path = input_image_path
         self._resampled_tac_path = out_tac_path
         self.lin_fit_thresh_in_mins = lin_fit_thresh_in_mins
+        self.rescale_constant = rescale_constant
     
     def __repr__(self):
         """
@@ -338,7 +344,7 @@ class ResampleBloodTACStep(FunctionBasedStep):
         Args:
             raw_blood_tac_path (str): The new path to the raw blood TAC file.
         """
-        self.kwargs['raw_blood_tac'] = raw_blood_tac_path
+        self.kwargs['blood_tac_path'] = raw_blood_tac_path
         self._raw_blood_tac_path = raw_blood_tac_path
     
     @property
@@ -359,7 +365,7 @@ class ResampleBloodTACStep(FunctionBasedStep):
         Args:
             input_image_path (str): The new path to the PET image file.
         """
-        self.kwargs['pet4d_path'] = input_image_path
+        self.kwargs['reference_4dpet_img_path'] = input_image_path
         self._input_image_path = input_image_path
     
     @property

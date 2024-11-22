@@ -149,10 +149,9 @@ def fdg_protocol_with_arterial(sub_id: str,
     if run_reg:
         sub_preproc.run_preproc(method_name='register_pet', modality=out_mod)
     if run_resample:
-        resample_blood_data_on_scanner_times(pet4d_path=preproc_props['FilePathTACInput'],
-                                             raw_blood_tac=raw_blood_tac_path,
-                                             lin_fit_thresh_in_mins=lin_fit_thresh_in_mins,
-                                             out_tac_path=resample_tac_path)
+        resample_blood_data_on_scanner_times(blood_tac_path=raw_blood_tac_path, out_tac_path=resample_tac_path,
+                                             reference_4dpet_img_path=preproc_props['FilePathTACInput'],
+                                             lin_fit_thresh_in_mins=lin_fit_thresh_in_mins)
     if run_patlak:
         patlak_obj = GraphicalAnalysisParametricImage(input_tac_path=resample_tac_path,
                                                       pet4D_img_path=preproc_props['FilePathTACInput'],

@@ -285,7 +285,7 @@ class BIDSyPathsForRawData:
         """
         if value is None:
             seg_dir = os.path.join(self.derivatives_dir, 'ROI_mask')
-            filename = 'dseg_forCMMS.tsv'
+            filename = 'dseg.tsv'
             self._segmentation_label_table_path = os.path.join(seg_dir, filename)
         else:
             val_path = pathlib.Path(value)
