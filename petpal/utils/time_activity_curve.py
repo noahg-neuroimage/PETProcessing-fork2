@@ -126,7 +126,8 @@ class MultiTACAnalysisMixin:
     def get_tacs_list_from_dir(tacs_dir: str) -> list[str]:
         assert os.path.isdir(tacs_dir), f"`tacs_dir` must be a valid directory: {os.path.abspath(tacs_dir)}"
         glob_path = os.path.join(tacs_dir, "*_tac.tsv")
-        tacs_files_list = glob.glob(glob_path)
+        tacs_files_list = sorted(glob.glob(glob_path))
+        
         return tacs_files_list
     
     @staticmethod
