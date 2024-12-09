@@ -503,6 +503,84 @@ class BIDS_Pipeline(BIDSyPathsForPipelines, StepsPipeline):
         segmentation_label_table_path (Optional[str]): Optional path to the segmentation label table.
         raw_blood_tac_path (Optional[str]): Optional path to the raw blood TAC file.
         step_containers (list[StepsContainer]): List of step containers for the pipeline.
+        
+    Example:
+        
+        The following is a basic example demonstrating how to instantiate the basic default
+        pipeline which performs the following steps:
+            1. Crop the raw PET image using a threshold.
+            2. Motion correct the cropped image to a mean-PET target where the frames have mean intensities
+               greater than or equal to the total mean intensity.
+            3. Computes a `weighted-series-sum` image from the cropped PET image. **We add this step since
+               it is not part of the default pipeline.**
+            4. Registers the motion corrected PET image to a T1w reference image.
+            5. For each of the ROI segments defined, we extract TACs and save them.
+            6. For the blood TAC, which is assumed to be decay corrected (and WB corrected if appliclable),
+               we resample the TAC on the PET scan frame times.
+            7. Generate parametric patlak slope and intercept images from the register PET image.
+            8. Generate parametric logan slope and intercept images from the register PET image.
+            9. For each ROI TAC, calculate a 1TCM fit.
+            10. For each ROI TAC, calculate a 1TCM fit.
+            11. For each ROI TAC, calculate an irreversible 2TCM (:math:`k_{4}=0`) fit.
+            12. For each ROI TAC, calculate a serial 2TCM fit.
+            13. For each ROI TAC, calculate a patlak fit.
+            14. For each ROI TAC, calculate a logan fit.
+        
+        We assume that we are running the following code in the ``/code`` folder of a BIDS project.
+        
+        .. code-block:: python
+        
+            from petpal.pipelines.pipelines import *
+            
+            
+            # Assuming that the current directory is the `BIDS_ROOT/code` of a BIDS directory.
+            
+            this_pipeline = BIDS_Pipeline.default_bids_pipeline(sub_id='XXXX',
+                                                                ses_id='XX',
+                                                                pipeline_name='study_pipeline')
+            
+            # Plot the dependency graph to quickly glance at all the steps in the pipeline.
+            this_pipeline.plot_dependency_graph()
+            
+            # Check if all the steps can potentially run
+            print(this_pipeline.can_steps_potentially_run())
+            
+            # Check which steps can potentially run
+            print(this_pipeline.get_steps_potential_run_state())
+            
+            ## Editing a pipeline by adding new steps and removing pre-defined steps
+            # Instantiating a weighted-series-sum step, and using the pipeline-inferred raw-PET image
+            # path to infer the half-life of the radioisotope for the calculation.
+            from petpal.pipelines.preproc_steps import ImageToImageStep
+            from petpal.utils.useful_functions import weighted_series_sum as wss_func
+            wss_step = ImageToImageStep(name='wss',
+                                        function=wss_func,
+                                        input_image_path='',
+                                        output_image_path='',
+                                        half_life=get_half_life_from_nifty(this_pipeline.pet_path),
+                                        verbose=False
+                                       )
+            
+            # Adding the step to the pipeline with the dependency that wss receives the output from
+            # the 'thresh_crop' step in the 'preproc' container.
+            this_pipeline.add_step(container_name='preproc', step=wss_step)
+            this_pipeline.add_dependency(sending='thresh_crop', receiving='wss')
+            
+            # Removing the step for calculating the Alt-Logan fits for each of the ROI TACs
+            this_pipeline.remove_step('roi_alt_logan_fit')
+            
+            # Removing the step for calculating the parametric Alt-Logan fits.
+            this_pipeline.remove_step('parametric_alt_logan_fit')
+            
+            # Since we added, and removed steps, we have to update the dependencies.
+            this_pipeline.update_dependencies()
+            
+            # Looking at the updated dependency graph in text-format
+            this_pipeline.print_dependency_graph()
+            
+            # Run all the steps in the pipeline in topological order.
+            this_pipeline()
+        
     """
     def __init__(self,
                  sub_id: str,
@@ -687,6 +765,31 @@ class BIDS_Pipeline(BIDSyPathsForPipelines, StepsPipeline):
 
         Returns:
             BIDS_Pipeline: A BIDS_Pipeline object with the default steps and dependencies set.
+            
+        Notes:
+            The following steps are defined:
+                - Crop the raw PET image using a threshold.
+                - Motion correct the cropped image to a mean-PET target where the frames have mean intensities
+                  greater than or equal to the total mean intensity.
+                - Registers the motion corrected PET image to a T1w reference image.
+                - For each of the ROI segments defined, we extract TACs and save them.
+                - For the blood TAC, which is assumed to be decay corrected (and WB corrected if appliclable),
+                  we resample the TAC on the PET scan frame times.
+                - Generate parametric patlak slope and intercept images from the register PET image.
+                - Generate parametric logan slope and intercept images from the register PET image.
+                - Generate parametric alt-logan slope and intercept images from the register PET image.
+                - For each ROI TAC, calculate a 1TCM fit.
+                - For each ROI TAC, calculate a 1TCM fit.
+                - For each ROI TAC, calculate an irreversible 2TCM (:math:`k_{4}=0`) fit.
+                - For each ROI TAC, calculate a serial 2TCM fit.
+                - For each ROI TAC, calculate a patlak fit.
+                - For each ROI TAC, calculate a logan fit.
+                - For each ROI TAC, calculate an alt-logan fit.
+                
+        See Also:
+            - :meth:`default_preprocess_steps<petpal.pipelines.steps_containers.StepsContainer.default_preprocess_steps>`
+            - :meth:`default_kinetic_analysis_steps<petpal.pipelines.steps_containers.StepsContainer.default_kinetic_analysis_steps>`
+            
         """
         temp_pipeline = StepsPipeline.default_steps_pipeline()
         
