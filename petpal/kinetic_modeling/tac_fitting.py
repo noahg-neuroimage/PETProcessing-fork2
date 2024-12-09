@@ -629,7 +629,7 @@ class TACFitterWithoutBloodVolume(TACFitter):
         return self.tcm_func(x, self.p_tac_vals, *params, vb=0.0)[1]
 
 
-class FitTCMToTAC(object):
+class TCMAnalysis(object):
     r"""
     A class dedicated to perform Tissue Compartment Model (TCM) fitting to time-activity curves (TACs).
 
@@ -647,7 +647,7 @@ class FitTCMToTAC(object):
             
             import petpal.kinetic_modeling.tac_fitting as pet_fit
             
-            fit_obj = pet_fit.FitTCMToTAC(input_tac_path='./input_tac.txt',
+            fit_obj = pet_fit.TCMAnalysis(input_tac_path='./input_tac.txt',
                                           roi_tac_path='./roi_tac.txt',
                                           output_directory='./',
                                           output_filename_prefix='fit',
@@ -681,7 +681,7 @@ class FitTCMToTAC(object):
                  max_func_iters: int = 2500,
                  ignore_blood_volume: bool = False):
         r"""
-        Initializes an instance of the FitTCMToTAC class.
+        Initializes an instance of the TCMAnalysis class.
 
         The initialization follows these steps:
             1. Saves absolute paths of the TAC files and output directory.
@@ -955,7 +955,7 @@ class FitTCMToTAC(object):
         self.save_analysis()
 
 
-class FitTCMToManyTACs(FitTCMToTAC, MultiTACAnalysisMixin):
+class MultiTACTCMAnalsyis(TCMAnalysis, MultiTACAnalysisMixin):
     def __init__(self,
                  input_tac_path: str,
                  roi_tacs_dir: str,
@@ -971,7 +971,7 @@ class FitTCMToManyTACs(FitTCMToTAC, MultiTACAnalysisMixin):
         MultiTACAnalysisMixin.__init__(self,
                                        input_tac_path=input_tac_path,
                                        tacs_dir=roi_tacs_dir)
-        FitTCMToTAC.__init__(self,
+        TCMAnalysis.__init__(self,
                              input_tac_path=input_tac_path,
                              roi_tac_path=roi_tacs_dir,
                              output_directory=output_directory,
@@ -987,7 +987,7 @@ class FitTCMToManyTACs(FitTCMToTAC, MultiTACAnalysisMixin):
         
     def init_analysis_props(self):
         num_of_tacs = self.num_of_tacs
-        analysis_props = [FitTCMToTAC.init_analysis_props(self) for a_tac in range(num_of_tacs)]
+        analysis_props = [TCMAnalysis.init_analysis_props(self) for a_tac in range(num_of_tacs)]
         for tac_id, a_prop_dict in enumerate(analysis_props):
             a_prop_dict['FilePathTTAC'] = os.path.abspath(self.tacs_files_list[tac_id])
         return analysis_props
