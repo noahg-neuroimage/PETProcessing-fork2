@@ -6,7 +6,7 @@ import re
 import os
 import ants
 import nibabel
-from nibabel.filebasedimages import FileBasedHeader, FileBasedImage
+from nibabel.filebasedimages import FileBasedHeader
 from typing import Union
 import numpy as np
 import pandas as pd
@@ -397,3 +397,31 @@ def safe_load_4dpet_nifti(filename: str) -> nibabel.nifti1.Nifti1Image:
     except Exception as e:
         print(f"Couldn't read file {filename}. Error: {e}")
         raise e
+
+
+def validate_two_images_same_dimensions(image_1: nibabel.nifti1.Nifti1Image,
+                                        image_2: nibabel.nifti1.Nifti1Image,
+                                        check_4d: bool=False):
+    """
+    Check the dimensions of two Nifti1Image objects and verify they have the same shape.
+
+    Args:
+        image_1 (nibabel.nifti1.Nifti1Image): The first image of the two to check image size.
+        image_2 (nibabel.nifti1.Nifti1Image): The second image of the two to check image size.
+        check_4d (bool): If true, checks all dimensions including validating the number of frames.
+            If false, only checks first three dimensions. Default False.
+    
+    Raises:
+        ValueError: If images do not have the same dimensions.
+    """
+    shape_1 = image_1.shape
+    shape_2 = image_2.shape
+
+    same_shape = False
+    if check_4d:
+        same_shape = shape_1 == shape_2
+    else:
+        same_shape = shape_1[:3] == shape_2[:3]
+
+    if not same_shape:
+        raise ValueError(f'Got incompatible image sizes: {shape_1}, {shape_2}.')

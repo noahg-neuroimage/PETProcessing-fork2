@@ -13,6 +13,7 @@ TODO:
     * Check if it makes more sense to lift out the more mathy methods out into a separate module.
     * Add references for the TCMs and Patlak. Could maybe rely on Turku PET Center.
     * Handle cases when tac_vals = 0.0. Might be able to use t_thresh so that we are past the 0-values.
+    * Add more detailed documentation to patlak analysis.
     
 """
 
@@ -155,7 +156,6 @@ def get_index_from_threshold(times_in_minutes: np.ndarray, t_thresh_in_minutes: 
         return np.argwhere(times_in_minutes >= t_thresh_in_minutes)[0, 0]
 
 
-# TODO: Add more detailed documentation.
 @numba.njit()
 def patlak_analysis(tac_times_in_minutes: np.ndarray,
                     input_tac_values: np.ndarray,
@@ -224,7 +224,7 @@ def patlak_analysis_with_rsquared(tac_times_in_minutes: np.ndarray,
 
     t_thresh = get_index_from_threshold(times_in_minutes=tac_times_in_minutes[non_zero_indices],
                                         t_thresh_in_minutes=t_thresh_in_minutes)
-    
+
     if len(tac_times_in_minutes[non_zero_indices][t_thresh:]) <= 2:
         return np.nan, np.nan, np.nan
 
@@ -416,7 +416,7 @@ def alternative_logan_analysis_with_rsquared(tac_times_in_minutes: np.ndarray,
 
     alt_logan_x = alt_logan_x[non_zero_indices][t_thresh:] / input_tac_values[non_zero_indices][t_thresh:]
     alt_logan_y = alt_logan_y[non_zero_indices][t_thresh:] / input_tac_values[non_zero_indices][t_thresh:]
-    
+
     alt_logan_values = fit_line_to_data_using_lls_with_rsquared(xdata=alt_logan_x,
                                                                 ydata=alt_logan_y)
 
@@ -462,12 +462,11 @@ def get_graphical_analysis_method(method_name: str) -> Callable:
     """
     if method_name == "patlak":
         return patlak_analysis
-    elif method_name == "logan":
+    if method_name == "logan":
         return logan_analysis
-    elif method_name == "alt_logan":
+    if method_name == "alt_logan":
         return alternative_logan_analysis
-    else:
-        raise ValueError(f"Invalid method_name! Must be either 'patlak', 'logan', or 'alt_logan'. Got {method_name}")
+    raise ValueError(f"Invalid method_name! Must be either 'patlak', 'logan', or 'alt_logan'. Got {method_name}")
 
 
 def get_graphical_analysis_method_with_rsquared(method_name: str) -> Callable:
@@ -509,12 +508,11 @@ def get_graphical_analysis_method_with_rsquared(method_name: str) -> Callable:
     """
     if method_name == "patlak":
         return patlak_analysis_with_rsquared
-    elif method_name == "logan":
+    if method_name == "logan":
         return logan_analysis_with_rsquared
-    elif method_name == "alt_logan":
+    if method_name == "alt_logan":
         return alternative_logan_analysis_with_rsquared
-    else:
-        raise ValueError(f"Invalid method_name! Must be either 'patlak', 'logan', or 'alt_logan'. Got {method_name}")
+    raise ValueError(f"Invalid method_name! Must be either 'patlak', 'logan', or 'alt_logan'. Got {method_name}")
 
 
 class GraphicalAnalysis:
@@ -578,7 +576,7 @@ class GraphicalAnalysis:
         self.method = method
         self.fit_thresh_in_mins = fit_thresh_in_mins
         self.analysis_func = get_graphical_analysis_method_with_rsquared(method_name=self.method)
-        
+
     def init_analysis_props(self) -> dict:
         """
         Initializes analysis properties dictionary.
@@ -604,7 +602,7 @@ class GraphicalAnalysis:
                  'Intercept': None,
                  'RSquared': None}
         return props
-    
+
     def run_analysis(self):
         """
         Runs the graphical analysis on the data using the specified method.
@@ -680,7 +678,7 @@ class GraphicalAnalysis:
         self.analysis_props['StartFrameTime'] = p_tac_times[t_thresh_index]
         self.analysis_props['EndFrameTime'] = p_tac_times[-1]
         self.analysis_props['NumberOfPointsFit'] = len(p_tac_times[t_thresh_index:])
-    
+
     def save_analysis(self):
         """
         Saves the analysis properties to a JSON file.
@@ -702,7 +700,7 @@ class GraphicalAnalysis:
         analysis_props_file = f"{file_name_prefix}_fitprops.json"
         with open(analysis_props_file, 'w',encoding='utf-8') as f:
             json.dump(obj=self.analysis_props, fp=f, indent=4)
-    
+
     def __call__(self):
         """
         Runs :meth:`run_analysis` and :meth:`save_analysis` to run the analysis and save the analysis properties.
@@ -710,8 +708,8 @@ class GraphicalAnalysis:
         """
         self.run_analysis()
         self.save_analysis()
-        
-        
+
+
 class MultiTACGraphicalAnalysis(GraphicalAnalysis, MultiTACAnalysisMixin):
     def __init__(self,
                  input_tac_path: str,
@@ -731,27 +729,30 @@ class MultiTACGraphicalAnalysis(GraphicalAnalysis, MultiTACAnalysisMixin):
                                    method=method,
                                    fit_thresh_in_mins=fit_thresh_in_mins
                                    )
-        
+
     def init_analysis_props(self):
         num_of_tacs = self.num_of_tacs
         analysis_props = [GraphicalAnalysis.init_analysis_props(self) for a_tac in range(num_of_tacs)]
         for tac_id, a_prop_dict in enumerate(analysis_props):
             a_prop_dict['FilePathTTAC'] = os.path.abspath(self.tacs_files_list[tac_id])
         return analysis_props
-    
-    
+
+
     def calculate_fit(self):
         p_tac_times, p_tac_vals = safe_load_tac(self.input_tac_path)
         for tac_id, a_tac in enumerate(self.tacs_files_list):
             _, t_tac_vals = safe_load_tac(a_tac)
-            slope, intercept, rsquared = self.analysis_func(tac_times_in_minutes=p_tac_times,
-                                                            input_tac_values=p_tac_vals,
-                                                            region_tac_values=t_tac_vals,
-                                                            t_thresh_in_minutes=self.fit_thresh_in_mins)
+            try:
+                slope, intercept, rsquared = self.analysis_func(tac_times_in_minutes=p_tac_times,
+                                                                input_tac_values=p_tac_vals,
+                                                                region_tac_values=t_tac_vals,
+                                                                t_thresh_in_minutes=self.fit_thresh_in_mins)
+            except np.linalg.LinAlgError:
+                slope, intercept, rsquared = np.nan, np.nan, np.nan
             self.analysis_props[tac_id]['Slope'] = slope
             self.analysis_props[tac_id]['Intercept'] = intercept
             self.analysis_props[tac_id]['RSquared'] = rsquared
-    
+
     def calculate_fit_properties(self):
         p_tac_times, _ = safe_load_tac(self.input_tac_path)
         t_thresh_index = get_index_from_threshold(times_in_minutes=p_tac_times,
@@ -759,18 +760,18 @@ class MultiTACGraphicalAnalysis(GraphicalAnalysis, MultiTACAnalysisMixin):
         points_fit = len(p_tac_times[t_thresh_index:])
         start_time=p_tac_times[t_thresh_index]
         end_time=p_tac_times[-1]
-        
+
         for tac_id, a_tac in enumerate(self.tacs_files_list):
             self.analysis_props[tac_id]['ThresholdTime'] = self.fit_thresh_in_mins
             self.analysis_props[tac_id]['MethodName'] = self.method
             self.analysis_props[tac_id]['StartFrameTime'] = start_time
             self.analysis_props[tac_id]['EndFrameTime'] = end_time
             self.analysis_props[tac_id]['NumberOfPointsFit'] = points_fit
-            
+
     def save_analysis(self):
         if self.analysis_props[0]['RSquared'] is None:
             raise RuntimeError("'run_analysis' method must be called before 'save_analysis'.")
-        
+
         for seg_name, fit_props in zip(self.inferred_seg_labels, self.analysis_props):
             filename = [self.output_filename_prefix,
                         f'desc-{self.method}',
