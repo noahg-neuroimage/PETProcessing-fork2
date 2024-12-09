@@ -286,8 +286,7 @@ class GraphicalAnalysisStep(ObjectBasedStep, TACAnalysisStepMixin):
                  output_directory: str,
                  output_prefix: str,
                  method: str,
-                 fit_threshold_in_mins: float = 30.0,
-                 image_rescale: float = 1.0 / 37000.0):
+                 fit_threshold_in_mins: float = 30.0):
         """
         Initializes the GraphicalAnalysisStep with specified parameters.
 
@@ -298,13 +297,12 @@ class GraphicalAnalysisStep(ObjectBasedStep, TACAnalysisStepMixin):
             output_prefix (str): Prefix for the output files.
             method (str): Graphical analysis method.
             fit_threshold_in_mins (float, optional): Threshold in minutes for fitting. Defaults to 30.0.
-            image_rescale (float, optional): Scale for the image values. Defaults to 1.0 / 37000.0.
             
         """
         TACAnalysisStepMixin.__init__(self, input_tac_path=input_tac_path, roi_tacs_dir=roi_tacs_dir,
                                       output_directory=output_directory, output_prefix=output_prefix,
                                       is_ref_tac_based_model=False, method=method,
-                                      fit_thresh_in_mins=fit_threshold_in_mins, image_rescale=image_rescale)
+                                      fit_thresh_in_mins=fit_threshold_in_mins)
         ObjectBasedStep.__init__(self, name=f'roi_{method}_fit', class_type=pet_grph.MultiTACGraphicalAnalysis,
                                  init_kwargs=self.init_kwargs, call_kwargs=dict())
     
@@ -576,7 +574,7 @@ class ParametricGraphicalAnalysisStep(ObjectBasedStep, TACAnalysisStepMixin):
                  output_prefix: str,
                  method: str,
                  fit_threshold_in_mins: float = 30.0,
-                 image_rescale:float=1.0):
+                 image_rescale:float=1.0/37000.):
         """
         Initializes the ParametricGraphicalAnalysisStep with specified parameters.
 
@@ -586,8 +584,8 @@ class ParametricGraphicalAnalysisStep(ObjectBasedStep, TACAnalysisStepMixin):
             output_directory (str): Directory where output files will be saved.
             output_prefix (str): Prefix for the output files.
             method (str): Graphical analysis method.
-            fit_threshold_in_mins (float, optional): Threshold in minutes for fitting. Defaults to 30.0.
-            image_rescale (float, optional): Image rescale factor. Defaults to 1.0.
+            fit_threshold_in_mins (float, optional): Threshold in minutes for fitting. Defaults to 30.0
+            image_rescale (float, optional): Image rescale factor. Defaults to 1.0/37000.0
         """
         TACAnalysisStepMixin.__init__(self, input_tac_path=input_tac_path, pet4D_img_path=input_image_path,
                                       roi_tacs_dir='', output_directory=output_directory, output_prefix=output_prefix,
@@ -599,7 +597,7 @@ class ParametricGraphicalAnalysisStep(ObjectBasedStep, TACAnalysisStepMixin):
                                  init_kwargs=self.init_kwargs,
                                  call_kwargs=dict(method_name=method,
                                                   t_thresh_in_mins=fit_threshold_in_mins,
-                                                  image_scale = image_rescale))
+                                                  image_scale=image_rescale))
         self._input_image_path = input_image_path
     
     def __repr__(self):

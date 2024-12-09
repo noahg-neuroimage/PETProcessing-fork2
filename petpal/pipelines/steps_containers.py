@@ -433,7 +433,7 @@ class StepsPipeline:
         """
         for step_name in nx.topological_sort(self.dependency_graph):
             step = self.get_step_from_node_label(node_label=step_name)
-            step()
+            step.execute()
     
     def add_step(self, container_name: str, step: StepType):
         """
@@ -533,7 +533,7 @@ class StepsPipeline:
         if not nx.is_directed_acyclic_graph(self.dependency_graph):
             raise RuntimeError(f"Adding dependency {sending} -> {receiving} creates a cycle!")
     
-    def get_step_from_node_label(self, node_label: str):
+    def get_step_from_node_label(self, node_label: str) -> StepType:
         """
         Retrieves a step object based on its node label in the dependency graph.
 
