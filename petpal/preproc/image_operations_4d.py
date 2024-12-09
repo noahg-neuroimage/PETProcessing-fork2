@@ -17,12 +17,14 @@ TODOs:
 
 """
 import os
-from scipy.ndimage import center_of_mass
+
+import ants
 import nibabel
 import numpy as np
-import ants
-from ..utils import image_io, math_lib
+from scipy.ndimage import center_of_mass
+
 from ..preproc import motion_corr
+from ..utils import image_io, math_lib
 
 
 def crop_image(input_image_path: str,
@@ -156,7 +158,6 @@ def extract_tac_from_nifty_using_mask(input_image_4d_numpy: np.ndarray,
                          f'({pet_image_4d.shape[:3]}). Consider resampling '
                          'segmentation to PET or vice versa.')
 
-    tac_out = np.zeros(num_frames, float)
     if verbose:
         print(f'Running TAC for region index {region}')
     masked_voxels = (seg_image > region - 0.1) & (seg_image < region + 0.1)
@@ -320,12 +321,13 @@ def roi_tac(input_image_4d_path: str,
     np.savetxt(out_tac_path,region_tac_file,delimiter='\t',header=header_text,comments='')
 
 
-def write_tacs(input_image_4d_path: str,
+def write_tacs(input_image_path: str,
                label_map_path: str,
                segmentation_image_path: str,
                out_tac_dir: str,
                verbose: bool,
-               time_frame_keyword: str = 'FrameReferenceTime'):
+               time_frame_keyword: str = 'FrameReferenceTime',
+               out_tac_prefix: str = '', ):
     """
     Function to write Tissue Activity Curves for each region, given a segmentation,
     4D PET image, and label map. Computes the average of the PET image within each
@@ -337,13 +339,13 @@ def write_tacs(input_image_4d_path: str,
         raise ValueError("'time_frame_keyword' must be one of "
                          "'FrameReferenceTime' or 'FrameTimesStart'")
 
-    pet_meta = image_io.load_metadata_for_nifty_with_same_filename(input_image_4d_path)
+    pet_meta = image_io.load_metadata_for_nifty_with_same_filename(input_image_path)
     label_map = image_io.ImageIO.read_label_map_tsv(label_map_file=label_map_path)
     regions_abrev = label_map['abbreviation']
     regions_map = label_map['mapping']
 
     tac_extraction_func = extract_tac_from_nifty_using_mask
-    pet_numpy = nibabel.load(input_image_4d_path).get_fdata()
+    pet_numpy = nibabel.load(input_image_path).get_fdata()
     seg_numpy = nibabel.load(segmentation_image_path).get_fdata()
 
     for i, _maps in enumerate(label_map['mapping']):
@@ -353,7 +355,10 @@ def write_tacs(input_image_4d_path: str,
                                             verbose=verbose)
         region_tac_file = np.array([pet_meta[time_frame_keyword],extracted_tac]).T
         header_text = f'{time_frame_keyword}\t{regions_abrev[i]}_mean_activity'
-        out_tac_path = os.path.join(out_tac_dir, f'tac-{regions_abrev[i]}.tsv')
+        if out_tac_prefix:
+            out_tac_path = os.path.join(out_tac_dir, f'{out_tac_prefix}_seg-{regions_abrev[i]}_tac.tsv')
+        else:
+            out_tac_path = os.path.join(out_tac_dir, f'seg-{regions_abrev[i]}_tac.tsv')
         np.savetxt(out_tac_path,region_tac_file,delimiter='\t',header=header_text,comments='')
 
 
@@ -380,7 +385,7 @@ class SimpleAutoImageCropper(object):
             from petpal.preproc.image_operations_4d import SimpleAutoImageCropper
     
             cropper = SimpleAutoImageCropper(
-                input_image_path='path/to/input_image.nii',
+                input_image_path='path/to/input_image_path.nii',
                 out_image_path='path/to/output_image.nii',
                 thresh_val=0.01,
                 verbose=True,
@@ -429,7 +434,7 @@ class SimpleAutoImageCropper(object):
                 from petpal.preproc.image_operations_4d import SimpleAutoImageCropper
     
                 cropper = SimpleAutoImageCropper(
-                    input_image_path='path/to/input_image.nii',
+                    input_image_path='path/to/input_image_path.nii',
                     out_image_path='path/to/output_image.nii',
                     thresh_val=0.01,
                     verbose=True,
@@ -562,7 +567,7 @@ class SimpleAutoImageCropper(object):
                 import nibabel as nib
                 from petpal.preproc.image_operations_4d import SimpleAutoImageCropper
     
-                input_image_path = 'path/to/input_image.nii'
+                input_image_path = 'path/to/input_image_path.nii'
                 img_obj = nib.load(input_image_path)
     
                 boundaries = SimpleAutoImageCropper.get_index_pairs_for_all_dims(img_obj=img_obj,
@@ -620,7 +625,7 @@ class SimpleAutoImageCropper(object):
                 import nibabel as nib
                 from petpal.preproc.image_operations_4d import SimpleAutoImageCropper
     
-                input_image_path = 'path/to/input_image.nii'
+                input_image_path = 'path/to/input_image_path.nii'
                 img_obj = nib.load(input_image_path)
     
                 cropped_img = SimpleAutoImageCropper.get_cropped_image(img_obj=img_obj, thresh=0.01)

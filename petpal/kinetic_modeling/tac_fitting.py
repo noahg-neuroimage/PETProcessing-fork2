@@ -629,7 +629,7 @@ class TACFitterWithoutBloodVolume(TACFitter):
         return self.tcm_func(x, self.p_tac_vals, *params, vb=0.0)[1]
 
 
-class FitTCMToTAC(object):
+class TCMAnalysis(object):
     r"""
     A class dedicated to perform Tissue Compartment Model (TCM) fitting to time-activity curves (TACs).
 
@@ -647,7 +647,7 @@ class FitTCMToTAC(object):
             
             import petpal.kinetic_modeling.tac_fitting as pet_fit
             
-            fit_obj = pet_fit.FitTCMToTAC(input_tac_path='./input_tac.txt',
+            fit_obj = pet_fit.TCMAnalysis(input_tac_path='./input_tac.txt',
                                           roi_tac_path='./roi_tac.txt',
                                           output_directory='./',
                                           output_filename_prefix='fit',
@@ -681,7 +681,7 @@ class FitTCMToTAC(object):
                  max_func_iters: int = 2500,
                  ignore_blood_volume: bool = False):
         r"""
-        Initializes an instance of the FitTCMToTAC class.
+        Initializes an instance of the TCMAnalysis class.
 
         The initialization follows these steps:
             1. Saves absolute paths of the TAC files and output directory.
@@ -955,7 +955,24 @@ class FitTCMToTAC(object):
         self.save_analysis()
 
 
-class FitTCMToManyTACs(FitTCMToTAC, MultiTACAnalysisMixin):
+class MultiTACTCMAnalsyis(TCMAnalysis, MultiTACAnalysisMixin):
+    """
+    A class for performing tissue compartment model (TCM) analysis on multiple tissue TACs.
+
+
+    Attributes:
+        input_tac_path (str): Path to the input TAC file.
+        roi_tacs_dir (str): Directory containing region of interest TAC files.
+        output_directory (str): Directory for saving analysis results.
+        output_filename_prefix (str): Prefix for output filenames.
+        compartment_model (str): Name of the compartment model to use.
+        parameter_bounds (Union[None, np.ndarray], optional): Bounds for the fitting parameters. Defaults to None.
+        weights (Union[float, None, np.ndarray], optional): Weights for fitting. Defaults to None.
+        resample_num (int): Number of resampling points. Defaults to 512.
+        aif_fit_thresh_in_mins (float): Threshold in minutes for AIF fitting. Defaults to 40.0.
+        max_func_iters (int): Maximum number of iterations for the fitting function. Defaults to 2500.
+        ignore_blood_volume (bool): Whether to ignore blood volume in the analysis. Defaults to False.
+    """
     def __init__(self,
                  input_tac_path: str,
                  roi_tacs_dir: str,
@@ -968,10 +985,26 @@ class FitTCMToManyTACs(FitTCMToTAC, MultiTACAnalysisMixin):
                  aif_fit_thresh_in_mins: float = 40.0,
                  max_func_iters: int = 2500,
                  ignore_blood_volume: bool = False):
+        """
+        Initializes the MultiTACTCMAnalsyis object with required paths, model parameters, and fitting options.
+
+        Args:
+            input_tac_path (str): Path to the input TAC file.
+            roi_tacs_dir (str): Directory containing region of interest TAC files.
+            output_directory (str): Directory for saving analysis results.
+            output_filename_prefix (str): Prefix for output filenames.
+            compartment_model (str): Name of the compartment model to use.
+            parameter_bounds (Union[None, np.ndarray], optional): Bounds for the fitting parameters. Defaults to None.
+            weights (Union[float, None, np.ndarray], optional): Weights for fitting. Defaults to None.
+            resample_num (int, optional): Number of resampling points. Defaults to 512.
+            aif_fit_thresh_in_mins (float, optional): Threshold in minutes for AIF fitting. Defaults to 40.0.
+            max_func_iters (int, optional): Maximum number of iterations for the fitting function. Defaults to 2500.
+            ignore_blood_volume (bool, optional): Whether to ignore blood volume in the analysis. Defaults to False.
+        """
         MultiTACAnalysisMixin.__init__(self,
                                        input_tac_path=input_tac_path,
                                        tacs_dir=roi_tacs_dir)
-        FitTCMToTAC.__init__(self,
+        TCMAnalysis.__init__(self,
                              input_tac_path=input_tac_path,
                              roi_tac_path=roi_tacs_dir,
                              output_directory=output_directory,
@@ -986,14 +1019,24 @@ class FitTCMToManyTACs(FitTCMToTAC, MultiTACAnalysisMixin):
         self.fit_results = []
         
     def init_analysis_props(self):
+        """
+        Initializes analysis properties for each tissue TAC. Overrides :meth:`TCMAnalysis.init_analysis_props`.
+
+        Returns:
+            list[dict]: A list of analysis property dictionaries for each TAC.
+        """
         num_of_tacs = self.num_of_tacs
-        analysis_props = [FitTCMToTAC.init_analysis_props(self) for a_tac in range(num_of_tacs)]
+        analysis_props = [TCMAnalysis.init_analysis_props(self) for a_tac in range(num_of_tacs)]
         for tac_id, a_prop_dict in enumerate(analysis_props):
             a_prop_dict['FilePathTTAC'] = os.path.abspath(self.tacs_files_list[tac_id])
         return analysis_props
         
         
     def calculate_fit(self):
+        """
+        Calculates the fit for each TAC, updating the analysis properties with model fit results.
+        Overrides :meth:`TCMAnalysis.calculate_fit`.
+        """
         p_tac = safe_load_tac(self.input_tac_path)
         fit_obj = None
         for a_tac in self.tacs_files_list:
@@ -1013,6 +1056,10 @@ class FitTCMToManyTACs(FitTCMToTAC, MultiTACAnalysisMixin):
             
     
     def calculate_fit_properties(self):
+        """
+        Updates analysis properties with formatted fit values for each TAC.
+        Overrides :meth:`TCMAnalysis.calculate_fit_properties`.
+        """
         for fit_results, fit_props, tac_path in zip(self.fit_results,
                                                     self.analysis_props,
                                                     self.tacs_files_list):
@@ -1021,6 +1068,12 @@ class FitTCMToManyTACs(FitTCMToTAC, MultiTACAnalysisMixin):
     
     
     def save_analysis(self):
+        """
+        Saves the analysis results to a JSON file for each TAC. Overrides :meth:`TCMAnalysis.save_analysis`.
+
+        Raises:
+            RuntimeError: If 'run_analysis' method has not been run before 'save_analysis'.
+        """
         if not self._has_analysis_been_run:
             raise RuntimeError("'run_analysis' method must be run before running this method.")
         

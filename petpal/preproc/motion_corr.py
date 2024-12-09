@@ -397,8 +397,8 @@ def motion_corr_frame_list_to_t1(input_image_4d_path: str,
 
 
 def motion_corr_frames_above_mean_value(input_image_4d_path: str,
-                                        motion_target_option: Union[str, tuple],
                                         out_image_path: str,
+                                        motion_target_option: Union[str, tuple],
                                         verbose: bool,
                                         type_of_transform: str = 'Affine',
                                         transform_metric: str = 'mattes',
