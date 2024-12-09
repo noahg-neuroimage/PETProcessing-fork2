@@ -717,6 +717,18 @@ def validate_directory_as_bids(project_path: str) -> bool:
 
 
 def parse_path_to_get_subject_and_session_id(path):
+    """
+    Parses a file path to extract subject and session IDs formatted according to BIDS standards.
+
+    This function expects the file name in the path to contain segments starting with 'sub-' and 'ses-'.
+    If these are not found, it returns default values indicating unknown IDs.
+
+    Args:
+        path (str): The file path to extract identifiers from.
+
+    Returns:
+        tuple: A tuple containing the subject ID and session ID.
+    """
     filename = pathlib.Path(path).name
     if ('sub-' in filename) and ('ses-' in filename):
         sub_ses_ids = filename.split("_")[:2]
@@ -727,9 +739,35 @@ def parse_path_to_get_subject_and_session_id(path):
         return "XXXX", "XX"
 
 def snake_to_camel_case(snake_str):
+    """
+    Converts a snake_case string to CamelCase.
+
+    The function breaks the input string by underscores and capitalizes each segment to generate CamelCase.
+
+    Args:
+        snake_str (str): The snake_case string to convert.
+
+    Returns:
+        str: The converted CamelCase string.
+    """
     return "".join(x.capitalize() for x in snake_str.lower().split("_"))
 
 def gen_bids_like_filename(sub_id: str, ses_id: str, suffix: str= 'pet', ext: str= '.nii.gz', **extra_desc) -> str:
+    """
+    Generates a filename following BIDS convention including subject and session information.
+
+    The function constructs filenames by appending additional descriptors and file suffix with extension.
+
+    Args:
+        sub_id (str): The subject identifier.
+        ses_id (str): The session identifier.
+        suffix (str, optional): The suffix indicating the data type. Defaults to 'pet'.
+        ext (str, optional): The file extension. Defaults to '.nii.gz'.
+        **extra_desc: Additional keyword arguments for any extra descriptors.
+
+    Returns:
+        str: A BIDS-like formatted filename.
+    """
     sub_ses_pre = f'sub-{sub_id}_ses-{ses_id}'
     file_parts = [sub_ses_pre, ]
     for name, val in extra_desc.items():
@@ -739,11 +777,45 @@ def gen_bids_like_filename(sub_id: str, ses_id: str, suffix: str= 'pet', ext: st
     return file_name
 
 def gen_bids_like_dir_path(sub_id: str, ses_id: str, modality: str='pet', sup_dir: str= '../') -> str:
+    """
+    Constructs a directory path following BIDS structure with subject and session subdirectories.
+
+    Args:
+        sub_id (str): The subject identifier.
+        ses_id (str): The session identifier.
+        modality (str, optional): Modality directory name. Defaults to 'pet'.
+        sup_dir (str, optional): The parent directory path. Defaults to '../'.
+
+    Returns:
+        str: A BIDS-like directory path.
+    """
     path_parts = [f'{sup_dir}', f'sub-{sub_id}', f'ses-{ses_id}', f'{modality}']
     return os.path.join(*path_parts)
 
 def gen_bids_like_filepath(sub_id: str, ses_id: str, bids_dir:str ='../',
                            modality: str='pet', suffix:str='pet', ext='.nii.gz', **extra_desc) -> str:
+    """
+    Creates a full file path using BIDS-like conventions for both directory structure and filename.
+
+    It combines directory and file generation to provide an organized output path.
+
+    Args:
+        sub_id (str): The subject identifier.
+        ses_id (str): The session identifier.
+        bids_dir (str, optional): Base directory for BIDS data. Defaults to '../'.
+        modality (str, optional): The type of modality. Defaults to 'pet'.
+        suffix (str, optional): Suffix indicating the type. Defaults to 'pet'.
+        ext (str, optional): The file extension. Defaults to '.nii.gz'.
+        **extra_desc: Additional keyword arguments for any extra descriptors.
+
+    Returns:
+        str: Full file path in BIDS-like structure.
+        
+    See Also:
+        - :func:`gen_bids_like_filename`
+        - :func:`gen_bids_like_dir_path`
+        
+    """
     filename = gen_bids_like_filename(sub_id=sub_id, ses_id=ses_id, suffix=suffix, ext=ext, **extra_desc)
     filedir  = gen_bids_like_dir_path(sub_id=sub_id, ses_id=ses_id, sup_dir=bids_dir, modality=modality)
     return os.path.join(filedir, filename)
