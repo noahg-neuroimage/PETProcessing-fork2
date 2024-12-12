@@ -211,7 +211,10 @@ def apply_rtm2_to_all_voxels(tac_times_in_minutes: np.ndarray,
         params_img (np.ndarray): A 4D array with RTM parameter fit results based on the supplied
             method.
     """
-    analysis_func = get_rtm_method(method=method)
+    bounds = False
+    if "bounds" in analysis_kwargs:
+        bounds = True
+    analysis_func = get_rtm_method(method=method,bounds=bounds)
     img_dims = tgt_image.shape
     output_shape = get_rtm_output_size(method=method)
     params_img = np.zeros((img_dims[0], img_dims[1], img_dims[2], output_shape), float)
@@ -224,7 +227,7 @@ def apply_rtm2_to_all_voxels(tac_times_in_minutes: np.ndarray,
                                                   ref_tac_vals=ref_tac_vals,
                                                   tgt_tac_vals=tgt_image[i, j, k, :],
                                                   **analysis_kwargs)
-                    params_img[i,j,k] = analysis_vals
+                    params_img[i,j,k] = analysis_vals[0]
 
     return params_img
 
