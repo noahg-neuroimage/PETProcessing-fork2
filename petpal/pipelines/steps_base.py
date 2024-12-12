@@ -1,3 +1,6 @@
+"""
+Base functionality for steps in PETPAL.
+"""
 import inspect
 from typing import Callable
 
@@ -167,7 +170,7 @@ class FunctionBasedStep(StepsAPI):
         for arg_name, arg_val in zip(list(self.func_sig.parameters), self.args):
             args_to_kwargs_dict[arg_name] = arg_val
         return args_to_kwargs_dict
-    
+
     def __str__(self):
         """
         Returns a detailed string representation of the FunctionBasedStep instance.
@@ -179,14 +182,14 @@ class FunctionBasedStep(StepsAPI):
         info_str = [f'({type(self).__name__} Info):',
                     f'Step Name: {self.name}',
                     f'Function Name: {self._func_name}',
-                    f'Arguments Passed:',
+                    'Arguments Passed:',
                     f'{args_to_kwargs_dict if args_to_kwargs_dict else "N/A"}',
                     'Keyword-Arguments Set:',
                     f'{self.kwargs if self.kwargs else "N/A"}',
                     'Default Arguments:',
                     f'{self.get_function_args_not_set_in_kwargs()}']
         return '\n'.join(info_str)
-    
+
     def __repr__(self):
         """
         Returns an unambiguous string representation of the FunctionBasedStep instance.
@@ -197,21 +200,21 @@ class FunctionBasedStep(StepsAPI):
         cls_name = type(self).__name__
         full_func_name = f'{self.function.__module__}.{self._func_name}'
         info_str = [f'{cls_name}(', f'name={repr(self.name)},', f'function={full_func_name},']
-        
+
         init_params = inspect.signature(self.__init__).parameters
         for arg_name in list(init_params)[2:-2]:
             info_str.append(f'{arg_name}={repr(getattr(self, arg_name))},')
-        
+
         for arg_name, arg_val in zip(list(self.func_sig.parameters), self.args):
             info_str.append(f'{arg_name}={repr(arg_val)}', )
-        
+
         for arg_name, arg_val in self.kwargs.items():
             info_str.append(f'{arg_name}={repr(arg_val)},')
-        
+
         info_str.append(')')
-        
-        return f'\n    '.join(info_str)
-    
+
+        return '\n    '.join(info_str)
+
     def all_args_non_empty_strings(self):
         """
         Checks if all positional arguments are non-empty strings.
@@ -223,7 +226,7 @@ class FunctionBasedStep(StepsAPI):
             if arg == '':
                 return False
         return True
-    
+
     def all_kwargs_non_empty_strings(self):
         """
         Checks if all keyword arguments are non-empty strings.
@@ -231,11 +234,11 @@ class FunctionBasedStep(StepsAPI):
         Returns:
             bool: True if all keyword arguments are non-empty strings, False otherwise.
         """
-        for arg_name, arg in self.kwargs.items():
+        for _arg_name, arg in self.kwargs.items():
             if arg == '':
                 return False
         return True
-    
+
     def can_potentially_run(self):
         """
         Determines if the step can potentially be executed based on argument validation.
@@ -280,7 +283,7 @@ class ObjectBasedStep(StepsAPI):
         self.init_sig: inspect.Signature = inspect.signature(self.class_type.__init__)
         self.call_sig: inspect.Signature = inspect.signature(self.class_type.__call__)
         self.validate_kwargs()
-    
+
     def validate_kwargs(self):
         """
         Validates that all mandatory initialization and call arguments have been provided.
@@ -290,7 +293,7 @@ class ObjectBasedStep(StepsAPI):
         """
         empty_init_kwargs = self.get_empty_default_kwargs(self.init_sig, self.init_kwargs)
         empty_call_kwargs = self.get_empty_default_kwargs(self.call_sig, self.call_kwargs)
-        
+
         if empty_init_kwargs or empty_call_kwargs:
             err_msg = [f"For {self.class_type.__name__}, the following arguments must be set:"]
             if empty_init_kwargs:
@@ -300,7 +303,7 @@ class ObjectBasedStep(StepsAPI):
                 err_msg.append("Calling:")
                 err_msg.append(f"{empty_call_kwargs}")
             raise RuntimeError("\n".join(err_msg))
-    
+
     @staticmethod
     def get_args_not_set_in_kwargs(sig: inspect.Signature, kwargs: dict) -> dict:
         """
@@ -318,7 +321,7 @@ class ObjectBasedStep(StepsAPI):
             if arg_name not in kwargs and arg_name != 'self':
                 unset_args_dict[arg_name] = arg_val.default
         return unset_args_dict
-    
+
     def get_empty_default_kwargs(self, sig: inspect.Signature, set_kwargs: dict) -> list:
         """
         Identifies arguments that have not been provided and lack default values.
@@ -337,7 +340,7 @@ class ObjectBasedStep(StepsAPI):
                 if arg_name not in set_kwargs:
                     empty_kwargs.append(arg_name)
         return empty_kwargs
-    
+
     def execute(self) -> None:
         """
         Instantiates the class and invokes it with the provided arguments.
@@ -349,7 +352,7 @@ class ObjectBasedStep(StepsAPI):
         obj_instance = self.class_type(**self.init_kwargs)
         obj_instance(**self.call_kwargs)
         print(f"(Info): Finished {self.name}")
-    
+
     def __str__(self):
         """
         Returns a detailed string representation of the ObjectBasedStep instance.
@@ -359,7 +362,7 @@ class ObjectBasedStep(StepsAPI):
         """
         unset_init_args = self.get_args_not_set_in_kwargs(self.init_sig, self.init_kwargs)
         unset_call_args = self.get_args_not_set_in_kwargs(self.call_sig, self.call_kwargs)
-        
+
         info_str = [f'({type(self).__name__} Info):', f'Step Name: {self.name}',
                     f'Class Name: {self.class_type.__name__}', 'Initialization Arguments:', f'{self.init_kwargs}',
                     'Default Initialization Arguments:', f'{unset_init_args if unset_init_args else "N/A"}',
@@ -377,23 +380,23 @@ class ObjectBasedStep(StepsAPI):
         cls_name = type(self).__name__
         full_func_name = f'{self.class_type.__module__}.{self.class_type.__name__}'
         info_str = [f'{cls_name}(', f'name={repr(self.name)},', f'class_type={full_func_name},']
-        
+
         if self.init_kwargs:
             info_str.append('init_kwargs={')
             for arg_name, arg_val in self.init_kwargs.items():
                 info_str.append(f'    {arg_name}={repr(arg_val)},')
             info_str[-1] = f'{info_str[-1]}' + '}'
-        
+
         if self.call_kwargs:
             info_str.append('call_kwargs={')
             for arg_name, arg_val in self.call_kwargs.items():
                 info_str.append(f'    {arg_name}={repr(arg_val)},')
             info_str[-1] = f'{info_str[-1]}' + '}'
-        
+
         info_str.append(')')
-        
-        return f'\n    '.join(info_str)
-    
+
+        return '\n    '.join(info_str)
+
     def all_init_kwargs_non_empty_strings(self):
         """
         Checks if all initialization keyword arguments are non-empty strings.
@@ -401,11 +404,11 @@ class ObjectBasedStep(StepsAPI):
         Returns:
             bool: True if all initialization keyword arguments are non-empty strings, False otherwise.
         """
-        for arg_name, arg_val in self.init_kwargs.items():
+        for _arg_name, arg_val in self.init_kwargs.items():
             if arg_val == '':
                 return False
         return True
-    
+
     def all_call_kwargs_non_empty_strings(self):
         """
         Checks if all call keyword arguments are non-empty strings.
@@ -413,11 +416,11 @@ class ObjectBasedStep(StepsAPI):
         Returns:
             bool: True if all call keyword arguments are non-empty strings, False otherwise.
         """
-        for arg_name, arg_val in self.call_kwargs.items():
+        for _arg_name, arg_val in self.call_kwargs.items():
             if arg_val == '':
                 return False
         return True
-    
+
     def can_potentially_run(self):
         """
         Determines if the step can potentially be executed based on argument validation.
@@ -428,4 +431,3 @@ class ObjectBasedStep(StepsAPI):
             bool: True if the step can potentially run, False otherwise.
         """
         return self.all_init_kwargs_non_empty_strings() and self.all_call_kwargs_non_empty_strings()
-
