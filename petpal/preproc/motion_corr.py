@@ -8,8 +8,8 @@ import os
 import tempfile
 from typing import Union
 import ants
-import nibabel
 import numpy as np
+from .image_operations_4d import get_average_of_timeseries
 from ..utils import image_io
 from ..utils.useful_functions import weighted_series_sum
 
@@ -75,7 +75,7 @@ def determine_motion_target(motion_target_option: Union[str, tuple, list],
         if motion_target_option == 'mean_image':
             out_image_file = tempfile.mkstemp(suffix='_mean.nii.gz')[1]
             input_img = ants.image_read(input_image_4d_path)
-            mean_img = input_img.get_average_of_timeseries()
+            mean_img = get_average_of_timeseries(input_image=input_img)
             ants.image_write(image=mean_img,filename=out_image_file)
             return out_image_file
 

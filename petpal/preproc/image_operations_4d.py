@@ -198,6 +198,19 @@ def binarize_image_with_threshold(input_image_numpy: np.ndarray,
     return bounded_image
 
 
+def get_average_of_timeseries(input_image: ants.ANTsImage):
+    """
+    Get average of a 4D ANTsImage and return as a 3D ANTsImage.
+    """
+    mean_array = input_image.mean(axis=-1)
+    one_image = ants.ndimage_to_list(image=input_image)[0]
+    mean_image = ants.from_numpy(data=mean_array,
+                                 origin=one_image.origin,
+                                 spacing=one_image.spacing,
+                                 direction=one_image.direction)
+    return mean_image
+
+
 def suvr(input_image_path: str,
          segmentation_image_path: str,
          ref_region: int,
