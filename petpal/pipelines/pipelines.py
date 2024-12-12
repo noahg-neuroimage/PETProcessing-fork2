@@ -1,8 +1,11 @@
+"""
+Handles base code for running pipelines on PET datasets.
+"""
 import pathlib
 import os
 import copy
 from typing import Union
-from .steps_base import *
+from .steps_base import ArgsDict
 from .steps_containers import StepsContainer, StepsPipeline
 from ..utils.image_io import get_half_life_from_nifty
 from ..utils.bids_utils import gen_bids_like_dir_path, gen_bids_like_filepath
@@ -61,7 +64,7 @@ class BIDSyPathsForRawData:
         self._segmentation_img_path = segmentation_img_path
         self._segmentation_label_table_path = segmentation_label_table_path
         self._raw_blood_tac_path = raw_blood_tac_path
-        
+
         self.bids_dir = self._bids_dir
         self.derivatives_dir = self._derivatives_dir
         self.pet_path = self._raw_pet_path
@@ -69,7 +72,7 @@ class BIDSyPathsForRawData:
         self.seg_img = self._segmentation_img_path
         self.seg_table = self._segmentation_label_table_path
         self.blood_path = self._raw_blood_tac_path
-        
+
     def __repr__(self):
         """
         Provides an unambiguous string representation of the BIDSyPathsForRawData instance.
@@ -88,9 +91,9 @@ class BIDSyPathsForRawData:
                     f'segmentation_img_path={repr(self.seg_img)}',
                     f'segmentation_label_table_path={repr(self.seg_table)}',
                     f'raw_blood_tac_path={repr(self.blood_path)}',
-                    f')']
+                    ')']
         return (",\n"+" "*name_len).join(info_str)
-    
+
     def __str__(self):
         """
         Returns a human-readable string representation of the object.
@@ -109,15 +112,15 @@ class BIDSyPathsForRawData:
                     f"Segmentation table: {repr(self.seg_table)}",
                     f"Blood TAC: {repr(self.blood_path)}",]
         return "\n".join(info_str)
-    
-    
+
+
     @property
     def bids_dir(self) -> str:
         """
         str: Property for the BIDS root directory.
         """
         return self._bids_dir
-    
+
     @bids_dir.setter
     def bids_dir(self, value):
         """
@@ -137,14 +140,14 @@ class BIDSyPathsForRawData:
                 self._bids_dir = os.path.abspath(value)
             else:
                 raise ValueError("Given BIDS path is not a directory.")
-            
+
     @property
     def derivatives_dir(self):
         """
         str: Property for the derivatives directory.
         """
         return self._derivatives_dir
-    
+
     @derivatives_dir.setter
     def derivatives_dir(self, value):
         """
@@ -166,15 +169,15 @@ class BIDSyPathsForRawData:
                 raise ValueError(f"Given derivatives path is not a sub-directory of BIDS path."
                                  f"\nBIDS:       {self.bids_dir}"
                                  f"\nDerivatives:{os.path.abspath(value)}")
-    
-    
+
+
     @property
     def pet_path(self):
         """
         str: Property for the raw PET image path.
         """
         return self._raw_pet_path
-    
+
     @pet_path.setter
     def pet_path(self, value: str):
         """
@@ -200,14 +203,14 @@ class BIDSyPathsForRawData:
                 self._raw_pet_path = value
             else:
                 raise FileNotFoundError(f"File does not exist: {value}")
-            
+
     @property
     def anat_path(self):
         """
         str: Property for the raw anatomical image path.
         """
         return self._raw_anat_path
-    
+
     @anat_path.setter
     def anat_path(self, value: str):
         """
@@ -231,14 +234,14 @@ class BIDSyPathsForRawData:
                 self._raw_anat_path = value
             else:
                 raise FileNotFoundError(f"File does not exist: {value}")
-            
+
     @property
     def seg_img(self):
         """
         str: Property for the segmentation image path.
         """
         return self._segmentation_img_path
-    
+
     @seg_img.setter
     def seg_img(self, value: str):
         """
@@ -264,14 +267,14 @@ class BIDSyPathsForRawData:
                 self._segmentation_img_path = value
             else:
                 raise FileNotFoundError(f"File does not exist: {value}")
-            
+  
     @property
     def seg_table(self):
         """
         str: Property for the segmentation label table path.
         """
         return self._segmentation_label_table_path
-    
+
     @seg_table.setter
     def seg_table(self, value: str):
         """
@@ -293,14 +296,14 @@ class BIDSyPathsForRawData:
                 self._segmentation_label_table_path = value
             else:
                 raise FileNotFoundError(f"File does not exist: {value}")
-            
+
     @property
     def blood_path(self):
         """
         str: Property for the raw blood TAC path.
         """
         return self._raw_blood_tac_path
-    
+
     @blood_path.setter
     def blood_path(self, value: str):
         """
@@ -328,8 +331,8 @@ class BIDSyPathsForRawData:
                 self._raw_blood_tac = value
             else:
                 raise FileNotFoundError(f"File does not exist: {value}")
-                
-                
+
+
 class BIDSyPathsForPipelines(BIDSyPathsForRawData):
     """
     A class to manage and generate paths for BIDS data and pipeline-specific analysis directories.
@@ -383,14 +386,14 @@ class BIDSyPathsForPipelines(BIDSyPathsForRawData):
                          segmentation_img_path=segmentation_img_path,
                          segmentation_label_table_path=segmentation_label_table_path,
                          raw_blood_tac_path=raw_blood_tac_path)
-        
+
         self._pipeline_dir = None
         self.pipeline_name = pipeline_name
         self.pipeline_dir = self._pipeline_dir
         self.list_of_analysis_dir_names = list_of_analysis_dir_names
         self.analysis_dirs = self.generate_analysis_dirs(list_of_dir_names=list_of_analysis_dir_names)
         self.make_analysis_dirs()
-        
+
     def __repr__(self):
         """
         Provides an unambiguous string representation of the BIDSyPathsForPipelines instance.
@@ -408,7 +411,7 @@ class BIDSyPathsForPipelines(BIDSyPathsForRawData):
         info_str.insert(2," "*name_len+f"pipeline_name={repr(self.pipeline_name)},")
         info_str.insert(3," "*name_len+f"list_of_analysis_dir_names={repr(self.list_of_analysis_dir_names)},")
         return ("\n").join(info_str)
-    
+
     def __str__(self):
         """
         Returns a human-readable string representation of the object.
@@ -419,20 +422,20 @@ class BIDSyPathsForPipelines(BIDSyPathsForRawData):
         info_str = super().__str__().split("\n")
         info_str.append(f"Pipeline Name: {self.pipeline_name}")
         info_str.append(f"Pipeline Dir: {self.pipeline_dir}")
-        info_str.append(f"Analysis Dirs:")
+        info_str.append("Analysis Dirs:")
         for dir_name, dir_path in self.analysis_dirs.items():
             info_str.append(f"\t{dir_name}: {dir_path}")
-            
+
         return "\n".join(info_str)
-        
-        
+
+
     @property
     def pipeline_dir(self):
         """
         str: Property for the pipeline directory.
         """
         return self._pipeline_dir
-    
+
     @pipeline_dir.setter
     def pipeline_dir(self, value: str):
         """
@@ -453,7 +456,7 @@ class BIDSyPathsForPipelines(BIDSyPathsForRawData):
                 self._pipeline_dir = os.path.abspath(value)
             else:
                 raise ValueError("Pipeline directory is not relative to the derivatives directory")
-    
+
     def generate_analysis_dirs(self, list_of_dir_names: Union[None, list[str]] = None) -> dict:
         """
         Generates paths for analysis directories.
@@ -467,21 +470,22 @@ class BIDSyPathsForPipelines(BIDSyPathsForRawData):
         """
         if list_of_dir_names is None:
             list_of_dir_names = ['preproc', 'km', 'tacs']
-        path_gen = lambda name: gen_bids_like_dir_path(sub_id=self.sub_id,
-                                                       ses_id=self.ses_id,
-                                                       modality=name,
-                                                       sup_dir=self.pipeline_dir)
+        def path_gen(name):
+            return gen_bids_like_dir_path(sub_id=self.sub_id,
+                                                 ses_id=self.ses_id,
+                                                 modality=name,
+                                                 sup_dir=self.pipeline_dir)
         analysis_dirs = {name:path_gen(name) for name in list_of_dir_names}
         return analysis_dirs
-    
+
     def make_analysis_dirs(self):
         """
         Creates the analysis directories if they do not already exist.
         """
-        for a_name, a_dir in self.analysis_dirs.items():
+        for _a_name, a_dir in self.analysis_dirs.items():
             os.makedirs(a_dir, exist_ok=True)
-            
-    
+
+
 class BIDS_Pipeline(BIDSyPathsForPipelines, StepsPipeline):
     """
     A class that combines BIDS data path management with a steps-based pipeline for processing.
@@ -629,7 +633,7 @@ class BIDS_Pipeline(BIDSyPathsForPipelines, StepsPipeline):
                                         segmentation_label_table_path=segmentation_label_table_path,
                                         raw_blood_tac_path=raw_blood_tac_path)
         StepsPipeline.__init__(self, name=pipeline_name, step_containers=step_containers)
-        
+
 
     def __repr__(self):
         """
@@ -645,7 +649,7 @@ class BIDS_Pipeline(BIDSyPathsForPipelines, StepsPipeline):
         """
         cls_name = type(self).__name__
         info_str = [f'{cls_name}(', ]
-        
+
         in_kwargs = ArgsDict(dict(sub_id=self.sub_id,
                                   ses_id=self.ses_id,
                                   pipeline_name = self.name,
@@ -658,20 +662,20 @@ class BIDS_Pipeline(BIDSyPathsForPipelines, StepsPipeline):
                                   segmentation_label_table_path = self.seg_table,
                                   raw_blood_tac_path = self.blood_path)
                 )
-        
+
         for arg_name, arg_val in in_kwargs.items():
             info_str.append(f'{arg_name}={repr(arg_val)},')
-        
+
         info_str.append('step_containers=[')
-        
+
         for _, container in self.step_containers.items():
             info_str.append(f'{repr(container)},')
-        
+
         info_str.append(']')
         info_str.append(')')
-        
-        return f'\n    '.join(info_str)
-    
+
+        return '\n    '.join(info_str)
+
     def __str__(self):
         """
         Returns a human-readable string representation of the object. Lists all the directories
@@ -688,8 +692,8 @@ class BIDS_Pipeline(BIDSyPathsForPipelines, StepsPipeline):
         paths_info_str = BIDSyPathsForPipelines.__str__(self).split("\n")
         info_str = ["*"*50]+paths_info_str + pipeline_info_str
         return "\n".join(info_str)
-        
-        
+
+
     def update_dependencies_for(self, step_name, verbose=False):
         """
         Updates the dependencies for a specified step in the pipeline. Overrides
@@ -711,21 +715,21 @@ class BIDS_Pipeline(BIDSyPathsForPipelines, StepsPipeline):
         try:
             sending_step.infer_outputs_from_inputs(out_dir=self.pipeline_dir,
                                                    der_type=sending_step_grp_name,)
-        except NotImplementedError:
+        except NotImplementedError as exc:
             raise NotImplementedError(f"Step {step_name} does have the `infer_outputs_from_inputs` "
-                                      f"method implemented.")
+                                      f"method implemented.") from exc
         for an_edge in self.dependency_graph[step_name]:
             receiving_step = self.get_step_from_node_label(an_edge)
             try:
                 receiving_step.set_input_as_output_from(sending_step)
-            except NotImplementedError:
+            except NotImplementedError as exc:
                 raise NotImplementedError(f"Step {receiving_step.name} does have the `set_input_as_output_from_inputs` "
-                                          f"method implemented.")
+                                          f"method implemented.") from exc
             else:
                 if verbose:
                     print(f"Updated input-output dependency between {sending_step.name} and {receiving_step.name}")
-    
-    
+
+
     @classmethod
     def default_bids_pipeline(cls,
                               sub_id: str,
@@ -792,7 +796,7 @@ class BIDS_Pipeline(BIDSyPathsForPipelines, StepsPipeline):
             
         """
         temp_pipeline = StepsPipeline.default_steps_pipeline()
-        
+
         obj = cls(sub_id=sub_id,
                   ses_id=ses_id,
                   pipeline_name=pipeline_name,
@@ -806,13 +810,13 @@ class BIDS_Pipeline(BIDSyPathsForPipelines, StepsPipeline):
                   raw_blood_tac_path=raw_blood_tac_path,
                   step_containers=list(temp_pipeline.step_containers.values())
                   )
-        
+
         obj.dependency_graph = copy.deepcopy(temp_pipeline.dependency_graph)
-        
+
         del temp_pipeline
-        
+
         containers = obj.step_containers
-        
+
         containers["preproc"][0].input_image_path = obj.pet_path
         containers["preproc"][1].kwargs['half_life'] = get_half_life_from_nifty(obj.pet_path)
         containers["preproc"][2].kwargs['reference_image_path'] = obj.anat_path
@@ -820,6 +824,6 @@ class BIDS_Pipeline(BIDSyPathsForPipelines, StepsPipeline):
         containers["preproc"][3].segmentation_label_map_path = obj.seg_table
         containers["preproc"][3].segmentation_image_path = obj.seg_img
         containers["preproc"][4].raw_blood_tac_path = obj.blood_path
-        
+
         obj.update_dependencies(verbose=False)
         return obj
