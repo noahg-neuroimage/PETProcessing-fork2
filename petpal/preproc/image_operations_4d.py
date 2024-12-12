@@ -17,13 +17,13 @@ TODOs:
 
 """
 import os
-
+import tempfile
 import ants
 import nibabel
 import numpy as np
 from scipy.ndimage import center_of_mass
 
-from ..preproc import motion_corr
+from petpal.utils.useful_functions import weighted_series_sum
 from ..utils import image_io, math_lib
 
 
@@ -71,6 +71,99 @@ def crop_image(input_image_path: str,
     return cropped_image
 
 
+def determine_motion_target(motion_target_option: str | tuple | list,
+                            input_image_4d_path: str = None,
+                            half_life: float = None) -> str:
+    """
+    Produce a motion target given the ``motion_target_option`` from a method
+    running registrations on PET, i.e. :meth:`motion_correction` or
+    :meth:`register_pet`.
+
+    The motion target option can be a string or a tuple. If it is a string,
+    then if this string is a file, use the file as the motion target.
+
+    If it is the option ``weighted_series_sum``, then run
+    :meth:`weighted_series_sum` and return the output path.
+
+    If it is the option ``mean_image``, then compute the time-average of the
+    4D-PET image.
+
+    If it is a tuple, run a weighted sum on the PET series on a range of
+    frames. The elements of the tuple are treated as times in seconds, counted
+    from the time of the first frame, i.e. (0,300) would average all frames
+    from the first to the frame 300 seconds later. If the two elements are the
+    same, returns the one frame closest to the entered time.
+
+    Args:
+        motion_target_option (str | tuple | list): Determines how the method behaves,
+            according to the above description. Can be a file, a method
+            ('weighted_series_sum' or 'mean_image'), or a tuple range e.g. (0,600).
+        input_image_4d_path (str): Path to the PET image. This is intended to
+            be supplied by the parent method employing this function. Default
+            value None.
+        half_life (float): Half life of the radiotracer used in the image
+            located at ``input_image_4d_path``. Only used if a calculation is
+            performed.
+
+    Returns:
+        out_image_file (str): File to use as a target to compute
+            transformations on.
+
+    Raises:
+        ValueError: If ``motion_target_option`` does not match an acceptable option, or if ``half_life`` is not specified
+        when ``motion_target_option`` is not 'mean_image'
+        TypeError: If start and end time are incompatible with ``float`` type.
+    """
+    if motion_target_option != 'mean_image' and half_life is None:
+        raise ValueError('half_life must be specified if not using "mean_image" for motion_target_option')
+
+    if isinstance(motion_target_option, str):
+        if os.path.exists(motion_target_option):
+            return motion_target_option
+
+        if motion_target_option == 'weighted_series_sum':
+            out_image_file = tempfile.mkstemp(suffix='_wss.nii.gz')[1]
+            weighted_series_sum(input_image_4d_path=input_image_4d_path,
+                                out_image_path=out_image_file,
+                                half_life=half_life,
+                                verbose=False)
+            return out_image_file
+
+        if motion_target_option == 'mean_image':
+            out_image_file = tempfile.mkstemp(suffix='_mean.nii.gz')[1]
+            input_img = ants.image_read(input_image_4d_path)
+            mean_img = get_average_of_timeseries(input_image=input_img)
+            ants.image_write(image=mean_img,filename=out_image_file)
+            return out_image_file
+
+        raise ValueError("motion_target_option did not match a file or 'weighted_series_sum'")
+
+    if isinstance(motion_target_option, (list, tuple)):
+
+        start_time = motion_target_option[0]
+        end_time = motion_target_option[1]
+
+        try:
+            float(start_time)
+            float(end_time)
+        except Exception as exc:
+            raise TypeError('Start time and end time of calculation must be '
+                            'able to be cast into float! Provided values are '
+                            f"{start_time} and {end_time}.") from exc
+
+        out_image_file = tempfile.mkstemp(suffix='_wss.nii.gz')[1]
+        weighted_series_sum(input_image_4d_path=input_image_4d_path,
+                            out_image_path=out_image_file,
+                            half_life=half_life,
+                            verbose=False,
+                            start_time=float(start_time),
+                            end_time=float(end_time))
+
+        return out_image_file
+
+    raise ValueError('motion_target_option did not match str or tuple type.')
+
+
 def brain_mask(input_image_4d_path: str,
                out_image_path: str,
                atlas_image_path: str,
@@ -96,7 +189,7 @@ def brain_mask(input_image_4d_path: str,
     """
     atlas = ants.image_read(atlas_image_path)
     atlas_mask = ants.image_read(atlas_mask_path)
-    pet_ref = ants.image_read(motion_corr.determine_motion_target(
+    pet_ref = ants.image_read(determine_motion_target(
         motion_target_option=motion_target_option,
         input_image_4d_path=input_image_4d_path,
         half_life=half_life
