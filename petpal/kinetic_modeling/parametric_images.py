@@ -423,24 +423,16 @@ class ReferenceTissueParametricImage:
         """
         Save parametric images.
         """
-        bp_img, simulation_img = self.fit_results
+        fit_image = self.fit_results
         pet_image = self.pet_image
-        mask_image = self.mask_image
-        bp_nibabel = nibabel.nifti1.Nifti1Image(dataobj=bp_img,
-                                                affine=mask_image.affine,
-                                                header=mask_image.header)
-        simulation_nibabel = nibabel.nifti1.Nifti1Image(dataobj=simulation_img,
-                                                        affine=pet_image.affine,
-                                                        header=pet_image.header)
+        fit_nibabel = nibabel.nifti1.Nifti1Image(dataobj=fit_image,
+                                                 affine=pet_image.affine,
+                                                 header=pet_image.header)
 
         try:
-            bp_img_path = os.path.join(self.output_directory,
-                                    f"{self.output_filename_prefix}_desc-bp_pet.nii.gz")
-            simulation_img_path = os.path.join(self.output_directory,
-                                            f"{self.output_filename_prefix}_desc-sim_pet.nii.gz")
-
-            nibabel.save(bp_nibabel,bp_img_path)
-            nibabel.save(simulation_nibabel,simulation_img_path)
+            fit_image_path = os.path.join(self.output_directory,
+                                    f"{self.output_filename_prefix}_desc-rtmfit_pet.nii.gz")
+            nibabel.save(fit_nibabel,fit_image_path)
         except IOError as exc:
             print("An IOError occurred while attempting to write the NIfTI image files.")
             raise exc from None
