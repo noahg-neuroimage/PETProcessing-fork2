@@ -477,7 +477,11 @@ class ReferenceTissueParametricImage:
             json.dump(obj=self.analysis_props, fp=f, indent=4)
 
 
-    def __call__(self, bounds, t_thresh_in_mins, k2_prime, image_scale):
+    def __call__(self,
+                 bounds: np.ndarray=None,
+                 t_thresh_in_mins: float=None,
+                 k2_prime: float=None,
+                 image_scale: float=None):
         self.run_parametric_analysis(bounds=bounds,
                                      t_thresh_in_mins=t_thresh_in_mins,
                                      k2_prime=k2_prime,
