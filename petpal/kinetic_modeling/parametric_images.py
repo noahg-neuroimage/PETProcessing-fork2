@@ -382,7 +382,7 @@ class ReferenceTissueParametricImage:
                                 bounds: Union[None, np.ndarray] = None,
                                 k2_prime: float=None,
                                 t_thresh_in_mins: float=None,
-                                image_scale: float=1/37000):
+                                image_scale: float=1):
         """
         Run the analysis.
 
@@ -414,7 +414,7 @@ class ReferenceTissueParametricImage:
                                                tgt_image=pet_np * image_scale,
                                                ref_tac_vals=ref_tac_vals,
                                                mask_img=mask_np,
-                                               method=method
+                                               method=method,
                                                **analysis_kwargs)
         self.fit_results = fit_results
 
