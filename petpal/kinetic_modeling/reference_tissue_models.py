@@ -6,6 +6,7 @@ Todo:
 """
 import numpy as np
 from scipy.optimize import curve_fit as sp_fit
+from lmfit import minimize, Parameters
 import numba
 from .graphical_analysis import get_index_from_threshold
 from .graphical_analysis import cumulative_trapezoidal_integral as cum_trapz
@@ -580,6 +581,13 @@ def fit_frtm2_to_tac(tac_times_in_minutes: np.ndarray,
         * :func:`calc_frtm_tac`
 
     """
+    def _fitting_frtm_lmfit(params, tac_times_in_minutes):
+        return calc_frtm_tac(tac_times_in_minutes=tac_times_in_minutes,
+                             ref_tac_vals=ref_tac_vals,
+                             r1=params['r1'],
+                             k2=k2_prime,
+                             k3=params['k3'],
+                             k4=params['k4'])
 
     def _fitting_frtm(tac_times_in_minutes, r1, k3, k4):
         return calc_frtm_tac(tac_times_in_minutes=tac_times_in_minutes, ref_tac_vals=ref_tac_vals, r1=r1, k2=k2_prime, k3=k3, k4=k4)
