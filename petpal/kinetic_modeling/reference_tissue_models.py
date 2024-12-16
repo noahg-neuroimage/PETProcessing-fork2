@@ -499,14 +499,15 @@ def fit_srtm2_to_tac_with_bounds(tac_times_in_minutes: np.ndarray,
 
 
 def fit_frtm_to_tac(tac_times_in_minutes: np.ndarray,
-                    tgt_tac_vals: np.ndarray,
-                    ref_tac_vals: np.ndarray,
-                    r1_start: float = 0.5,
-                    k2_start: float = 0.5,
-                    k3_start: float = 0.5,
-                    k4_start: float = 0.5) -> tuple:
+                     tgt_tac_vals: np.ndarray,
+                     ref_tac_vals: np.ndarray,
+                     uncertainties: np.ndarray,
+                     r1_start: float = 0.5,
+                     k2_start: float = 0.5,
+                     k3_start: float = 0.5,
+                     k4_start: float = 0.5) -> tuple:
     r"""
-    Fit FRTM to the provided target Time Activity Curve (TAC), given the reference TAC, times, and
+    Fit FRTM2 to the provided target Time Activity Curve (TAC), given the reference TAC, times, and
     starting guesses for the kinetic parameters.
 
     .. important::
@@ -520,8 +521,8 @@ def fit_frtm_to_tac(tac_times_in_minutes: np.ndarray,
         tac_times_in_minutes (np.ndarray): The array representing the time-points for both TACs.
         tgt_tac_vals (np.ndarray): Target TAC to fit with the SRTM.
         ref_tac_vals (np.ndarray): Reference (and Target) TAC times.
+        k2_prime (float): Value for the :math:`k_2^\prime` parameter. Defaults to 0.5.
         r1_start (float): Starting guess for the :math:`R_1\equiv\frac{k_1^\prime}{k_1}` parameter.
-        k2_start (float): Starting guess for :math:`k_2` parameter.
         k3_start (float): Starting guess for :math:`k_3` parameter.
         k4_start (float): Starting guess for :math:`k_4` parameter.
 
@@ -536,16 +537,25 @@ def fit_frtm_to_tac(tac_times_in_minutes: np.ndarray,
         * :func:`calc_frtm_tac`
 
     """
-    def _fitting_frtm(tac_times_in_minutes, r1, k2, k3, k4):
-        return calc_frtm_tac(tac_times_in_minutes=tac_times_in_minutes, ref_tac_vals=ref_tac_vals, r1=r1, k2=k2, k3=k3, k4=k4)
+    def _fitting_frtm_lmfit(params, tac_times_in_minutes, tgt_tac_vals,uncertainties):
+        frtm_tac = calc_frtm_tac(tac_times_in_minutes=tac_times_in_minutes,
+                                 ref_tac_vals=ref_tac_vals,
+                                 r1=params['r1'],
+                                 k2=params['k2'],
+                                 k3=params['k3'],
+                                 k4=params['k4'])
+        return (tgt_tac_vals - frtm_tac)/uncertainties
 
-    starting_values = (r1_start, k2_start, k3_start, k4_start)
-    return sp_fit(f=_fitting_frtm, xdata=tac_times_in_minutes, ydata=tgt_tac_vals, p0=starting_values)
+    params = create_params(r1={'value': r1_start,'min': 1e-3},k2={'value': k2_start,'min': 1e-15},k3={'value': k3_start,'min': 1e-15},k4={'value': k4_start,'min': 1e-15})
+    out = minimize(_fitting_frtm_lmfit,params,args=[tac_times_in_minutes,tgt_tac_vals,uncertainties])
+
+    return out
 
 
 def fit_frtm2_to_tac(tac_times_in_minutes: np.ndarray,
                      tgt_tac_vals: np.ndarray,
                      ref_tac_vals: np.ndarray,
+                     uncertainties: np.ndarray,
                      k2_prime: float = 0.5,
                      r1_start: float = 0.5,
                      k3_start: float = 0.5,
@@ -581,16 +591,17 @@ def fit_frtm2_to_tac(tac_times_in_minutes: np.ndarray,
         * :func:`calc_frtm_tac`
 
     """
-    def _fitting_frtm_lmfit(params, tac_times_in_minutes):
-        return calc_frtm_tac(tac_times_in_minutes=tac_times_in_minutes,
+    def _fitting_frtm_lmfit(params, tac_times_in_minutes, tgt_tac_vals, uncertainties):
+        frtm_tac = calc_frtm_tac(tac_times_in_minutes=tac_times_in_minutes,
                              ref_tac_vals=ref_tac_vals,
                              r1=params['r1'],
                              k2=k2_prime,
                              k3=params['k3'],
                              k4=params['k4'])
+        return (tgt_tac_vals - frtm_tac)/uncertainties
 
-    params = create_params(r1=r1_start,k3=k3_start,k4=k4_start)
-    out = minimize(_fitting_frtm_lmfit,params,args=(tac_times_in_minutes))
+    params = create_params(r1={'value': r1_start,'min': 1e-3},k3={'value': k3_start,'min': 1e-6},k4={'value': k4_start,'min': 1e-5})
+    out = minimize(_fitting_frtm_lmfit,params,args=[tac_times_in_minutes,tgt_tac_vals,uncertainties])
 
     return out
 
