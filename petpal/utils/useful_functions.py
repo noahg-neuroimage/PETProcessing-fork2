@@ -195,12 +195,12 @@ def weighted_series_sum(input_image_4d_path: str,
     pet_sum_image = nibabel.nifti1.Nifti1Image(dataobj=image_weighted_sum,
                                                affine=pet_image.affine,
                                                header=pet_image.header)
-    nibabel.save(pet_sum_image, out_image_path)
-    if verbose:
-        print(f"(ImageOps4d): weighted sum image saved to {out_image_path}")
-
-    image_io.safe_copy_meta(input_image_path=input_image_4d_path,
-                            out_image_path=out_image_path)
+    if out_image_path is not None:
+        nibabel.save(pet_sum_image, out_image_path)
+        if verbose:
+            print(f"(ImageOps4d): weighted sum image saved to {out_image_path}")
+        image_io.safe_copy_meta(input_image_path=input_image_4d_path,
+                                out_image_path=out_image_path)
 
     return pet_sum_image
 
