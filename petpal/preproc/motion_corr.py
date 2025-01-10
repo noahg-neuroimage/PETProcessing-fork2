@@ -591,6 +591,8 @@ def windowed_motion_corr_to_target(input_image_path: str,
                                            input_image_4d_path=input_image_path,
                                            half_life=half_life)
 
+    target_image = ants.image_read(target_image)
+
     out_image = []
 
     for win_id, (st_id, end_id) in enumerate(zip(*window_idx_pairs)):
