@@ -543,7 +543,17 @@ def motion_corr_frames_above_mean_value_to_t1(input_image_4d_path: str,
                                  half_life=half_life)
 
 
-def gen_timeseries_from_image_list(image_list: list[ants.core.ANTsImage]):
+def gen_timeseries_from_image_list(image_list: list[ants.core.ANTsImage]) -> ants.core.ANTsImage:
+    r"""
+    Takes a list of ANTs ndimages, and generates a 4D ndimage. Undoes :func:`ants.ndimage_to_list`
+    so that we take a list of 3D images and generates a 4D image.
+
+    Args:
+        image_list (list[ants.core.ANTsImage]): A list of ndimages.
+
+    Returns:
+        ants.core.ANTsImage: 4D ndimage.
+    """
     tmp_image = _gen_nd_image_based_on_image_list(image_list)
     return ants.list_to_ndimage(tmp_image, image_list)
 
