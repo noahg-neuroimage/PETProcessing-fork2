@@ -596,7 +596,6 @@ def windowed_motion_corr_to_target(input_image_path: str,
 
     reg_kwargs_default = {'aff_metric'               : 'mattes',
                           'write_composite_transform': True}
-
     reg_kwargs = {**reg_kwargs_default, **kwargs}
 
     out_image = []
