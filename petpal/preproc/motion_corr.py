@@ -590,11 +590,9 @@ def windowed_motion_corr_to_target(input_image_path: str,
     target_image = determine_motion_target(motion_target_option=motion_target_option,
                                            input_image_4d_path=input_image_path,
                                            half_life=half_life)
-
     target_image = ants.image_read(target_image)
 
     out_image = []
-
     for win_id, (st_id, end_id) in enumerate(zip(*window_idx_pairs)):
         window_tgt_image = weighted_series_sum_over_window_indecies(input_image_4d=input_image,
                                                                     output_image_path=None,
