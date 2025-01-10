@@ -543,6 +543,11 @@ def motion_corr_frames_above_mean_value_to_t1(input_image_4d_path: str,
                                  half_life=half_life)
 
 
+def gen_timeseries_from_image_list(image_list: list[ants.core.ANTsImage]):
+    tmp_image = _gen_nd_image_based_on_image_list(image_list)
+    return ants.list_to_ndimage(tmp_image, image_list)
+
+
 def _gen_nd_image_based_on_image_list(image_list: list[ants.core.ants_image.ANTsImage]):
     r"""
     Generate a 4D ANTsImage based on a list of 3D ANTsImages.
