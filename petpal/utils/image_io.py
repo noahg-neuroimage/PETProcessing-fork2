@@ -466,3 +466,35 @@ def validate_two_images_same_dimensions(image_1: nibabel.nifti1.Nifti1Image,
 
     if not same_shape:
         raise ValueError(f'Got incompatible image sizes: {shape_1}, {shape_2}.')
+
+def get_window_index_pairs_from_durations(frame_durations: np.ndarray, w_size: float):
+    r"""
+    Computes start and end index pairs for windows of a given size based on frame durations.
+
+    Args:
+        frame_durations (np.ndarray): Array of frame durations in seconds.
+        w_size (float): Window size in seconds.
+
+    Returns:
+        np.ndarray: Array of shape (2, N), where the first row contains start indices,
+            and the second row contains end indices for each window.
+
+    Raises:
+        ValueError: If `w_size` is less than or equal to 0.
+        ValueError: If `w_size` is greater than the total duration of all frames.
+    """
+    if w_size <= 0:
+        raise ValueError("Window size has to be > 0")
+    if w_size > np.sum(frame_durations):
+        raise ValueError("Window size is larger than the whole scan.")
+    _tmp_ind = [0]
+    _sub_sum = 0
+    for frm_id, frm_dur in enumerate(frame_durations):
+        _sub_sum += frm_dur
+        if _sub_sum >= w_size:
+            _tmp_ind.append(frm_id + 1)
+            _sub_sum = 0
+    s_idx = np.asarray(_tmp_ind[:-1])
+    e_idx = np.asarray(_tmp_ind[1:])
+    id_pairs = np.vstack((s_idx, e_idx))
+    return id_pairs

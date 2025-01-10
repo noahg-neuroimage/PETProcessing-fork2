@@ -221,3 +221,4 @@ def read_plasma_glucose_concentration(file_path: str, correction_scale: float = 
         float: Corrected plasma glucose concentration value.
     """
     return correction_scale * float(np.loadtxt(file_path))
+
