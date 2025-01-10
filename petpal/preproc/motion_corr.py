@@ -548,7 +548,8 @@ def windowed_motion_corr_to_target(input_image_path: str,
                                    motion_target_option: str | tuple,
                                    w_size: float,
                                    type_of_transform: str = 'QuickRigid',
-                                   interpolator: str = 'linear'):
+                                   interpolator: str = 'linear',
+                                   **kwargs):
     """
     Performs windowed motion correction (MoCo) to align frames of a 4D PET image to a given target image.
 
@@ -562,6 +563,7 @@ def windowed_motion_corr_to_target(input_image_path: str,
         w_size (float): Window size in seconds for dividing the image into time sections.
         type_of_transform (str): Type of transformation to use in registration (default: 'QuickRigid').
         interpolator (str): Interpolation method for the transformation (default: 'linear').
+        **kwargs: Additional arguments passed to :func:`ants.registration`.
 
     Returns:
         ants.core.ANTsImage: Motion-corrected 4D image.
@@ -592,6 +594,11 @@ def windowed_motion_corr_to_target(input_image_path: str,
                                            half_life=half_life)
     target_image = ants.image_read(target_image)
 
+    reg_kwargs_default = {'aff_metric'               : 'mattes',
+                          'write_composite_transform': True}
+
+    reg_kwargs = {**reg_kwargs_default, **kwargs}
+
     out_image = []
     for win_id, (st_id, end_id) in enumerate(zip(*window_idx_pairs)):
         window_tgt_image = weighted_series_sum_over_window_indecies(input_image_4d=input_image,
@@ -603,9 +610,8 @@ def windowed_motion_corr_to_target(input_image_path: str,
         window_registration = ants.registration(fixed=target_image,
                                                 moving=window_tgt_image,
                                                 type_of_transform=type_of_transform,
-                                                aff_metric='mattes',
                                                 interpolator=interpolator,
-                                                write_composite_transform=True)
+                                                **reg_kwargs)
         for frm_id in range(st_id, end_id):
             out_image.append(ants.apply_transforms(fixed=target_image,
                                                    moving=input_image_list[frm_id],
