@@ -11,8 +11,10 @@ import ants
 import nibabel
 import numpy as np
 from ..utils import image_io
-from ..utils.useful_functions import weighted_series_sum
-
+from ..utils.useful_functions import (weighted_series_sum, weighted_series_sum_over_window_indecies)
+from ..utils.image_io import (get_frame_timing_info_for_nifty,
+                              get_window_index_pairs_for_image,
+                              get_half_life_from_nifty)
 
 def determine_motion_target(motion_target_option: Union[str, tuple, list],
                             input_image_4d_path: str = None,
@@ -540,6 +542,75 @@ def motion_corr_frames_above_mean_value_to_t1(input_image_4d_path: str,
                                  transform_metric=transform_metric,
                                  half_life=half_life)
 
+
+def windowed_motion_corr_to_target(input_image_path: str,
+                                   output_image_path: str | None,
+                                   target_image: str,
+                                   w_size: float,
+                                   type_of_transform: str = 'QuickRigid',
+                                   interpolator: str = 'linear'):
+    """
+    Performs windowed motion correction (MoCo) to align frames of a 4D PET image to a given target image.
+
+    Args:
+        input_image_path (str): Path to the input 4D PET image file.
+        output_image_path (str | None): Path to save the resulting motion-corrected image. If
+            None, don't save image to disk.
+        target_image (str): Path to the target image used for alignment.
+        w_size (float): Window size in seconds for dividing the image into time sections.
+        type_of_transform (str): Type of transformation to use in registration (default: 'QuickRigid').
+        interpolator (str): Interpolation method for the transformation (default: 'linear').
+
+    Returns:
+        ants.core.ANTsImage: Motion-corrected 4D image.
+
+    Workflow:
+        1. Reads the input 4D image and splits it into individual frames.
+        2. Computes index windows based on the specified window size (`w_size`).
+        3. Extracts necessary frame timing information and the tracer's half-life.
+        4. For each window:
+            - Calculates a weighted sum image for the window.
+              See :func:`petpal.utils.useful_functions.weighted_series_sum_over_window_indecies`.
+            - Performs registration of the weighted sum image to the target image.
+            - Applies the obtained transformations to each frame within the window.
+        5. Combines the transformed frames into a corrected 4D image.
+        6. Saves the output image to the specified path, if provided.
+
+    Note:
+        If `output_image_path` is provided, the corrected 4D image will be saved to the specified path.
+    """
+    input_image = ants.image_read(filename=input_image_path)
+    input_image_list = ants.ndimage_to_list(input_image)
+    window_idx_pairs = get_window_index_pairs_for_image(image_path=input_image_path, w_size=w_size)
+    half_life = get_half_life_from_nifty(image_path=input_image_path)
+    frame_info_dict = get_frame_timing_info_for_nifty(image_path=input_image_path)
+
+    out_image = []
+
+    for win_id, (st_id, end_id) in enumerate(zip(*window_idx_pairs)):
+        window_tgt_image = weighted_series_sum_over_window_indecies(input_image_4d=input_image,
+                                                                    output_image_path=None,
+                                                                    window_start_id=st_id,
+                                                                    window_end_id=end_id,
+                                                                    half_life=half_life,
+                                                                    image_frame_info=frame_info_dict)
+        window_registration = ants.registration(fixed=target_image,
+                                                moving=window_tgt_image,
+                                                type_of_transform=type_of_transform,
+                                                aff_metric='mattes',
+                                                interpolator=interpolator,
+                                                write_composite_transform=True)
+        for frm_id in range(st_id, end_id):
+            out_image.append(ants.apply_transforms(fixed=target_image,
+                                                   moving=input_image_list[frm_id],
+                                                   transformlist=window_registration['fwdtransforms']))
+
+    out_image = gen_timeseries_from_image_list(out_image)
+
+    if output_image_path is not None:
+        ants.image_write(image=out_image, filename=output_image_path)
+
+    return out_image
 
 def gen_timeseries_from_image_list(image_list: list[ants.core.ANTsImage]) -> ants.core.ANTsImage:
     r"""
