@@ -544,8 +544,8 @@ def motion_corr_frames_above_mean_value_to_t1(input_image_4d_path: str,
 
 
 def windowed_motion_corr_to_target(input_image_path: str,
-                                   output_image_path: str | None,
-                                   target_image: str,
+                                   out_image_path: str | None,
+                                   motion_target_option: str | tuple,
                                    w_size: float,
                                    type_of_transform: str = 'QuickRigid',
                                    interpolator: str = 'linear'):
@@ -554,9 +554,11 @@ def windowed_motion_corr_to_target(input_image_path: str,
 
     Args:
         input_image_path (str): Path to the input 4D PET image file.
-        output_image_path (str | None): Path to save the resulting motion-corrected image. If
+        out_image_path (str | None): Path to save the resulting motion-corrected image. If
             None, don't save image to disk.
-        target_image (str): Path to the target image used for alignment.
+        motion_target_option (str | tuple): Option to determine the motion target. This can
+            be a path to a specific image file, a tuple of frame indices to generate a target, or
+            specific options recognized by :func:`determine_motion_target`.
         w_size (float): Window size in seconds for dividing the image into time sections.
         type_of_transform (str): Type of transformation to use in registration (default: 'QuickRigid').
         interpolator (str): Interpolation method for the transformation (default: 'linear').
@@ -577,13 +579,17 @@ def windowed_motion_corr_to_target(input_image_path: str,
         6. Saves the output image to the specified path, if provided.
 
     Note:
-        If `output_image_path` is provided, the corrected 4D image will be saved to the specified path.
+        If `out_image_path` is provided, the corrected 4D image will be saved to the specified path.
     """
     input_image = ants.image_read(filename=input_image_path)
     input_image_list = ants.ndimage_to_list(input_image)
     window_idx_pairs = get_window_index_pairs_for_image(image_path=input_image_path, w_size=w_size)
     half_life = get_half_life_from_nifty(image_path=input_image_path)
     frame_info_dict = get_frame_timing_info_for_nifty(image_path=input_image_path)
+
+    target_image = determine_motion_target(motion_target_option=motion_target_option,
+                                           input_image_4d_path=input_image_path,
+                                           half_life=half_life)
 
     out_image = []
 
@@ -607,8 +613,8 @@ def windowed_motion_corr_to_target(input_image_path: str,
 
     out_image = gen_timeseries_from_image_list(out_image)
 
-    if output_image_path is not None:
-        ants.image_write(image=out_image, filename=output_image_path)
+    if out_image_path is not None:
+        ants.image_write(image=out_image, filename=out_image_path)
 
     return out_image
 
