@@ -8,6 +8,7 @@ from petpal.utils import image_io, math_lib
 import nibabel
 import numpy as np
 from scipy.interpolate import interp1d
+import ants
 
 FULL_NAME = [
     'Background',
@@ -203,6 +204,58 @@ def weighted_series_sum(input_image_4d_path: str,
                                 out_image_path=out_image_path)
 
     return pet_sum_image
+
+def weighted_series_sum_over_window_indecies(input_image_4d: ants.core.ANTsImage | str,
+                                             output_image_path: str | None,
+                                             window_start_id: int,
+                                             window_end_id: int,
+                                             half_life: float,
+                                             image_frame_info: dict, ):
+    r"""
+    Computes a weighted series sum over a specified window of indices for a 4D PET image.
+
+    Args:
+        input_image_4d (ants.core.ANTsImage | str): Input 4D PET image as an ANTs image or the path to a NIfTI file.
+        output_image_path (str | None): Path to save the output image. If `None`, the output is not saved.
+        window_start_id (int): Start index of the image window.
+        window_end_id (int): End index of the image window.
+        half_life (float): Radioactive tracer's half-life in seconds.
+        image_frame_info (dict): Frame timing information with keys:
+            - `start` (np.ndarray): Frame start times.
+            - `duration` (np.ndarray): Frame durations.
+            - `decay` (np.ndarray): Decay correction factors.
+
+    Returns:
+        ants.core.ANTsImage: Resultant image after weighted sum computation.
+
+    Note:
+        If `output_image_path` is provided, the computed image will be saved to the specified path.
+        This allows us to utilize ANTs pipelines
+        ``weighted_series_sum_over_window_indecies(...).get_center_of_mass()`` for example.
+
+    """
+    if isinstance(input_image_4d, str):
+        input_image_4d = image_io.safe_load_4dpet_nifti(filename=input_image_4d)
+
+    assert len(input_image_4d.shape) == 4, "Input image must be 4D."
+
+    window_wss = math_lib.weighted_sum_computation_over_index_window(pet_series=input_image_4d,
+                                                                     window_start_id=window_start_id,
+                                                                     window_end_id=window_end_id,
+                                                                     half_life=half_life,
+                                                                     frame_starts=image_frame_info['start'],
+                                                                     frame_durations=image_frame_info['duration'],
+                                                                     decay_factors=image_frame_info['decay'],)
+
+    window_wss = ants.from_numpy(data=window_wss,
+                                 origin=input_image_4d.origin[:-1],
+                                 direction=input_image_4d.direction[:-1],
+                                 spacing=input_image_4d.spacing[:-1])
+
+    if output_image_path is not None:
+        ants.image_write(image=window_wss, filename=output_image_path)
+
+    return  window_wss
 
 
 def read_plasma_glucose_concentration(file_path: str, correction_scale: float = 1.0 / 18.0) -> float:

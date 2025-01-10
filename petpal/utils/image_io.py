@@ -522,3 +522,4 @@ def get_window_index_pairs_for_image(image_path: str, w_size: float):
     """
     image_frame_info = get_frame_timing_info_for_nifty(image_path=image_path)
     return get_window_index_pairs_from_durations(frame_durations=image_frame_info['duration'], w_size=w_size)
+
