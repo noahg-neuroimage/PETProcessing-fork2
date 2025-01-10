@@ -189,6 +189,47 @@ def get_half_life_from_nifty(image_path:str):
     meta_path = _gen_meta_data_filepath_for_nifty(image_path)
     return get_half_life_from_meta(meta_path)
 
+
+def get_frame_timing_info_for_nifty(image_path: str) -> dict[str, np.ndarray]:
+    r"""
+    Extracts frame timing information and decay factors from a NIfTI image metadata.
+    Expects that the JSON metadata file has ``FrameDuration`` and ``DecayFactor`` keys.
+
+    .. important::
+        This function tries to infer `FrameTimesEnd` and `FrameTimesStart` from the frame durations
+        if those keys are not present in the metadata file. If the scan is broken, this might generate
+        incorrect results.
+
+
+    Args:
+        image_path (str): Path to the NIfTI image file.
+
+    Returns:
+        dict: Frame timing information with the following keys:
+            - `duration` (np.ndarray): Frame durations in seconds.
+            - `start` (np.ndarray): Frame start times in seconds.
+            - `end` (np.ndarray): Frame end times in seconds.
+            - `decay` (np.ndarray): Decay factors for each frame.
+    """
+    _meta_data = load_metadata_for_nifty_with_same_filename(image_path=image_path)
+    frm_dur = np.asarray(_meta_data['FrameDuration'], int)
+    try:
+        frm_ends = np.asarray(_meta_data['FrameTimesEnd'], int)
+    except KeyError:
+        frm_ends = np.cumsum(frm_dur)
+    try:
+        frm_starts = np.asarray(_meta_data['FrameTimesStart'], int)
+    except KeyError:
+        frm_starts = np.diff(frm_ends)
+
+    frm_info = {'duration': frm_dur,
+                'start': frm_starts,
+                'end': frm_ends,
+                'decay': np.asarray(_meta_data['DecayFactor'])
+                }
+
+    return frm_info
+
 class ImageIO:
     """
     :class:`ImageIO` to handle reading and writing imaging data and metadata.
