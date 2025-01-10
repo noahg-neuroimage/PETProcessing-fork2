@@ -269,8 +269,7 @@ def motion_corr_frame_list(input_image_4d_path: str,
 
     if verbose:
         print("... done!\n")
-    tmp_image = _gen_nd_image_based_on_image_list(out_image)
-    out_image = ants.list_to_ndimage(tmp_image, out_image)
+    out_image = gen_timeseries_from_image_list(out_image)
     out_image = ants.to_nibabel(out_image)
 
     nibabel.save(out_image, out_image_path)
@@ -386,8 +385,7 @@ def motion_corr_frame_list_to_t1(input_image_4d_path: str,
 
     if verbose:
         print("... done!\n")
-    tmp_image = _gen_nd_image_based_on_image_list(out_image)
-    out_image = ants.list_to_ndimage(tmp_image, out_image)
+    out_image = gen_timeseries_from_image_list(out_image)
     out_image = ants.to_nibabel(out_image)
 
     nibabel.save(out_image, out_image_path)
