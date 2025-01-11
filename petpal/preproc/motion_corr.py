@@ -82,7 +82,7 @@ def determine_motion_target(motion_target_option: Union[str, tuple, list],
             nibabel.save(mean_img, out_image_file)
             return out_image_file
 
-        raise ValueError("motion_target_option did not match a file or 'weighted_series_sum'")
+        raise ValueError("motion_target_option did not match a file, 'weighted_series_sum' or 'mean_image'")
 
     if isinstance(motion_target_option, (list, tuple)):
 
