@@ -552,6 +552,14 @@ def windowed_motion_corr_to_target(input_image_path: str,
                                    **kwargs):
     """
     Performs windowed motion correction (MoCo) to align frames of a 4D PET image to a given target image.
+    We compute a combined image over the frames in a window, which is registered to the target image.
+    Then, for each frame within the window, the same transformation is applied. This can be useful for
+    initial frames with low counts. By setting a small-enough window size, later frames can still be
+    individually registered to the target image.
+
+    .. important::
+        The motion-target will determine the space of the output image. If we provide a T1 image
+        as the `motion_target_option`, the output image will be in T1-space.
 
     Args:
         input_image_path (str): Path to the input 4D PET image file.

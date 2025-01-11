@@ -4,7 +4,8 @@ from typing import Union
 from .steps_base import *
 from ..preproc.image_operations_4d import SimpleAutoImageCropper, write_tacs
 from ..preproc.register import register_pet
-from ..preproc.motion_corr import motion_corr_frames_above_mean_value
+from ..preproc.motion_corr import (motion_corr_frames_above_mean_value,
+                                   windowed_motion_corr_to_target)
 from ..input_function import blood_input
 from ..utils.bids_utils import parse_path_to_get_subject_and_session_id, snake_to_camel_case, gen_bids_like_dir_path, gen_bids_like_filepath
 from ..utils.image_io import safe_copy_meta
@@ -610,7 +611,32 @@ class ImageToImageStep(FunctionBasedStep):
         except RuntimeError as err:
             warnings.warn(f"Invalid override: {err}. Using default instance instead.", stacklevel=2)
             return cls(**defaults)
-    
+
+    @classmethod
+    def default_windowed_moco(cls, verbose=False, **overrides):
+        """
+        Creates a default instance for motion correction of frames using a windowed strategy.
+        See :func:`windowed_motion_corr_to_target<petpal.preproc.motion_corr.windowed_motion_corr_to_target>`
+        for more details. All paths are empty-strings.
+
+        Args:
+            verbose:
+            **overrides:
+
+        Returns:
+            ImageToImageStep: A new instance for windowed motion correction of frames.
+        """
+        defaults = dict(name='windowed_moco', function=windowed_motion_corr_to_target,
+                        input_image_path='', output_image_path='',
+                        motion_target_option='weighted_series_sum', w_size=60.0,
+                        verbose=verbose, **overrides)
+        override_dict = {**defaults, **overrides}
+        try:
+            return cls(**override_dict)
+        except RuntimeError as err:
+            warnings.warn(f"Invalid override: {err}. Using default instance instead.", stacklevel=2)
+            return cls(**defaults)
+
     @classmethod
     def default_register_pet_to_t1(cls, reference_image_path='', half_life='', verbose=False, **overrides):
         """
