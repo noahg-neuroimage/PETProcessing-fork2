@@ -47,6 +47,7 @@ See Also:
 """
 import argparse
 from ..utils import useful_functions
+from ..preproc import image_operations_4d
 
 
 _PREPROC_EXAMPLES_ = (r"""
@@ -115,13 +116,19 @@ def _generate_args() -> argparse.Namespace:
     parser_wss.add_argument('--end-time', required=False, help='End time of sum in seconds.',
                             type=float,default=-1)
 
+    parser_crop = subparsers.add_parser('auto-crop',
+                                        help='Automatically crop 4D PET image using threshold.')
+    _add_common_args(parser_crop)
+    parser_crop.add_argument('-t','--thresh-val', required=True,default=0.01,
+                            help='Fractional threshold to crop image projections.',type=float)
+
 
     return parser
 
 
 def main():
     """
-    Weighted Series Sum command line interface
+    Preproc command line interface
     """
     preproc_parser = _generate_args()
     args = preproc_parser.parse_args()
@@ -145,6 +152,11 @@ def main():
                                              end_time=args.end_time,
                                              verbose=args.verbose)
 
+    if command=='auto-crop':
+        image_operations_4d.SimpleAutoImageCropper(input_image_path=args.input_img,
+                                                   out_image_path=args.out_img,
+                                                   thresh_val=args.thresh_val,
+                                                   verbose=args.verbose)
 
 
 if __name__ == "__main__":
