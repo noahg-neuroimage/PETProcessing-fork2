@@ -47,7 +47,7 @@ See Also:
 """
 import argparse
 from ..utils import useful_functions
-from ..preproc import image_operations_4d
+from ..preproc import image_operations_4d, motion_corr
 
 
 _PREPROC_EXAMPLES_ = (r"""
@@ -123,6 +123,15 @@ def _generate_args() -> argparse.Namespace:
                             help='Fractional threshold to crop image projections.',type=float)
 
 
+    parser_moco = subparsers.add_parser('motion-correction',
+                                        help='Motion correct 4D PET data.')
+    _add_common_args(parser_moco)
+    parser_moco.add_argument('--motion-target', required=True,default='mean_image',
+                             help='Target to motion correct to.',type=str)
+    parser_moco.add_argument('--transform-type', required=False,default='Rigid',
+                             help='Transformation type (Rigid or Affine).',type=str)
+
+
     return parser
 
 
@@ -144,7 +153,7 @@ def main():
     if args.verbose:
         print(f"Running {command} with parameters")
 
-    if command=='weighted-series-sum':
+    if command=='weighted_series_sum':
         useful_functions.weighted_series_sum(input_image_4d_path=args.input_img,
                                              out_image_path=args.out_img,
                                              half_life=args.half_life,
@@ -152,7 +161,7 @@ def main():
                                              end_time=args.end_time,
                                              verbose=args.verbose)
 
-    if command=='auto-crop':
+    if command=='auto_crop':
         image_operations_4d.SimpleAutoImageCropper(input_image_path=args.input_img,
                                                    out_image_path=args.out_img,
                                                    thresh_val=args.thresh_val,
