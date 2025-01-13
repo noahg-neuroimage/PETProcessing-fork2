@@ -101,7 +101,7 @@ def _generate_args() -> argparse.Namespace:
     Returns:
         args (argparse.Namespace): Arguments used in the command line and their corresponding values.
     """
-    parser = argparse.ArgumentParser(prog='petpal-preproc',
+    parser = argparse.ArgumentParser(prog='petpal-preproc-2',
                                      description='Command line interface for running PET pre-processing steps.',
                                      epilog=_PREPROC_EXAMPLES_, formatter_class=argparse.RawTextHelpFormatter)
 
