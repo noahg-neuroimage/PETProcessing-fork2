@@ -9,9 +9,9 @@ import ants
 import nibabel
 from nibabel.processing import resample_from_to
 from ..utils import image_io
-from . import motion_corr
+from . import image_operations_4d
 
-determine_motion_target = motion_corr.determine_motion_target
+determine_motion_target = image_operations_4d.determine_motion_target
 
 def register_pet(input_reg_image_path: str,
                  out_image_path: str,
