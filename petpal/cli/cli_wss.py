@@ -48,18 +48,13 @@ See Also:
 import os
 import argparse
 from ..preproc import preproc
+from ..utils import useful_functions
 
 
 _PREPROC_EXAMPLES_ = (r"""
 Examples:
   - Weighted Sum:
     petpal-preproc weighted-sum --out-dir /path/to/output --prefix sub_001 --pet /path/to/pet.nii --half-life 6586.26
-  - Registration:
-    petpal-preproc register-pet --out-dir /path/to/output --prefix sub_001 --pet /path/to/pet.nii --anatomical /path/to/mri.nii --motion-target /path/to/pet/reference.nii
-  - Motion Correction:
-    petpal-preproc motion-corr --out-dir /path/to/output --prefix sub_001 --pet /path/to/pet.nii --pet-reference /path/to/sum.nii
-  - Writing TACs From Segmentation Masks:
-    petpal-preproc write-tacs --out-dir /path/to/output --pet /path/to/pet.nii --segmentation /path/to/seg_masks.nii --label-map-path /path/to/dseg.tsv
 """)
 
 
@@ -94,9 +89,8 @@ def _add_common_args(parser: argparse.ArgumentParser) -> None:
             print(args.prefix)
 
     """
-    parser.add_argument('-o', '--out-dir', default='./', help='Output directory')
-    parser.add_argument('-f', '--prefix', default="sub_XXXX", help='Output file prefix')
-    parser.add_argument('-p', '--pet',required=True,help='Path to PET image.',type=str)
+    parser.add_argument('-o', '--out-img', default='petpal_wss_output.nii.gz', help='Output image filename')
+    parser.add_argument('-i', '--input-img',required=True,help='Path to input image.',type=str)
     parser.add_argument('-v', '--verbose', action='store_true',
                             help='Print processing information during computation.', required=False)
 
@@ -116,7 +110,7 @@ def _generate_args() -> argparse.Namespace:
 
     parser_wss = subparsers.add_parser('weighted-series-sum', help='Half-life weighted sum of 4D PET series.')
     _add_common_args(parser_wss)
-    parser_wss.add_argument('-l', '--half-life', required=True, help='Half life of radioisotope in seconds.',
+    parser_wss.add_argument('--half-life', required=True, help='Half life of radioisotope in seconds.',
                             type=float)
 
 
@@ -125,22 +119,27 @@ def _generate_args() -> argparse.Namespace:
 
 def main():
     """
-    Preprocessing command line interface
+    Weighted Series Sum command line interface
     """
     preproc_parser = _generate_args()
     args = preproc_parser.parse_args()
 
     if args.command is None:
         preproc_parser.print_help()
-        raise Exception('Exiting without command')
+        raise SystemExit('Exiting without command')
 
 
 
     command = str(args.command).replace('-','_')
 
     if args.verbose:
-        print(f"Running {command} with parameters: {preproc_props}")
+        print(f"Running {command} with parameters")
 
+    if command=='weighted-series-sum':
+        useful_functions.weighted_series_sum(input_image_4d_path=args.input_img,
+                                             out_image_path=args.out_img,
+                                             half_life=args.half_life,
+                                             verbose=True)
 
 
 
