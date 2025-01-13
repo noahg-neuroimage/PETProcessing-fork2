@@ -45,9 +45,7 @@ See Also:
     * :mod:`petpal.preproc` - module to implement preprocessing tools.
 
 """
-import os
 import argparse
-from ..preproc import preproc
 from ..utils import useful_functions
 
 
@@ -112,6 +110,10 @@ def _generate_args() -> argparse.Namespace:
     _add_common_args(parser_wss)
     parser_wss.add_argument('--half-life', required=True, help='Half life of radioisotope in seconds.',
                             type=float)
+    parser_wss.add_argument('--start-time', required=False, help='Start time of sum in seconds.',
+                            type=float,default=0)
+    parser_wss.add_argument('--end-time', required=False, help='End time of sum in seconds.',
+                            type=float,default=-1)
 
 
     return parser
@@ -139,7 +141,9 @@ def main():
         useful_functions.weighted_series_sum(input_image_4d_path=args.input_img,
                                              out_image_path=args.out_img,
                                              half_life=args.half_life,
-                                             verbose=True)
+                                             start_time=args.start_time,
+                                             end_time=args.end_time,
+                                             verbose=args.verbose)
 
 
 
