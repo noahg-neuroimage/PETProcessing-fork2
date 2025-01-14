@@ -14,36 +14,15 @@ The user must provide:
     
 
 Examples:
-    * Half-life Weighted Sum:
-    
-        .. code-block:: bash
-    
-            petpal-preproc weighted-sum --out-dir /path/to/output --prefix sub_001 --pet /path/to/pet.nii --half-life 6586.26
-    
-    * Image Registration:
-    
-        .. code-block:: bash
-    
-            petpal-preproc register-pet --out-dir /path/to/output --prefix sub_001 --pet /path/to/pet.nii --anatomical /path/to/mri.nii --motion-target /path/to/pet/reference.nii
-            
-    * Motion Correction:
-    
-        .. code-block:: bash
-            
-            petpal-preproc motion-corr --out-dir /path/to/output --prefix sub_001 --pet /path/to/pet.nii --pet-reference /path/to/sum.nii
-            
-    * Extracting TACs Using A Mask And Color-Table:
-    
-        .. code-block:: bash
-            
-            petpal-preproc write-tacs --out-dir /path/to/output --pet /path/to/pet.nii --segmentation /path/to/seg_masks.nii --label-map-path /path/to/dseg.tsv
+(Need to fix these)
 
 See Also:
-    * :mod:`petpal.image_operations_4d` - module used for operations on 4D images.
-    * :mod:`petpal.motion_corr` - module for motion correction tools.
-    * :mod:`petpal.register` - module for MRI and atlas registration.
-    * :mod:`petpal.preproc` - module to implement preprocessing tools.
+    * :mod:`petpal.preproc.image_operations_4d` - module used for operations on 4D images.
+    * :mod:`petpal.preproc.motion_corr` - module for motion correction tools.
+    * :mod:`petpal.preproc.register` - module for MRI and atlas registration.
 
+To do:
+    * Fix docs
 """
 import argparse
 from ..utils import useful_functions
@@ -63,7 +42,7 @@ Examples:
 
 def _add_common_args(parser: argparse.ArgumentParser) -> None:
     """
-    Adds common arguments ('--pet', '--out-dir', and '--prefix') to a provided ArgumentParser object.
+    Adds common arguments ('--input-img', '--out-img', '--verbose') to a provided ArgumentParser object.
 
     This function modifies the passed ArgumentParser object by adding three arguments commonly used in the script.
     It uses the add_argument method of the ArgumentParser class. After running this function, the parser will
