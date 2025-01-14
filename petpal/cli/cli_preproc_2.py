@@ -53,7 +53,11 @@ from ..preproc import image_operations_4d, motion_corr
 _PREPROC_EXAMPLES_ = (r"""
 Examples:
   - Weighted Sum:
-    petpal-preproc weighted-sum --out-dir /path/to/output --prefix sub_001 --pet /path/to/pet.nii --half-life 6586.26
+    petpal-preproc-2 weighted-series-sum -i /path/to/pet.nii -o /path/to/output.nii --half-life 6586.26
+  - Auto Crop:
+    petpal-preproc-2 auto-crop -i /path/to/pet.nii -o /path/to/output.nii -t 0.01
+  - Motion Correction:
+    petpal-preproc-2 motion-correction -i /path/to/pet.nii -o /path/to/output.nii --motion-target 0 600 --half-life 6586.26 --transform-type Rigid
 """)
 
 
