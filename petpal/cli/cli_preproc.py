@@ -177,7 +177,7 @@ def main():
 
     if args.command is None:
         preproc_parser.print_help()
-        raise Exception('Exiting without command')
+        raise SystemExit('Exiting without command')
 
     subject = preproc.PreProc(output_directory=os.path.abspath(args.out_dir),
                               output_filename_prefix=args.prefix)

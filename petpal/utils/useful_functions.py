@@ -2,12 +2,11 @@
 Module to handle abstracted functionalities
 """
 import os
-
-from petpal.utils import image_io, math_lib
-
 import nibabel
 import numpy as np
 from scipy.interpolate import interp1d
+from petpal.utils import image_io, math_lib
+
 
 FULL_NAME = [
     'Background',
@@ -147,6 +146,11 @@ def weighted_series_sum(input_image_4d_path: str,
     pet_meta = image_io.load_metadata_for_nifty_with_same_filename(input_image_4d_path)
     pet_image = nibabel.load(input_image_4d_path)
     pet_series = pet_image.get_fdata()
+
+    time_keywords = ['FrameReferenceTime','FrameTimesStart']
+    for keyword in time_keywords:
+        if keyword in pet_meta.keys():
+            frame_start = pet_meta[keyword]
     frame_start = pet_meta['FrameTimesStart']
     frame_duration = pet_meta['FrameDuration']
 
