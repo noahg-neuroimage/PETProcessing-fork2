@@ -126,11 +126,15 @@ def _generate_args() -> argparse.Namespace:
     parser_moco = subparsers.add_parser('motion-correction',
                                         help='Motion correct 4D PET data.')
     _add_common_args(parser_moco)
-    parser_moco.add_argument('--motion-target', required=True,default='mean_image',
-                             help='Target to motion correct to.',type=str)
+    parser_moco.add_argument('--motion-target', default=None, nargs='+',
+                            help="Motion target option. Can be an image path, "
+                                 "'weighted_series_sum' or a tuple (i.e. '-t 0 600' for first ten minutes).",
+                            required=True)
     parser_moco.add_argument('--transform-type', required=False,default='Rigid',
                              help='Transformation type (Rigid or Affine).',type=str)
-
+    parser_moco.add_argument('--half-life', required=False, 
+                             help='Half life of radioisotope in seconds.'
+                                  'Required for some motion targets.',type=float)
 
     return parser
 
@@ -167,6 +171,17 @@ def main():
                                                    thresh_val=args.thresh_val,
                                                    verbose=args.verbose)
 
+    if command=='motion_correction':
+        if len(args.motion_target)==1:
+            motion_target = args.motion_target[0]
+        else:
+            motion_target = args.motion_target
+        motion_corr.motion_corr(input_image_4d_path=args.input_img,
+                                out_image_path=args.out_img,
+                                motion_target_option=motion_target,
+                                verbose=True,
+                                type_of_transform=args.transform_type,
+                                half_life=args.half_life)
 
 if __name__ == "__main__":
     main()
