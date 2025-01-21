@@ -22,9 +22,7 @@ import ants
 import nibabel
 import numpy as np
 from scipy.ndimage import center_of_mass
-
-from petpal.utils.useful_functions import weighted_series_sum
-
+from ..utils.useful_functions import weighted_series_sum
 from ..utils import image_io, math_lib
 
 
