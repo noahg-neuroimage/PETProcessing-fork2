@@ -142,6 +142,7 @@ def _generate_args() -> argparse.Namespace:
 
     parser_window_moco = subparsers.add_parser('window-motion-corr',
                                                help='Windowed motion correction for 4D PET using ANTS')
+    _add_common_args(parser_window_moco)
     parser_window_moco.add_argument('-t', '--motion-target', default='weighted_series_sum', type=str,
                                     help="Motion target option. Can be an image path , 'weighted_series_sum' or 'mean_image'")
     parser_window_moco.add_argument('-w', '--window_size', default=60.0, type=float,
@@ -149,7 +150,6 @@ def _generate_args() -> argparse.Namespace:
     parser_window_moco.add_argument('-y', '--transform-type', default='QuickRigid', type=str,
                                     choices=['QuickRigid', 'Rigid', 'DenseRigid', 'Affine', 'AffineFast'],
                                     help="Type of ANTs transformation to apply when registering.")
-    _add_common_args(parser_window_moco)
     parser_tac = subparsers.add_parser('write-tacs', help='Write ROI TACs from 4D PET using segmentation masks.')
     _add_common_args(parser_tac)
     parser_tac.add_argument('-s', '--segmentation', required=True,
