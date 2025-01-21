@@ -48,6 +48,7 @@ See Also:
 import os
 import argparse
 from ..preproc import preproc
+from ..preproc.motion_corr import windowed_motion_corr_to_target
 
 
 _PREPROC_EXAMPLES_ = (r"""
@@ -58,6 +59,8 @@ Examples:
     petpal-preproc register-pet --out-dir /path/to/output --prefix sub_001 --pet /path/to/pet.nii --anatomical /path/to/mri.nii --motion-target /path/to/pet/reference.nii
   - Motion Correction:
     petpal-preproc motion-corr --out-dir /path/to/output --prefix sub_001 --pet /path/to/pet.nii --pet-reference /path/to/sum.nii
+  - Windowed Motion Corr:
+    petpal-preproc window-motion-corr --out-dir /path/to/output --prefix sub_001 --pet /path/to/pet.nii --target /path/to/sum.nii|'weighted_series_sum'
   - Writing TACs From Segmentation Masks:
     petpal-preproc write-tacs --out-dir /path/to/output --pet /path/to/pet.nii --segmentation /path/to/seg_masks.nii --label-map-path /path/to/dseg.tsv
 """)
@@ -137,6 +140,16 @@ def _generate_args() -> argparse.Namespace:
     parser_moco.add_argument('-l', '--half-life', help='Half life of radioisotope in seconds.',
                             type=float)
 
+    parser_window_moco = subparsers.add_parser('window-motion-corr',
+                                               help='Windowed motion correction for 4D PET using ANTS')
+    _add_common_args(parser_window_moco)
+    parser_window_moco.add_argument('-t', '--motion-target', default='weighted_series_sum', type=str,
+                                    help="Motion target option. Can be an image path , 'weighted_series_sum' or 'mean_image'")
+    parser_window_moco.add_argument('-w', '--window_size', default=60.0, type=float,
+                                    help="Window size in seconds.",)
+    parser_window_moco.add_argument('-y', '--transform-type', default='QuickRigid', type=str,
+                                    choices=['QuickRigid', 'Rigid', 'DenseRigid', 'Affine', 'AffineFast'],
+                                    help="Type of ANTs transformation to apply when registering.")
     parser_tac = subparsers.add_parser('write-tacs', help='Write ROI TACs from 4D PET using segmentation masks.')
     _add_common_args(parser_tac)
     parser_tac.add_argument('-s', '--segmentation', required=True,
@@ -178,6 +191,16 @@ def main():
     if args.command is None:
         preproc_parser.print_help()
         raise SystemExit('Exiting without command')
+
+    if args.command == 'window-motion-corr':
+        out_path = os.path.join(args.out_dir, f"{args.prefix}_desc-WindowMoco_pet.nii.gz")
+        windowed_motion_corr_to_target(input_image_path=args.pet,
+                                       out_image_path=out_path,
+                                       motion_target_option=args.motion_target,
+                                       w_size=args.window_size,
+                                       )
+        return None
+
 
     subject = preproc.PreProc(output_directory=os.path.abspath(args.out_dir),
                               output_filename_prefix=args.prefix)

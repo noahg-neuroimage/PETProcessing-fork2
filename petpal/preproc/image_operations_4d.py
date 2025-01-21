@@ -22,9 +22,7 @@ import ants
 import nibabel
 import numpy as np
 from scipy.ndimage import center_of_mass
-
-from petpal.utils.useful_functions import weighted_series_sum
-
+from ..utils.useful_functions import weighted_series_sum
 from ..utils import image_io, math_lib
 
 
@@ -413,7 +411,7 @@ def roi_tac(input_image_4d_path: str,
         raise ValueError("'time_frame_keyword' must be one of "
                          "'FrameReferenceTime' or 'FrameTimesStart'")
 
-    pet_meta = image_io.load_metadata_for_nifty_with_same_filename(input_image_4d_path)
+    pet_meta = image_io.load_metadata_for_nifti_with_same_filename(input_image_4d_path)
     tac_extraction_func = extract_tac_from_nifty_using_mask
     pet_numpy = nibabel.load(input_image_4d_path).get_fdata()
     seg_numpy = nibabel.load(roi_image_path).get_fdata()
@@ -446,7 +444,7 @@ def write_tacs(input_image_path: str,
         raise ValueError("'time_frame_keyword' must be one of "
                          "'FrameReferenceTime' or 'FrameTimesStart'")
 
-    pet_meta = image_io.load_metadata_for_nifty_with_same_filename(input_image_path)
+    pet_meta = image_io.load_metadata_for_nifti_with_same_filename(input_image_path)
     label_map = image_io.ImageIO.read_label_map_tsv(label_map_file=label_map_path)
     regions_abrev = label_map['abbreviation']
     regions_map = label_map['mapping']
