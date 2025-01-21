@@ -190,7 +190,7 @@ def main():
 
     if args.command is None:
         preproc_parser.print_help()
-        raise Exception('Exiting without command')
+        raise SystemExit('Exiting without command')
 
     if args.command == 'window-motion-corr':
         out_path = os.path.join(args.out_dir, f"{args.prefix}_desc-WindowMoco_pet.nii.gz")
