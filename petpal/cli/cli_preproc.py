@@ -199,6 +199,7 @@ def main():
                                        motion_target_option=args.motion_target,
                                        w_size=args.window_size,
                                        )
+        return None
 
 
     subject = preproc.PreProc(output_directory=os.path.abspath(args.out_dir),
