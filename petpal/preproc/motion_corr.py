@@ -12,9 +12,9 @@ import nibabel
 import numpy as np
 from ..utils import image_io
 from ..utils.useful_functions import (weighted_series_sum, weighted_series_sum_over_window_indecies)
-from ..utils.image_io import (get_frame_timing_info_for_nifty,
+from ..utils.image_io import (get_frame_timing_info_for_nifti,
                               get_window_index_pairs_for_image,
-                              get_half_life_from_nifty)
+                              get_half_life_from_nifti)
 
 def determine_motion_target(motion_target_option: Union[str, tuple, list],
                             input_image_4d_path: str = None,
@@ -594,8 +594,8 @@ def windowed_motion_corr_to_target(input_image_path: str,
     input_image = ants.image_read(filename=input_image_path)
     input_image_list = ants.ndimage_to_list(input_image)
     window_idx_pairs = get_window_index_pairs_for_image(image_path=input_image_path, w_size=w_size)
-    half_life = get_half_life_from_nifty(image_path=input_image_path)
-    frame_info_dict = get_frame_timing_info_for_nifty(image_path=input_image_path)
+    half_life = get_half_life_from_nifti(image_path=input_image_path)
+    frame_info_dict = get_frame_timing_info_for_nifti(image_path=input_image_path)
 
     target_image = determine_motion_target(motion_target_option=motion_target_option,
                                            input_image_4d_path=input_image_path,

@@ -145,7 +145,7 @@ def weighted_series_sum(input_image_4d_path: str,
     """
     if half_life <= 0:
         raise ValueError('(ImageOps4d): Radioisotope half life is zero or negative.')
-    pet_meta = image_io.load_metadata_for_nifty_with_same_filename(input_image_4d_path)
+    pet_meta = image_io.load_metadata_for_nifti_with_same_filename(input_image_4d_path)
     pet_image = nibabel.load(input_image_4d_path)
     pet_series = pet_image.get_fdata()
     frame_start = pet_meta['FrameTimesStart']

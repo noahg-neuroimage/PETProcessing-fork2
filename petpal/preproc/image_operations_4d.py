@@ -306,7 +306,7 @@ def roi_tac(input_image_4d_path: str,
         raise ValueError("'time_frame_keyword' must be one of "
                          "'FrameReferenceTime' or 'FrameTimesStart'")
 
-    pet_meta = image_io.load_metadata_for_nifty_with_same_filename(input_image_4d_path)
+    pet_meta = image_io.load_metadata_for_nifti_with_same_filename(input_image_4d_path)
     tac_extraction_func = extract_tac_from_nifty_using_mask
     pet_numpy = nibabel.load(input_image_4d_path).get_fdata()
     seg_numpy = nibabel.load(roi_image_path).get_fdata()
@@ -339,7 +339,7 @@ def write_tacs(input_image_path: str,
         raise ValueError("'time_frame_keyword' must be one of "
                          "'FrameReferenceTime' or 'FrameTimesStart'")
 
-    pet_meta = image_io.load_metadata_for_nifty_with_same_filename(input_image_path)
+    pet_meta = image_io.load_metadata_for_nifti_with_same_filename(input_image_path)
     label_map = image_io.ImageIO.read_label_map_tsv(label_map_file=label_map_path)
     regions_abrev = label_map['abbreviation']
     regions_map = label_map['mapping']

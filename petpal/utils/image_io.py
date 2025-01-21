@@ -54,7 +54,7 @@ def convert_ctab_to_dseg(ctab_path: str,
     label_map.to_csv(dseg_path,sep='\t')
     return label_map
 
-def _gen_meta_data_filepath_for_nifty(nifty_path:str):
+def _gen_meta_data_filepath_for_nifti(nifty_path:str):
     """
     Generates the corresponding metadata file path for a given nifti file path.
 
@@ -70,7 +70,7 @@ def _gen_meta_data_filepath_for_nifty(nifty_path:str):
     meta_data_path = re.sub(r'\.nii\.gz$|\.nii$', '.json', nifty_path)
     return meta_data_path
 
-def load_metadata_for_nifty_with_same_filename(image_path) -> dict:
+def load_metadata_for_nifti_with_same_filename(image_path) -> dict:
     """
     Static method to load metadata. Assume same path as input image path.
 
@@ -89,7 +89,7 @@ def load_metadata_for_nifty_with_same_filename(image_path) -> dict:
     if not os.path.exists(image_path):
         raise FileNotFoundError(f"Image file {image_path} not found.")
 
-    meta_path = _gen_meta_data_filepath_for_nifty(image_path)
+    meta_path = _gen_meta_data_filepath_for_nifti(image_path)
 
     if not os.path.exists(meta_path):
         raise FileNotFoundError(f"Metadata file {meta_path} not found. Does it have a different path?")
@@ -138,8 +138,8 @@ def safe_copy_meta(input_image_path: str,
             generating a new image.
         out_image_path (str): Path to the output file written by the function.
     """
-    copy_meta_path = _gen_meta_data_filepath_for_nifty(out_image_path)
-    meta_data_dict = load_metadata_for_nifty_with_same_filename(input_image_path)
+    copy_meta_path = _gen_meta_data_filepath_for_nifti(out_image_path)
+    meta_data_dict = load_metadata_for_nifti_with_same_filename(input_image_path)
     write_dict_to_json(meta_data_dict=meta_data_dict, out_path=copy_meta_path)
 
 
@@ -167,12 +167,12 @@ def get_half_life_from_meta(meta_data_file_path: str):
     except KeyError:
         raise KeyError("RadionuclideHalfLife not found in meta-data file.")
     
-def get_half_life_from_nifty(image_path:str):
+def get_half_life_from_nifti(image_path:str):
     """
     Retrieves the radionuclide half-life from a nifti image file.
 
     This function first checks if the provided nifti image file exists. It then derives
-    the corresponding metadata file path using :func:`_gen_meta_data_filepath_for_nifty`
+    the corresponding metadata file path using :func:`_gen_meta_data_filepath_for_nifti`
     and finally retrieves the half-life from the metadata using :func:`get_half_life_from_meta`.
 
     Args:
@@ -186,11 +186,11 @@ def get_half_life_from_nifty(image_path:str):
     """
     if not os.path.exists(image_path):
         raise FileNotFoundError(f"Image file {image_path} not found")
-    meta_path = _gen_meta_data_filepath_for_nifty(image_path)
+    meta_path = _gen_meta_data_filepath_for_nifti(image_path)
     return get_half_life_from_meta(meta_path)
 
 
-def get_frame_timing_info_for_nifty(image_path: str) -> dict[str, np.ndarray]:
+def get_frame_timing_info_for_nifti(image_path: str) -> dict[str, np.ndarray]:
     r"""
     Extracts frame timing information and decay factors from a NIfTI image metadata.
     Expects that the JSON metadata file has ``FrameDuration`` and ``DecayFactor`` keys.
@@ -211,7 +211,7 @@ def get_frame_timing_info_for_nifty(image_path: str) -> dict[str, np.ndarray]:
             - `end` (np.ndarray): Frame end times in seconds.
             - `decay` (np.ndarray): Decay factors for each frame.
     """
-    _meta_data = load_metadata_for_nifty_with_same_filename(image_path=image_path)
+    _meta_data = load_metadata_for_nifti_with_same_filename(image_path=image_path)
     frm_dur = np.asarray(_meta_data['FrameDuration'], int)
     try:
         frm_ends = np.asarray(_meta_data['FrameTimesEnd'], int)
@@ -520,6 +520,6 @@ def get_window_index_pairs_for_image(image_path: str, w_size: float):
     See Also:
         :func:`get_window_index_pairs_from_durations`
     """
-    image_frame_info = get_frame_timing_info_for_nifty(image_path=image_path)
+    image_frame_info = get_frame_timing_info_for_nifti(image_path=image_path)
     return get_window_index_pairs_from_durations(frame_durations=image_frame_info['duration'], w_size=w_size)
 
