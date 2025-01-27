@@ -87,8 +87,9 @@ def main():
                             help="Threshold in minutes below which data points will be discarded.")
     grp_params.add_argument("-m", "--method-name", required=True,
                             help="Name of the RTM method for kinetic modeling.")
-    grp_params.add_argument("-b", "--bounds",required=False,help="",nargs='+',default=None)
-    grp_params.add_argument("-k", "--k2-prime",required=False,default=None,
+    grp_params.add_argument("-b", "--bounds",required=False,nargs='+',default=None,type=float,
+                            help="Fit parameter bounds.")
+    grp_params.add_argument("-k", "--k2-prime",required=False,default=None,type=float,
                             help="Set k2_prime for RTM2 type methods.")
 
     args = parser.parse_args()
