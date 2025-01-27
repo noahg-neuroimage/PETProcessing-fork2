@@ -46,7 +46,7 @@ def main():
     subparsers = parser.add_subparsers(dest="command",
                                        help="Generate parametric image with graphical method.")
 
-    parser_graphical = subparsers.add_parser("graphical-analysis",help="Parametric image with"
+    parser_graphical = subparsers.add_parser("graphical-analysis",help="Parametric image with "
                                              "graphical methods, e.g. Logan or Patlak")
     grp_io = parser_graphical.add_argument_group('I/O Paths')
     grp_io.add_argument("-i", "--input-tac-path", required=True,
@@ -67,7 +67,24 @@ def main():
                             help="Name of the method for generating the plot.")
 
 
+    parser_reference = subparsers.add_parser("reference-tissue",help="Parametric image with "
+                                             "reference tissue (RTM) methods, e.g. SRTM or MRTM")
+    grp_io = parser_reference.add_argument_group('I/O Paths')
+    grp_io.add_argument("-i", "--ref-tac-path", required=True,
+                        help="Path to the reference region Time-Activity Curve (TAC) file.")
+    grp_io.add_argument("-p", "--pet4D-img-path", required=True,
+                        help="Path to the 4D PET image file.")
+    grp_io.add_argument("-o", "--output-directory", required=True,
+                        help="Directory where the output parametric images will be saved.")
+    grp_io.add_argument("-f", "--output-filename-prefix", default="",
+                        help="Optional prefix for the output filenames.")
 
+
+    grp_params = parser_reference.add_argument_group('Method Parameters')
+    grp_params.add_argument("-t", "--threshold-in-mins", required=True, type=float,
+                            help="Threshold in minutes below which data points will be discarded.")
+    grp_params.add_argument("-m", "--method-name", required=True,
+                            help="Name of the RTM method for kinetic modeling.")
 
     args = parser.parse_args()
 
