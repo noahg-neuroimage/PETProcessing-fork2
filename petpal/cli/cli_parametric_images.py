@@ -12,8 +12,8 @@ The user must provide:
 
 An optional filename prefix for the output files can also be supplied.
 
-This script uses the :class:'petpal.parametric_images.GraphicalAnalysisParametricImage' class to calculate and save
-the images.
+This script uses the :class:'petpal.parametric_images.GraphicalAnalysisParametricImage' class to 
+calculate and save the images.
 
 Example:
     .. code-block:: bash
@@ -47,14 +47,13 @@ def main():
 
     parser_graphical = subparsers.add_parser("graphical-analysis",help="Parametric image with"
                                              "graphical methods, e.g. Logan or Patlak")
-    grp_io = parser_graphical.add_argument_group('I/O Paths')
-    grp_io.add_argument("-i", "--input-tac-path", required=True,
+    parser_graphical.add_argument("-i", "--input-tac-path", required=True,
                         help="Path to the input Time-Activity Curve (TAC) file.")
-    grp_io.add_argument("-p", "--pet4D-img-path", required=True,
+    parser_graphical.add_argument("-p", "--pet4D-img-path", required=True,
                         help="Path to the 4D PET image file.")
-    grp_io.add_argument("-o", "--output-directory", required=True,
+    parser_graphical.add_argument("-o", "--output-directory", required=True,
                         help="Directory where the output parametric images will be saved.")
-    grp_io.add_argument("-f", "--output-filename-prefix", default="",
+    parser_graphical.add_argument("-f", "--output-filename-prefix", default="",
                         help="Optional prefix for the output filenames.")
 
     grp_params = parser_graphical.add_argument_group('Method Parameters')
