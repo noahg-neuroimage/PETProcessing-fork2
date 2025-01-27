@@ -35,7 +35,7 @@ def main():
     Parametric image command line interface
     """
     parser = argparse.ArgumentParser(prog="Parametric Images With Graphical Analyses",
-                                     description="Generate parametric images using graphical or"
+                                     description="Generate parametric images using graphical or "
                                                  "reference tissue methods on PET data.",
                                      epilog="Example usage: petpal-parametric-image "
                                             "--input-tac-path /path/to/input.tac "
@@ -43,18 +43,21 @@ def main():
                                             "--output-directory /path/to/output"
                                             " --output-filename-prefix param_image "
                                             "--method-name patlak --threshold-in-mins 30.0")
-    subparsers = parser.add_subparsers(dest="command", help="Sub-command help.")
+    subparsers = parser.add_subparsers(dest="command",
+                                       help="Generate parametric image with graphical method.")
 
     parser_graphical = subparsers.add_parser("graphical-analysis",help="Parametric image with"
                                              "graphical methods, e.g. Logan or Patlak")
-    parser_graphical.add_argument("-i", "--input-tac-path", required=True,
+    grp_io = parser_graphical.add_argument_group('I/O Paths')
+    grp_io.add_argument("-i", "--input-tac-path", required=True,
                         help="Path to the input Time-Activity Curve (TAC) file.")
-    parser_graphical.add_argument("-p", "--pet4D-img-path", required=True,
+    grp_io.add_argument("-p", "--pet4D-img-path", required=True,
                         help="Path to the 4D PET image file.")
-    parser_graphical.add_argument("-o", "--output-directory", required=True,
+    grp_io.add_argument("-o", "--output-directory", required=True,
                         help="Directory where the output parametric images will be saved.")
-    parser_graphical.add_argument("-f", "--output-filename-prefix", default="",
+    grp_io.add_argument("-f", "--output-filename-prefix", default="",
                         help="Optional prefix for the output filenames.")
+
 
     grp_params = parser_graphical.add_argument_group('Method Parameters')
     grp_params.add_argument("-t", "--threshold-in-mins", required=True, type=float,
@@ -63,20 +66,32 @@ def main():
                             choices=['patlak', 'logan', 'alt-logan'],
                             help="Name of the method for generating the plot.")
 
+
+
+
     args = parser.parse_args()
 
-    param_img = GraphicalAnalysisParametricImage(input_tac_path=args.input_tac_path,
-                                                 pet4D_img_path=args.pet4D_img_path,
-                                                 output_directory=args.output_directory,
-                                                 output_filename_prefix=args.output_filename_prefix)
+    if args.command is None:
+        parser.print_help()
+        raise SystemExit('Exiting without command')
 
-#    param_img = ReferenceTissueParametricImage(input_tac_path=args.input_tac_path,
-#                                               pet4D_img_path=args.pet4D_img_path,
-#                                               output_directory=args.output_directory,
-#                                               output_filename_prefix=args.output_filename_prefix)
+    if args.command=='graphical-analysis':
+        param_img = GraphicalAnalysisParametricImage(input_tac_path=args.input_tac_path,
+                                                    pet4D_img_path=args.pet4D_img_path,
+                                                    output_directory=args.output_directory,
+                                                    output_filename_prefix=args.output_filename_prefix)
+        param_img.run_analysis(method_name=args.method_name,
+                               t_thresh_in_mins=args.threshold_in_mins)
+        param_img.save_analysis()
+
+    if args.command=='reference-tissue':
+        print('waiting')
+    #    param_img = ReferenceTissueParametricImage(input_tac_path=args.input_tac_path,
+    #                                               pet4D_img_path=args.pet4D_img_path,
+    #                                               output_directory=args.output_directory,
+    #                                               output_filename_prefix=args.output_filename_prefix)
     print(ReferenceTissueParametricImage)
-    param_img.run_analysis(method_name=args.method_name, t_thresh_in_mins=args.threshold_in_mins)
-    param_img.save_analysis()
+
 
 
 if __name__ == "__main__":
