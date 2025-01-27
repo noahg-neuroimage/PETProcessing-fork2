@@ -1,13 +1,11 @@
-"""
-Manages preproc steps in a pipeline.
-"""
 import warnings
 import copy
-from typing import Union, Callable
-from .steps_base import FunctionBasedStep, ArgsDict
+from typing import Union
+from .steps_base import *
 from ..preproc.image_operations_4d import SimpleAutoImageCropper, write_tacs
 from ..preproc.register import register_pet
-from ..preproc.motion_corr import motion_corr_frames_above_mean_value
+from ..preproc.motion_corr import (motion_corr_frames_above_mean_value,
+                                   windowed_motion_corr_to_target)
 from ..input_function import blood_input
 from ..utils.bids_utils import parse_path_to_get_subject_and_session_id, snake_to_camel_case, gen_bids_like_dir_path, gen_bids_like_filepath
 from ..utils.image_io import safe_copy_meta
@@ -62,7 +60,7 @@ class TACsFromSegmentationStep(FunctionBasedStep):
         self._out_tacs_prefix = out_tacs_prefix
         self.time_keyword = time_keyword
         self.verbose = verbose
-
+    
     def __repr__(self):
         """
         Provides an unambiguous string representation of the TACsFromSegmentationStep instance.
@@ -72,18 +70,18 @@ class TACsFromSegmentationStep(FunctionBasedStep):
         """
         cls_name = type(self).__name__
         info_str = [f'{cls_name}(']
-
+        
         in_kwargs = ArgsDict(
-            {"input_image_path": self.input_image_path, "segmentation_image_path": self.segmentation_image_path,
-             "segmentation_label_map_path": self.segmentation_label_map_path, "out_tacs_dir": self.out_tacs_dir,
-             "out_tacs_prefix": self.out_tacs_prefix, "time_keyword": self.time_keyword, "verbose": self.verbose})
-
+            dict(input_image_path=self.input_image_path, segmentation_image_path=self.segmentation_image_path,
+                 segmentation_label_map_path=self.segmentation_label_map_path, out_tacs_dir=self.out_tacs_dir,
+                 out_tacs_prefix=self.out_tacs_prefix, time_keyword=self.time_keyword, verbose=self.verbose))
+        
         for arg_name, arg_val in in_kwargs.items():
             info_str.append(f'{arg_name}={repr(arg_val)},')
         info_str.append(')')
-
-        return '\n    '.join(info_str)
-
+        
+        return f'\n    '.join(info_str)
+    
     @property
     def segmentation_image_path(self):
         """
@@ -93,7 +91,7 @@ class TACsFromSegmentationStep(FunctionBasedStep):
             str: The path to the segmentation image.
         """
         return self._segmentation_image
-
+    
     @segmentation_image_path.setter
     def segmentation_image_path(self, segmentation_image_path: str):
         """
@@ -104,7 +102,7 @@ class TACsFromSegmentationStep(FunctionBasedStep):
         """
         self._segmentation_image = segmentation_image_path
         self.kwargs['segmentation_image_path'] = segmentation_image_path
-
+    
     @property
     def segmentation_label_map_path(self):
         """
@@ -114,7 +112,7 @@ class TACsFromSegmentationStep(FunctionBasedStep):
             str: The path to the segmentation label map.
         """
         return self._segmentation_label_map
-
+    
     @segmentation_label_map_path.setter
     def segmentation_label_map_path(self, segmentation_label_map_path: str):
         """
@@ -125,7 +123,7 @@ class TACsFromSegmentationStep(FunctionBasedStep):
         """
         self._segmentation_label_map = segmentation_label_map_path
         self.kwargs['label_map_path'] = segmentation_label_map_path
-
+    
     @property
     def out_tacs_dir(self):
         """
@@ -135,7 +133,7 @@ class TACsFromSegmentationStep(FunctionBasedStep):
             str: The output directory path.
         """
         return self._out_tacs_path
-
+    
     @out_tacs_dir.setter
     def out_tacs_dir(self, out_tacs_path: str):
         """
@@ -146,7 +144,7 @@ class TACsFromSegmentationStep(FunctionBasedStep):
         """
         self.kwargs['out_tac_dir'] = out_tacs_path
         self._out_tacs_path = out_tacs_path
-
+    
     @property
     def out_tacs_prefix(self):
         """
@@ -156,7 +154,7 @@ class TACsFromSegmentationStep(FunctionBasedStep):
             str: The prefix for the output TACs.
         """
         return self._out_tacs_prefix
-
+    
     @out_tacs_prefix.setter
     def out_tacs_prefix(self, out_tacs_prefix: str):
         """
@@ -167,7 +165,7 @@ class TACsFromSegmentationStep(FunctionBasedStep):
         """
         self.kwargs['out_tac_prefix'] = out_tacs_prefix
         self._out_tacs_prefix = out_tacs_prefix
-
+    
     @property
     def out_path_and_prefix(self):
         """
@@ -177,7 +175,7 @@ class TACsFromSegmentationStep(FunctionBasedStep):
             tuple: A tuple containing the output directory path and prefix.
         """
         return self._out_tacs_path, self._out_tacs_prefix
-
+    
     @out_path_and_prefix.setter
     def out_path_and_prefix(self, out_dir_and_prefix: str):
         """
@@ -191,12 +189,12 @@ class TACsFromSegmentationStep(FunctionBasedStep):
         """
         try:
             out_dir, out_prefix = out_dir_and_prefix
-        except ValueError as exc:
-            raise ValueError("Pass a tuple with two items: `(out_dir, out_prefix)`") from exc
+        except ValueError:
+            raise ValueError("Pass a tuple with two items: `(out_dir, out_prefix)`")
         else:
             self.out_tacs_dir = out_dir
             self.out_tacs_prefix = out_prefix
-
+    
     @property
     def input_image_path(self):
         """
@@ -206,7 +204,7 @@ class TACsFromSegmentationStep(FunctionBasedStep):
             str: The path to the input image.
         """
         return self._input_image
-
+    
     @input_image_path.setter
     def input_image_path(self, input_image_path: str):
         """
@@ -217,7 +215,7 @@ class TACsFromSegmentationStep(FunctionBasedStep):
         """
         self.kwargs['input_image_path'] = input_image_path
         self._input_image = input_image_path
-
+    
     def set_input_as_output_from(self, sending_step):
         """
         Sets the input image path based on the output from a specified sending step.
@@ -229,7 +227,7 @@ class TACsFromSegmentationStep(FunctionBasedStep):
             self.input_image_path = sending_step.output_image_path
         else:
             super().set_input_as_output_from(sending_step)
-
+    
     def infer_outputs_from_inputs(self, out_dir: str, der_type: str, suffix: str=None, ext: str=None, **extra_desc):
         """
         Infers output directory and prefix for TACs based on the input image path.
@@ -246,7 +244,7 @@ class TACsFromSegmentationStep(FunctionBasedStep):
         self.out_tacs_dir = outpath
         step_name_in_camel_case = snake_to_camel_case(self.name)
         self.out_tacs_prefix = f'sub-{sub_id}_ses-{ses_id}_desc-{step_name_in_camel_case}'
-
+    
     @classmethod
     def default_write_tacs_from_segmentation_rois(cls):
         """
@@ -263,7 +261,7 @@ class TACsFromSegmentationStep(FunctionBasedStep):
                    out_tacs_prefix='',
                    time_keyword='FrameReferenceTime',
                    verbose=False)
-
+    
 
 class ResampleBloodTACStep(FunctionBasedStep):
     """
@@ -308,7 +306,7 @@ class ResampleBloodTACStep(FunctionBasedStep):
         self._resampled_tac_path = out_tac_path
         self.lin_fit_thresh_in_mins = lin_fit_thresh_in_mins
         self.rescale_constant = rescale_constant
-
+    
     def __repr__(self):
         """
         Provides an unambiguous string representation of the ResampleBloodTACStep instance.
@@ -318,17 +316,17 @@ class ResampleBloodTACStep(FunctionBasedStep):
         """
         cls_name = type(self).__name__
         info_str = [f'{cls_name}(']
-
+        
         in_kwargs = ArgsDict(
-                {"input_raw_blood_tac_path": self.raw_blood_tac_path, "input_image_path": self.input_image_path,
-                 "out_tac_path": self.resampled_tac_path, "lin_fit_thresh_in_mins": self.lin_fit_thresh_in_mins})
-
+                dict(input_raw_blood_tac_path=self.raw_blood_tac_path, input_image_path=self.input_image_path,
+                     out_tac_path=self.resampled_tac_path, lin_fit_thresh_in_mins=self.lin_fit_thresh_in_mins))
+        
         for arg_name, arg_val in in_kwargs.items():
             info_str.append(f'{arg_name}={repr(arg_val)},')
         info_str.append(')')
-
-        return '\n    '.join(info_str)
-
+        
+        return f'\n    '.join(info_str)
+    
     @property
     def raw_blood_tac_path(self):
         """
@@ -338,7 +336,7 @@ class ResampleBloodTACStep(FunctionBasedStep):
             str: The path to the input raw blood TAC file.
         """
         return self._raw_blood_tac_path
-
+    
     @raw_blood_tac_path.setter
     def raw_blood_tac_path(self, raw_blood_tac_path):
         """
@@ -349,7 +347,7 @@ class ResampleBloodTACStep(FunctionBasedStep):
         """
         self.kwargs['blood_tac_path'] = raw_blood_tac_path
         self._raw_blood_tac_path = raw_blood_tac_path
-
+    
     @property
     def input_image_path(self):
         """
@@ -359,7 +357,7 @@ class ResampleBloodTACStep(FunctionBasedStep):
             str: The path to the PET image file.
         """
         return self._input_image_path
-
+    
     @input_image_path.setter
     def input_image_path(self, input_image_path: str):
         """
@@ -370,7 +368,7 @@ class ResampleBloodTACStep(FunctionBasedStep):
         """
         self.kwargs['reference_4dpet_img_path'] = input_image_path
         self._input_image_path = input_image_path
-
+    
     @property
     def resampled_tac_path(self):
         """
@@ -380,7 +378,7 @@ class ResampleBloodTACStep(FunctionBasedStep):
             str: The path where the resampled TAC will be saved.
         """
         return self._resampled_tac_path
-
+    
     @resampled_tac_path.setter
     def resampled_tac_path(self, resampled_tac_path):
         """
@@ -391,7 +389,7 @@ class ResampleBloodTACStep(FunctionBasedStep):
         """
         self.kwargs['out_tac_path'] = resampled_tac_path
         self._resampled_tac_path = resampled_tac_path
-
+    
     def set_input_as_output_from(self, sending_step):
         """
         Sets the input image path based on the output from a specified sending step.
@@ -403,7 +401,7 @@ class ResampleBloodTACStep(FunctionBasedStep):
             self.input_image_path = sending_step.output_image_path
         else:
             super().set_input_as_output_from(sending_step)
-
+    
     def infer_outputs_from_inputs(self, out_dir: str, der_type, suffix='blood', ext='.tsv', **extra_desc):
         """
         Infers the output file path for resampled TAC based on the input raw blood TAC path.
@@ -419,7 +417,7 @@ class ResampleBloodTACStep(FunctionBasedStep):
         filepath = gen_bids_like_filepath(sub_id=sub_id, ses_id=ses_id, bids_dir=out_dir, modality='preproc',
                                           suffix=suffix, ext=ext, desc='OnScannerFrameTimes')
         self.resampled_tac_path = filepath
-
+    
     @classmethod
     def default_resample_blood_tac_on_scanner_times(cls):
         """
@@ -503,7 +501,7 @@ class ImageToImageStep(FunctionBasedStep):
         if copy_meta_file:
             safe_copy_meta(input_image_path=self.input_image_path, out_image_path=self.output_image_path)
         print(f"(Info): Finished {self.name}")
-
+    
     def __str__(self):
         """
         Provides a string representation of the ImageToImageStep instance.
@@ -520,9 +518,9 @@ class ImageToImageStep(FunctionBasedStep):
         def_args_ind = sup_str_list.index("Default Arguments:")
         sup_str_list.pop(def_args_ind + 1)
         sup_str_list.pop(def_args_ind + 1)
-
+        
         return "\n".join(sup_str_list)
-
+    
     def set_input_as_output_from(self, sending_step: FunctionBasedStep) -> None:
         """
         Sets the input image path based on the output from a specified sending step.
@@ -534,7 +532,7 @@ class ImageToImageStep(FunctionBasedStep):
             self.input_image_path = sending_step.output_image_path
         else:
             super().set_input_as_output_from(sending_step)
-
+    
     def can_potentially_run(self):
         """
         Checks if the step can potentially run based on input and output paths. Checks if all path related
@@ -546,7 +544,7 @@ class ImageToImageStep(FunctionBasedStep):
         input_img_non_empty_str = False if self.input_image_path == '' else True
         output_img_non_empty_str = False if self.output_image_path == '' else True
         return super().can_potentially_run() and input_img_non_empty_str and output_img_non_empty_str
-
+    
     def infer_outputs_from_inputs(self,
                                   out_dir: str,
                                   der_type='preproc',
@@ -568,7 +566,7 @@ class ImageToImageStep(FunctionBasedStep):
         filepath = gen_bids_like_filepath(sub_id=sub_id, ses_id=ses_id, suffix=suffix, bids_dir=out_dir,
                                           modality=der_type, ext=ext, desc=step_name_in_camel_case, **extra_desc)
         self.output_image_path = filepath
-
+    
     @classmethod
     def default_threshold_cropping(cls, **overrides):
         """
@@ -589,7 +587,7 @@ class ImageToImageStep(FunctionBasedStep):
         except RuntimeError as err:
             warnings.warn(f"Invalid override: {err}. Using default instance instead.", stacklevel=2)
             return cls(**defaults)
-
+    
     @classmethod
     def default_moco_frames_above_mean(cls, verbose=False, **overrides):
         """
@@ -607,6 +605,31 @@ class ImageToImageStep(FunctionBasedStep):
         defaults = dict(name='moco_frames_above_mean', function=motion_corr_frames_above_mean_value,
                         input_image_path='', output_image_path='', motion_target_option='mean_image', verbose=verbose,
                         half_life=None, )
+        override_dict = {**defaults, **overrides}
+        try:
+            return cls(**override_dict)
+        except RuntimeError as err:
+            warnings.warn(f"Invalid override: {err}. Using default instance instead.", stacklevel=2)
+            return cls(**defaults)
+
+    @classmethod
+    def default_windowed_moco(cls, verbose=False, **overrides):
+        """
+        Creates a default instance for motion correction of frames using a windowed strategy.
+        See :func:`windowed_motion_corr_to_target<petpal.preproc.motion_corr.windowed_motion_corr_to_target>`
+        for more details. All paths are empty-strings.
+
+        Args:
+            verbose:
+            **overrides:
+
+        Returns:
+            ImageToImageStep: A new instance for windowed motion correction of frames.
+        """
+        defaults = dict(name='windowed_moco', function=windowed_motion_corr_to_target,
+                        input_image_path='', output_image_path='',
+                        motion_target_option='weighted_series_sum', w_size=60.0,
+                        verbose=verbose)
         override_dict = {**defaults, **overrides}
         try:
             return cls(**override_dict)

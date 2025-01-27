@@ -1,8 +1,5 @@
-"""
-Handles kinetic modeling for steps manager.
-"""
 from typing import Union
-from .steps_base import ArgsDict, StepsAPI, ObjectBasedStep
+from .steps_base import *
 from ..kinetic_modeling import parametric_images
 from ..kinetic_modeling import tac_fitting
 from ..kinetic_modeling import rtm_analysis as pet_rtms
@@ -52,7 +49,7 @@ class TACAnalysisStepMixin(StepsAPI):
         self._input_tac_path = input_tac_path
         self._output_directory = output_directory
         self._output_prefix = output_prefix
-
+    
     @property
     def input_tac_path(self) -> str:
         """
@@ -62,7 +59,7 @@ class TACAnalysisStepMixin(StepsAPI):
             str: Path to the input TAC file.
         """
         return self._input_tac_path
-
+    
     @input_tac_path.setter
     def input_tac_path(self, input_tac_path: str):
         """
@@ -73,7 +70,7 @@ class TACAnalysisStepMixin(StepsAPI):
         """
         self._input_tac_path = input_tac_path
         self.init_kwargs['input_tac_path'] = input_tac_path
-
+    
     @property
     def reference_tac_path(self) -> str:
         """
@@ -83,7 +80,7 @@ class TACAnalysisStepMixin(StepsAPI):
             str: Path to the reference TAC file.
         """
         return self.input_tac_path
-
+    
     @reference_tac_path.setter
     def reference_tac_path(self, ref_tac_path: str):
         """
@@ -94,7 +91,7 @@ class TACAnalysisStepMixin(StepsAPI):
         """
         self._input_tac_path = ref_tac_path
         self.init_kwargs['ref_tac_path'] = ref_tac_path
-
+    
     @property
     def tacs_dir(self) -> str:
         """
@@ -104,7 +101,7 @@ class TACAnalysisStepMixin(StepsAPI):
             str: Directory containing the TAC files to be analyzed.
         """
         return self._tacs_dir
-
+    
     @tacs_dir.setter
     def tacs_dir(self, tacs_dir: str):
         """
@@ -114,7 +111,7 @@ class TACAnalysisStepMixin(StepsAPI):
             tacs_dir (str): Directory containing the TAC files to be analyzed.
         """
         self._tacs_dir = tacs_dir
-
+    
     @property
     def roi_tacs_dir(self) -> str:
         """
@@ -124,7 +121,7 @@ class TACAnalysisStepMixin(StepsAPI):
             str: Directory containing the ROI TAC files to be analyzed.
         """
         return self.tacs_dir
-
+    
     @roi_tacs_dir.setter
     def roi_tacs_dir(self, roi_tacs_dir: str):
         """
@@ -135,7 +132,7 @@ class TACAnalysisStepMixin(StepsAPI):
         """
         self.tacs_dir = roi_tacs_dir
         self.init_kwargs['roi_tacs_dir'] = roi_tacs_dir
-
+    
     @property
     def output_directory(self) -> str:
         """
@@ -201,12 +198,12 @@ class TACAnalysisStepMixin(StepsAPI):
         """
         try:
             out_dir, out_prefix = out_dir_and_prefix
-        except ValueError as exc:
-            raise ValueError("Pass a tuple with two items: `(out_dir, out_prefix)`") from exc
+        except ValueError:
+            raise ValueError("Pass a tuple with two items: `(out_dir, out_prefix)`")
         else:
             self.output_directory = out_dir
             self.output_prefix = out_prefix
-
+    
     def infer_prefix_from_input_tac_path(self):
         """
         Infers the output prefix based on the input/reference TAC file path. Gets the subject and session from the
@@ -217,7 +214,7 @@ class TACAnalysisStepMixin(StepsAPI):
         """
         sub_id, ses_id = parse_path_to_get_subject_and_session_id(self.input_tac_path)
         self.output_prefix = f'sub-{sub_id}_ses-{ses_id}'
-
+    
     def infer_output_directory_from_input_tac_path(self, out_dir: str, der_type: str = 'km'):
         """
         Infers the output directory based on the input/reference TAC file path. Gets the subject and session from the
@@ -234,7 +231,7 @@ class TACAnalysisStepMixin(StepsAPI):
         sub_id, ses_id = parse_path_to_get_subject_and_session_id(self.input_tac_path)
         outpath = gen_bids_like_dir_path(sub_id=sub_id, ses_id=ses_id, modality=der_type, sup_dir=out_dir)
         self.output_directory = outpath
-
+    
     def infer_outputs_from_inputs(self, out_dir: str, der_type, suffix=None, ext=None, **extra_desc):
         """
         Infers the output directory and prefix based on the input/reference TAC file path. Gets the subject and session
@@ -249,7 +246,7 @@ class TACAnalysisStepMixin(StepsAPI):
         """
         self.infer_prefix_from_input_tac_path()
         self.infer_output_directory_from_input_tac_path(out_dir=out_dir, der_type=der_type)
-
+    
     def set_input_as_output_from(self, sending_step: PreprocStepType) -> None:
         """
         Sets the input parameters based on the output from a specified sending step.
@@ -308,7 +305,7 @@ class GraphicalAnalysisStep(ObjectBasedStep, TACAnalysisStepMixin):
                                       fit_thresh_in_mins=fit_threshold_in_mins)
         ObjectBasedStep.__init__(self, name=f'roi_{method}_fit', class_type=pet_grph.MultiTACGraphicalAnalysis,
                                  init_kwargs=self.init_kwargs, call_kwargs=dict())
-
+    
     def __repr__(self):
         """
         Provides an unambiguous string representation of the ResampleBloodTACStep instance.
@@ -318,7 +315,7 @@ class GraphicalAnalysisStep(ObjectBasedStep, TACAnalysisStepMixin):
         """
         cls_name = type(self).__name__
         info_str = [f'{cls_name}(']
-
+        
         in_kwargs = ArgsDict(dict(input_tac_path=self.input_tac_path, roi_tacs_dir=self.roi_tacs_dir,
                                   output_directory=self.output_directory, output_prefix=self.output_prefix,
                                   method=self.init_kwargs['method'],
@@ -328,9 +325,9 @@ class GraphicalAnalysisStep(ObjectBasedStep, TACAnalysisStepMixin):
         for arg_name, arg_val in in_kwargs.items():
             info_str.append(f'{arg_name}={repr(arg_val)},')
         info_str.append(')')
-
-        return '\n    '.join(info_str)
-
+        
+        return f'\n    '.join(info_str)
+    
     @classmethod
     def default_patlak(cls):
         """
@@ -342,7 +339,7 @@ class GraphicalAnalysisStep(ObjectBasedStep, TACAnalysisStepMixin):
             GraphicalAnalysisStep: A new instance for Patlak graphical analysis.
         """
         return cls(input_tac_path='', roi_tacs_dir='', output_directory='', output_prefix='', method='patlak', )
-
+    
     @classmethod
     def default_logan(cls):
         """
@@ -354,7 +351,7 @@ class GraphicalAnalysisStep(ObjectBasedStep, TACAnalysisStepMixin):
             GraphicalAnalysisStep: A new instance for Logan graphical analysis.
         """
         return cls(input_tac_path='', roi_tacs_dir='', output_directory='', output_prefix='', method='logan', )
-
+    
     @classmethod
     def default_alt_logan(cls):
         """
@@ -406,10 +403,10 @@ class TCMFittingAnalysisStep(ObjectBasedStep, TACAnalysisStepMixin):
         TACAnalysisStepMixin.__init__(self, input_tac_path=input_tac_path, roi_tacs_dir=roi_tacs_dir,
                                       output_directory=output_directory, output_prefix=output_prefix,
                                       is_ref_tac_based_model=False, compartment_model=compartment_model, **kwargs)
-
+        
         ObjectBasedStep.__init__(self, name=f'roi_{compartment_model}_fit', class_type=tac_fitting.MultiTACTCMAnalsyis,
                                  init_kwargs=self.init_kwargs, call_kwargs=dict())
-
+    
     def __repr__(self):
         """
         Provides an unambiguous string representation of the ResampleBloodTACStep instance.
@@ -419,7 +416,7 @@ class TCMFittingAnalysisStep(ObjectBasedStep, TACAnalysisStepMixin):
         """
         cls_name = type(self).__name__
         info_str = [f'{cls_name}(']
-
+        
         in_kwargs = ArgsDict(dict(input_tac_path=self.input_tac_path, roi_tacs_dir=self.roi_tacs_dir,
                                   output_directory=self.output_directory, output_prefix=self.output_prefix,
                                   compartment_model=self.init_kwargs['compartment_model']))
@@ -428,11 +425,11 @@ class TCMFittingAnalysisStep(ObjectBasedStep, TACAnalysisStepMixin):
         
         for arg_name in list(self.init_kwargs)[5:]:
             info_str.append(f'{arg_name}={repr(self.init_kwargs[arg_name])},')
-
+        
         info_str.append(')')
         
-        return '\n    '.join(info_str)
-
+        return f'\n    '.join(info_str)
+    
     @classmethod
     def default_1tcm(cls, **kwargs):
         """
@@ -448,7 +445,7 @@ class TCMFittingAnalysisStep(ObjectBasedStep, TACAnalysisStepMixin):
         """
         return cls(input_tac_path='', roi_tacs_dir='', output_directory='', output_prefix='', compartment_model='1tcm',
                    **kwargs)
-
+    
     @classmethod
     def default_serial2tcm(cls, **kwargs):
         """
@@ -464,7 +461,7 @@ class TCMFittingAnalysisStep(ObjectBasedStep, TACAnalysisStepMixin):
         """
         return cls(input_tac_path='', roi_tacs_dir='', output_directory='', output_prefix='',
                    compartment_model='serial-2tcm', **kwargs)
-
+    
     @classmethod
     def default_irreversible_2tcm(cls, **kwargs):
         """
@@ -528,7 +525,7 @@ class RTMFittingAnalysisStep(ObjectBasedStep, TACAnalysisStepMixin):
                                  init_kwargs=self.init_kwargs,
                                  call_kwargs=dict(bounds=bounds, t_thresh_in_mins=fit_threshold_in_mins,
                                                   k2_prime=k2_prime))
-
+    
     def __repr__(self):
         """
         Provides an unambiguous string representation of the ResampleBloodTACStep instance.
@@ -538,7 +535,7 @@ class RTMFittingAnalysisStep(ObjectBasedStep, TACAnalysisStepMixin):
         """
         cls_name = type(self).__name__
         info_str = [f'{cls_name}(']
-
+        
         in_kwargs = ArgsDict(dict(ref_tac_path=self.reference_tac_path, roi_tacs_dir=self.roi_tacs_dir,
                                   output_directory=self.output_directory, output_prefix=self.output_prefix,
                                   rtm_model=self.init_kwargs['method'], bounds=self.call_kwargs['bounds'],
@@ -547,10 +544,10 @@ class RTMFittingAnalysisStep(ObjectBasedStep, TACAnalysisStepMixin):
         
         for arg_name, arg_val in in_kwargs.items():
             info_str.append(f'{arg_name}={repr(arg_val)},')
-
+        
         info_str.append(')')
-
-        return '\n    '.join(info_str)
+        
+        return f'\n    '.join(info_str)
 
 
 class ParametricGraphicalAnalysisStep(ObjectBasedStep, TACAnalysisStepMixin):
@@ -594,7 +591,7 @@ class ParametricGraphicalAnalysisStep(ObjectBasedStep, TACAnalysisStepMixin):
                                       roi_tacs_dir='', output_directory=output_directory, output_prefix=output_prefix,
                                       is_ref_tac_based_model=False, )
         del self.init_kwargs['roi_tacs_dir']
-
+        
         ObjectBasedStep.__init__(self, name=f'parametric_{method}_fit',
                                  class_type=parametric_images.GraphicalAnalysisParametricImage,
                                  init_kwargs=self.init_kwargs,
@@ -602,7 +599,7 @@ class ParametricGraphicalAnalysisStep(ObjectBasedStep, TACAnalysisStepMixin):
                                                   t_thresh_in_mins=fit_threshold_in_mins,
                                                   image_scale=image_rescale))
         self._input_image_path = input_image_path
-
+    
     def __repr__(self):
         """
         Provides an unambiguous string representation of the ResampleBloodTACStep instance.
@@ -612,19 +609,19 @@ class ParametricGraphicalAnalysisStep(ObjectBasedStep, TACAnalysisStepMixin):
         """
         cls_name = type(self).__name__
         info_str = [f'{cls_name}(']
-
+        
         in_kwargs = ArgsDict(dict(input_tac_path=self.input_tac_path, input_image_path=self.input_image_path,
                                   output_directory=self.output_directory, output_prefix=self.output_prefix,
                                   method=self.call_kwargs['method_name'],
                                   fit_threshold_in_mins=self.call_kwargs['t_thresh_in_mins'], ))
-
+        
         for arg_name, arg_val in in_kwargs.items():
             info_str.append(f'{arg_name}={repr(arg_val)},')
         
         info_str.append(')')
-
-        return '\n    '.join(info_str)
-
+        
+        return f'\n    '.join(info_str)
+    
     @property
     def input_image_path(self) -> str:
         """
@@ -645,7 +642,7 @@ class ParametricGraphicalAnalysisStep(ObjectBasedStep, TACAnalysisStepMixin):
         """
         self._input_image_path = input_image_path
         self.init_kwargs['pet4D_img_path'] = input_image_path
-
+    
     def set_input_as_output_from(self, sending_step: PreprocStepType) -> None:
         """
         Sets the input paths based on the outputs of a sending preprocessing step.
@@ -664,7 +661,7 @@ class ParametricGraphicalAnalysisStep(ObjectBasedStep, TACAnalysisStepMixin):
             self.input_image_path = sending_step.output_image_path
         else:
             super().set_input_as_output_from(sending_step)
-
+    
     @classmethod
     def default_patlak(cls):
         """
@@ -676,7 +673,7 @@ class ParametricGraphicalAnalysisStep(ObjectBasedStep, TACAnalysisStepMixin):
             ParametricGraphicalAnalysisStep: A new instance for Patlak parametric graphical analysis.
         """
         return cls(input_tac_path='', input_image_path='', output_directory='', output_prefix='', method='patlak')
-
+    
     @classmethod
     def default_logan(cls):
         """
@@ -688,7 +685,7 @@ class ParametricGraphicalAnalysisStep(ObjectBasedStep, TACAnalysisStepMixin):
             ParametricGraphicalAnalysisStep: A new instance for Logan parametric graphical analysis.
         """
         return cls(input_tac_path='', input_image_path='', output_directory='', output_prefix='', method='logan')
-
+    
     @classmethod
     def default_alt_logan(cls):
         """
@@ -700,7 +697,7 @@ class ParametricGraphicalAnalysisStep(ObjectBasedStep, TACAnalysisStepMixin):
             ParametricGraphicalAnalysisStep: A new instance for Alt-Logan parametric graphical analysis.
         """
         return cls(input_tac_path='', input_image_path='', output_directory='', output_prefix='', method='alt_logan')
-
+    
 KMStepType = Union[GraphicalAnalysisStep,
                    TCMFittingAnalysisStep,
                    ParametricGraphicalAnalysisStep,

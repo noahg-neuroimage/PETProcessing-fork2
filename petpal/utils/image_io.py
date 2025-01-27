@@ -54,7 +54,7 @@ def convert_ctab_to_dseg(ctab_path: str,
     label_map.to_csv(dseg_path,sep='\t')
     return label_map
 
-def _gen_meta_data_filepath_for_nifty(nifty_path:str):
+def _gen_meta_data_filepath_for_nifti(nifty_path:str):
     """
     Generates the corresponding metadata file path for a given nifti file path.
 
@@ -70,7 +70,7 @@ def _gen_meta_data_filepath_for_nifty(nifty_path:str):
     meta_data_path = re.sub(r'\.nii\.gz$|\.nii$', '.json', nifty_path)
     return meta_data_path
 
-def load_metadata_for_nifty_with_same_filename(image_path) -> dict:
+def load_metadata_for_nifti_with_same_filename(image_path) -> dict:
     """
     Static method to load metadata. Assume same path as input image path.
 
@@ -89,7 +89,7 @@ def load_metadata_for_nifty_with_same_filename(image_path) -> dict:
     if not os.path.exists(image_path):
         raise FileNotFoundError(f"Image file {image_path} not found.")
 
-    meta_path = _gen_meta_data_filepath_for_nifty(image_path)
+    meta_path = _gen_meta_data_filepath_for_nifti(image_path)
 
     if not os.path.exists(meta_path):
         raise FileNotFoundError(f"Metadata file {meta_path} not found. Does it have a different path?")
@@ -138,8 +138,8 @@ def safe_copy_meta(input_image_path: str,
             generating a new image.
         out_image_path (str): Path to the output file written by the function.
     """
-    copy_meta_path = _gen_meta_data_filepath_for_nifty(out_image_path)
-    meta_data_dict = load_metadata_for_nifty_with_same_filename(input_image_path)
+    copy_meta_path = _gen_meta_data_filepath_for_nifti(out_image_path)
+    meta_data_dict = load_metadata_for_nifti_with_same_filename(input_image_path)
     write_dict_to_json(meta_data_dict=meta_data_dict, out_path=copy_meta_path)
 
 
@@ -167,12 +167,12 @@ def get_half_life_from_meta(meta_data_file_path: str):
     except KeyError:
         raise KeyError("RadionuclideHalfLife not found in meta-data file.")
     
-def get_half_life_from_nifty(image_path:str):
+def get_half_life_from_nifti(image_path:str):
     """
     Retrieves the radionuclide half-life from a nifti image file.
 
     This function first checks if the provided nifti image file exists. It then derives
-    the corresponding metadata file path using :func:`_gen_meta_data_filepath_for_nifty`
+    the corresponding metadata file path using :func:`_gen_meta_data_filepath_for_nifti`
     and finally retrieves the half-life from the metadata using :func:`get_half_life_from_meta`.
 
     Args:
@@ -186,8 +186,49 @@ def get_half_life_from_nifty(image_path:str):
     """
     if not os.path.exists(image_path):
         raise FileNotFoundError(f"Image file {image_path} not found")
-    meta_path = _gen_meta_data_filepath_for_nifty(image_path)
+    meta_path = _gen_meta_data_filepath_for_nifti(image_path)
     return get_half_life_from_meta(meta_path)
+
+
+def get_frame_timing_info_for_nifti(image_path: str) -> dict[str, np.ndarray]:
+    r"""
+    Extracts frame timing information and decay factors from a NIfTI image metadata.
+    Expects that the JSON metadata file has ``FrameDuration`` and ``DecayFactor`` keys.
+
+    .. important::
+        This function tries to infer `FrameTimesEnd` and `FrameTimesStart` from the frame durations
+        if those keys are not present in the metadata file. If the scan is broken, this might generate
+        incorrect results.
+
+
+    Args:
+        image_path (str): Path to the NIfTI image file.
+
+    Returns:
+        dict: Frame timing information with the following keys:
+            - `duration` (np.ndarray): Frame durations in seconds.
+            - `start` (np.ndarray): Frame start times in seconds.
+            - `end` (np.ndarray): Frame end times in seconds.
+            - `decay` (np.ndarray): Decay factors for each frame.
+    """
+    _meta_data = load_metadata_for_nifti_with_same_filename(image_path=image_path)
+    frm_dur = np.asarray(_meta_data['FrameDuration'], int)
+    try:
+        frm_ends = np.asarray(_meta_data['FrameTimesEnd'], int)
+    except KeyError:
+        frm_ends = np.cumsum(frm_dur)
+    try:
+        frm_starts = np.asarray(_meta_data['FrameTimesStart'], int)
+    except KeyError:
+        frm_starts = np.diff(frm_ends)
+
+    frm_info = {'duration': frm_dur,
+                'start': frm_starts,
+                'end': frm_ends,
+                'decay': np.asarray(_meta_data['DecayFactor'])
+                }
+
+    return frm_info
 
 class ImageIO:
     """
@@ -425,3 +466,60 @@ def validate_two_images_same_dimensions(image_1: nibabel.nifti1.Nifti1Image,
 
     if not same_shape:
         raise ValueError(f'Got incompatible image sizes: {shape_1}, {shape_2}.')
+
+def get_window_index_pairs_from_durations(frame_durations: np.ndarray, w_size: float):
+    r"""
+    Computes start and end index pairs for windows of a given size based on frame durations.
+
+    Args:
+        frame_durations (np.ndarray): Array of frame durations in seconds.
+        w_size (float): Window size in seconds.
+
+    Returns:
+        np.ndarray: Array of shape (2, N), where the first row contains start indices,
+            and the second row contains end indices for each window.
+
+    Raises:
+        ValueError: If `w_size` is less than or equal to 0.
+        ValueError: If `w_size` is greater than the total duration of all frames.
+    """
+    if w_size <= 0:
+        raise ValueError("Window size has to be > 0")
+    if w_size > np.sum(frame_durations):
+        raise ValueError("Window size is larger than the whole scan.")
+    _tmp_w_ids = [0]
+    _w_dur_sum = 0
+    for frm_id, frm_dur in enumerate(frame_durations):
+        _w_dur_sum += frm_dur
+        if _w_dur_sum >= w_size:
+            _tmp_w_ids.append(frm_id + 1)
+            _w_dur_sum = 0
+    w_start_ids = np.asarray(_tmp_w_ids[:-1])
+    w_end_ids = np.asarray(_tmp_w_ids[1:])
+    id_pairs = np.vstack((w_start_ids, w_end_ids))
+    return id_pairs
+
+
+def get_window_index_pairs_for_image(image_path: str, w_size: float):
+    """
+    Computes start and end index pairs for windows of a given size
+    based on the frame durations of a NIfTI image.
+
+    Args:
+        image_path (str): Path to the NIfTI image file.
+        w_size (float): Window size in seconds.
+
+    Returns:
+        np.ndarray: Array of shape (2, N), where the first row contains start indices,
+            and the second row contains end indices for each window.
+
+    Raises:
+        ValueError: If `w_size` is less than or equal to 0.
+        ValueError: If `w_size` is greater than the total duration of all frames.
+
+    See Also:
+        :func:`get_window_index_pairs_from_durations`
+    """
+    image_frame_info = get_frame_timing_info_for_nifti(image_path=image_path)
+    return get_window_index_pairs_from_durations(frame_durations=image_frame_info['duration'], w_size=w_size)
+
