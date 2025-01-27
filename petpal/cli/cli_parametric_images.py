@@ -70,10 +70,12 @@ def main():
     parser_reference = subparsers.add_parser("reference-tissue",help="Parametric image with "
                                              "reference tissue (RTM) methods, e.g. SRTM or MRTM")
     grp_io = parser_reference.add_argument_group('I/O Paths')
-    grp_io.add_argument("-i", "--ref-tac-path", required=True,
+    grp_io.add_argument("-i", "--reference-tac-path", required=True,
                         help="Path to the reference region Time-Activity Curve (TAC) file.")
     grp_io.add_argument("-p", "--pet4D-img-path", required=True,
                         help="Path to the 4D PET image file.")
+    grp_io.add_argument("--mask-img-path", required=True,
+                        help="Path to the mask of 4D PET image.")
     grp_io.add_argument("-o", "--output-directory", required=True,
                         help="Directory where the output parametric images will be saved.")
     grp_io.add_argument("-f", "--output-filename-prefix", default="",
@@ -81,10 +83,13 @@ def main():
 
 
     grp_params = parser_reference.add_argument_group('Method Parameters')
-    grp_params.add_argument("-t", "--threshold-in-mins", required=True, type=float,
+    grp_params.add_argument("-t", "--threshold-in-mins", required=False, type=float,default=None,
                             help="Threshold in minutes below which data points will be discarded.")
     grp_params.add_argument("-m", "--method-name", required=True,
                             help="Name of the RTM method for kinetic modeling.")
+    grp_params.add_argument("-b", "--bounds",required=False,help="",nargs='+',default=None)
+    grp_params.add_argument("-k", "--k2-prime",required=False,default=None,
+                            help="Set k2_prime for RTM2 type methods.")
 
     args = parser.parse_args()
 
@@ -102,11 +107,18 @@ def main():
         param_img.save_analysis()
 
     if args.command=='reference-tissue':
-        print('waiting')
-    #    param_img = ReferenceTissueParametricImage(input_tac_path=args.input_tac_path,
-    #                                               pet4D_img_path=args.pet4D_img_path,
-    #                                               output_directory=args.output_directory,
-    #                                               output_filename_prefix=args.output_filename_prefix)
+        param_img = ReferenceTissueParametricImage(reference_tac_path=args.reference_tac_path,
+                                                   pet_image_path=args.pet4D_img_path,
+                                                   mask_image_path=args.mask_img_path,
+                                                   method=args.method_name,
+                                                   output_directory=args.output_directory,
+                                                   output_filename_prefix=args.output_filename_prefix)
+        param_img.run_parametric_analysis(bounds=args.bounds,
+                                          k2_prime=args.k2_prime,
+                                          t_thresh_in_mins=args.threshold_in_mins)
+        param_img.save_parametric_images()
+        param_img.save_analysis_properties()
+    
     print(ReferenceTissueParametricImage)
 
 
