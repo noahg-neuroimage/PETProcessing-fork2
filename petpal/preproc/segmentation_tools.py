@@ -10,9 +10,13 @@ TODO:
  * Find a more efficient way to find the region mask in :meth:`segmentations_merge` that works for region=1
 
 """
+import ants
 import numpy as np
 import nibabel
 from nibabel import processing
+
+from petpal.preproc import motion_corr
+import pandas as pd
 from . import image_operations_4d
 from ..utils import math_lib
 
@@ -314,3 +318,33 @@ def vat_wm_region_merge(wmparc_segmentation_path: str,
                                           header=wmparc.header,
                                           affine=wmparc.affine)
     nibabel.save(out_file,out_image_path)
+
+
+def gw_segmentation(freesurfer_path: str,
+                    dseg_path: str,
+                    output_path: str):
+    dseg = pd.read_csv(dseg_path,sep=r'\s+')
+    freesurfer = ants.image_read(freesurfer_path)
+    freesurfer_np = freesurfer.numpy()
+    gm_map = np.zeros_like(freesurfer_np)
+    wm_map = np.zeros_like(freesurfer_np)
+
+    for i,mapping in enumerate(dseg['mapping']):
+        gw_label = dseg['gray_white_matter'].iloc[i]
+        region_seg = np.where(freesurfer_np==mapping)
+        if gw_label == 0:
+            gm_map[region_seg] = 1
+        elif gw_label == 1:
+            wm_map[region_seg] = 1
+
+    gm_img = ants.from_numpy(data=gm_map,
+                             origin=freesurfer.origin,
+                             spacing=freesurfer.spacing,
+                             direction=freesurfer.direction)
+    wm_img = ants.from_numpy(data=wm_map,
+                             origin=freesurfer.origin,
+                             spacing=freesurfer.spacing,
+                             direction=freesurfer.direction)
+    gw_map_template = motion_corr._gen_nd_image_based_on_image_list([gm_img,wm_img])
+    gw_map_4d = ants.list_to_ndimage(image=gw_map_template,image_list=[gm_img,wm_img])
+    ants.image_write(gw_map_4d,output_path)

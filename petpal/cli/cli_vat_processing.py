@@ -1,12 +1,10 @@
 # pylint: skip-file
-# V6: Change logan to patlak. Can't run PVC on patlak ki. Fix tac naming.
 import os
 import argparse
-import glob
 import pandas as pd
 import numpy as np
 import ants
-from petpal.preproc import preproc, motion_corr
+from petpal.preproc import preproc
 from petpal.kinetic_modeling import parametric_images, fit_tac_with_rtms, reference_tissue_models, graphical_analysis
 
 
@@ -15,36 +13,6 @@ Example:
   - Running many subjects:
     petpal-vat-proc --subjects participants.tsv --out-dir /path/to/output --pet-dir /path/to/pet/folder/ --reg-dir /path/to/subject/Registrations/
 """)
-def gw_segmentation(freesurfer_path: str,
-                    dseg_path: str,
-                    output_path: str):
-    dseg = pd.read_csv(dseg_path,sep=r'\s+')
-    freesurfer = ants.image_read(freesurfer_path)
-    freesurfer_np = freesurfer.numpy()
-    gm_map = np.zeros_like(freesurfer_np)
-    wm_map = np.zeros_like(freesurfer_np)
-
-    for i,mapping in enumerate(dseg['mapping']):
-        gw_label = dseg['gray_white_matter'].iloc[i]
-        region_seg = np.where(freesurfer_np==mapping)
-        if gw_label == 0:
-            gm_map[region_seg] = 1
-        elif gw_label == 1:
-            wm_map[region_seg] = 1
-
-    gm_img = ants.from_numpy(data=gm_map,
-                             origin=freesurfer.origin,
-                             spacing=freesurfer.spacing,
-                             direction=freesurfer.direction)
-    wm_img = ants.from_numpy(data=wm_map,
-                             origin=freesurfer.origin,
-                             spacing=freesurfer.spacing,
-                             direction=freesurfer.direction)
-    gw_map_template = motion_corr._gen_nd_image_based_on_image_list([gm_img,wm_img])
-    gw_map_4d = ants.list_to_ndimage(image=gw_map_template,image_list=[gm_img,wm_img])
-    ants.image_write(gw_map_4d,output_path)
-
-
 def subcortical_mask(input_seg_path, keeps, output_seg_path):
     seg = ants.image_read(input_seg_path)
     seg_np = seg.numpy()
