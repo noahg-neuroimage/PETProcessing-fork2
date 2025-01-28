@@ -3,8 +3,8 @@ import os
 import argparse
 import pandas as pd
 import ants
-from petpal.preproc import preproc
 from petpal.kinetic_modeling import parametric_images, fit_tac_with_rtms, graphical_analysis
+from petpal.pipelines import pipelines
 
 
 _VAT_EXAMPLE_ = (r"""
@@ -50,10 +50,6 @@ def vat_protocol(subjstring: str,
         preproc_props['FilePathAnat'] = f'{reg_dir}/{subjstring}_Bay3prisma/{subjstring}_Bay3prisma_mpr.nii'
         preproc_props['FilePathWarp'] = f'{reg_dir}/{subjstring}_Bay3prisma/PRISMA_TRIO_PIB_NL_ANTS_NoT2/{subjstring}_Bay3prisma_mpr_to_PRISMA_TRIO_PIB_NL_T1_ANTSwarp.nii.gz'
         brain_mask_path = f'{reg_dir}/{subjstring}_Bay3prisma/{subjstring}_Bay3prisma_mpr_brain_mask.nii'
-    sub_vat = preproc.PreProc(
-        output_directory=out_folder,
-        output_filename_prefix=out_prefix
-    )
     real_files = [
         preproc_props['FilePathMocoInp'],
         preproc_props['FilePathSeg'],
@@ -76,6 +72,9 @@ def vat_protocol(subjstring: str,
 
 
     # preprocessing
+    vat_pipeline = pipelines.BIDS_Pipeline(sub_id=sub,
+                                           ses_id=ses)
+    print(vat_pipeline)
     preproc_props['FilePathRegInp'] = sub_vat.generate_outfile_path(method_short='moco')
     sub_vat.update_props(preproc_props)
     sub_vat.run_preproc('motion_corr')
