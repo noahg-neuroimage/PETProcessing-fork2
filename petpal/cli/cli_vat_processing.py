@@ -13,23 +13,6 @@ Example:
   - Running many subjects:
     petpal-vat-proc --subjects participants.tsv --out-dir /path/to/output --pet-dir /path/to/pet/folder/ --reg-dir /path/to/subject/Registrations/
 """)
-def subcortical_mask(input_seg_path, keeps, output_seg_path):
-    seg = ants.image_read(input_seg_path)
-    seg_np = seg.numpy()
-    scseg = np.zeros(seg_np.shape)
-    for keep in keeps:
-        region_seg = np.where(seg_np==keep)
-        scseg[region_seg] = 1
-    scseg_img = ants.from_numpy(
-        data=scseg,
-        origin=seg.origin,
-        spacing=seg.spacing,
-        direction=seg.direction
-    )
-    ants.image_write(scseg_img,output_seg_path)
-    return 0
-
-
 def k2p_from_mrtm_fit(results):
     k2_prime = []
     for result in results:

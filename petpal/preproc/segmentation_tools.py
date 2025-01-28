@@ -348,3 +348,20 @@ def gw_segmentation(freesurfer_path: str,
     gw_map_template = motion_corr._gen_nd_image_based_on_image_list([gm_img,wm_img])
     gw_map_4d = ants.list_to_ndimage(image=gw_map_template,image_list=[gm_img,wm_img])
     ants.image_write(gw_map_4d,output_path)
+
+
+def subcortical_mask(input_seg_path, output_seg_path,subcortical_regions=[7,8,10,11,12,13,49,50,51,52,173,174,175]):
+    segmentation = ants.image_read(input_seg_path)
+    segmentation_np = segmentation.numpy()
+    subcortical_mask = np.zeros(segmentation_np.shape)
+    for region in subcortical_regions:
+        region_seg = np.where(segmentation_np==region)
+        subcortical_mask[region_seg] = 1
+    subcortical_img = ants.from_numpy(
+        data=subcortical_mask,
+        origin=segmentation.origin,
+        spacing=segmentation.spacing,
+        direction=segmentation.direction
+    )
+    ants.image_write(subcortical_img,output_seg_path)
+    return subcortical_img
