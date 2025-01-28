@@ -2,10 +2,9 @@
 import os
 import argparse
 import pandas as pd
-import numpy as np
 import ants
 from petpal.preproc import preproc
-from petpal.kinetic_modeling import parametric_images, fit_tac_with_rtms, reference_tissue_models, graphical_analysis
+from petpal.kinetic_modeling import parametric_images, fit_tac_with_rtms, graphical_analysis
 
 
 _VAT_EXAMPLE_ = (r"""
@@ -13,26 +12,6 @@ Example:
   - Running many subjects:
     petpal-vat-proc --subjects participants.tsv --out-dir /path/to/output --pet-dir /path/to/pet/folder/ --reg-dir /path/to/subject/Registrations/
 """)
-def k2p_from_mrtm_fit(results):
-    k2_prime = []
-    for result in results:
-        try:
-            k2_prime += [reference_tissue_models.calc_k2prime_from_mrtm_2003_fit(result[0])]
-        except:
-            k2_prime += [np.nan]
-    return k2_prime
-
-
-def ki_from_mrtm_fit(results):
-    ki = []
-    for result in results:
-        try:
-            ki += [reference_tissue_models.calc_ki_from_mrtm_2003_fit(result[0])]
-        except:
-            ki += [np.nan]
-    return ki
-
-
 def vat_protocol(subjstring: str,
                  out_dir: str,
                  pet_dir: str,
