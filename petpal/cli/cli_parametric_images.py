@@ -119,10 +119,6 @@ def main():
                                           t_thresh_in_mins=args.threshold_in_mins)
         param_img.save_parametric_images()
         param_img.save_analysis_properties()
-    
-    print(ReferenceTissueParametricImage)
-
-
 
 if __name__ == "__main__":
     main()
