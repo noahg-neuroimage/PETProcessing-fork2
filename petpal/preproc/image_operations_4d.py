@@ -294,12 +294,12 @@ def get_average_of_timeseries(input_image: ants.ANTsImage):
     """
     Get average of a 4D ANTsImage and return as a 3D ANTsImage.
     """
+    assert len(input_image.shape) == 4, "Input image must be 4D"
     mean_array = input_image.mean(axis=-1)
-    one_image = ants.ndimage_to_list(image=input_image)[0]
     mean_image = ants.from_numpy(data=mean_array,
-                                 origin=one_image.origin,
-                                 spacing=one_image.spacing,
-                                 direction=one_image.direction)
+                                 origin=input_image.origin[:-1],
+                                 spacing=input_image.spacing[:-1],
+                                 direction=input_image.direction[:-1])
     return mean_image
 
 
