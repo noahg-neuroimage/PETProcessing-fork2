@@ -20,7 +20,7 @@ dependencies = [
     "numba",
     "pandas",
     "nibabel",
-    "antspyx",
+    "antspyx >= 0.5",
     "fslpy",
     "SimpleITK",
     "matplotlib",
