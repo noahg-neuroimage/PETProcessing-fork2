@@ -223,11 +223,10 @@ def get_frame_timing_info_for_nifti(image_path: str) -> dict[str, np.ndarray]:
     except KeyError:
         frm_starts = np.diff(frm_ends)
     try:
-        decay = _meta_data['DecayCorrectionFactor']
+        decay = np.asarray(_meta_data['DecayCorrectionFactor'],float)
     except KeyError:
-        decay = _meta_data['DecayFactor']
-    else:
-        raise KeyError("Neither 'DecayCorrectionFactor' nor 'DecayFactor' keys found in metadata.")
+        decay = np.asarray(_meta_data['DecayFactor'],float)
+
     frm_info = {'duration': frm_dur,
                 'start': frm_starts,
                 'end': frm_ends,
