@@ -215,7 +215,7 @@ def get_half_life_from_meta(meta_data_file_path: str):
         return half_life
     except KeyError as exc:
         raise KeyError("RadionuclideHalfLife not found in meta-data file.") from exc
-    
+
 def get_half_life_from_nifti(image_path:str):
     """
     Retrieves the radionuclide half-life from a nifti image file.
