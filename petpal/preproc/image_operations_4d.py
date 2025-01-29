@@ -299,7 +299,7 @@ def get_average_of_timeseries(input_image: ants.ANTsImage):
     mean_image = ants.from_numpy(data=mean_array,
                                  origin=input_image.origin[:-1],
                                  spacing=input_image.spacing[:-1],
-                                 direction=input_image.direction[:-1])
+                                 direction=input_image.direction[:-1,:-1])
     return mean_image
 
 
