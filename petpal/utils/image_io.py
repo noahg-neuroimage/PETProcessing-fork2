@@ -163,7 +163,7 @@ def safe_copy_meta(input_image_path: str,
     meta_data_dict = load_metadata_for_nifti_with_same_filename(input_image_path)
     write_dict_to_json(meta_data_dict=meta_data_dict, out_path=copy_meta_path)
 
-def get_half_life_from(meta_data_file_path: str) -> float:
+def get_half_life_from_radionuclide(meta_data_file_path: str) -> float:
     """
     Extracts the radionuclide half-life in seconds from a nifti metadata file. This function
     grabs the tracer radionuclide from the metadata and assumes a fixed half-life based on this.
@@ -236,7 +236,11 @@ def get_half_life_from_nifti(image_path:str):
     if not os.path.exists(image_path):
         raise FileNotFoundError(f"Image file {image_path} not found")
     meta_path = _gen_meta_data_filepath_for_nifti(image_path)
-    return get_half_life_from_meta(meta_path)
+    try:
+        half_life = get_half_life_from_radionuclide(meta_path)
+    except KeyError:
+        half_life = get_half_life_from_meta(meta_path)
+    return half_life
 
 
 def get_frame_timing_info_for_nifti(image_path: str) -> dict[str, np.ndarray]:
