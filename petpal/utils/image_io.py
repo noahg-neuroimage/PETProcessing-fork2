@@ -193,7 +193,8 @@ def get_half_life_from_nifti(image_path:str):
 def get_frame_timing_info_for_nifti(image_path: str) -> dict[str, np.ndarray]:
     r"""
     Extracts frame timing information and decay factors from a NIfTI image metadata.
-    Expects that the JSON metadata file has ``FrameDuration`` and ``DecayFactor`` keys.
+    Expects that the JSON metadata file has ``FrameDuration`` and ``DecayFactor`` or 
+    ``DecayCorrectionFactor`` keys.
 
     .. important::
         This function tries to infer `FrameTimesEnd` and `FrameTimesStart` from the frame durations
@@ -221,11 +222,16 @@ def get_frame_timing_info_for_nifti(image_path: str) -> dict[str, np.ndarray]:
         frm_starts = np.asarray(_meta_data['FrameTimesStart'], int)
     except KeyError:
         frm_starts = np.diff(frm_ends)
-
+    try:
+        decay = _meta_data['DecayCorrectionFactor']
+    except KeyError:
+        decay = _meta_data['DecayFactor']
+    else:
+        raise KeyError("Neither 'DecayCorrectionFactor' nor 'DecayFactor' keys found in metadata.")
     frm_info = {'duration': frm_dur,
                 'start': frm_starts,
                 'end': frm_ends,
-                'decay': np.asarray(_meta_data['DecayFactor'])
+                'decay': decay
                 }
 
     return frm_info
