@@ -5,8 +5,9 @@ import pandas as pd
 import ants
 from petpal.kinetic_modeling import parametric_images, fit_tac_with_rtms, graphical_analysis
 from petpal.pipelines import pipelines, steps_base, preproc_steps
-from petpal.preproc import image_operations_4d, motion_corr
+from petpal.preproc import image_operations_4d, motion_corr, register, segmentation_tools
 from petpal.utils.bids_utils import gen_bids_like_dir_path, gen_bids_like_filename, gen_bids_like_filepath
+from petpal.utils.image_io import _HALFLIVES_
 
 
 _VAT_EXAMPLE_ = (r"""
@@ -20,15 +21,15 @@ def vat_protocol(subjstring: str,
                  reg_dir: str,
                  skip: bool):
     sub, ses = rename_subs(subjstring)
+    segmentation_label_file = '/home/usr/goldmann/dseg.tsv'
+    motion_target = (0,600)
+    reg_pars = {'aff_metric': 'mattes','type_of_transform': 'DenseRigid'}
+    half_life = _HALFLIVES_['f18']
     preproc_props = {
-        'FilePathLabelMap': '/home/usr/goldmann/dseg.tsv',
         'FilePathFSLPremat': '',
         'FilePathFSLPostmat': '',
-        'HalfLife': 6586.2,
         'StartTimeWSS': 1800,
         'EndTimeWSS': 7200,
-        'MotionTarget': (0,600),
-        'RegPars': {'aff_metric': 'mattes','type_of_transform': 'DenseRigid'},
         'RefRegion': 1,
         'BlurSize': 4.2,
         'TimeFrameKeyword': 'FrameTimesStart',
@@ -39,7 +40,7 @@ def vat_protocol(subjstring: str,
         out_prefix = f'{sub}'
         pet_file = f'{pet_dir}/{sub}/pet/{sub}_pet.nii.gz'
         freesurfer_file = f'{reg_dir}/{sub}/{sub}_aparc+aseg.nii'
-        brainstem_segmentation = f'{reg_dir}/{sub}/{sub}_brainstem.nii'
+        brainstem_segmentation_file = f'{reg_dir}/{sub}/{sub}_brainstem.nii'
         mprage_file = f'{reg_dir}/{sub}/{sub}_mpr.nii'
         atlas_warp_file = f'{reg_dir}/{sub}/PRISMA_TRIO_PIB_NL_ANTS_NoT2/{sub}_mpr_to_PRISMA_TRIO_PIB_NL_T1_ANTSwarp.nii.gz'
         mpr_brain_mask_file = f'{reg_dir}/{sub}/{sub}_mpr_brain_mask.nii'
@@ -48,7 +49,7 @@ def vat_protocol(subjstring: str,
         out_prefix = f'{sub}_{ses}'
         pet_file = f'{pet_dir}/{sub}/{ses}/pet/{sub}_{ses}_trc-18FVAT_pet.nii.gz'
         freesurfer_file = f'{reg_dir}/{subjstring}_Bay3prisma/{subjstring}_Bay3prisma_aparc+aseg.nii'
-        brainstem_segmentation = f'{reg_dir}/{subjstring}_Bay3prisma/{subjstring}_Bay3prisma_brainstem.nii'
+        brainstem_segmentation_file = f'{reg_dir}/{subjstring}_Bay3prisma/{subjstring}_Bay3prisma_brainstem.nii'
         mprage_file = f'{reg_dir}/{subjstring}_Bay3prisma/{subjstring}_Bay3prisma_mpr.nii'
         atlas_warp_file = f'{reg_dir}/{subjstring}_Bay3prisma/PRISMA_TRIO_PIB_NL_ANTS_NoT2/{subjstring}_Bay3prisma_mpr_to_PRISMA_TRIO_PIB_NL_T1_ANTSwarp.nii.gz'
         mpr_brain_mask_file = f'{reg_dir}/{subjstring}_Bay3prisma/{subjstring}_Bay3prisma_mpr_brain_mask.nii'
@@ -56,7 +57,7 @@ def vat_protocol(subjstring: str,
         pet_file,
         freesurfer_file,
         mprage_file,
-        brainstem_segmentation,
+        brainstem_segmentation_file,
         atlas_warp_file,
         mpr_brain_mask_file
     ]
@@ -73,33 +74,52 @@ def vat_protocol(subjstring: str,
         sub_flex = f'{sub}_{ses}'
 
 
-    def vat_bids_filepath(modality,**extra_desc):
+    def vat_bids_filepath(suffix,folder,**extra_desc):
         sub_id = sub.replace('sub-','')
         ses_id = ses.replace('ses-','')
         new_dir = gen_bids_like_dir_path(sub_id=sub_id,
                                          ses_id=ses_id,
-                                         sup_dir=out_dir)
+                                         sup_dir=out_dir,
+                                         modality=folder)
         os.makedirs(new_dir,exist_ok=True)
         new_file = gen_bids_like_filepath(sub_id=sub_id,
                                           ses_id=ses_id,
                                           bids_dir=out_dir,
-                                          modality=modality,
-                                          suffix=modality,
+                                          modality=folder,
+                                          suffix=suffix,
                                           **extra_desc)
 
         return new_file
 
 
     # preprocessing
-    pet_cropped_file = vat_bids_filepath(modality='pet',crop='003')
+    pet_cropped_file = vat_bids_filepath(suffix='pet',folder='pet',crop='003')
     image_operations_4d.SimpleAutoImageCropper(input_image_path=pet_file,
                                                out_image_path=pet_cropped_file,
                                                thresh_val=0.03)
-    pet_moco_file = vat_bids_filepath(modality='pet',moco='windowed')
+
+    pet_moco_file = vat_bids_filepath(suffix='pet',folder='pet',moco='windowed')
     motion_corr.windowed_motion_corr_to_target(input_image_path=pet_cropped_file,
                                                out_image_path=pet_moco_file,
                                                motion_target_option=(0,600),
                                                w_size=600)
+
+    pet_reg_anat_file = vat_bids_filepath(suffix='pet',folder='pet',moco='windowed',space='mpr')
+    register.register_pet(input_reg_image_path=pet_moco_file,
+                          out_image_path=pet_reg_anat_file,
+                          reference_image_path=mprage_file,
+                          motion_target_option=motion_target,
+                          half_life=half_life,
+                          **reg_pars)
+    
+    vat_wm_ref_region_roi_file = vat_bids_filepath(suffix='seg',folder='pet',desc='RefRegionROI')
+    segmentation_tools.vat_wm_ref_region(input_segmentation_path=freesurfer_file,
+                                         out_segmentation_path=vat_wm_ref_region_roi_file)
+    vat_wm_ref_segmentation_file = vat_bids_filepath(suffix='seg',folder='pet',desc='RefRegionSegmentation')
+    segmentation_tools.vat_wm_region_merge(wm_ref_segmentation_path=freesurfer_file,
+                                           bs_segmentation_path=brainstem_segmentation_file,
+                                           vat_wm_ref_segmentation_path=vat_wm_ref_region_roi_file,
+                                           out_image_path=vat_wm_ref_segmentation_file)
 
 
 
