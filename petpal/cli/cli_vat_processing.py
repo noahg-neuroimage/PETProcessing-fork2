@@ -72,8 +72,12 @@ def vat_protocol(subjstring: str,
 
 
     # preprocessing
-    vat_pipeline = pipelines.BIDS_Pipeline(sub_id=sub,
-                                           ses_id=ses)
+    vat_pipeline = pipelines.BIDS_Pipeline(sub_id=sub.replace('sub-',''),
+                                           ses_id=ses.replace('ses-',''),
+                                           segmentation_img_path=f'{reg_dir}/{subjstring}_Bay3prisma/{subjstring}_Bay3prisma_aparc+aseg.nii',
+                                           segmentation_label_table_path='/home/usr/goldmann/dseg.tsv',
+                                           raw_anat_img_path=f'{reg_dir}/{subjstring}_Bay3prisma/{subjstring}_Bay3prisma_mpr.nii',
+                                           pipeline_name='VATDYS')
     print(vat_pipeline)
     preproc_props['FilePathRegInp'] = sub_vat.generate_outfile_path(method_short='moco')
     sub_vat.update_props(preproc_props)
@@ -208,12 +212,12 @@ def main():
             reg_dir = '/data/norris/data1/Registration/VATNL'
         elif sub[:3]=='PIB':
             pet_dir = '/data/jsp/human2/BidsDataset/PIB'
-            reg_dir = '/export/scratch1/Maame/Registration/'
-        #vat_protocol(sub,args.out_dir,pet_dir,reg_dir,skip=True)
-        try:
-            vat_protocol(sub,args.out_dir,pet_dir,reg_dir,skip=True)
-        except:
-            print(f"Couldn't run {sub}, passing")
-            pass
+            reg_dir = '/data/jsp/human2/Registration/PIB_FS73_ANTS'
+        vat_protocol(sub,args.out_dir,pet_dir,reg_dir,skip=True)
+        #try:
+        #    vat_protocol(sub,args.out_dir,pet_dir,reg_dir,skip=True)
+        #except:
+        #    print(f"Couldn't run {sub}, passing")
+        #    pass
 
 main()
