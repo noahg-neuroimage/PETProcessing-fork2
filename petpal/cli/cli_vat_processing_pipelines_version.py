@@ -5,8 +5,6 @@ import pandas as pd
 import ants
 from petpal.kinetic_modeling import parametric_images, fit_tac_with_rtms, graphical_analysis
 from petpal.pipelines import pipelines, steps_base, preproc_steps
-from petpal.preproc import image_operations_4d
-from petpal.utils.bids_utils import gen_bids_like_dir_path, gen_bids_like_filename, gen_bids_like_filepath
 
 
 _VAT_EXAMPLE_ = (r"""
@@ -37,28 +35,28 @@ def vat_protocol(subjstring: str,
     if ses=='':
         out_folder = f'{out_dir}/{sub}'
         out_prefix = f'{sub}'
-        pet_file = f'{pet_dir}/{sub}/pet/{sub}_pet.nii.gz'
-        freesurfer_file = f'{reg_dir}/{sub}/{sub}_aparc+aseg.nii'
-        brainstem_segmentation = f'{reg_dir}/{sub}/{sub}_brainstem.nii'
-        mprage_file = f'{reg_dir}/{sub}/{sub}_mpr.nii'
-        atlas_warp_file = f'{reg_dir}/{sub}/PRISMA_TRIO_PIB_NL_ANTS_NoT2/{sub}_mpr_to_PRISMA_TRIO_PIB_NL_T1_ANTSwarp.nii.gz'
-        mpr_brain_mask_file = f'{reg_dir}/{sub}/{sub}_mpr_brain_mask.nii'
+        preproc_props['FilePathMocoInp'] = f'{pet_dir}/{sub}/pet/{sub}_pet.nii.gz'
+        preproc_props['FilePathSeg'] = f'{reg_dir}/{sub}/{sub}_aparc+aseg.nii'
+        preproc_props['FilePathBSseg'] = f'{reg_dir}/{sub}/{sub}_brainstem.nii'
+        preproc_props['FilePathAnat'] = f'{reg_dir}/{sub}/{sub}_mpr.nii'
+        preproc_props['FilePathWarp'] = f'{reg_dir}/{sub}/PRISMA_TRIO_PIB_NL_ANTS_NoT2/{sub}_mpr_to_PRISMA_TRIO_PIB_NL_T1_ANTSwarp.nii.gz'
+        brain_mask_path = f'{reg_dir}/{sub}/{sub}_mpr_brain_mask.nii'
     else:
         out_folder = f'{out_dir}/{sub}_{ses}'
         out_prefix = f'{sub}_{ses}'
-        pet_file = f'{pet_dir}/{sub}/{ses}/pet/{sub}_{ses}_trc-18FVAT_pet.nii.gz'
-        freesurfer_file = f'{reg_dir}/{subjstring}_Bay3prisma/{subjstring}_Bay3prisma_aparc+aseg.nii'
-        brainstem_segmentation = f'{reg_dir}/{subjstring}_Bay3prisma/{subjstring}_Bay3prisma_brainstem.nii'
-        mprage_file = f'{reg_dir}/{subjstring}_Bay3prisma/{subjstring}_Bay3prisma_mpr.nii'
-        atlas_warp_file = f'{reg_dir}/{subjstring}_Bay3prisma/PRISMA_TRIO_PIB_NL_ANTS_NoT2/{subjstring}_Bay3prisma_mpr_to_PRISMA_TRIO_PIB_NL_T1_ANTSwarp.nii.gz'
-        mpr_brain_mask_file = f'{reg_dir}/{subjstring}_Bay3prisma/{subjstring}_Bay3prisma_mpr_brain_mask.nii'
+        preproc_props['FilePathMocoInp'] = f'{pet_dir}/{sub}/{ses}/pet/{sub}_{ses}_trc-18FVAT_pet.nii.gz'
+        preproc_props['FilePathSeg'] = f'{reg_dir}/{subjstring}_Bay3prisma/{subjstring}_Bay3prisma_aparc+aseg.nii'
+        preproc_props['FilePathBSseg'] = f'{reg_dir}/{subjstring}_Bay3prisma/{subjstring}_Bay3prisma_brainstem.nii'
+        preproc_props['FilePathAnat'] = f'{reg_dir}/{subjstring}_Bay3prisma/{subjstring}_Bay3prisma_mpr.nii'
+        preproc_props['FilePathWarp'] = f'{reg_dir}/{subjstring}_Bay3prisma/PRISMA_TRIO_PIB_NL_ANTS_NoT2/{subjstring}_Bay3prisma_mpr_to_PRISMA_TRIO_PIB_NL_T1_ANTSwarp.nii.gz'
+        brain_mask_path = f'{reg_dir}/{subjstring}_Bay3prisma/{subjstring}_Bay3prisma_mpr_brain_mask.nii'
     real_files = [
-        pet_file,
-        freesurfer_file,
-        mprage_file,
-        brainstem_segmentation,
-        atlas_warp_file,
-        mpr_brain_mask_file
+        preproc_props['FilePathMocoInp'],
+        preproc_props['FilePathSeg'],
+        preproc_props['FilePathAnat'],
+        preproc_props['FilePathBSseg'],
+        preproc_props['FilePathWarp'],
+        brain_mask_path
     ]
     for check in real_files:
         if not os.path.exists(check):
@@ -73,56 +71,23 @@ def vat_protocol(subjstring: str,
         sub_flex = f'{sub}_{ses}'
 
 
-    def vat_bids_filepath(modality,**extra_desc):
-        sub_id = sub.replace('sub-','')
-        ses_id = ses.replace('ses-','')
-        new_dir = gen_bids_like_dir_path(sub_id=sub_id,
-                                         ses_id=ses_id,
-                                         sup_dir=out_dir)
-        os.makedirs(new_dir,exist_ok=True)
-        new_file = gen_bids_like_filepath(sub_id=sub_id,
-                                          ses_id=ses_id,
-                                          bids_dir=out_dir,
-                                          modality=modality,
-                                          suffix=modality,
-                                          **extra_desc)
-
-        return new_file
-
-
     # preprocessing
-    crop_file = vat_bids_filepath(modality='pet',crop='003')
-    image_operations_4d.SimpleAutoImageCropper(input_image_path=pet_file,
-                                               out_image_path=crop_file,
-                                               thresh_val=0.03)
+    vat_pipeline = pipelines.BIDS_Pipeline(sub_id=sub.replace('sub-',''),
+                                           ses_id=ses.replace('ses-',''),
+                                           segmentation_img_path=f'{reg_dir}/{subjstring}_Bay3prisma/{subjstring}_Bay3prisma_aparc+aseg.nii',
+                                           segmentation_label_table_path='/home/usr/goldmann/dseg.tsv',
+                                           raw_anat_img_path=f'{reg_dir}/{subjstring}_Bay3prisma/{subjstring}_Bay3prisma_mpr.nii',
+                                           pipeline_name='VATDYS',
+                                           step_containers=[pipelines.StepsContainer(name='preproc'),
+                                                            pipelines.StepsContainer(name='km')])
+    print(vat_pipeline)
 
+    vat_pipeline.add_step(container_name='preproc',
+                          step=preproc_steps.ImageToImageStep.default_threshold_cropping(''))
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    vat_pipeline.print_steps_names()
+    vat_pipeline.print_steps_details()
+    vat_pipeline.print_dependency_graph()
     preproc_props['FilePathRegInp'] = sub_vat.generate_outfile_path(method_short='moco')
     sub_vat.update_props(preproc_props)
     sub_vat.run_preproc('motion_corr')
@@ -131,7 +96,7 @@ def vat_protocol(subjstring: str,
     print('finished wm ref region')
 
     # write tacs
-    freesurfer_file = sub_vat.generate_outfile_path(method_short='wm-merged')
+    preproc_props['FilePathSeg'] = sub_vat.generate_outfile_path(method_short='wm-merged')
     preproc_props['FilePathTACInput'] = sub_vat.generate_outfile_path(method_short='reg')
     sub_vat.update_props(preproc_props)
     sub_vat.run_preproc('write_tacs')
@@ -175,11 +140,11 @@ def vat_protocol(subjstring: str,
     segfile_4d = sub_vat.generate_outfile_path(method_short='wm-merged-4d')
     #suvr_file = sub_vat.generate_outfile_path(method_short='suvr')
     #suvr_pvc_file = sub_vat.generate_outfile_path(method_short='desc-suvr_pvc-rbv')
-    #os.system(f"/home/usr/odonnellj/PETPVC-build/src/pvc_make4d -i {freesurfer_file} -o {segfile_4d}")
+    #os.system(f"/home/usr/odonnellj/PETPVC-build/src/pvc_make4d -i {preproc_props['FilePathSeg']} -o {segfile_4d}")
     #os.system(f"/home/usr/odonnellj/PETPVC-build/src/petpvc -i {suvr_file} -o {suvr_pvc_file} -m {segfile_4d} -p RBV+VC -x 4.2 -y 4.2 -z 4.2")
     ki_file = sub_vat.generate_outfile_path(method_short='desc-patlak-slope')
     #ki_pvc_file = sub_vat.generate_outfile_path(method_short='desc-ki_pvc-rbv')
-    #os.system(f"/home/usr/odonnellj/PETPVC-build/src/pvc_make4d -i {freesurfer_file} -o {segfile_4d}")
+    #os.system(f"/home/usr/odonnellj/PETPVC-build/src/pvc_make4d -i {preproc_props['FilePathSeg']} -o {segfile_4d}")
     #os.system(f"/home/usr/odonnellj/PETPVC-build/src/petpvc -i {ki_file} -o {ki_pvc_file} -m {segfile_4d} -p RBV+VC -x 4.2 -y 4.2 -z 4.2")
 
 
@@ -189,7 +154,7 @@ def vat_protocol(subjstring: str,
     ki_warp = ants.apply_transforms(
         fixed=ref,
         moving=ki_ants,
-        transformlist=[atlas_warp_file],
+        transformlist=[preproc_props['FilePathWarp']],
         imagetype=0,
         verbose=1
     )
@@ -200,7 +165,7 @@ def vat_protocol(subjstring: str,
     #suvr_warp = ants.apply_transforms(
     #    fixed=ref,
     #    moving=suvr_ants,
-    #    transformlist=[atlas_warp_file],
+    #    transformlist=[preproc_props['FilePathWarp']],
     #    imagetype=0,
     #    verbose=1
     #)
