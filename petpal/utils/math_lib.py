@@ -5,9 +5,9 @@ import numpy as np
 from scipy.ndimage import gaussian_filter
 import ants
 
-def weighted_sum_computation(frame_duration: np.ndarray,
+def weighted_sum_computation(pet_series: ants.core.ANTsImage | np.ndarray,
+                             frame_duration: np.ndarray,
                              half_life: float,
-                             pet_series: np.ndarray,
                              frame_start: np.ndarray,
                              decay_correction: np.ndarray):
     """
@@ -38,7 +38,7 @@ def weighted_sum_computation(frame_duration: np.ndarray,
     total_decay /= np.exp(-1 * decay_constant * frame_start[0])
     
     pet_series_scaled = pet_series[:, :, :] * frame_duration / decay_correction
-    pet_series_sum_scaled = np.sum(pet_series_scaled, axis=3)
+    pet_series_sum_scaled = pet_series_scaled.sum(axis=3)
     image_weighted_sum = pet_series_sum_scaled * total_decay / image_total_duration
     return image_weighted_sum
 
