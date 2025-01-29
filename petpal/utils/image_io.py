@@ -1,5 +1,10 @@
 """
 Image IO
+
+PET radionuclide half life source: code borrowed from DynamicPET
+(https://github.com/bilgelm/dynamicpet/blob/main/src/dynamicpet/petbids/petbidsjson.py), derived
+from TPC (turkupetcentre.net/petanalysis/decay.html). This source is from:
+Table of Isotopes, Sixth edition, edited by C.M. Lederer, J.M. Hollander, I. Perlman. WILEY, 1967. 
 """
 import json
 import re
@@ -11,6 +16,22 @@ from typing import Union
 import numpy as np
 import pandas as pd
 from . import useful_functions
+
+
+_HALFLIVES_ = {
+    "c11": 1224,
+    "n13": 599,
+    "o15": 123,
+    "f18": 6588,
+    "cu62": 582,
+    "cu64": 45721.1,
+    "ga68": 4080,
+    "ge68": 23760000,
+    "br76": 58700,
+    "rb82": 75,
+    "zr89": 282240,
+    "i124": 360806.4,
+}
 
 
 def write_dict_to_json(meta_data_dict: dict, out_path: str):
@@ -142,10 +163,38 @@ def safe_copy_meta(input_image_path: str,
     meta_data_dict = load_metadata_for_nifti_with_same_filename(input_image_path)
     write_dict_to_json(meta_data_dict=meta_data_dict, out_path=copy_meta_path)
 
+def get_half_life_from(meta_data_file_path: str) -> float:
+    """
+    Extracts the radionuclide half-life in seconds from a nifti metadata file. This function
+    grabs the tracer radionuclide from the metadata and assumes a fixed half-life based on this.
+    Code borrowed from:
+    https://github.com/bilgelm/dynamicpet/blob/main/src/dynamicpet/petbids/petbidsjson.py.
+
+    Args:
+        meta_data_file_path (str): Path to the nifti metadata file.
+
+    Returns:
+        float: The radionuclide half-life extracted from the tracer radionuclide.
+
+    Raises:
+        FileNotFoundError: If the metadata file does not exist at the provided path.
+        KeyError: If the 'TracerRadionuclide' key is not found in the metadata file.
+    """
+    if not os.path.exists(meta_data_file_path):
+        raise FileNotFoundError(f"Metadata file {meta_data_file_path} not found")
+    with open(meta_data_file_path, 'r',encoding='utf-8') as m_file:
+        meta_data = json.load(m_file)
+
+    try:
+        radionuclide = meta_data['TracerRadionuclide'].lower().replace("-", "")
+    except KeyError as exc:
+        raise KeyError("Required BIDS metadata field 'TracerRadionuclide' not found.") from exc
+
+    return _HALFLIVES_[radionuclide]
 
 def get_half_life_from_meta(meta_data_file_path: str):
     """
-    Extracts the radionuclide half-life (usually in seconds) from a nifti metadata file.
+    Extracts the radionuclide half-life (usually in seconds) from a nifti metadata file. 
 
     Args:
         meta_data_file_path (str): Path to the nifti metadata file.
@@ -159,13 +208,13 @@ def get_half_life_from_meta(meta_data_file_path: str):
     """
     if not os.path.exists(meta_data_file_path):
         raise FileNotFoundError(f"Metadata file {meta_data_file_path} not found")
-    with open(meta_data_file_path, 'r') as m_file:
+    with open(meta_data_file_path, 'r',encoding='utf-8') as m_file:
         meta_data = json.load(m_file)
     try:
         half_life = meta_data['RadionuclideHalfLife']
         return half_life
-    except KeyError:
-        raise KeyError("RadionuclideHalfLife not found in meta-data file.")
+    except KeyError as exc:
+        raise KeyError("RadionuclideHalfLife not found in meta-data file.") from exc
     
 def get_half_life_from_nifti(image_path:str):
     """
