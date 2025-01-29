@@ -5,7 +5,7 @@ import pandas as pd
 import ants
 from petpal.kinetic_modeling import parametric_images, fit_tac_with_rtms, graphical_analysis
 from petpal.pipelines import pipelines, steps_base, preproc_steps
-from petpal.preproc import image_operations_4d
+from petpal.preproc import image_operations_4d, motion_corr
 from petpal.utils.bids_utils import gen_bids_like_dir_path, gen_bids_like_filename, gen_bids_like_filepath
 
 
@@ -91,11 +91,15 @@ def vat_protocol(subjstring: str,
 
 
     # preprocessing
-    crop_file = vat_bids_filepath(modality='pet',crop='003')
+    pet_cropped_file = vat_bids_filepath(modality='pet',crop='003')
     image_operations_4d.SimpleAutoImageCropper(input_image_path=pet_file,
-                                               out_image_path=crop_file,
+                                               out_image_path=pet_cropped_file,
                                                thresh_val=0.03)
-
+    pet_moco_file = vat_bids_filepath(modality='pet',moco='windowed')
+    motion_corr.windowed_motion_corr_to_target(input_image_path=pet_cropped_file,
+                                               out_image_path=pet_moco_file,
+                                               motion_target_option=(0,600),
+                                               w_size=600)
 
 
 
