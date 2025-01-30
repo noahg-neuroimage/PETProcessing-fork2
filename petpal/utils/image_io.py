@@ -91,6 +91,25 @@ def _gen_meta_data_filepath_for_nifti(nifty_path:str):
     meta_data_path = re.sub(r'\.nii\.gz$|\.nii$', '.json', nifty_path)
     return meta_data_path
 
+
+def safe_load_meta(input_metadata_file: str) -> dict:
+    """
+    Function to load a generic metadata json file.
+
+    Args:
+        input_metadata_file (str): Metadata file to be read.
+
+    Returns:
+        metadata (dict): The metadata in dictionary format.
+    """
+    if not os.path.exists(input_metadata_file):
+        raise FileNotFoundError(f"Metadata file {input_metadata_file} not found. Does it have a different path?")
+
+    with open(input_metadata_file, 'r', encoding='utf-8') as meta_file:
+        metadata = json.load(meta_file)
+    return metadata
+
+
 def load_metadata_for_nifti_with_same_filename(image_path) -> dict:
     """
     Static method to load metadata. Assume same path as input image path.
@@ -100,7 +119,7 @@ def load_metadata_for_nifti_with_same_filename(image_path) -> dict:
             same name as the file but with different extension exists.
 
     Returns:
-        image_meta (dict): Dictionary where keys are fields in the image
+        metadata (dict): Dictionary where keys are fields in the image
             metadata file and values correspond to values in those fields.
 
     Raises:
@@ -111,13 +130,9 @@ def load_metadata_for_nifti_with_same_filename(image_path) -> dict:
         raise FileNotFoundError(f"Image file {image_path} not found.")
 
     meta_path = _gen_meta_data_filepath_for_nifti(image_path)
+    metadata = safe_load_meta(input_metadata_file=meta_path)
 
-    if not os.path.exists(meta_path):
-        raise FileNotFoundError(f"Metadata file {meta_path} not found. Does it have a different path?")
-
-    with open(meta_path, 'r', encoding='utf-8') as meta_file:
-        image_meta = json.load(meta_file)
-    return image_meta
+    return metadata
 
 
 def safe_load_tac(filename: str, **kwargs) -> np.ndarray:
