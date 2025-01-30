@@ -8,6 +8,7 @@ from petpal.pipelines import pipelines, steps_base, preproc_steps
 from petpal.preproc import image_operations_4d, motion_corr, register, segmentation_tools
 from petpal.utils.bids_utils import gen_bids_like_dir_path, gen_bids_like_filename, gen_bids_like_filepath
 from petpal.utils.image_io import _HALFLIVES_
+from petpal.utils import useful_functions
 
 
 _VAT_EXAMPLE_ = (r"""
@@ -27,6 +28,8 @@ def vat_protocol(subjstring: str,
     motion_target = (0,600)
     reg_pars = {'aff_metric': 'mattes','type_of_transform': 'DenseRigid'}
     half_life = _HALFLIVES_['f18']
+    suvr_start = 3600
+    suvr_end = 7200
     preproc_props = {
         'FilePathFSLPremat': '',
         'FilePathFSLPostmat': '',
@@ -134,17 +137,32 @@ def vat_protocol(subjstring: str,
                                    time_frame_keyword='FrameTimesStart')
 
     # kinetic modeling
-    wmref_tac_path = vat_bids_filepath(suffix='tac',folder='tacs',seg='WMRef')
+    wmref_tac_path = vat_bids_filepath(suffix='tac',folder='tacs',seg='WMRef',ext='.tsv')
     km_save_dir = gen_bids_like_dir_path(sub_id=sub_id,ses_id=ses_id,sup_dir=out_dir,modality='km')
-    os.makedirs(km_save_dir)
+    os.makedirs(km_save_dir,exist_ok=True)
     mrtm1_path = gen_bids_like_filename(sub_id=sub_id,ses_id=ses_id,model='mrtm1',suffix='km',ext='')
     mrtm1_analysis = rtm_analysis.MultiTACRTMAnalysis(ref_tac_path=wmref_tac_path,
                                                       roi_tacs_dir=tac_save_dir,
                                                       output_directory=km_save_dir,
-                                                      output_filename_prefix=mrtm1_path)
+                                                      output_filename_prefix=mrtm1_path,
+                                                      method='mrtm')
+    mrtm1_analysis.run_analysis(t_thresh_in_mins=10)
+    mrtm1_analysis.save_analysis()
 
-
-
+    # suvr
+    wss_file_path = vat_bids_filepath(suffix='pet',folder='pet',space='mpr',desc='WSS')
+    suvr_file_path = vat_bids_filepath(suffix='pet',folder='pet',space='mpr',desc='SUVR')
+    useful_functions.weighted_series_sum(input_image_4d_path=pet_reg_anat_file,
+                                         half_life=half_life,
+                                         verbose=True,
+                                         start_time=suvr_start,
+                                         end_time=suvr_end,
+                                         out_image_path=wss_file_path)
+    suvr = image_operations_4d.suvr(input_image_path=wss_file_path,
+                             segmentation_image_path=vat_wm_ref_segmentation_file,
+                             ref_region=1,
+                             out_image_path=suvr_file_path,
+                             verbose=True)
 
 
 
