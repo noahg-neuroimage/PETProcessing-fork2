@@ -135,6 +135,34 @@ def load_metadata_for_nifti_with_same_filename(image_path) -> dict:
     return metadata
 
 
+def copy_metadata_sans_list(metadata: dict) -> dict:
+    """
+    Given a metadata dictionary, return an identical dictionary with any list-like data replaced
+    with individual values. Useful when converting several JSON files into a TSV file.
+
+    Args:
+        metadata (dict): The metadata file that may contain lists of data.
+
+    Returns:
+        metadata_for_tsv (dict): The same metadata with list-like data replaced with individual values.
+
+    Note:
+        List-like data is replaced by renaming the key it appears in with ordinal values. E.g. if metadata
+        contains a key named ``FitPars`` with value [4,6] then the function would create two new keys,
+        FitPars_1 and Fit_Pars2 with values 4 and 6 respectively.
+    """
+    metadata_for_tsv = {}
+    for key in metadata:
+        data = metadata[key]
+        if isinstance(data,list):
+            for i,val in enumerate(data):
+                key_new = f'{key}_{i+1}'
+                metadata_for_tsv[key_new] = val
+        else:
+            metadata_for_tsv[key] = metadata[key]
+    return metadata_for_tsv
+
+
 def safe_load_tac(filename: str, **kwargs) -> np.ndarray:
     """
     Loads time-activity curves (TAC) from a file.
