@@ -144,12 +144,13 @@ def copy_metadata_sans_list(metadata: dict) -> dict:
         metadata (dict): The metadata file that may contain lists of data.
 
     Returns:
-        metadata_for_tsv (dict): The same metadata with list-like data replaced with individual values.
+        metadata_for_tsv (dict): The same metadata with list-like data replaced with individual
+            values.
 
     Note:
-        List-like data is replaced by renaming the key it appears in with ordinal values. E.g. if metadata
-        contains a key named ``FitPars`` with value [4,6] then the function would create two new keys,
-        FitPars_1 and Fit_Pars2 with values 4 and 6 respectively.
+        List-like data is replaced by renaming the key it appears in with ordinal values. E.g. if
+        metadata contains a key named ``FitPars`` with value [4,6] then the function would create
+        two new keys, FitPars_1 and Fit_Pars2 with values 4 and 6 respectively.
     """
     metadata_for_tsv = {}
     for key in metadata:
