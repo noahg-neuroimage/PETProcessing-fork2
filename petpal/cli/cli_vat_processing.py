@@ -3,7 +3,7 @@ import os
 import argparse
 import pandas as pd
 import ants
-from petpal.kinetic_modeling import parametric_images, fit_tac_with_rtms, graphical_analysis
+from petpal.kinetic_modeling import parametric_images, fit_tac_with_rtms, graphical_analysis, reference_tissue_models, rtm_analysis
 from petpal.pipelines import pipelines, steps_base, preproc_steps
 from petpal.preproc import image_operations_4d, motion_corr, register, segmentation_tools
 from petpal.utils.bids_utils import gen_bids_like_dir_path, gen_bids_like_filename, gen_bids_like_filepath
@@ -21,6 +21,8 @@ def vat_protocol(subjstring: str,
                  reg_dir: str,
                  skip: bool):
     sub, ses = rename_subs(subjstring)
+    sub_id = sub.replace('sub-','')
+    ses_id = ses.replace('ses-','')
     segmentation_label_file = '/home/usr/goldmann/dseg.tsv'
     motion_target = (0,600)
     reg_pars = {'aff_metric': 'mattes','type_of_transform': 'DenseRigid'}
@@ -75,8 +77,7 @@ def vat_protocol(subjstring: str,
 
 
     def vat_bids_filepath(suffix,folder,**extra_desc):
-        sub_id = sub.replace('sub-','')
-        ses_id = ses.replace('ses-','')
+
         new_dir = gen_bids_like_dir_path(sub_id=sub_id,
                                          ses_id=ses_id,
                                          sup_dir=out_dir,
@@ -101,8 +102,8 @@ def vat_protocol(subjstring: str,
     pet_moco_file = vat_bids_filepath(suffix='pet',folder='pet',moco='windowed')
     motion_corr.windowed_motion_corr_to_target(input_image_path=pet_cropped_file,
                                                out_image_path=pet_moco_file,
-                                               motion_target_option=(0,600),
-                                               w_size=600)
+                                               motion_target_option=motion_target,
+                                               w_size=300)
 
     pet_reg_anat_file = vat_bids_filepath(suffix='pet',folder='pet',moco='windowed',space='mpr')
     register.register_pet(input_reg_image_path=pet_moco_file,
@@ -110,17 +111,37 @@ def vat_protocol(subjstring: str,
                           reference_image_path=mprage_file,
                           motion_target_option=motion_target,
                           half_life=half_life,
+                          verbose=True,
                           **reg_pars)
     
     vat_wm_ref_region_roi_file = vat_bids_filepath(suffix='seg',folder='pet',desc='RefRegionROI')
     segmentation_tools.vat_wm_ref_region(input_segmentation_path=freesurfer_file,
                                          out_segmentation_path=vat_wm_ref_region_roi_file)
     vat_wm_ref_segmentation_file = vat_bids_filepath(suffix='seg',folder='pet',desc='RefRegionSegmentation')
-    segmentation_tools.vat_wm_region_merge(wm_ref_segmentation_path=freesurfer_file,
+    segmentation_tools.vat_wm_region_merge(wmparc_segmentation_path=freesurfer_file,
                                            bs_segmentation_path=brainstem_segmentation_file,
-                                           vat_wm_ref_segmentation_path=vat_wm_ref_region_roi_file,
+                                           wm_ref_segmentation_path=vat_wm_ref_region_roi_file,
                                            out_image_path=vat_wm_ref_segmentation_file)
 
+    tac_save_dir = gen_bids_like_dir_path(sub_id=sub_id,ses_id=ses_id,sup_dir=out_dir,modality='tacs')
+    os.makedirs(tac_save_dir,exist_ok=True)
+    image_operations_4d.write_tacs(input_image_path=pet_reg_anat_file,
+                                   label_map_path=segmentation_label_file,
+                                   segmentation_image_path=vat_wm_ref_segmentation_file,
+                                   out_tac_dir=tac_save_dir,
+                                   verbose=True,
+                                   out_tac_prefix=out_prefix,
+                                   time_frame_keyword='FrameTimesStart')
+
+    # kinetic modeling
+    wmref_tac_path = vat_bids_filepath(suffix='tac',folder='tacs',seg='WMRef')
+    km_save_dir = gen_bids_like_dir_path(sub_id=sub_id,ses_id=ses_id,sup_dir=out_dir,modality='km')
+    os.makedirs(km_save_dir)
+    mrtm1_path = gen_bids_like_filename(sub_id=sub_id,ses_id=ses_id,model='mrtm1',suffix='km',ext='')
+    mrtm1_analysis = rtm_analysis.MultiTACRTMAnalysis(ref_tac_path=wmref_tac_path,
+                                                      roi_tacs_dir=tac_save_dir,
+                                                      output_directory=km_save_dir,
+                                                      output_filename_prefix=mrtm1_path)
 
 
 
@@ -140,25 +161,6 @@ def vat_protocol(subjstring: str,
 
 
 
-
-
-
-
-
-
-
-    preproc_props['FilePathRegInp'] = sub_vat.generate_outfile_path(method_short='moco')
-    sub_vat.update_props(preproc_props)
-    sub_vat.run_preproc('motion_corr')
-    sub_vat.run_preproc('register_pet')
-    sub_vat.run_preproc('vat_wm_ref_region')
-    print('finished wm ref region')
-
-    # write tacs
-    freesurfer_file = sub_vat.generate_outfile_path(method_short='wm-merged')
-    preproc_props['FilePathTACInput'] = sub_vat.generate_outfile_path(method_short='reg')
-    sub_vat.update_props(preproc_props)
-    sub_vat.run_preproc('write_tacs')
 
     # run patlak
     tacs = os.path.join(out_dir,sub_flex,'tacs')
