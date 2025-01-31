@@ -9,12 +9,15 @@ Table of Isotopes, Sixth edition, edited by C.M. Lederer, J.M. Hollander, I. Per
 import json
 import re
 import os
+import glob
 import ants
 import nibabel
 from nibabel.filebasedimages import FileBasedHeader
 from typing import Union
 import numpy as np
 import pandas as pd
+
+from petpal.utils.bids_utils import infer_sub_ses_from_tac_path
 from . import useful_functions
 
 
@@ -625,3 +628,31 @@ def get_window_index_pairs_for_image(image_path: str, w_size: float):
     image_frame_info = get_frame_timing_info_for_nifti(image_path=image_path)
     return get_window_index_pairs_from_durations(frame_durations=image_frame_info['duration'], w_size=w_size)
 
+
+def km_regional_fits_to_tsv(fit_results_dir: str, out_tsv_dir: str):
+    """
+    Tidies the output of regional kinetic modeling results by converting JSON files into a TSV file
+    with one row per fit region. Accomodates lists by converting them into key-value pairs. Assigns
+    a subject and session to each row inferred from the original TAC file path.
+
+    Requires fields to be identical across all JSON results files.
+
+    Args:
+        fit_results_dir (str): Directory where RTM results are stored in JSON files.
+        out_tsv_dir (str): Path where resulting TSV file containing fit results will be stored.
+
+    Returns:
+        km_fits (pd.DataFrame): DataFrame containing KM fit data for all regions.
+    """
+    fit_results_jsons = glob.glob(os.path.join(fit_results_dir,'*.json'))
+    km_fits = pd.DataFrame()
+    for i,fit in enumerate(fit_results_jsons):
+        fit_load = safe_load_meta(fit)
+        fit_clean = copy_metadata_sans_list(fit_load)
+        sub, ses = infer_sub_ses_from_tac_path(fit_clean['FilePathTTAC'])
+        fit_clean['sub_id'] = sub
+        fit_clean['ses_id'] = ses
+        fit_pd = pd.DataFrame(fit_clean,index=[i])
+        km_fits = pd.concat([km_fits,fit_pd])
+    km_fits.to_csv(out_tsv_dir,sep='\t')
+    return km_fits
