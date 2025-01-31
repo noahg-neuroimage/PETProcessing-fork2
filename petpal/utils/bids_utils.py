@@ -493,7 +493,6 @@ class BidsInstance:
         if os.path.exists(filepath) or os.path.islink(filepath):
             if filepath.endswith(".nii") or filepath.endswith(".nii.gz"):
                 print("Nifti")
-                # file = ImageIO.load_nii(filepath=self.filepath)
             elif filepath.endswith(".json"):
                 file = load_json(filepath=filepath)
             elif filepath.endswith(".tsv"):
