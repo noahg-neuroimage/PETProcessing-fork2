@@ -330,8 +330,7 @@ def get_frame_timing_info_for_nifti(image_path: str) -> dict[str, np.ndarray]:
     frm_info = {'duration': frm_dur,
                 'start': frm_starts,
                 'end': frm_ends,
-                'decay': decay
-                }
+                'decay': decay}
 
     return frm_info
 
@@ -342,7 +341,6 @@ class ImageIO:
     Provides several tools designed for reading and writing data within the Python environment.
 
     Key methods include:
-        - :meth:`load_nii`: Loads a NIfTI file from a file path.
         - :meth:`save_nii`: Saves a loaded NIfTI file to a file path.
         - :meth:`extract_image_from_nii_as_numpy`: Extracts imaging data from a NIfTI file as a numpy array.
         - :meth:`extract_header_from_nii`: Extracts header information from a NIfTI file as a dictionary.
@@ -360,36 +358,6 @@ class ImageIO:
             verbose (bool): Set to True to print debugging info to shell. Defaults to True.
         """
         self.verbose = verbose
-
-    def load_nii(self, image_path: str) -> Union[nibabel.nifti1.Nifti1Image, nibabel.nifti2.Nifti2Image]:
-        """
-        Wrapper to load nifti from image_path.
-
-        Args:
-            image_path (str): Path to a .nii or .nii.gz file.
-
-        Returns:
-            The nifti FileBasedImage.
-
-        Raises:
-            FileNotFoundError: If the provided image path cannot be found in the directory.
-            OSError: If the provided image path does not have a NIfTI extension.
-        """
-        if not os.path.exists(image_path):
-            raise FileNotFoundError(f"Image file {image_path} not found")
-
-        if not re.search(r'\.nii\.gz$|\.nii$', image_path):
-            raise OSError(f"{image_path} does not have the extension .nii or .nii.gz")
-
-        image = nibabel.load(image_path)
-
-        if not isinstance(image, (nibabel.nifti1.Nifti1Image, nibabel.nifti2.Nifti2Image)):
-            raise OSError(f'File at {image_path} is not in nifti1 or nifti2 format')
-
-        if self.verbose:
-            print(f"(ImageIO): {image_path} loaded")
-
-        return image
 
     def save_nii(self, image: nibabel.nifti1.Nifti1Image, out_file: str):
         """
