@@ -35,17 +35,17 @@ class Sgtm:
         self.zeroth_roi = zeroth_roi
         self.out_tsv_path = out_tsv_path
         self.sgtm_result = self.run_sgtm(input_image=self.input_image,
-                                    segmentation_image=self.segmentation_image,
-                                    fwhm=self.fwhm,
-                                    zeroth_roi=self.zeroth_roi)
+                                         segmentation_image=self.segmentation_image,
+                                         fwhm=self.fwhm,
+                                         zeroth_roi=self.zeroth_roi)
         if self.out_tsv_path:
             self.save_results()
 
     @staticmethod
     def run_sgtm(input_image: ants.ANTsImage,
-            segmentation_image: ants.ANTsImage,
-            fwhm: float | tuple[float, float, float],
-            zeroth_roi: bool = False) -> tuple[np.ndarray, np.ndarray, float]:
+                segmentation_image: ants.ANTsImage,
+                fwhm: float | tuple[float, float, float],
+                zeroth_roi: bool = False) -> tuple[np.ndarray, np.ndarray, float]:
         r"""
         Apply Symmetric Geometric Transfer Matrix (SGTM) method for Partial Volume Correction 
         (PVC) to PET images based on ROI labels.
@@ -106,28 +106,30 @@ class Sgtm:
             This provides the estimated activity concentrations corrected for partial volume effects in each ROI.
         """
         assert input_image.shape == segmentation_image.shape, "PET and ROI images must be the same dimensions"
-
+        input_numpy = input_image.numpy()
+        segmentation_numpy = segmentation_image.numpy()
         resolution = input_image.spacing
         if isinstance(fwhm, float):
             sigma = [(fwhm / 2.355) / res for res in resolution]
         else:
             sigma = [(fwhm_i / 2.355) / res_i for fwhm_i, res_i in zip(fwhm, resolution)]
 
-        unique_labels = np.unique(segmentation_image)
+        unique_labels = np.unique(segmentation_numpy)
         if not zeroth_roi:
             unique_labels = unique_labels[unique_labels != 0]
 
-        flattened_size = input_image.size
+
+        flattened_size = input_numpy.size
         voxel_by_roi_matrix = np.zeros((flattened_size, len(unique_labels)))
 
         for i, label in enumerate(unique_labels):
-            masked_roi = (segmentation_image == label).astype(float)
+            masked_roi = (segmentation_numpy == label).astype('float32')
             blurred_roi = gaussian_filter(masked_roi, sigma=sigma)
             voxel_by_roi_matrix[:, i] = blurred_roi.ravel()
 
         omega = voxel_by_roi_matrix.T @ voxel_by_roi_matrix
 
-        t_vector = voxel_by_roi_matrix.T @ input_image.ravel()
+        t_vector = voxel_by_roi_matrix.T @ input_numpy.ravel()
         t_corrected = np.linalg.solve(omega, t_vector)
         condition_number = np.linalg.cond(omega)
 
