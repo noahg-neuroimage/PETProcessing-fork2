@@ -18,6 +18,22 @@ Example:
   - Running many subjects:
     petpal-vat-proc --subjects participants.tsv --out-dir /path/to/output --pet-dir /path/to/pet/folder/ --reg-dir /path/to/subject/Registrations/
 """)
+def infer_group(sub_id: str):
+    """
+    Infer the group a subject belongs to based on the subject ID.
+
+    PIB and VATNL belong to 'HC' group while VATDYS belongs to CD group.
+    """
+    group = 'UNK'
+    if 'PIB' in sub_id:
+        group = 'HC'
+    if 'VATNL' in sub_id:
+        group = 'HC'
+    if 'VATDYS' in sub_id:
+        group = 'CD'
+    return group
+
+
 def vat_protocol(subjstring: str,
                  out_dir: str,
                  pet_dir: str,
@@ -44,7 +60,6 @@ def vat_protocol(subjstring: str,
         'Verbose': True
     }
     if ses=='':
-        out_folder = f'{out_dir}/{sub}'
         out_prefix = f'{sub}'
         pet_file = f'{pet_dir}/{sub}/pet/{sub}_pet.nii.gz'
         freesurfer_file = f'{reg_dir}/{sub}/{sub}_aparc+aseg.nii'
@@ -53,7 +68,6 @@ def vat_protocol(subjstring: str,
         atlas_warp_file = f'{reg_dir}/{sub}/PRISMA_TRIO_PIB_NL_ANTS_NoT2/{sub}_mpr_to_PRISMA_TRIO_PIB_NL_T1_ANTSwarp.nii.gz'
         mpr_brain_mask_file = f'{reg_dir}/{sub}/{sub}_mpr_brain_mask.nii'
     else:
-        out_folder = f'{out_dir}/{sub}_{ses}'
         out_prefix = f'{sub}_{ses}'
         pet_file = f'{pet_dir}/{sub}/{ses}/pet/{sub}_{ses}_trc-18FVAT_pet.nii.gz'
         freesurfer_file = f'{reg_dir}/{subjstring}_Bay3prisma/{subjstring}_Bay3prisma_aparc+aseg.nii'
@@ -103,8 +117,8 @@ def vat_protocol(subjstring: str,
     pet_cropped_file = vat_bids_filepath(suffix='pet',folder='pet',crop='003')
     if 'crop' not in skip:
         image_operations_4d.SimpleAutoImageCropper(input_image_path=pet_file,
-                                                out_image_path=pet_cropped_file,
-                                                thresh_val=0.03)
+                                                   out_image_path=pet_cropped_file,
+                                                   thresh_val=0.03)
 
     pet_moco_file = vat_bids_filepath(suffix='pet',folder='pet',moco='windowed')
     if 'moco' not in skip:
@@ -127,22 +141,22 @@ def vat_protocol(subjstring: str,
     vat_wm_ref_segmentation_file = vat_bids_filepath(suffix='seg',folder='pet',desc='RefRegionSegmentation')
     if 'refregion' not in skip:
         segmentation_tools.vat_wm_ref_region(input_segmentation_path=freesurfer_file,
-                                            out_segmentation_path=vat_wm_ref_region_roi_file)
+                                             out_segmentation_path=vat_wm_ref_region_roi_file)
         segmentation_tools.vat_wm_region_merge(wmparc_segmentation_path=freesurfer_file,
-                                            bs_segmentation_path=brainstem_segmentation_file,
-                                            wm_ref_segmentation_path=vat_wm_ref_region_roi_file,
-                                            out_image_path=vat_wm_ref_segmentation_file)
+                                               bs_segmentation_path=brainstem_segmentation_file,
+                                               wm_ref_segmentation_path=vat_wm_ref_region_roi_file,
+                                               out_image_path=vat_wm_ref_segmentation_file)
 
     tac_save_dir = gen_bids_like_dir_path(sub_id=sub_id,ses_id=ses_id,sup_dir=out_dir,modality='tacs')
     os.makedirs(tac_save_dir,exist_ok=True)
     if 'tacs' not in skip:
         image_operations_4d.write_tacs(input_image_path=pet_reg_anat_file,
-                                    label_map_path=segmentation_label_file,
-                                    segmentation_image_path=vat_wm_ref_segmentation_file,
-                                    out_tac_dir=tac_save_dir,
-                                    verbose=True,
-                                    out_tac_prefix=out_prefix,
-                                    time_frame_keyword='FrameTimesStart')
+                                       label_map_path=segmentation_label_file,
+                                       segmentation_image_path=vat_wm_ref_segmentation_file,
+                                       out_tac_dir=tac_save_dir,
+                                       verbose=True,
+                                       out_tac_prefix=out_prefix,
+                                       time_frame_keyword='FrameTimesStart')
 
     # kinetic modeling
     wmref_tac_path = vat_bids_filepath(suffix='tac',folder='tacs',seg='WMRef',ext='.tsv')
@@ -154,10 +168,10 @@ def vat_protocol(subjstring: str,
     mrtm1_path = gen_bids_like_filename(sub_id=sub_id,ses_id=ses_id,model='mrtm1',suffix='fits',ext='')
     if 'mrtm1' not in skip:
         mrtm1_analysis = rtm_analysis.MultiTACRTMAnalysis(ref_tac_path=wmref_tac_path,
-                                                        roi_tacs_dir=tac_save_dir,
-                                                        output_directory=mrtm_save_dir,
-                                                        output_filename_prefix=mrtm1_path,
-                                                        method='mrtm')
+                                                          roi_tacs_dir=tac_save_dir,
+                                                          output_directory=mrtm_save_dir,
+                                                          output_filename_prefix=mrtm1_path,
+                                                          method='mrtm')
         mrtm1_analysis.run_analysis(t_thresh_in_mins=10)
         mrtm1_analysis.save_analysis()
         km_regional_fits_to_tsv(fit_results_dir=mrtm_save_dir,out_tsv_dir=mrtm_save_path)
@@ -184,16 +198,16 @@ def vat_protocol(subjstring: str,
     suvr_file_path = vat_bids_filepath(suffix='pet',folder='pet',space='mpr',desc='SUVR')
     if 'suvr' not in skip:
         useful_functions.weighted_series_sum(input_image_4d_path=pet_reg_anat_file,
-                                            half_life=half_life,
-                                            verbose=True,
-                                            start_time=suvr_start,
-                                            end_time=suvr_end,
-                                            out_image_path=wss_file_path)
+                                             half_life=half_life,
+                                             verbose=True,
+                                             start_time=suvr_start,
+                                             end_time=suvr_end,
+                                             out_image_path=wss_file_path)
         image_operations_4d.suvr(input_image_path=wss_file_path,
-                                segmentation_image_path=vat_wm_ref_segmentation_file,
-                                ref_region=1,
-                                out_image_path=suvr_file_path,
-                                verbose=True)
+                                 segmentation_image_path=vat_wm_ref_segmentation_file,
+                                 ref_region=1,
+                                 out_image_path=suvr_file_path,
+                                 verbose=True)
 
     if 'pvc' not in skip:
         suvr_pvc_path = vat_bids_filepath(suffix='pet',folder='pet',space='mpr',pvc='SGTM',desc='SUVR',ext='.tsv')
