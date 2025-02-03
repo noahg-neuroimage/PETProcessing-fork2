@@ -32,6 +32,7 @@ def vat_protocol(subjstring: str,
     half_life = _HALFLIVES_['f18']
     suvr_start = 1800
     suvr_end = 7200
+    pvc_fwhm_mm = 4.2
     preproc_props = {
         'FilePathFSLPremat': '',
         'FilePathFSLPostmat': '',
@@ -198,78 +199,8 @@ def vat_protocol(subjstring: str,
         suvr_pvc_path = vat_bids_filepath(suffix='pet',folder='pet',space='mpr',pvc='SGTM',desc='SUVR',ext='.tsv')
         sgtm.Sgtm(input_image_path=suvr_file_path,
                   segmentation_image_path=vat_wm_ref_segmentation_file,
-                  fwhm=4.2,
+                  fwhm=pvc_fwhm_mm,
                   out_tsv_path=suvr_pvc_path)
-
-
-
-
-
-
-
-
-
-
-
-
-    # calculate pars and save results
-    region_names = [os.path.basename(result['FilePathTTAC']) for result in graphical_model.analysis_props]
-    ki = [result['Slope'] for result in graphical_model.analysis_props]
-    ki_pandas = pd.DataFrame(columns=['regions', 'ki_patlak'],data={'regions': region_names, 'ki_patlak': ki})
-    ki_pandas.to_csv(os.path.join(out_dir,sub_flex,f'{sub_flex}_ki-patlak.tsv'),sep='\t')
-    
-    # parametric patlak
-    parametric_analysis = parametric_images.GraphicalAnalysisParametricImage(
-        input_tac_path=os.path.join(tacs,'WMRef_tac.tsv'),
-        pet4D_img_path=sub_vat.generate_outfile_path(method_short='reg'),
-        output_directory=os.path.join(out_dir,sub_flex),
-        output_filename_prefix=out_prefix,
-    )
-    parametric_analysis.run_analysis(method_name='patlak',t_thresh_in_mins=20,image_scale=1)
-    parametric_analysis.save_analysis()
-
-    # suvr
-    preproc_props['FilePathWSSInput'] = sub_vat.generate_outfile_path(method_short='reg')
-    preproc_props['FilePathSUVRInput'] = sub_vat.generate_outfile_path(method_short='wss')
-    sub_vat.update_props(preproc_props)
-    sub_vat.run_preproc('weighted_series_sum')
-    sub_vat.run_preproc('suvr')
-
-    # pvc
-    segfile_4d = sub_vat.generate_outfile_path(method_short='wm-merged-4d')
-    #suvr_file = sub_vat.generate_outfile_path(method_short='suvr')
-    #suvr_pvc_file = sub_vat.generate_outfile_path(method_short='desc-suvr_pvc-rbv')
-    #os.system(f"/home/usr/odonnellj/PETPVC-build/src/pvc_make4d -i {freesurfer_file} -o {segfile_4d}")
-    #os.system(f"/home/usr/odonnellj/PETPVC-build/src/petpvc -i {suvr_file} -o {suvr_pvc_file} -m {segfile_4d} -p RBV+VC -x 4.2 -y 4.2 -z 4.2")
-    ki_file = sub_vat.generate_outfile_path(method_short='desc-patlak-slope')
-    #ki_pvc_file = sub_vat.generate_outfile_path(method_short='desc-ki_pvc-rbv')
-    #os.system(f"/home/usr/odonnellj/PETPVC-build/src/pvc_make4d -i {freesurfer_file} -o {segfile_4d}")
-    #os.system(f"/home/usr/odonnellj/PETPVC-build/src/petpvc -i {ki_file} -o {ki_pvc_file} -m {segfile_4d} -p RBV+VC -x 4.2 -y 4.2 -z 4.2")
-
-
-    # reg ki to atlas
-    ref = ants.image_read('/data/jsp/human2/AaronProjects/PRISMA_TRIO_PIB_NL/PRISMA_TRIO_PIB_NL_MNI152_T1_0p9mm.nii.gz')
-    ki_ants = ants.image_read(ki_file)
-    ki_warp = ants.apply_transforms(
-        fixed=ref,
-        moving=ki_ants,
-        transformlist=[atlas_warp_file],
-        imagetype=0,
-        verbose=1
-    )
-    ki_smooth = ants.smooth_image(image=ki_warp,sigma=4.2,FWHM=True)
-    ants.image_write(ki_smooth,sub_vat.generate_outfile_path(method_short='desc-ki_space-atlas'))
-
-    #suvr_ants = ants.image_read(suvr_pvc_file)
-    #suvr_warp = ants.apply_transforms(
-    #    fixed=ref,
-    #    moving=suvr_ants,
-    #    transformlist=[atlas_warp_file],
-    #    imagetype=0,
-    #    verbose=1
-    #)
-    #suvr_smooth = ants.smooth_image(image=suvr_warp,sigma=6,FWHM=True)
-    #ants.image_write(suvr_smooth,sub_vat.generate_outfile_path(method_short='desc-suvr_pvc-rbv_space-atlas'))
 
     return None
 
@@ -323,10 +254,4 @@ def main():
             pet_dir = '/data/jsp/human2/BidsDataset/PIB'
             reg_dir = '/data/jsp/human2/Registration/PIB_FS73_ANTS'
         vat_protocol(sub,args.out_dir,pet_dir,reg_dir,skip=args.skip)
-        #try:
-        #    vat_protocol(sub,args.out_dir,pet_dir,reg_dir,skip=True)
-        #except:
-        #    print(f"Couldn't run {sub}, passing")
-        #    pass
-
 main()
