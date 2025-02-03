@@ -3,9 +3,11 @@ import os
 import argparse
 import pandas as pd
 import ants
+import nibabel
 from petpal.kinetic_modeling import parametric_images, graphical_analysis,rtm_analysis
 from petpal.pipelines import pipelines, steps_base, preproc_steps
 from petpal.preproc import image_operations_4d, motion_corr, register, segmentation_tools
+from petpal.preproc import symmetric_geometric_transfer_matrix as sgtm
 from petpal.utils.bids_utils import gen_bids_like_dir_path, gen_bids_like_filename, gen_bids_like_filepath
 from petpal.utils.image_io import _HALFLIVES_, km_regional_fits_to_tsv
 from petpal.utils import useful_functions
@@ -192,8 +194,16 @@ def vat_protocol(subjstring: str,
                                 out_image_path=suvr_file_path,
                                 verbose=True)
 
-
-
+    if 'pvc' not in skip:
+        suvr_pvc_path = vat_bids_filepath(suffix='pet',folder='pet',space='mpr',pvc='SGTM',desc='SUVR')
+        suvr_nibabel = nibabel.load(suvr_file_path)
+        wm_ref_segmentation_nibabel = nibabel.load(vat_wm_ref_segmentation_file)
+        sgtm_results = sgtm.sgtm(pet_nifti=suvr_nibabel,
+                                roi_nifti=wm_ref_segmentation_nibabel,
+                                fwhm=4.2,)
+        print(sgtm_results[0])
+        print(sgtm_results[1])
+        print(sgtm_results[2])
 
 
 
@@ -299,7 +309,7 @@ def main():
     parser.add_argument('-o','--out-dir',required=True,help='Output directory analyses are saved to.')
     parser.add_argument('-p','--pet-dir',required=True,help='Path to parent directory of PET imaging data.')
     parser.add_argument('-r','--reg-dir',required=True,help='Path to parent directory of registrations computed from MPR to atlas space.')
-    parser.add_argument('--skip',required=False,help='List of steps to skip',nargs='+')
+    parser.add_argument('--skip',required=False,help='List of steps to skip',nargs='+',default=[])
     args = parser.parse_args()
 
 
