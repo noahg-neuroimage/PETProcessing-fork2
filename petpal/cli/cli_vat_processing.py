@@ -49,16 +49,6 @@ def vat_protocol(subjstring: str,
     suvr_start = 1800
     suvr_end = 7200
     pvc_fwhm_mm = 4.2
-    preproc_props = {
-        'FilePathFSLPremat': '',
-        'FilePathFSLPostmat': '',
-        'StartTimeWSS': 1800,
-        'EndTimeWSS': 7200,
-        'RefRegion': 1,
-        'BlurSize': 4.2,
-        'TimeFrameKeyword': 'FrameTimesStart',
-        'Verbose': True
-    }
     if ses=='':
         out_prefix = f'{sub}'
         pet_file = f'{pet_dir}/{sub}/pet/{sub}_pet.nii.gz'
@@ -86,14 +76,7 @@ def vat_protocol(subjstring: str,
     for check in real_files:
         if not os.path.exists(check):
             print(f'{check} not found')
-            return None
     print(real_files)
-
-
-    if ses=='':
-        sub_flex = sub
-    else:
-        sub_flex = f'{sub}_{ses}'
 
 
     def vat_bids_filepath(suffix,folder,**extra_desc):
@@ -216,8 +199,6 @@ def vat_protocol(subjstring: str,
                   fwhm=pvc_fwhm_mm,
                   out_tsv_path=suvr_pvc_path)
 
-    return None
-
 def rename_subs(sub: str):
     """
     Handle converting subject ID to BIDS structure.
@@ -248,8 +229,6 @@ def main():
                                      epilog=_VAT_EXAMPLE_, formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument('-s','--subjects',required=True,help='Path to participants.tsv')
     parser.add_argument('-o','--out-dir',required=True,help='Output directory analyses are saved to.')
-    parser.add_argument('-p','--pet-dir',required=True,help='Path to parent directory of PET imaging data.')
-    parser.add_argument('-r','--reg-dir',required=True,help='Path to parent directory of registrations computed from MPR to atlas space.')
     parser.add_argument('--skip',required=False,help='List of steps to skip',nargs='+',default=[])
     args = parser.parse_args()
 
