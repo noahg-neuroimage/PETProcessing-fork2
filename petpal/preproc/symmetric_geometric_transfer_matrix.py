@@ -15,7 +15,8 @@ class Sgtm:
                  input_image_path: str,
                  segmentation_image_path: str,
                  fwhm: float | tuple[float, float, float],
-                 zeroth_roi: bool = False):
+                 zeroth_roi: bool = False,
+                 out_tsv_path: str = None):
         """
         Initialize running sGTM
 
@@ -32,6 +33,13 @@ class Sgtm:
         self.segmentation_image = ants.image_read(segmentation_image_path)
         self.fwhm = fwhm
         self.zeroth_roi = zeroth_roi
+        self.out_tsv_path = out_tsv_path
+        self.sgtm_result = self.run_sgtm(input_image=self.input_image,
+                                    segmentation_image=self.segmentation_image,
+                                    fwhm=self.fwhm,
+                                    zeroth_roi=self.zeroth_roi)
+        if self.out_tsv_path:
+            self.save_results()
 
     @staticmethod
     def run_sgtm(input_image: ants.ANTsImage,
@@ -124,3 +132,10 @@ class Sgtm:
         condition_number = np.linalg.cond(omega)
 
         return unique_labels, t_corrected, condition_number
+
+    def save_results(self):
+        """
+        Saves the result of an sGTM calculation.
+        """
+        sgtm_result_array = np.array([self.sgtm_result[0],self.sgtm_result[1]]).T
+        np.savetxt(self.out_tsv_path,sgtm_result_array,header='Region\tMean')
