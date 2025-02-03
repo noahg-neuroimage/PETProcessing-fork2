@@ -195,15 +195,11 @@ def vat_protocol(subjstring: str,
                                 verbose=True)
 
     if 'pvc' not in skip:
-        suvr_pvc_path = vat_bids_filepath(suffix='pet',folder='pet',space='mpr',pvc='SGTM',desc='SUVR')
-        suvr_nibabel = nibabel.load(suvr_file_path)
-        wm_ref_segmentation_nibabel = nibabel.load(vat_wm_ref_segmentation_file)
-        sgtm_results = sgtm.sgtm(pet_nifti=suvr_nibabel,
-                                roi_nifti=wm_ref_segmentation_nibabel,
-                                fwhm=4.2,)
-        print(sgtm_results[0])
-        print(sgtm_results[1])
-        print(sgtm_results[2])
+        suvr_pvc_path = vat_bids_filepath(suffix='pet',folder='pet',space='mpr',pvc='SGTM',desc='SUVR',ext='.tsv')
+        sgtm.Sgtm(input_image_path=suvr_file_path,
+                  segmentation_image_path=vat_wm_ref_segmentation_file,
+                  fwhm=4.2,
+                  out_tsv_path=suvr_pvc_path)
 
 
 
