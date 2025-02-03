@@ -20,7 +20,7 @@ def vat_protocol(subjstring: str,
                  out_dir: str,
                  pet_dir: str,
                  reg_dir: str,
-                 skip: bool):
+                 skip: list):
     sub, ses = rename_subs(subjstring)
     sub_id = sub.replace('sub-','')
     ses_id = ses.replace('ses-','')
@@ -98,43 +98,48 @@ def vat_protocol(subjstring: str,
 
     # preprocessing
     pet_cropped_file = vat_bids_filepath(suffix='pet',folder='pet',crop='003')
-    image_operations_4d.SimpleAutoImageCropper(input_image_path=pet_file,
-                                               out_image_path=pet_cropped_file,
-                                               thresh_val=0.03)
+    if 'crop' not in skip:
+        image_operations_4d.SimpleAutoImageCropper(input_image_path=pet_file,
+                                                out_image_path=pet_cropped_file,
+                                                thresh_val=0.03)
 
     pet_moco_file = vat_bids_filepath(suffix='pet',folder='pet',moco='windowed')
-    motion_corr.windowed_motion_corr_to_target(input_image_path=pet_cropped_file,
-                                               out_image_path=pet_moco_file,
-                                               motion_target_option=motion_target,
-                                               w_size=300)
+    if 'moco' not in skip:
+        motion_corr.windowed_motion_corr_to_target(input_image_path=pet_cropped_file,
+                                                out_image_path=pet_moco_file,
+                                                motion_target_option=motion_target,
+                                                w_size=300)
 
     pet_reg_anat_file = vat_bids_filepath(suffix='pet',folder='pet',moco='windowed',space='mpr')
-    register.register_pet(input_reg_image_path=pet_moco_file,
-                          out_image_path=pet_reg_anat_file,
-                          reference_image_path=mprage_file,
-                          motion_target_option=motion_target,
-                          half_life=half_life,
-                          verbose=True,
-                          **reg_pars)
+    if 'register' not in skip:
+        register.register_pet(input_reg_image_path=pet_moco_file,
+                            out_image_path=pet_reg_anat_file,
+                            reference_image_path=mprage_file,
+                            motion_target_option=motion_target,
+                            half_life=half_life,
+                            verbose=True,
+                            **reg_pars)
     
     vat_wm_ref_region_roi_file = vat_bids_filepath(suffix='seg',folder='pet',desc='RefRegionROI')
-    segmentation_tools.vat_wm_ref_region(input_segmentation_path=freesurfer_file,
-                                         out_segmentation_path=vat_wm_ref_region_roi_file)
     vat_wm_ref_segmentation_file = vat_bids_filepath(suffix='seg',folder='pet',desc='RefRegionSegmentation')
-    segmentation_tools.vat_wm_region_merge(wmparc_segmentation_path=freesurfer_file,
-                                           bs_segmentation_path=brainstem_segmentation_file,
-                                           wm_ref_segmentation_path=vat_wm_ref_region_roi_file,
-                                           out_image_path=vat_wm_ref_segmentation_file)
+    if 'refregion' not in skip:
+        segmentation_tools.vat_wm_ref_region(input_segmentation_path=freesurfer_file,
+                                            out_segmentation_path=vat_wm_ref_region_roi_file)
+        segmentation_tools.vat_wm_region_merge(wmparc_segmentation_path=freesurfer_file,
+                                            bs_segmentation_path=brainstem_segmentation_file,
+                                            wm_ref_segmentation_path=vat_wm_ref_region_roi_file,
+                                            out_image_path=vat_wm_ref_segmentation_file)
 
     tac_save_dir = gen_bids_like_dir_path(sub_id=sub_id,ses_id=ses_id,sup_dir=out_dir,modality='tacs')
     os.makedirs(tac_save_dir,exist_ok=True)
-    image_operations_4d.write_tacs(input_image_path=pet_reg_anat_file,
-                                   label_map_path=segmentation_label_file,
-                                   segmentation_image_path=vat_wm_ref_segmentation_file,
-                                   out_tac_dir=tac_save_dir,
-                                   verbose=True,
-                                   out_tac_prefix=out_prefix,
-                                   time_frame_keyword='FrameTimesStart')
+    if 'tacs' not in skip:
+        image_operations_4d.write_tacs(input_image_path=pet_reg_anat_file,
+                                    label_map_path=segmentation_label_file,
+                                    segmentation_image_path=vat_wm_ref_segmentation_file,
+                                    out_tac_dir=tac_save_dir,
+                                    verbose=True,
+                                    out_tac_prefix=out_prefix,
+                                    time_frame_keyword='FrameTimesStart')
 
     # kinetic modeling
     wmref_tac_path = vat_bids_filepath(suffix='tac',folder='tacs',seg='WMRef',ext='.tsv')
@@ -144,45 +149,48 @@ def vat_protocol(subjstring: str,
     mrtm_save_path = vat_bids_filepath(suffix='fits',model='mrtm1',folder='km',ext='.tsv')
     os.makedirs(mrtm_save_dir,exist_ok=True)
     mrtm1_path = gen_bids_like_filename(sub_id=sub_id,ses_id=ses_id,model='mrtm1',suffix='fits',ext='')
-    mrtm1_analysis = rtm_analysis.MultiTACRTMAnalysis(ref_tac_path=wmref_tac_path,
-                                                      roi_tacs_dir=tac_save_dir,
-                                                      output_directory=mrtm_save_dir,
-                                                      output_filename_prefix=mrtm1_path,
-                                                      method='mrtm')
-    mrtm1_analysis.run_analysis(t_thresh_in_mins=10)
-    mrtm1_analysis.save_analysis()
-    km_regional_fits_to_tsv(fit_results_dir=mrtm_save_dir,out_tsv_dir=mrtm_save_path)
+    if 'mrtm1' not in skip:
+        mrtm1_analysis = rtm_analysis.MultiTACRTMAnalysis(ref_tac_path=wmref_tac_path,
+                                                        roi_tacs_dir=tac_save_dir,
+                                                        output_directory=mrtm_save_dir,
+                                                        output_filename_prefix=mrtm1_path,
+                                                        method='mrtm')
+        mrtm1_analysis.run_analysis(t_thresh_in_mins=10)
+        mrtm1_analysis.save_analysis()
+        km_regional_fits_to_tsv(fit_results_dir=mrtm_save_dir,out_tsv_dir=mrtm_save_path)
 
     logan_save_dir = gen_bids_like_dir_path(sub_id=sub_id,ses_id=ses_id,sup_dir=out_dir,modality='logan_fits')
     logan_save_path = vat_bids_filepath(suffix='fits',model='altlogan',folder='km',ext='.tsv')
     os.makedirs(logan_save_dir,exist_ok=True)
     logan_path = gen_bids_like_filename(sub_id=sub_id,ses_id=ses_id,model='altlogan',suffix='fits',ext='')
-    graphical_model = graphical_analysis.MultiTACGraphicalAnalysis(
-        input_tac_path=wmref_tac_path,
-        roi_tacs_dir=tac_save_dir,
-        output_directory=logan_save_dir,
-        output_filename_prefix=logan_path,
-        method='alt_logan',
-        fit_thresh_in_mins=10
-    )
-    graphical_model.run_analysis()
-    graphical_model.save_analysis()
-    km_regional_fits_to_tsv(fit_results_dir=logan_save_dir,out_tsv_dir=logan_save_path)
+    if 'logan' not in skip:
+        graphical_model = graphical_analysis.MultiTACGraphicalAnalysis(
+            input_tac_path=wmref_tac_path,
+            roi_tacs_dir=tac_save_dir,
+            output_directory=logan_save_dir,
+            output_filename_prefix=logan_path,
+            method='alt_logan',
+            fit_thresh_in_mins=10
+        )
+        graphical_model.run_analysis()
+        graphical_model.save_analysis()
+        km_regional_fits_to_tsv(fit_results_dir=logan_save_dir,out_tsv_dir=logan_save_path)
 
     # suvr
     wss_file_path = vat_bids_filepath(suffix='pet',folder='pet',space='mpr',desc='WSS')
     suvr_file_path = vat_bids_filepath(suffix='pet',folder='pet',space='mpr',desc='SUVR')
-    useful_functions.weighted_series_sum(input_image_4d_path=pet_reg_anat_file,
-                                         half_life=half_life,
-                                         verbose=True,
-                                         start_time=suvr_start,
-                                         end_time=suvr_end,
-                                         out_image_path=wss_file_path)
-    image_operations_4d.suvr(input_image_path=wss_file_path,
-                             segmentation_image_path=vat_wm_ref_segmentation_file,
-                             ref_region=1,
-                             out_image_path=suvr_file_path,
-                             verbose=True)
+    if 'suvr' not in skip:
+        useful_functions.weighted_series_sum(input_image_4d_path=pet_reg_anat_file,
+                                            half_life=half_life,
+                                            verbose=True,
+                                            start_time=suvr_start,
+                                            end_time=suvr_end,
+                                            out_image_path=wss_file_path)
+        image_operations_4d.suvr(input_image_path=wss_file_path,
+                                segmentation_image_path=vat_wm_ref_segmentation_file,
+                                ref_region=1,
+                                out_image_path=suvr_file_path,
+                                verbose=True)
 
 
 
@@ -291,6 +299,7 @@ def main():
     parser.add_argument('-o','--out-dir',required=True,help='Output directory analyses are saved to.')
     parser.add_argument('-p','--pet-dir',required=True,help='Path to parent directory of PET imaging data.')
     parser.add_argument('-r','--reg-dir',required=True,help='Path to parent directory of registrations computed from MPR to atlas space.')
+    parser.add_argument('--skip',required=False,help='List of steps to skip',nargs='+')
     args = parser.parse_args()
 
 
@@ -307,7 +316,7 @@ def main():
         elif sub[:3]=='PIB':
             pet_dir = '/data/jsp/human2/BidsDataset/PIB'
             reg_dir = '/data/jsp/human2/Registration/PIB_FS73_ANTS'
-        vat_protocol(sub,args.out_dir,pet_dir,reg_dir,skip=True)
+        vat_protocol(sub,args.out_dir,pet_dir,reg_dir,skip=args.skip)
         #try:
         #    vat_protocol(sub,args.out_dir,pet_dir,reg_dir,skip=True)
         #except:
