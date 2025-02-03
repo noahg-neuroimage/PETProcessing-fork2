@@ -49,8 +49,7 @@ def vat_protocol(subjstring: str,
     suvr_start = 1800
     suvr_end = 7200
     pvc_fwhm_mm = 4.2
-    if ses=='':
-        out_prefix = f'{sub}'
+    if 'VAT' in sub:
         pet_file = f'{pet_dir}/{sub}/pet/{sub}_pet.nii.gz'
         freesurfer_file = f'{reg_dir}/{sub}/{sub}_aparc+aseg.nii'
         brainstem_segmentation_file = f'{reg_dir}/{sub}/{sub}_brainstem.nii'
@@ -58,7 +57,6 @@ def vat_protocol(subjstring: str,
         atlas_warp_file = f'{reg_dir}/{sub}/PRISMA_TRIO_PIB_NL_ANTS_NoT2/{sub}_mpr_to_PRISMA_TRIO_PIB_NL_T1_ANTSwarp.nii.gz'
         mpr_brain_mask_file = f'{reg_dir}/{sub}/{sub}_mpr_brain_mask.nii'
     else:
-        out_prefix = f'{sub}_{ses}'
         pet_file = f'{pet_dir}/{sub}/{ses}/pet/{sub}_{ses}_trc-18FVAT_pet.nii.gz'
         freesurfer_file = f'{reg_dir}/{subjstring}_Bay3prisma/{subjstring}_Bay3prisma_aparc+aseg.nii'
         brainstem_segmentation_file = f'{reg_dir}/{subjstring}_Bay3prisma/{subjstring}_Bay3prisma_brainstem.nii'
@@ -132,13 +130,14 @@ def vat_protocol(subjstring: str,
 
     tac_save_dir = gen_bids_like_dir_path(sub_id=sub_id,ses_id=ses_id,sup_dir=out_dir,modality='tacs')
     os.makedirs(tac_save_dir,exist_ok=True)
+    tac_prefix = f'{sub}_{ses}'
     if 'tacs' not in skip:
         image_operations_4d.write_tacs(input_image_path=pet_reg_anat_file,
                                        label_map_path=segmentation_label_file,
                                        segmentation_image_path=vat_wm_ref_segmentation_file,
                                        out_tac_dir=tac_save_dir,
                                        verbose=True,
-                                       out_tac_prefix=out_prefix,
+                                       out_tac_prefix=tac_prefix,
                                        time_frame_keyword='FrameTimesStart')
 
     # kinetic modeling
@@ -211,7 +210,7 @@ def rename_subs(sub: str):
         - session part string
     """
     if 'VAT' in sub:
-        return [f'sub-{sub}', '']
+        return [f'sub-{sub}', 'ses-VYr0']
     elif 'PIB' in sub:
         subname, sesname = sub.split('_')
         subname = subname.replace('-','')
