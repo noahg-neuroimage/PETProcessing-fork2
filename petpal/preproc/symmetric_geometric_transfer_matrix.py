@@ -1,13 +1,16 @@
+"""
+Module to run partial volume correction on a parametric PET image using the symmetric geometric
+transfer matrix (sGTM) method.
+"""
 import numpy as np
-from typing import Tuple, Union
 from scipy.ndimage import gaussian_filter
-import nibabel as nib
+import ants
 
 
-def sgtm(pet_nifti: nib.Nifti1Image,
-         roi_nifti: nib.Nifti1Image,
-         fwhm: Union[float, Tuple[float, float, float]],
-         zeroth_roi: bool = False) -> Tuple[np.ndarray, np.ndarray, float]:
+def sgtm(input_image: ants.ANTsImage,
+         segmentation_image: ants.ANTsImage,
+         fwhm: float | tuple[float, float, float],
+         zeroth_roi: bool = False) -> tuple[np.ndarray, np.ndarray, float]:
     r"""
     Apply Symmetric Geometric Transfer Matrix (SGTM) method for Partial Volume Correction (PVC) to PET images based
     on ROI labels.
@@ -16,8 +19,8 @@ def sgtm(pet_nifti: nib.Nifti1Image,
     partial volume averaging.
 
     Args:
-        pet_nifti (nib.Nifti1Image): The 3D PET image Nifti1 object.
-        roi_nifti (nib.Nifti1Image): The 3D ROI image, Nifti1 object, should have the same dimensions as `pet_nifti`.
+        input_image (nib.Nifti1Image): The 3D PET image Nifti1 object.
+        segmentation_image (nib.Nifti1Image): The 3D ROI image, Nifti1 object, should have the same dimensions as `input_image`.
         fwhm (Union[float, Tuple[float, float, float]]): Full width at half maximum of the Gaussian blurring kernel for each dimension.
         zeroth_roi (bool): If False, ignores the zero label in calculations, often used to exclude background or non-ROI regions.
 
@@ -28,15 +31,15 @@ def sgtm(pet_nifti: nib.Nifti1Image,
             - float: Condition number of the omega matrix, indicating the numerical stability of the inversion.
 
     Raises:
-        AssertionError: If `pet_nifti` and `roi_nifti` do not have the same dimensions.
+        AssertionError: If `input_image` and `segmentation_image` do not have the same dimensions.
 
     Examples:
         .. code-block:: python
 
-            pet_nifti = nib.load('path_to_pet_image.nii')
-            roi_nifti = nib.load('path_to_roi_image.nii')
+            input_image = nib.load('path_to_pet_image.nii')
+            segmentation_image = nib.load('path_to_roi_image.nii')
             fwhm = (8.0, 8.0, 8.0)  # or fwhm = 8.0
-            labels, corrected_values, cond_number = sgtm(pet_nifti, roi_nifti, fwhm)
+            labels, corrected_values, cond_number = sgtm(input_image, segmentation_image, fwhm)
 
     Notes:
         The SGTM method uses the matrix :math:`\Omega` (omega), defined as:
@@ -64,31 +67,29 @@ def sgtm(pet_nifti: nib.Nifti1Image,
 
         This provides the estimated activity concentrations corrected for partial volume effects in each ROI.
     """
-    pet_3d = pet_nifti.get_fdata()
-    roi_3d = roi_nifti.get_fdata()
-    assert pet_3d.shape == roi_3d.shape, "PET and ROI images must be the same dimensions"
+    assert input_image.shape == segmentation_image.shape, "PET and ROI images must be the same dimensions"
 
-    resolution = pet_nifti.header.get_zooms()[:3]
+    resolution = input_image.spacing
     if isinstance(fwhm, float):
         sigma = [(fwhm / 2.355) / res for res in resolution]
     else:
         sigma = [(fwhm_i / 2.355) / res_i for fwhm_i, res_i in zip(fwhm, resolution)]
 
-    unique_labels = np.unique(roi_3d)
+    unique_labels = np.unique(segmentation_image)
     if not zeroth_roi:
         unique_labels = unique_labels[unique_labels != 0]
 
-    flattened_size = pet_3d.size
+    flattened_size = input_image.size
     voxel_by_roi_matrix = np.zeros((flattened_size, len(unique_labels)))
 
     for i, label in enumerate(unique_labels):
-        masked_roi = (roi_3d == label).astype(float)
+        masked_roi = (segmentation_image == label).astype(float)
         blurred_roi = gaussian_filter(masked_roi, sigma=sigma)
         voxel_by_roi_matrix[:, i] = blurred_roi.ravel()
 
     omega = voxel_by_roi_matrix.T @ voxel_by_roi_matrix
 
-    t_vector = voxel_by_roi_matrix.T @ pet_3d.ravel()
+    t_vector = voxel_by_roi_matrix.T @ input_image.ravel()
     t_corrected = np.linalg.solve(omega, t_vector)
     condition_number = np.linalg.cond(omega)
 
