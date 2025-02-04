@@ -287,11 +287,9 @@ def vat_wm_region_merge(wmparc_segmentation_path: str,
             FreeSurfer. If None, then skip.
     """
     wmparc = nibabel.load(wmparc_segmentation_path)
-    bs = nibabel.load(bs_segmentation_path)
     wm_ref = nibabel.load(wm_ref_segmentation_path)
 
     wmparc_img = wmparc.get_fdata()
-    bs_img = bs.get_fdata()
     wm_ref_img = wm_ref.get_fdata()
 
     zooms = wmparc.header.get_zooms()
@@ -304,6 +302,8 @@ def vat_wm_region_merge(wmparc_segmentation_path: str,
     if bs_segmentation_path is None:
         wmparc_bs = wmparc_split
     else:
+        bs = nibabel.load(bs_segmentation_path)
+        bs_img = bs.get_fdata()
         wmparc_bs = segmentations_merge(segmentation_primary=wmparc_split,
                                         segmentation_secondary=bs_img,
                                         regions=[173,174,175])
@@ -316,8 +316,11 @@ def vat_wm_region_merge(wmparc_segmentation_path: str,
     wmparc_bs_wmref = segmentations_merge(segmentation_primary=wmparc_bs_prob,
                                           segmentation_secondary=wm_ref_img,
                                           regions=[1])
-
-    out_file = nibabel.nifti1.Nifti1Image(dataobj=wmparc_bs_wmref[:,:,:,0],
+    if len(wmparc_bs_wmref.shape)==4:
+        out_array = wmparc_bs_wmref[:,:,:,0]
+    else:
+        out_array = wmparc_bs_wmref
+    out_file = nibabel.nifti1.Nifti1Image(dataobj=out_array,
                                           header=wmparc.header,
                                           affine=wmparc.affine)
     nibabel.save(out_file,out_image_path)
@@ -326,6 +329,9 @@ def vat_wm_region_merge(wmparc_segmentation_path: str,
 def gw_segmentation(freesurfer_path: str,
                     dseg_path: str,
                     output_path: str):
+    """
+    Creates a gray matter and a white matter mask based on FreeSurfer regions. Useful for PVC.
+    """
     dseg = pd.read_csv(dseg_path,sep=r'\s+')
     freesurfer = ants.image_read(freesurfer_path)
     freesurfer_np = freesurfer.numpy()
