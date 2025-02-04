@@ -2,10 +2,7 @@
 import os
 import argparse
 import pandas as pd
-import ants
-import nibabel
-from petpal.kinetic_modeling import parametric_images, graphical_analysis,rtm_analysis
-from petpal.pipelines import pipelines, steps_base, preproc_steps
+from petpal.kinetic_modeling import graphical_analysis,rtm_analysis
 from petpal.preproc import image_operations_4d, motion_corr, register, segmentation_tools
 from petpal.preproc import symmetric_geometric_transfer_matrix as sgtm
 from petpal.utils.bids_utils import gen_bids_like_dir_path, gen_bids_like_filename, gen_bids_like_filepath
