@@ -354,13 +354,25 @@ class FitTACWithRTMs:
         nan_array = np.array([])
 
         if method == 'srtm':
-            nan_array = np.array([np.nan, np.nan, np.nan])
+            nan_array = (np.array([np.nan, np.nan, np.nan]),
+                         np.array([[np.nan, np.nan, np.nan],
+                                   [np.nan, np.nan, np.nan],
+                                   [np.nan, np.nan, np.nan]]))
         elif method == 'frtm':
-            nan_array = np.array([np.nan, np.nan, np.nan, np.nan])
+            nan_array = (np.array([np.nan, np.nan, np.nan, np.nan]),
+                         np.array([np.nan, np.nan, np.nan, np.nan],
+                                  [np.nan, np.nan, np.nan, np.nan],
+                                  [np.nan, np.nan, np.nan, np.nan],
+                                  [np.nan, np.nan, np.nan, np.nan]))
         elif method == 'srtm2':
-            nan_array = np.array([np.nan, np.nan])
+            nan_array = (np.array([np.nan, np.nan]),
+                         np.array([[np.nan, np.nan],
+                                   [np.nan, np.nan]]))
         elif method == 'frtm2':
-            nan_array = np.array([np.nan, np.nan, np.nan])
+            nan_array = (np.array([np.nan, np.nan, np.nan]),
+                         np.array([[np.nan, np.nan, np.nan],
+                                   [np.nan, np.nan, np.nan],
+                                   [np.nan, np.nan, np.nan]]))
         elif method == 'mrtm':
             nan_array = [np.array([np.nan, np.nan, np.nan]),
                          np.array(len(self.tac_times_in_minutes)*[np.nan])]
