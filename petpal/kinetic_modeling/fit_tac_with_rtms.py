@@ -411,8 +411,10 @@ class FitTACWithRTMs:
                                     t_thresh_in_mins=self.t_thresh_in_mins)
         try:
             self.fit_results = rtm_method(tac_times_in_minutes=self.tac_times_in_minutes,
-                                        tgt_tac_vals=self.target_tac_vals,
-                                        ref_tac_vals=self.reference_tac_vals,
-                                        **rtm_kwargs)
+                                          tgt_tac_vals=self.target_tac_vals,
+                                          ref_tac_vals=self.reference_tac_vals,
+                                          **rtm_kwargs)
         except ValueError:
+            self.fit_results = self.get_failed_output_nan_array()
+        except RuntimeError:
             self.fit_results = self.get_failed_output_nan_array()
