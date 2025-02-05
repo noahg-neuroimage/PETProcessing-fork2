@@ -13,7 +13,6 @@ import glob
 import ants
 import nibabel
 from nibabel.filebasedimages import FileBasedHeader
-from typing import Union
 import numpy as np
 import pandas as pd
 
@@ -106,7 +105,8 @@ def safe_load_meta(input_metadata_file: str) -> dict:
         metadata (dict): The metadata in dictionary format.
     """
     if not os.path.exists(input_metadata_file):
-        raise FileNotFoundError(f"Metadata file {input_metadata_file} not found. Does it have a different path?")
+        raise FileNotFoundError(f"Metadata file {input_metadata_file} not found. Does it have a "
+                                "different path?")
 
     with open(input_metadata_file, 'r', encoding='utf-8') as meta_file:
         metadata = json.load(meta_file)
@@ -227,10 +227,7 @@ def get_half_life_from_radionuclide(meta_data_file_path: str) -> float:
         FileNotFoundError: If the metadata file does not exist at the provided path.
         KeyError: If the 'TracerRadionuclide' key is not found in the metadata file.
     """
-    if not os.path.exists(meta_data_file_path):
-        raise FileNotFoundError(f"Metadata file {meta_data_file_path} not found")
-    with open(meta_data_file_path, 'r',encoding='utf-8') as m_file:
-        meta_data = json.load(m_file)
+    meta_data = safe_load_meta(meta_data_file_path)
 
     try:
         radionuclide = meta_data['TracerRadionuclide'].lower().replace("-", "")
@@ -253,10 +250,8 @@ def get_half_life_from_meta(meta_data_file_path: str):
         FileNotFoundError: If the metadata file does not exist at the provided path.
         KeyError: If the 'RadionuclideHalfLife' key is not found in the metadata file.
     """
-    if not os.path.exists(meta_data_file_path):
-        raise FileNotFoundError(f"Metadata file {meta_data_file_path} not found")
-    with open(meta_data_file_path, 'r',encoding='utf-8') as m_file:
-        meta_data = json.load(m_file)
+    meta_data = safe_load_meta(meta_data_file_path)
+
     try:
         half_life = meta_data['RadionuclideHalfLife']
         return half_life
