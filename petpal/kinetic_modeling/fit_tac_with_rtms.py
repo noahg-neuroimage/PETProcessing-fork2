@@ -366,7 +366,8 @@ class FitTACWithRTMs:
         method = self.method
         output_size = get_rtm_output_size(method=method)
 
-        nan_array = np.array([np.nan]*output_size)
+        nan_array = (np.array([np.nan]*output_size),
+                     np.array([[np.nan]*output_size]*output_size))
 
         if 'mrtm' in method:
             nan_array = [np.array([np.nan]*output_size),
