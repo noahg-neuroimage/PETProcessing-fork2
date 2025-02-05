@@ -138,10 +138,11 @@ def load_metadata_for_nifti_with_same_filename(image_path) -> dict:
     return metadata
 
 
-def copy_metadata_sans_list(metadata: dict) -> dict:
+def flatten_metadata(metadata: dict) -> dict:
     """
-    Given a metadata dictionary, return an identical dictionary with any list-like data replaced
-    with individual values. Useful when converting several JSON files into a TSV file.
+    Given a metadata dictionary, return an identical dictionary with any list-like or dict-like 
+    data replaced with individual values. Useful when converting several JSON files into a TSV 
+    file.
 
     Args:
         metadata (dict): The metadata file that may contain lists of data.
@@ -153,7 +154,9 @@ def copy_metadata_sans_list(metadata: dict) -> dict:
     Note:
         List-like data is replaced by renaming the key it appears in with ordinal values. E.g. if
         metadata contains a key named ``FitPars`` with value [4,6] then the function would create
-        two new keys, FitPars_1 and Fit_Pars2 with values 4 and 6 respectively.
+        two new keys, FitPars_1 and Fit_Pars2 with values 4 and 6 respectively. Likewise, nested
+        dictionaries are replaced by combining the two keys identifying the data with underscores.
+        Function is not robust for doubly nested lists and dictionaries.
     """
     metadata_for_tsv = {}
     for key in metadata:
@@ -162,6 +165,10 @@ def copy_metadata_sans_list(metadata: dict) -> dict:
             for i,val in enumerate(data):
                 key_new = f'{key}_{i+1}'
                 metadata_for_tsv[key_new] = val
+        elif isinstance(data,dict):
+            for inner_key in data:
+                key_new = f'{key}_{inner_key}'
+                metadata_for_tsv[key_new] = data[inner_key]
         else:
             metadata_for_tsv[key] = metadata[key]
     return metadata_for_tsv
@@ -611,7 +618,7 @@ def km_regional_fits_to_tsv(fit_results_dir: str, out_tsv_dir: str):
     km_fits = pd.DataFrame()
     for i,fit in enumerate(fit_results_jsons):
         fit_load = safe_load_meta(fit)
-        fit_clean = copy_metadata_sans_list(fit_load)
+        fit_clean = flatten_metadata(fit_load)
         sub, ses = infer_sub_ses_from_tac_path(fit_clean['FilePathTTAC'])
         fit_clean['sub_id'] = sub
         fit_clean['ses_id'] = ses
