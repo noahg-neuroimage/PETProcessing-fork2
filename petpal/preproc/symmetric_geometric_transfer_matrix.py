@@ -140,4 +140,4 @@ class Sgtm:
         Saves the result of an sGTM calculation.
         """
         sgtm_result_array = np.array([self.sgtm_result[0],self.sgtm_result[1]]).T
-        np.savetxt(self.out_tsv_path,sgtm_result_array,header='Region\tMean')
+        np.savetxt(self.out_tsv_path,sgtm_result_array,header='Region\tMean',fmt=['%.0f','%.2f'])
