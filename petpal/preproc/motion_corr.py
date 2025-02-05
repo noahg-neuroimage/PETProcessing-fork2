@@ -233,7 +233,7 @@ def motion_corr_frame_list_to_t1(input_image_4d_path: str,
 
             motion_corr_frame_list_to_t1(input_image_4d_path='pet_timeseries.nii.gz',
                               t1_image_path='t1_image.nii.gz',
-                              motion_target_option='average',
+                              motion_target_option='mean_image',
                               out_image_path='pet_corrected.nii.gz',
                               verbose=True)
 
