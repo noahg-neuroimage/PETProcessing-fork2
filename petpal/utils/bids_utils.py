@@ -493,7 +493,6 @@ class BidsInstance:
         if os.path.exists(filepath) or os.path.islink(filepath):
             if filepath.endswith(".nii") or filepath.endswith(".nii.gz"):
                 print("Nifti")
-                # file = ImageIO.load_nii(filepath=self.filepath)
             elif filepath.endswith(".json"):
                 file = load_json(filepath=filepath)
             elif filepath.endswith(".tsv"):
@@ -819,3 +818,46 @@ def gen_bids_like_filepath(sub_id: str, ses_id: str, bids_dir:str ='../',
     filename = gen_bids_like_filename(sub_id=sub_id, ses_id=ses_id, suffix=suffix, ext=ext, **extra_desc)
     filedir  = gen_bids_like_dir_path(sub_id=sub_id, ses_id=ses_id, sup_dir=bids_dir, modality=modality)
     return os.path.join(filedir, filename)
+
+
+def infer_sub_ses_from_tac_path(tac_path: str):
+    """
+    Infers subject and session IDs from a TAC file path by analyzing the filename.
+
+    This method extracts subject and session IDs from the filename of a TAC file. It checks the 
+    presence of a `sub-` and `ses-` marker in the filename, which is followed by the subject and 
+    session respectively. This segment name is then formatted with each part capitalized. If no 
+    subject or session is found a generic value of `UNK` is returned.
+
+    Args:
+        tac_path (str): Path of the TAC file.
+        tac_id (int): ID of the TAC.
+
+    Returns:
+        tuple: Inferred subject and session IDs.
+    """
+    path = pathlib.Path(tac_path)
+    assert path.suffix == '.tsv', '`tac_path` must point to a TSV file (*.tsv)'
+    filename = path.name
+    fileparts = filename.split("_")
+    subname = 'XXXX'
+    for part in fileparts:
+        if 'sub-' in part:
+            subname = part.split('sub-')[-1]
+            break
+    if subname == 'XXXX':
+        subname = 'UNK'
+    else:
+        name_parts = subname.split("-")
+        subname = ''.join(name_parts)
+    sesname = 'XXXX'
+    for part in fileparts:
+        if 'ses-' in part:
+            sesname = part.split('ses-')[-1]
+            break
+    if sesname == 'XXXX':
+        subname = 'UNK'
+    else:
+        name_parts = sesname.split("-")
+        sesname = ''.join(name_parts)
+    return subname, sesname
