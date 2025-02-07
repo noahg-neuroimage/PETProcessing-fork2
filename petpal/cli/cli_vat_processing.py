@@ -1,5 +1,6 @@
 # pylint: skip-file
 import os
+import glob
 import argparse
 import pandas as pd
 from petpal.kinetic_modeling import graphical_analysis,rtm_analysis
@@ -31,10 +32,31 @@ def infer_group(sub_id: str):
     return group
 
 
+def rename_subs(sub: str):
+    """
+    Handle converting subject ID to BIDS structure.
+
+    VATDYS0XX -> sub-VATDYS0XX
+    PIBXX-YYY_VYrZ -> sub-PIBXXYYY_ses-VYrZ
+
+    returns:
+        - subject part string
+        - session part string
+    """
+    if 'VAT' in sub:
+        return [f'sub-{sub}', 'ses-VYr0']
+    elif 'PIB' in sub:
+        subname, sesname = sub.split('_')
+        subname = subname.replace('-','')
+        subname = f'sub-{subname}'
+        sesname = f'ses-{sesname}'
+        return [subname, sesname]
+
+
 def vat_protocol(subjstring: str,
                  out_dir: str,
                  pet_dir: str,
-                 reg_dir: str,
+                 fs_dir: str,
                  skip: list):
     sub, ses = rename_subs(subjstring)
     sub_id = sub.replace('sub-','')
@@ -48,18 +70,18 @@ def vat_protocol(subjstring: str,
     pvc_fwhm_mm = 4.2
     if 'VAT' in sub:
         pet_file = f'{pet_dir}/{sub}/pet/{sub}_pet.nii.gz'
-        freesurfer_file = f'{reg_dir}/{sub}/{sub}_aparc+aseg.nii'
-        brainstem_segmentation_file = f'{reg_dir}/{sub}/{sub}_brainstem.nii'
-        mprage_file = f'{reg_dir}/{sub}/{sub}_mpr.nii'
-        atlas_warp_file = f'{reg_dir}/{sub}/PRISMA_TRIO_PIB_NL_ANTS_NoT2/{sub}_mpr_to_PRISMA_TRIO_PIB_NL_T1_ANTSwarp.nii.gz'
-        mpr_brain_mask_file = f'{reg_dir}/{sub}/{sub}_mpr_brain_mask.nii'
+        freesurfer_file = glob.glob(f'{fs_dir}/{subjstring}*/mri/aparc+aseg.mgz')[0]
+        brainstem_segmentation_file = glob.glob(f'{fs_dir}/{subjstring}*/mri/brainstemSsLabels.v13.FSvoxelSpace.mgz')[0]
+        mprage_file = glob.glob(f'{fs_dir}/{subjstring}*/mri/nu.mgz')[0]
+        atlas_warp_file = f'PLACEHOLDER'
+        mpr_brain_mask_file = glob.glob(f'{fs_dir}/{subjstring}*/mri/brainmask.mgz')[0]
     else:
         pet_file = f'{pet_dir}/{sub}/{ses}/pet/{sub}_{ses}_trc-18FVAT_pet.nii.gz'
-        freesurfer_file = f'{reg_dir}/{subjstring}_Bay3prisma/{subjstring}_Bay3prisma_aparc+aseg.nii'
-        brainstem_segmentation_file = f'{reg_dir}/{subjstring}_Bay3prisma/{subjstring}_Bay3prisma_brainstem.nii'
-        mprage_file = f'{reg_dir}/{subjstring}_Bay3prisma/{subjstring}_Bay3prisma_mpr.nii'
-        atlas_warp_file = f'{reg_dir}/{subjstring}_Bay3prisma/PRISMA_TRIO_PIB_NL_ANTS_NoT2/{subjstring}_Bay3prisma_mpr_to_PRISMA_TRIO_PIB_NL_T1_ANTSwarp.nii.gz'
-        mpr_brain_mask_file = f'{reg_dir}/{subjstring}_Bay3prisma/{subjstring}_Bay3prisma_mpr_brain_mask.nii'
+        freesurfer_file = glob.glob(f'{fs_dir}/{subjstring}*/mri/aparc+aseg.mgz')[0]
+        brainstem_segmentation_file = glob.glob(f'{fs_dir}/{subjstring}*/mri/brainstemSsLabels.v13.FSvoxelSpace.mgz')[0]
+        mprage_file = glob.glob(f'{fs_dir}/{subjstring}*/mri/nu.mgz')[0]
+        atlas_warp_file = f'PLACEHOLDER'
+        mpr_brain_mask_file = glob.glob(f'{fs_dir}/{subjstring}*/mri/brainmask.mgz')[0]
     real_files = [
         pet_file,
         freesurfer_file,
@@ -195,26 +217,6 @@ def vat_protocol(subjstring: str,
                   fwhm=pvc_fwhm_mm,
                   out_tsv_path=suvr_pvc_path)
 
-def rename_subs(sub: str):
-    """
-    Handle converting subject ID to BIDS structure.
-
-    VATDYS0XX -> sub-VATDYS0XX
-    PIBXX-YYY_VYrZ -> sub-PIBXXYYY_ses-VYrZ
-
-    returns:
-        - subject part string
-        - session part string
-    """
-    if 'VAT' in sub:
-        return [f'sub-{sub}', 'ses-VYr0']
-    elif 'PIB' in sub:
-        subname, sesname = sub.split('_')
-        subname = subname.replace('-','')
-        subname = f'sub-{subname}'
-        sesname = f'ses-{sesname}'
-        return [subname, sesname]
-
 
 def main():
     """
@@ -225,6 +227,13 @@ def main():
                                      epilog=_VAT_EXAMPLE_, formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument('-s','--subjects',required=True,help='Path to participants.tsv')
     parser.add_argument('-o','--out-dir',required=True,help='Output directory analyses are saved to.')
+    parser.add_argument('--vatdys-pet',required=True,help='Path to BIDS directory storing VATDYS PET')
+    parser.add_argument('--vatdys-fs',required=True,help='Path to directory storing VATDYS FreeSurfer')
+    parser.add_argument('--vatnl-pet',required=True,help='Path to BIDS directory storing VATNL PET')
+    parser.add_argument('--vatnl-fs',required=True,help='Path to directory storing VATNL FreeSurfer')
+    parser.add_argument('--pib-pet',required=True,help='Path to BIDS directory storing PIB PET')
+    parser.add_argument('--pib-fs',required=True,help='Path to directory storing PIB FreeSurfer')
+
     parser.add_argument('--skip',required=False,help='List of steps to skip',nargs='+',default=[])
     args = parser.parse_args()
 
@@ -232,15 +241,18 @@ def main():
     subs_sheet = pd.read_csv(args.subjects,sep='\t')
     subs = subs_sheet['participant_id']
 
-    for sub in subs[:1]:
+    for sub in subs:
         if sub[:6]=='VATDYS':
-            pet_dir = '/data/norris/data1/data_archive/VATDYS'
-            reg_dir = '/export/scratch1/Registration/VATDYS'
+            pet_dir = args.vatdys_pet
+            fs_dir = args.vatdys_fs
         elif sub[:5]=='VATNL':
-            pet_dir = '/data/norris/data1/data_archive/VATNL'
-            reg_dir = '/data/norris/data1/Registration/VATNL'
+            pet_dir = args.vatnl_pet
+            fs_dir = args.vatnl_fs
         elif sub[:3]=='PIB':
-            pet_dir = '/data/jsp/human2/BidsDataset/PIB'
-            reg_dir = '/data/jsp/human2/Registration/PIB_FS73_ANTS'
-        vat_protocol(sub,args.out_dir,pet_dir,reg_dir,skip=args.skip)
+            pet_dir = args.pib_pet
+            fs_dir = args.pib_fs
+        try:
+            vat_protocol(sub,args.out_dir,pet_dir,fs_dir,skip=args.skip)
+        except:
+            print(f'Running subject {sub} failed; trying next one.')
 main()
