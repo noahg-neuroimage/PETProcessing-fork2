@@ -5,7 +5,6 @@ Todo:
     
 """
 import numpy as np
-from scipy.optimize import curve_fit as sp_fit
 from lmfit import minimize, create_params
 import numba
 from .graphical_analysis import get_index_from_threshold

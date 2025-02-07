@@ -230,7 +230,8 @@ class FitTACWithRTMs:
                  method: str = 'mrtm',
                  bounds: Union[None, np.ndarray] = None,
                  t_thresh_in_mins: float = None,
-                 k2_prime: float = None):
+                 k2_prime: float = None,
+                 uncertainties: np.ndarray = None):
         r"""
         Initialize the FitTACWithRTMs object with specified parameters.
 
@@ -261,6 +262,8 @@ class FitTACWithRTMs:
         self.method: str = method.lower()
         self.bounds: Union[None, np.ndarray] = bounds
         self.validate_bounds()
+
+        self.uncertainties = uncertainties
 
         self.t_thresh_in_mins: float = t_thresh_in_mins
         self.k2_prime: float = k2_prime
