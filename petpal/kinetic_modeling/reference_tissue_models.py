@@ -307,6 +307,7 @@ def calc_frtm_tac(tac_times_in_minutes: np.ndarray,
 def fit_srtm_to_tac(tac_times_in_minutes: np.ndarray,
                     tgt_tac_vals: np.ndarray,
                     ref_tac_vals: np.ndarray,
+                    uncertainties: np.ndarray,
                     r1_start: float = 0.5,
                     k2_start: float = 0.5,
                     bp_start: float = 0.5) -> tuple:
@@ -340,17 +341,26 @@ def fit_srtm_to_tac(tac_times_in_minutes: np.ndarray,
         * :func:`calc_srtm_tac`
 
     """
-    def _fitting_srtm(tac_times_in_minutes, r1, k2, bp):
-        return calc_srtm_tac(tac_times_in_minutes=tac_times_in_minutes, ref_tac_vals=ref_tac_vals, r1=r1, k2=k2, bp=bp)
-    
-    starting_values = [r1_start, k2_start, bp_start]
-    
-    return sp_fit(f=_fitting_srtm, xdata=tac_times_in_minutes, ydata=tgt_tac_vals, p0=starting_values)
+    def _fitting_srtm_lmfit(params, tac_times_in_minutes, tgt_tac_vals, uncertainties):
+        srtm_tac = calc_srtm_tac(tac_times_in_minutes=tac_times_in_minutes,
+                                 ref_tac_vals=ref_tac_vals,
+                                 r1=params['r1'],
+                                 k2=params['k2'],
+                                 bp=params['bp'])
+        return (tgt_tac_vals - srtm_tac)/uncertainties
+
+    params = create_params(r1={'value': r1_start[0]},
+                           k2={'value': k2_start[0]},
+                           bp={'value': bp_start[0]})
+    out = minimize(_fitting_srtm_lmfit,params,
+                   args=[tac_times_in_minutes,tgt_tac_vals,uncertainties])
+    return out
 
 
 def fit_srtm2_to_tac(tac_times_in_minutes: np.ndarray,
                      tgt_tac_vals: np.ndarray,
                      ref_tac_vals: np.ndarray,
+                     uncertainties: np.ndarray,
                      k2_prime: float = 0.5,
                      r1_start: float = 0.5,
                      bp_start: float = 0.5) -> tuple:
@@ -386,18 +396,26 @@ def fit_srtm2_to_tac(tac_times_in_minutes: np.ndarray,
 
     """
 
-    def _fitting_srtm(tac_times_in_minutes, r1, bp):
-        return calc_srtm_tac(tac_times_in_minutes=tac_times_in_minutes, ref_tac_vals=ref_tac_vals, r1=r1, k2=k2_prime, bp=bp)
+    def _fitting_srtm2_lmfit(params, tac_times_in_minutes, tgt_tac_vals, uncertainties):
+        srtm_tac = calc_srtm_tac(tac_times_in_minutes=tac_times_in_minutes,
+                                 ref_tac_vals=ref_tac_vals,
+                                 r1=params['r1'],
+                                 k2=k2_prime,
+                                 bp=params['bp'])
+        return (tgt_tac_vals - srtm_tac)/uncertainties
 
-    starting_values = [r1_start, bp_start]
-
-    return sp_fit(f=_fitting_srtm, xdata=tac_times_in_minutes, ydata=tgt_tac_vals, p0=starting_values)
+    params = create_params(r1={'value': r1_start[0]},
+                           bp={'value': bp_start[0]})
+    out = minimize(_fitting_srtm2_lmfit,params,
+                   args=[tac_times_in_minutes,tgt_tac_vals,uncertainties])
+    return out
 
 
 
 def fit_srtm_to_tac_with_bounds(tac_times_in_minutes: np.ndarray,
                                 tgt_tac_vals: np.ndarray,
                                 ref_tac_vals: np.ndarray,
+                                uncertainties: np.ndarray,
                                 r1_bounds: np.ndarray = np.asarray(
                                     [0.5, 0.0, 10.0]),
                                 k2_bounds: np.ndarray = np.asarray(
@@ -435,20 +453,26 @@ def fit_srtm_to_tac_with_bounds(tac_times_in_minutes: np.ndarray,
         * :func:`calc_srtm_tac`
 
     """
-    def _fitting_srtm(tac_times_in_minutes, r1, k2, bp):
-        return calc_srtm_tac(tac_times_in_minutes=tac_times_in_minutes, ref_tac_vals=ref_tac_vals, r1=r1, k2=k2, bp=bp)
+    def _fitting_srtm_lmfit(params, tac_times_in_minutes, tgt_tac_vals, uncertainties):
+        srtm_tac = calc_srtm_tac(tac_times_in_minutes=tac_times_in_minutes,
+                                 ref_tac_vals=ref_tac_vals,
+                                 r1=params['r1'],
+                                 k2=params['k2'],
+                                 bp=params['bp'])
+        return (tgt_tac_vals - srtm_tac)/uncertainties
 
-    st_values = (r1_bounds[0], k2_bounds[0], bp_bounds[0])
-    lo_values = (r1_bounds[1], k2_bounds[1], bp_bounds[1])
-    hi_values = (r1_bounds[2], k2_bounds[2], bp_bounds[2])
-
-    return sp_fit(f=_fitting_srtm, xdata=tac_times_in_minutes, ydata=tgt_tac_vals,
-                  p0=st_values, bounds=[lo_values, hi_values])
+    params = create_params(r1={'value': r1_bounds[0],'min': r1_bounds[1],'max': r1_bounds[2]},
+                           k2={'value': k2_bounds[0],'min': k2_bounds[1],'max': k2_bounds[2]},
+                           bp={'value': bp_bounds[0],'min': bp_bounds[1],'max': bp_bounds[2]})
+    out = minimize(_fitting_srtm_lmfit,params,
+                   args=[tac_times_in_minutes,tgt_tac_vals,uncertainties])
+    return out
 
 
 def fit_srtm2_to_tac_with_bounds(tac_times_in_minutes: np.ndarray,
                                  tgt_tac_vals: np.ndarray,
                                  ref_tac_vals: np.ndarray,
+                                 uncertainties: np.ndarray,
                                  k2_prime: float = 0.5,
                                  r1_bounds: np.ndarray = np.asarray(
                                      [0.5, 0.0, 10.0]),
@@ -488,14 +512,19 @@ def fit_srtm2_to_tac_with_bounds(tac_times_in_minutes: np.ndarray,
 
     """
 
-    def _fitting_srtm(tac_times_in_minutes, r1, bp):
-        return calc_srtm_tac(tac_times_in_minutes=tac_times_in_minutes, ref_tac_vals=ref_tac_vals, r1=r1, k2=k2_prime, bp=bp)
+    def _fitting_srtm2_lmfit(params, tac_times_in_minutes, tgt_tac_vals, uncertainties):
+        srtm_tac = calc_srtm_tac(tac_times_in_minutes=tac_times_in_minutes,
+                                 ref_tac_vals=ref_tac_vals,
+                                 r1=params['r1'],
+                                 k2=k2_prime,
+                                 bp=params['bp'])
+        return (tgt_tac_vals - srtm_tac)/uncertainties
 
-    st_values = (r1_bounds[0], bp_bounds[0])
-    lo_values = (r1_bounds[1], bp_bounds[1])
-    hi_values = (r1_bounds[2], bp_bounds[2])
-
-    return sp_fit(f=_fitting_srtm, xdata=tac_times_in_minutes, ydata=tgt_tac_vals, p0=st_values, bounds=[lo_values, hi_values])
+    params = create_params(r1={'value': r1_bounds[0],'min': r1_bounds[1],'max': r1_bounds[2]},
+                           bp={'value': bp_bounds[0],'min': bp_bounds[1],'max': bp_bounds[2]})
+    out = minimize(_fitting_srtm2_lmfit,params,
+                   args=[tac_times_in_minutes,tgt_tac_vals,uncertainties])
+    return out
 
 
 def fit_frtm_to_tac(tac_times_in_minutes: np.ndarray,
@@ -546,8 +575,12 @@ def fit_frtm_to_tac(tac_times_in_minutes: np.ndarray,
                                  k4=params['k4'])
         return (tgt_tac_vals - frtm_tac)/uncertainties
 
-    params = create_params(r1={'value': r1_start,'min': 1e-3},k2={'value': k2_start,'min': 1e-15},k3={'value': k3_start,'min': 1e-15},k4={'value': k4_start,'min': 1e-15})
-    out = minimize(_fitting_frtm_lmfit,params,args=[tac_times_in_minutes,tgt_tac_vals,uncertainties])
+    params = create_params(r1={'value': r1_start},
+                           k2={'value': k2_start},
+                           k3={'value': k3_start},
+                           k4={'value': k4_start})
+    out = minimize(_fitting_frtm_lmfit,params,
+                   args=[tac_times_in_minutes,tgt_tac_vals,uncertainties])
 
     return out
 
@@ -591,7 +624,7 @@ def fit_frtm2_to_tac(tac_times_in_minutes: np.ndarray,
         * :func:`calc_frtm_tac`
 
     """
-    def _fitting_frtm_lmfit(params, tac_times_in_minutes, tgt_tac_vals, uncertainties):
+    def _fitting_frtm2_lmfit(params, tac_times_in_minutes, tgt_tac_vals, uncertainties):
         frtm_tac = calc_frtm_tac(tac_times_in_minutes=tac_times_in_minutes,
                              ref_tac_vals=ref_tac_vals,
                              r1=params['r1'],
@@ -600,8 +633,11 @@ def fit_frtm2_to_tac(tac_times_in_minutes: np.ndarray,
                              k4=params['k4'])
         return (tgt_tac_vals - frtm_tac)/uncertainties
 
-    params = create_params(r1={'value': r1_start,'min': 1e-3},k3={'value': k3_start,'min': 1e-6},k4={'value': k4_start,'min': 1e-5})
-    out = minimize(_fitting_frtm_lmfit,params,args=[tac_times_in_minutes,tgt_tac_vals,uncertainties])
+    params = create_params(r1={'value': r1_start},
+                           k3={'value': k3_start},
+                           k4={'value': k4_start})
+    out = minimize(_fitting_frtm2_lmfit,params,
+                   args=[tac_times_in_minutes,tgt_tac_vals,uncertainties])
 
     return out
 
@@ -609,6 +645,7 @@ def fit_frtm2_to_tac(tac_times_in_minutes: np.ndarray,
 def fit_frtm_to_tac_with_bounds(tac_times_in_minutes: np.ndarray,
                                 tgt_tac_vals: np.ndarray,
                                 ref_tac_vals: np.ndarray,
+                                uncertainties: np.ndarray,
                                 r1_bounds: np.ndarray = np.asarray(
                                     [0.5, 0.0, 10.0]),
                                 k2_bounds: np.ndarray = np.asarray(
@@ -649,21 +686,29 @@ def fit_frtm_to_tac_with_bounds(tac_times_in_minutes: np.ndarray,
         * :func:`calc_frtm_tac`
 
     """
-    def _fitting_frtm(tac_times_in_minutes, r1, k2, k3, k4):
-        return calc_frtm_tac(tac_times_in_minutes=tac_times_in_minutes,
-                             ref_tac_vals=ref_tac_vals, r1=r1, k2=k2, k3=k3, k4=k4)
+    def _fitting_frtm_lmfit(params, tac_times_in_minutes, tgt_tac_vals,uncertainties):
+        frtm_tac = calc_frtm_tac(tac_times_in_minutes=tac_times_in_minutes,
+                                 ref_tac_vals=ref_tac_vals,
+                                 r1=params['r1'],
+                                 k2=params['k2'],
+                                 k3=params['k3'],
+                                 k4=params['k4'])
+        return (tgt_tac_vals - frtm_tac)/uncertainties
 
-    st_values = (r1_bounds[0], k2_bounds[0], k3_bounds[0], k4_bounds[0])
-    lo_values = (r1_bounds[1], k2_bounds[1], k3_bounds[1], k4_bounds[1])
-    hi_values = (r1_bounds[2], k2_bounds[2], k3_bounds[2], k4_bounds[2])
+    params = create_params(r1={'value': r1_bounds[0],'min': r1_bounds[1],'max': r1_bounds[2]},
+                           k2={'value': k2_bounds[0],'min': k2_bounds[1],'max': k2_bounds[2]},
+                           k3={'value': k3_bounds[0],'min': k3_bounds[1],'max': k3_bounds[2]},
+                           k4={'value': k4_bounds[0],'min': k4_bounds[1],'max': k4_bounds[2]})
+    out = minimize(_fitting_frtm_lmfit,params,
+                   args=[tac_times_in_minutes,tgt_tac_vals,uncertainties])
+    return out
 
-    return sp_fit(f=_fitting_frtm, xdata=tac_times_in_minutes, ydata=tgt_tac_vals,
-                  p0=st_values, bounds=[lo_values, hi_values])
 
 
 def fit_frtm2_to_tac_with_bounds(tac_times_in_minutes: np.ndarray,
                                  tgt_tac_vals: np.ndarray,
                                  ref_tac_vals: np.ndarray,
+                                 uncertainties: np.ndarray,
                                  k2_prime: float = 0.5,
                                  r1_bounds: np.ndarray = np.asarray(
                                      [0.5, 0.0, 10.0]),
@@ -703,15 +748,21 @@ def fit_frtm2_to_tac_with_bounds(tac_times_in_minutes: np.ndarray,
         * :func:`fit_frtm2_to_tac`
 
     """
+    def _fitting_frtm2_lmfit(params, tac_times_in_minutes, tgt_tac_vals,uncertainties):
+        frtm_tac = calc_frtm_tac(tac_times_in_minutes=tac_times_in_minutes,
+                                 ref_tac_vals=ref_tac_vals,
+                                 r1=params['r1'],
+                                 k2=k2_prime,
+                                 k3=params['k3'],
+                                 k4=params['k4'])
+        return (tgt_tac_vals - frtm_tac)/uncertainties
 
-    def _fitting_frtm(tac_times_in_minutes, r1, k3, k4):
-        return calc_frtm_tac(tac_times_in_minutes=tac_times_in_minutes, ref_tac_vals=ref_tac_vals, r1=r1, k2=k2_prime, k3=k3, k4=k4)
-
-    st_values = (r1_bounds[0], k3_bounds[0], k4_bounds[0])
-    lo_values = (r1_bounds[1], k3_bounds[1], k4_bounds[1])
-    hi_values = (r1_bounds[2], k3_bounds[2], k4_bounds[2])
-
-    return sp_fit(f=_fitting_frtm, xdata=tac_times_in_minutes, ydata=tgt_tac_vals, p0=st_values, bounds=[lo_values, hi_values])
+    params = create_params(r1={'value': r1_bounds[0],'min': r1_bounds[1],'max': r1_bounds[2]},
+                           k3={'value': k3_bounds[0],'min': k3_bounds[1],'max': k3_bounds[2]},
+                           k4={'value': k4_bounds[0],'min': k4_bounds[1],'max': k4_bounds[2]})
+    out = minimize(_fitting_frtm2_lmfit,params,
+                   args=[tac_times_in_minutes,tgt_tac_vals,uncertainties])
+    return out
 
 @numba.njit(fastmath=True)
 def fit_mrtm_original_to_tac(tac_times_in_minutes: np.ndarray,
