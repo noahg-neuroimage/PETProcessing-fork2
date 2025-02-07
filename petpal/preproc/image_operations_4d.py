@@ -22,8 +22,7 @@ import ants
 import nibabel
 import numpy as np
 from scipy.ndimage import center_of_mass
-
-from petpal.utils.useful_functions import weighted_series_sum
+from ..utils.useful_functions import weighted_series_sum
 from ..utils import image_io, math_lib
 
 
@@ -110,8 +109,8 @@ def determine_motion_target(motion_target_option: str | tuple | list,
             transformations on.
 
     Raises:
-        ValueError: If ``motion_target_option`` does not match an acceptable option, or if ``half_life`` is not specified
-        when ``motion_target_option`` is not 'mean_image'
+        ValueError: If ``motion_target_option`` does not match an acceptable option, or if 
+        ``half_life`` is not specifiedwhen ``motion_target_option`` is not 'mean_image'
         TypeError: If start and end time are incompatible with ``float`` type.
     """
     if motion_target_option != 'mean_image' and half_life is None:
@@ -295,12 +294,12 @@ def get_average_of_timeseries(input_image: ants.ANTsImage):
     """
     Get average of a 4D ANTsImage and return as a 3D ANTsImage.
     """
+    assert len(input_image.shape) == 4, "Input image must be 4D"
     mean_array = input_image.mean(axis=-1)
-    one_image = ants.ndimage_to_list(image=input_image)[0]
     mean_image = ants.from_numpy(data=mean_array,
-                                 origin=one_image.origin,
-                                 spacing=one_image.spacing,
-                                 direction=one_image.direction)
+                                 origin=input_image.origin[:-1],
+                                 spacing=input_image.spacing[:-1],
+                                 direction=input_image.direction[:-1,:-1])
     return mean_image
 
 
@@ -412,7 +411,7 @@ def roi_tac(input_image_4d_path: str,
         raise ValueError("'time_frame_keyword' must be one of "
                          "'FrameReferenceTime' or 'FrameTimesStart'")
 
-    pet_meta = image_io.load_metadata_for_nifty_with_same_filename(input_image_4d_path)
+    pet_meta = image_io.load_metadata_for_nifti_with_same_filename(input_image_4d_path)
     tac_extraction_func = extract_tac_from_nifty_using_mask
     pet_numpy = nibabel.load(input_image_4d_path).get_fdata()
     seg_numpy = nibabel.load(roi_image_path).get_fdata()
@@ -445,7 +444,7 @@ def write_tacs(input_image_path: str,
         raise ValueError("'time_frame_keyword' must be one of "
                          "'FrameReferenceTime' or 'FrameTimesStart'")
 
-    pet_meta = image_io.load_metadata_for_nifty_with_same_filename(input_image_path)
+    pet_meta = image_io.load_metadata_for_nifti_with_same_filename(input_image_path)
     label_map = image_io.ImageIO.read_label_map_tsv(label_map_file=label_map_path)
     regions_abrev = label_map['abbreviation']
     regions_map = label_map['mapping']

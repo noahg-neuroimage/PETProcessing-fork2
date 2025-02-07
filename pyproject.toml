@@ -20,7 +20,7 @@ dependencies = [
     "numba",
     "pandas",
     "nibabel",
-    "antspyx",
+    "antspyx >= 0.5",
     "fslpy",
     "SimpleITK",
     "matplotlib",
@@ -44,6 +44,7 @@ classifiers = [  # These are added to PyPI package when published; Used for sear
 
 [project.scripts]
     petpal-preproc = "petpal.cli.cli_preproc:main"
+    petpal-preproc-2 = "petpal.cli.cli_preproc_2:main"
     petpal-bids = "petpal.cli.cli_bids:main"
     petpal-tac-interpolate = "petpal.cli.cli_tac_interpolation:main"
     petpal-graph-plot = "petpal.cli.cli_graphical_plots:main"
@@ -54,6 +55,7 @@ classifiers = [  # These are added to PyPI package when published; Used for sear
     petpal-vat-proc = "petpal.cli.cli_vat_processing:main"
     petpal-brier-fdg-pipeline = "petpal.cli.cli_brier_fdg_processing:main"
     petpal-pib-proc = "petpal.cli.cli_pib_processing:main"
+    petpal-pvc = "petpal.cli.cli_pvc:main"
 
 [project.urls]
     Repository = "https://github.com/FurqanDar/PETProcessing.git"

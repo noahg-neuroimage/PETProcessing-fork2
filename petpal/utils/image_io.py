@@ -1,16 +1,39 @@
 """
 Image IO
+
+PET radionuclide half life source: code borrowed from DynamicPET
+(https://github.com/bilgelm/dynamicpet/blob/main/src/dynamicpet/petbids/petbidsjson.py), derived
+from TPC (turkupetcentre.net/petanalysis/decay.html). This source is from:
+Table of Isotopes, Sixth edition, edited by C.M. Lederer, J.M. Hollander, I. Perlman. WILEY, 1967. 
 """
 import json
 import re
 import os
+import glob
 import ants
 import nibabel
 from nibabel.filebasedimages import FileBasedHeader
-from typing import Union
 import numpy as np
 import pandas as pd
+
+from petpal.utils.bids_utils import infer_sub_ses_from_tac_path
 from . import useful_functions
+
+
+_HALFLIVES_ = {
+    "c11": 1224,
+    "n13": 599,
+    "o15": 123,
+    "f18": 6588,
+    "cu62": 582,
+    "cu64": 45721.1,
+    "ga68": 4080,
+    "ge68": 23760000,
+    "br76": 58700,
+    "rb82": 75,
+    "zr89": 282240,
+    "i124": 360806.4,
+}
 
 
 def write_dict_to_json(meta_data_dict: dict, out_path: str):
@@ -54,7 +77,7 @@ def convert_ctab_to_dseg(ctab_path: str,
     label_map.to_csv(dseg_path,sep='\t')
     return label_map
 
-def _gen_meta_data_filepath_for_nifty(nifty_path:str):
+def _gen_meta_data_filepath_for_nifti(nifty_path:str):
     """
     Generates the corresponding metadata file path for a given nifti file path.
 
@@ -70,7 +93,27 @@ def _gen_meta_data_filepath_for_nifty(nifty_path:str):
     meta_data_path = re.sub(r'\.nii\.gz$|\.nii$', '.json', nifty_path)
     return meta_data_path
 
-def load_metadata_for_nifty_with_same_filename(image_path) -> dict:
+
+def safe_load_meta(input_metadata_file: str) -> dict:
+    """
+    Function to load a generic metadata json file.
+
+    Args:
+        input_metadata_file (str): Metadata file to be read.
+
+    Returns:
+        metadata (dict): The metadata in dictionary format.
+    """
+    if not os.path.exists(input_metadata_file):
+        raise FileNotFoundError(f"Metadata file {input_metadata_file} not found. Does it have a "
+                                "different path?")
+
+    with open(input_metadata_file, 'r', encoding='utf-8') as meta_file:
+        metadata = json.load(meta_file)
+    return metadata
+
+
+def load_metadata_for_nifti_with_same_filename(image_path) -> dict:
     """
     Static method to load metadata. Assume same path as input image path.
 
@@ -79,7 +122,7 @@ def load_metadata_for_nifty_with_same_filename(image_path) -> dict:
             same name as the file but with different extension exists.
 
     Returns:
-        image_meta (dict): Dictionary where keys are fields in the image
+        metadata (dict): Dictionary where keys are fields in the image
             metadata file and values correspond to values in those fields.
 
     Raises:
@@ -89,14 +132,46 @@ def load_metadata_for_nifty_with_same_filename(image_path) -> dict:
     if not os.path.exists(image_path):
         raise FileNotFoundError(f"Image file {image_path} not found.")
 
-    meta_path = _gen_meta_data_filepath_for_nifty(image_path)
+    meta_path = _gen_meta_data_filepath_for_nifti(image_path)
+    metadata = safe_load_meta(input_metadata_file=meta_path)
 
-    if not os.path.exists(meta_path):
-        raise FileNotFoundError(f"Metadata file {meta_path} not found. Does it have a different path?")
+    return metadata
 
-    with open(meta_path, 'r', encoding='utf-8') as meta_file:
-        image_meta = json.load(meta_file)
-    return image_meta
+
+def flatten_metadata(metadata: dict) -> dict:
+    """
+    Given a metadata dictionary, return an identical dictionary with any list-like or dict-like 
+    data replaced with individual values. Useful when converting several JSON files into a TSV 
+    file.
+
+    Args:
+        metadata (dict): The metadata file that may contain lists of data.
+
+    Returns:
+        metadata_for_tsv (dict): The same metadata with list-like data replaced with individual
+            values.
+
+    Note:
+        List-like data is replaced by renaming the key it appears in with ordinal values. E.g. if
+        metadata contains a key named ``FitPars`` with value [4,6] then the function would create
+        two new keys, FitPars_1 and Fit_Pars2 with values 4 and 6 respectively. Likewise, nested
+        dictionaries are replaced by combining the two keys identifying the data with underscores.
+        Function is not robust for doubly nested lists and dictionaries.
+    """
+    metadata_for_tsv = {}
+    for key in metadata:
+        data = metadata[key]
+        if isinstance(data,list):
+            for i,val in enumerate(data):
+                key_new = f'{key}_{i+1}'
+                metadata_for_tsv[key_new] = val
+        elif isinstance(data,dict):
+            for inner_key in data:
+                key_new = f'{key}_{inner_key}'
+                metadata_for_tsv[key_new] = data[inner_key]
+        else:
+            metadata_for_tsv[key] = metadata[key]
+    return metadata_for_tsv
 
 
 def safe_load_tac(filename: str, **kwargs) -> np.ndarray:
@@ -138,14 +213,39 @@ def safe_copy_meta(input_image_path: str,
             generating a new image.
         out_image_path (str): Path to the output file written by the function.
     """
-    copy_meta_path = _gen_meta_data_filepath_for_nifty(out_image_path)
-    meta_data_dict = load_metadata_for_nifty_with_same_filename(input_image_path)
+    copy_meta_path = _gen_meta_data_filepath_for_nifti(out_image_path)
+    meta_data_dict = load_metadata_for_nifti_with_same_filename(input_image_path)
     write_dict_to_json(meta_data_dict=meta_data_dict, out_path=copy_meta_path)
 
+def get_half_life_from_radionuclide(meta_data_file_path: str) -> float:
+    """
+    Extracts the radionuclide half-life in seconds from a nifti metadata file. This function
+    grabs the tracer radionuclide from the metadata and assumes a fixed half-life based on this.
+    Code borrowed from:
+    https://github.com/bilgelm/dynamicpet/blob/main/src/dynamicpet/petbids/petbidsjson.py.
+
+    Args:
+        meta_data_file_path (str): Path to the nifti metadata file.
+
+    Returns:
+        float: The radionuclide half-life extracted from the tracer radionuclide.
+
+    Raises:
+        FileNotFoundError: If the metadata file does not exist at the provided path.
+        KeyError: If the 'TracerRadionuclide' key is not found in the metadata file.
+    """
+    meta_data = safe_load_meta(meta_data_file_path)
+
+    try:
+        radionuclide = meta_data['TracerRadionuclide'].lower().replace("-", "")
+    except KeyError as exc:
+        raise KeyError("Required BIDS metadata field 'TracerRadionuclide' not found.") from exc
+
+    return _HALFLIVES_[radionuclide]
 
 def get_half_life_from_meta(meta_data_file_path: str):
     """
-    Extracts the radionuclide half-life (usually in seconds) from a nifti metadata file.
+    Extracts the radionuclide half-life (usually in seconds) from a nifti metadata file. 
 
     Args:
         meta_data_file_path (str): Path to the nifti metadata file.
@@ -157,22 +257,20 @@ def get_half_life_from_meta(meta_data_file_path: str):
         FileNotFoundError: If the metadata file does not exist at the provided path.
         KeyError: If the 'RadionuclideHalfLife' key is not found in the metadata file.
     """
-    if not os.path.exists(meta_data_file_path):
-        raise FileNotFoundError(f"Metadata file {meta_data_file_path} not found")
-    with open(meta_data_file_path, 'r') as m_file:
-        meta_data = json.load(m_file)
+    meta_data = safe_load_meta(meta_data_file_path)
+
     try:
         half_life = meta_data['RadionuclideHalfLife']
         return half_life
-    except KeyError:
-        raise KeyError("RadionuclideHalfLife not found in meta-data file.")
-    
-def get_half_life_from_nifty(image_path:str):
+    except KeyError as exc:
+        raise KeyError("RadionuclideHalfLife not found in meta-data file.") from exc
+
+def get_half_life_from_nifti(image_path:str):
     """
     Retrieves the radionuclide half-life from a nifti image file.
 
     This function first checks if the provided nifti image file exists. It then derives
-    the corresponding metadata file path using :func:`_gen_meta_data_filepath_for_nifty`
+    the corresponding metadata file path using :func:`_gen_meta_data_filepath_for_nifti`
     and finally retrieves the half-life from the metadata using :func:`get_half_life_from_meta`.
 
     Args:
@@ -186,8 +284,57 @@ def get_half_life_from_nifty(image_path:str):
     """
     if not os.path.exists(image_path):
         raise FileNotFoundError(f"Image file {image_path} not found")
-    meta_path = _gen_meta_data_filepath_for_nifty(image_path)
-    return get_half_life_from_meta(meta_path)
+    meta_path = _gen_meta_data_filepath_for_nifti(image_path)
+    try:
+        half_life = get_half_life_from_radionuclide(meta_path)
+    except KeyError:
+        half_life = get_half_life_from_meta(meta_path)
+    return half_life
+
+
+def get_frame_timing_info_for_nifti(image_path: str) -> dict[str, np.ndarray]:
+    r"""
+    Extracts frame timing information and decay factors from a NIfTI image metadata.
+    Expects that the JSON metadata file has ``FrameDuration`` and ``DecayFactor`` or 
+    ``DecayCorrectionFactor`` keys.
+
+    .. important::
+        This function tries to infer `FrameTimesEnd` and `FrameTimesStart` from the frame durations
+        if those keys are not present in the metadata file. If the scan is broken, this might generate
+        incorrect results.
+
+
+    Args:
+        image_path (str): Path to the NIfTI image file.
+
+    Returns:
+        dict: Frame timing information with the following keys:
+            - `duration` (np.ndarray): Frame durations in seconds.
+            - `start` (np.ndarray): Frame start times in seconds.
+            - `end` (np.ndarray): Frame end times in seconds.
+            - `decay` (np.ndarray): Decay factors for each frame.
+    """
+    _meta_data = load_metadata_for_nifti_with_same_filename(image_path=image_path)
+    frm_dur = np.asarray(_meta_data['FrameDuration'], int)
+    try:
+        frm_ends = np.asarray(_meta_data['FrameTimesEnd'], int)
+    except KeyError:
+        frm_ends = np.cumsum(frm_dur)
+    try:
+        frm_starts = np.asarray(_meta_data['FrameTimesStart'], int)
+    except KeyError:
+        frm_starts = np.diff(frm_ends)
+    try:
+        decay = np.asarray(_meta_data['DecayCorrectionFactor'],float)
+    except KeyError:
+        decay = np.asarray(_meta_data['DecayFactor'],float)
+
+    frm_info = {'duration': frm_dur,
+                'start': frm_starts,
+                'end': frm_ends,
+                'decay': decay}
+
+    return frm_info
 
 class ImageIO:
     """
@@ -196,7 +343,6 @@ class ImageIO:
     Provides several tools designed for reading and writing data within the Python environment.
 
     Key methods include:
-        - :meth:`load_nii`: Loads a NIfTI file from a file path.
         - :meth:`save_nii`: Saves a loaded NIfTI file to a file path.
         - :meth:`extract_image_from_nii_as_numpy`: Extracts imaging data from a NIfTI file as a numpy array.
         - :meth:`extract_header_from_nii`: Extracts header information from a NIfTI file as a dictionary.
@@ -214,36 +360,6 @@ class ImageIO:
             verbose (bool): Set to True to print debugging info to shell. Defaults to True.
         """
         self.verbose = verbose
-
-    def load_nii(self, image_path: str) -> Union[nibabel.nifti1.Nifti1Image, nibabel.nifti2.Nifti2Image]:
-        """
-        Wrapper to load nifti from image_path.
-
-        Args:
-            image_path (str): Path to a .nii or .nii.gz file.
-
-        Returns:
-            The nifti FileBasedImage.
-
-        Raises:
-            FileNotFoundError: If the provided image path cannot be found in the directory.
-            OSError: If the provided image path does not have a NIfTI extension.
-        """
-        if not os.path.exists(image_path):
-            raise FileNotFoundError(f"Image file {image_path} not found")
-
-        if not re.search(r'\.nii\.gz$|\.nii$', image_path):
-            raise OSError(f"{image_path} does not have the extension .nii or .nii.gz")
-
-        image = nibabel.load(image_path)
-
-        if not isinstance(image, (nibabel.nifti1.Nifti1Image, nibabel.nifti2.Nifti2Image)):
-            raise OSError(f'File at {image_path} is not in nifti1 or nifti2 format')
-
-        if self.verbose:
-            print(f"(ImageIO): {image_path} loaded")
-
-        return image
 
     def save_nii(self, image: nibabel.nifti1.Nifti1Image, out_file: str):
         """
@@ -425,3 +541,88 @@ def validate_two_images_same_dimensions(image_1: nibabel.nifti1.Nifti1Image,
 
     if not same_shape:
         raise ValueError(f'Got incompatible image sizes: {shape_1}, {shape_2}.')
+
+def get_window_index_pairs_from_durations(frame_durations: np.ndarray, w_size: float):
+    r"""
+    Computes start and end index pairs for windows of a given size based on frame durations.
+
+    Args:
+        frame_durations (np.ndarray): Array of frame durations in seconds.
+        w_size (float): Window size in seconds.
+
+    Returns:
+        np.ndarray: Array of shape (2, N), where the first row contains start indices,
+            and the second row contains end indices for each window.
+
+    Raises:
+        ValueError: If `w_size` is less than or equal to 0.
+        ValueError: If `w_size` is greater than the total duration of all frames.
+    """
+    if w_size <= 0:
+        raise ValueError("Window size has to be > 0")
+    if w_size > np.sum(frame_durations):
+        raise ValueError("Window size is larger than the whole scan.")
+    _tmp_w_ids = [0]
+    _w_dur_sum = 0
+    for frm_id, frm_dur in enumerate(frame_durations):
+        _w_dur_sum += frm_dur
+        if _w_dur_sum >= w_size:
+            _tmp_w_ids.append(frm_id + 1)
+            _w_dur_sum = 0
+    w_start_ids = np.asarray(_tmp_w_ids[:-1])
+    w_end_ids = np.asarray(_tmp_w_ids[1:])
+    id_pairs = np.vstack((w_start_ids, w_end_ids))
+    return id_pairs
+
+
+def get_window_index_pairs_for_image(image_path: str, w_size: float):
+    """
+    Computes start and end index pairs for windows of a given size
+    based on the frame durations of a NIfTI image.
+
+    Args:
+        image_path (str): Path to the NIfTI image file.
+        w_size (float): Window size in seconds.
+
+    Returns:
+        np.ndarray: Array of shape (2, N), where the first row contains start indices,
+            and the second row contains end indices for each window.
+
+    Raises:
+        ValueError: If `w_size` is less than or equal to 0.
+        ValueError: If `w_size` is greater than the total duration of all frames.
+
+    See Also:
+        :func:`get_window_index_pairs_from_durations`
+    """
+    image_frame_info = get_frame_timing_info_for_nifti(image_path=image_path)
+    return get_window_index_pairs_from_durations(frame_durations=image_frame_info['duration'], w_size=w_size)
+
+
+def km_regional_fits_to_tsv(fit_results_dir: str, out_tsv_dir: str):
+    """
+    Tidies the output of regional kinetic modeling results by converting JSON files into a TSV file
+    with one row per fit region. Accomodates lists by converting them into key-value pairs. Assigns
+    a subject and session to each row inferred from the original TAC file path.
+
+    Requires fields to be identical across all JSON results files.
+
+    Args:
+        fit_results_dir (str): Directory where RTM results are stored in JSON files.
+        out_tsv_dir (str): Path where resulting TSV file containing fit results will be stored.
+
+    Returns:
+        km_fits (pd.DataFrame): DataFrame containing KM fit data for all regions.
+    """
+    fit_results_jsons = glob.glob(os.path.join(fit_results_dir,'*.json'))
+    km_fits = pd.DataFrame()
+    for i,fit in enumerate(fit_results_jsons):
+        fit_load = safe_load_meta(fit)
+        fit_clean = flatten_metadata(fit_load)
+        sub, ses = infer_sub_ses_from_tac_path(fit_clean['FilePathTTAC'])
+        fit_clean['sub_id'] = sub
+        fit_clean['ses_id'] = ses
+        fit_pd = pd.DataFrame(fit_clean,index=[i])
+        km_fits = pd.concat([km_fits,fit_pd])
+    km_fits.to_csv(out_tsv_dir,sep='\t')
+    return km_fits

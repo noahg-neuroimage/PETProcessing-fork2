@@ -175,7 +175,7 @@ def resample_blood_data_on_scanner_times(blood_tac_path: str,
 
     """
     assert rescale_constant > 0.0, "Rescale constant must be greater than zero."
-    image_meta_data = image_io.load_metadata_for_nifty_with_same_filename(image_path=reference_4dpet_img_path)
+    image_meta_data = image_io.load_metadata_for_nifti_with_same_filename(image_path=reference_4dpet_img_path)
     frame_times = np.asarray(image_meta_data['FrameReferenceTime']) / 60.0
     blood_times, blood_activity = image_io.safe_load_tac(filename=blood_tac_path)
     blood_intp = BloodInputFunction(time=blood_times, activity=blood_activity, thresh_in_mins=lin_fit_thresh_in_mins)

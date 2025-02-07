@@ -13,7 +13,7 @@ import pathlib
 from bids_validator import BIDSValidator
 from nibabel.filebasedimages import FileBasedImage
 from nibabel.nifti1 import Nifti1Image
-
+from petpal.utils.image_io import safe_load_meta
 
 class BidsInstance:
     """
@@ -307,7 +307,7 @@ class BidsInstance:
             Warning: Issues a runtime warning through the `warnings` module if required keys are missing
                 from the JSON data.
         """
-        metadata_cache = load_json(filepath=pet_sidecar_filepath)
+        metadata_cache = safe_load_meta(input_metadata_file=pet_sidecar_filepath)
         json_keys = metadata_cache.keys()
         for keys in self.required_metadata:
             if isinstance(keys, list):
@@ -493,9 +493,8 @@ class BidsInstance:
         if os.path.exists(filepath) or os.path.islink(filepath):
             if filepath.endswith(".nii") or filepath.endswith(".nii.gz"):
                 print("Nifti")
-                # file = ImageIO.load_nii(filepath=self.filepath)
             elif filepath.endswith(".json"):
-                file = load_json(filepath=filepath)
+                file = safe_load_meta(input_metadata_file=filepath)
             elif filepath.endswith(".tsv"):
                 file = load_tsv_simple(filepath=filepath)
             else:
@@ -589,32 +588,6 @@ def save_json(json_dict: dict,
     with open(filepath, 'w') as file:
         json.dump(json_dict, file, indent=4)
         file.write('\n')
-
-
-def load_json(filepath: str):
-    """
-    Loads a JSON file from the specified filepath and returns its content as a dictionary.
-
-    Args:
-        filepath (str): The path to the JSON file to be loaded.
-
-    Returns:
-        dict: The JSON file content as a dictionary.
-
-    Raises:
-        FileNotFoundError: If the specified file does not exist.
-        json.JSONDecodeError: If the file content is not valid JSON.
-    """
-    try:
-        with open(filepath, 'r') as file:
-            data = json.load(file)
-        return data
-    except FileNotFoundError:
-        print(f"File not found: {filepath}")
-        return None
-    except json.JSONDecodeError:
-        print(f"Error decoding JSON from file: {filepath}")
-        return None
 
 
 def save_array_as_tsv(array: numpy.array,
@@ -819,3 +792,46 @@ def gen_bids_like_filepath(sub_id: str, ses_id: str, bids_dir:str ='../',
     filename = gen_bids_like_filename(sub_id=sub_id, ses_id=ses_id, suffix=suffix, ext=ext, **extra_desc)
     filedir  = gen_bids_like_dir_path(sub_id=sub_id, ses_id=ses_id, sup_dir=bids_dir, modality=modality)
     return os.path.join(filedir, filename)
+
+
+def infer_sub_ses_from_tac_path(tac_path: str):
+    """
+    Infers subject and session IDs from a TAC file path by analyzing the filename.
+
+    This method extracts subject and session IDs from the filename of a TAC file. It checks the 
+    presence of a `sub-` and `ses-` marker in the filename, which is followed by the subject and 
+    session respectively. This segment name is then formatted with each part capitalized. If no 
+    subject or session is found a generic value of `UNK` is returned.
+
+    Args:
+        tac_path (str): Path of the TAC file.
+        tac_id (int): ID of the TAC.
+
+    Returns:
+        tuple: Inferred subject and session IDs.
+    """
+    path = pathlib.Path(tac_path)
+    assert path.suffix == '.tsv', '`tac_path` must point to a TSV file (*.tsv)'
+    filename = path.name
+    fileparts = filename.split("_")
+    subname = 'XXXX'
+    for part in fileparts:
+        if 'sub-' in part:
+            subname = part.split('sub-')[-1]
+            break
+    if subname == 'XXXX':
+        subname = 'UNK'
+    else:
+        name_parts = subname.split("-")
+        subname = ''.join(name_parts)
+    sesname = 'XXXX'
+    for part in fileparts:
+        if 'ses-' in part:
+            sesname = part.split('ses-')[-1]
+            break
+    if sesname == 'XXXX':
+        subname = 'UNK'
+    else:
+        name_parts = sesname.split("-")
+        sesname = ''.join(name_parts)
+    return subname, sesname
