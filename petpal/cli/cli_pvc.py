@@ -116,15 +116,16 @@ def main():
         epilog="Example of usage: pet-cli-pvc --method SGTM --pet-path /path/to/pet_image.nii --roi-path /path/to/roi_image.nii --fwhm 8.0"
     )
 
-    parser.add_argument("--method", required=True, help="PVC method to use (SGTM or PETPVC method).")
+    parser.add_argument("-m","--method", required=True, help="PVC method to use (SGTM or PETPVC method).")
     parser.add_argument("-i","--input-image", required=True, help="Path to the PET image file.")
     parser.add_argument("-s","--segmentation_image", required=True,
                         help="Path to the Segmentation image file.")
-    parser.add_argument("--fwhm", required=True, type=float,
-                        help="Full Width at Half Maximum for Gaussian blurring (Tuple or single float).")
-    parser.add_argument("--output-path", help="Path to the output image file (for PETPVC method).")
-    parser.add_argument("--verbose", action="store_true", help="Print additional information.")
-    parser.add_argument("--debug", action="store_true", help="Enable debug mode (for PETPVC method).")
+    parser.add_argument("-f","--fwhm", required=True, type=float,
+                        help="Full Width at Half Maximum for Gaussian blurring (Tuple or single "
+                             "float) in mm.")
+    parser.add_argument("-o","--output-path", help="Path to the output image file (for PETPVC method).")
+    parser.add_argument("-v","--verbose", action="store_true", help="Print additional information.")
+    parser.add_argument("-d","--debug", action="store_true", help="Enable debug mode (for PETPVC method).")
 
     args = parser.parse_args()
 
