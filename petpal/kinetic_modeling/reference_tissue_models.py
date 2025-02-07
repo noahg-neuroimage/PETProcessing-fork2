@@ -528,13 +528,13 @@ def fit_srtm2_to_tac_with_bounds(tac_times_in_minutes: np.ndarray,
 
 
 def fit_frtm_to_tac(tac_times_in_minutes: np.ndarray,
-                     tgt_tac_vals: np.ndarray,
-                     ref_tac_vals: np.ndarray,
-                     uncertainties: np.ndarray,
-                     r1_start: float = 0.5,
-                     k2_start: float = 0.5,
-                     k3_start: float = 0.5,
-                     k4_start: float = 0.5) -> tuple:
+                    tgt_tac_vals: np.ndarray,
+                    ref_tac_vals: np.ndarray,
+                    uncertainties: np.ndarray,
+                    r1_start: float = 0.5,
+                    k2_start: float = 0.5,
+                    k3_start: float = 0.5,
+                    k4_start: float = 0.5) -> tuple:
     r"""
     Fit FRTM2 to the provided target Time Activity Curve (TAC), given the reference TAC, times, and
     starting guesses for the kinetic parameters.
