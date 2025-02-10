@@ -12,7 +12,7 @@ from petpal.kinetic_modeling.reference_tissue_models import (calc_k2prime_from_m
                                                              calc_bp_from_mrtm2_2003_fit,
                                                              calc_bp_from_mrtm_original_fit,
                                                              calc_bp_from_mrtm_2003_fit)
-from petpal.utils.image_io import safe_load_tac
+from petpal.utils.image_io import safe_load_tac, safe_load_meta, get_half_life_from_meta
 from ..utils.time_activity_curve import MultiTACAnalysisMixin
 
 
@@ -69,7 +69,8 @@ class RTMAnalysis:
                  roi_tac_path: str,
                  output_directory: str,
                  output_filename_prefix: str,
-                 method: str):
+                 method: str,
+                 metadata_path: str=None):
         r"""
         Initialize RTMAnalysis with provided arguments.
 
@@ -93,6 +94,7 @@ class RTMAnalysis:
         """
         self.ref_tac_path: str = os.path.abspath(ref_tac_path)
         self.roi_tac_path: str = os.path.abspath(roi_tac_path)
+        self.half_life_in_minutes, self.frame_duration = self.get_uncertainty_inputs(metadata_path)
         self.output_directory: str = os.path.abspath(output_directory)
         self.output_filename_prefix: str = output_filename_prefix
         self.method = method.lower()
@@ -195,6 +197,20 @@ class RTMAnalysis:
             raise ValueError("k2_prime must be set for the modified RTM (MRTM2, FRTM2, and SRTM2) "
                              "analyses.")
 
+
+    def get_uncertainty_inputs(self, metadata_path):
+        """
+        Get the half life and frame duration from metadata, if provided.
+        """
+        if metadata_path is not None:
+            half_life_in_minutes = get_half_life_from_meta(meta_data_file_path=metadata_path)/60
+            frame_durations = safe_load_meta(input_metadata_file=metadata_path)['FrameDuration']/60
+        else:
+            half_life_in_minutes = None
+            frame_durations = None
+        return half_life_in_minutes, frame_durations
+
+
     def calculate_fit(self,
                       bounds: Union[None, np.ndarray] = None,
                       t_thresh_in_mins: float = None,
@@ -218,8 +234,7 @@ class RTMAnalysis:
             FitResults: Object containing fit results.
         """
         self.validate_analysis_inputs(k2_prime=k2_prime, t_thresh_in_mins=t_thresh_in_mins)
-        half_life = 'PLACEHOLDER'
-        frame_durations = 'PLACEHOLDER'
+
         ref_tac_times, ref_tac_vals = safe_load_tac(filename=self.ref_tac_path, **tac_load_kwargs)
         _tgt_tac_times, tgt_tac_vals = safe_load_tac(filename=self.roi_tac_path, **tac_load_kwargs)
         analysis_obj = FitTACWithRTMs(tac_times_in_minutes=ref_tac_times,
@@ -228,8 +243,8 @@ class RTMAnalysis:
                                       method=self.method, bounds=bounds,
                                       t_thresh_in_mins=t_thresh_in_mins,
                                       k2_prime=k2_prime,
-                                      half_life_in_minutes=half_life/60,
-                                      frame_durations=frame_durations)
+                                      half_life_in_minutes=self.half_life_in_minutes,
+                                      frame_durations=self.frame_duration)
         analysis_obj.fit_tac_to_model()
 
         return analysis_obj.fit_results
@@ -413,7 +428,8 @@ class MultiTACRTMAnalysis(RTMAnalysis, MultiTACAnalysisMixin):
                  roi_tacs_dir: str,
                  output_directory: str,
                  output_filename_prefix: str,
-                 method: str):
+                 method: str,
+                 metadata_path: str=None):
         """
         Initializes the MultiTACRTMAnalysis object with required paths and analysis method.
 
@@ -423,6 +439,8 @@ class MultiTACRTMAnalysis(RTMAnalysis, MultiTACAnalysisMixin):
             output_directory (str): Directory for saving analysis results.
             output_filename_prefix (str): Prefix for output filenames.
             method (str): Method used for RTM analysis.
+            metadata_path (str): Path to metadata file from which TACs are derived. Used in
+                analysis of uncertainty. Default None.
         """
         MultiTACAnalysisMixin.__init__(self,
                                        input_tac_path=ref_tac_path,
@@ -432,7 +450,8 @@ class MultiTACRTMAnalysis(RTMAnalysis, MultiTACAnalysisMixin):
                              roi_tac_path=roi_tacs_dir,
                              output_directory=output_directory,
                              output_filename_prefix=output_filename_prefix,
-                             method=method)
+                             method=method,
+                             metadata_path=metadata_path)
 
 
     def init_analysis_props(self, method: str) -> list[dict]:
@@ -473,8 +492,6 @@ class MultiTACRTMAnalysis(RTMAnalysis, MultiTACAnalysisMixin):
         """
         ref_tac_times, ref_tac_vals = safe_load_tac(self.ref_tac_path)
         fit_results = []
-        half_life = 'PLACEHOLDER'
-        frame_durations = 'PLACEHOLDER'
         for _, a_tac in enumerate(self.tacs_files_list):
             _, tgt_tac_vals = safe_load_tac(a_tac)
             analysis_obj = FitTACWithRTMs(tac_times_in_minutes=ref_tac_times,
@@ -484,8 +501,8 @@ class MultiTACRTMAnalysis(RTMAnalysis, MultiTACAnalysisMixin):
                                           bounds=bounds,
                                           t_thresh_in_mins=t_thresh_in_mins,
                                           k2_prime=k2_prime,
-                                          frame_durations=frame_durations,
-                                          half_life_in_minutes=half_life/60)
+                                          half_life_in_minutes=self.half_life_in_minutes,
+                                          frame_durations=self.frame_duration)
             analysis_obj.fit_tac_to_model()
             fit_results.append(analysis_obj.fit_results)
 
