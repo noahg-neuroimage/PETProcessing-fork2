@@ -768,7 +768,7 @@ def fit_mrtm_original_to_tac(tac_times_in_minutes: np.ndarray,
                              tgt_tac_vals: np.ndarray,
                              ref_tac_vals: np.ndarray,
                              t_thresh_in_mins: float,
-                             weights: np.ndarray=None):
+                             uncertainties: np.ndarray):
     r"""
     Fit the original (1996) Multilinear Reference Tissue Model (MRTM) to the provided target Time
     Activity Curve (TAC) values given the reference TAC, times, and threshold time (in minutes).
@@ -804,8 +804,7 @@ def fit_mrtm_original_to_tac(tac_times_in_minutes: np.ndarray,
         This function is implemented with numba for improved performance.
 
     """
-    if weights is None:
-        weights = np.ones_like(tac_times_in_minutes)
+    weights = np.power(uncertainties,-2)
 
     non_zero_indices = np.argwhere(tgt_tac_vals != 0.).T[0]
 
@@ -841,7 +840,7 @@ def fit_mrtm_2003_to_tac(tac_times_in_minutes: np.ndarray,
                          tgt_tac_vals: np.ndarray,
                          ref_tac_vals: np.ndarray,
                          t_thresh_in_mins: float,
-                         weights: np.ndarray=None):
+                         uncertainties: np.ndarray):
     r"""
     Fit the 2003 Multilinear Reference Tissue Model (MRTM) to the provided target Time Activity
     Curve (TAC) values given the reference TAC, times, and threshold time (in minutes). The data
@@ -875,8 +874,7 @@ def fit_mrtm_2003_to_tac(tac_times_in_minutes: np.ndarray,
         This function is implemented with numba for improved performance.
 
     """
-    if weights is None:
-        weights = np.ones_like(tac_times_in_minutes)
+    weights = np.power(uncertainties,-2)
 
     t_thresh = get_index_from_threshold(times_in_minutes=tac_times_in_minutes,
                                         t_thresh_in_minutes=t_thresh_in_mins)
@@ -901,7 +899,7 @@ def fit_mrtm2_2003_to_tac(tac_times_in_minutes: np.ndarray,
                           ref_tac_vals: np.ndarray,
                           t_thresh_in_mins: float,
                           k2_prime: float,
-                          weights: np.ndarray=None):
+                          uncertainties: np.ndarray):
     r"""
     Fit the second version of Multilinear Reference Tissue Model (MRTM2) to the provided target
     Time Activity Curve (TAC) values given the reference TAC, times, threshold time (in minutes),
@@ -937,8 +935,7 @@ def fit_mrtm2_2003_to_tac(tac_times_in_minutes: np.ndarray,
         This function is implemented with numba for improved performance.
 
     """
-    if weights is None:
-        weights = np.ones_like(tac_times_in_minutes)
+    weights = np.power(uncertainties,-2)
 
     t_thresh = get_index_from_threshold(times_in_minutes=tac_times_in_minutes,
                                         t_thresh_in_minutes=t_thresh_in_mins)

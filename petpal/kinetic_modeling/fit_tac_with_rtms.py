@@ -452,6 +452,7 @@ class FitTACWithRTMs:
             self.fit_results = rtm_method(tac_times_in_minutes=self.tac_times_in_minutes,
                                           tgt_tac_vals=self.target_tac_vals,
                                           ref_tac_vals=self.reference_tac_vals,
+                                          uncertainties=self.uncertainties,
                                           **rtm_kwargs)
         except ValueError:
             self.fit_results = self.get_failed_output_nan_array()
