@@ -218,17 +218,18 @@ class RTMAnalysis:
             FitResults: Object containing fit results.
         """
         self.validate_analysis_inputs(k2_prime=k2_prime, t_thresh_in_mins=t_thresh_in_mins)
-
+        half_life = 'PLACEHOLDER'
+        frame_durations = 'PLACEHOLDER'
         ref_tac_times, ref_tac_vals = safe_load_tac(filename=self.ref_tac_path, **tac_load_kwargs)
         _tgt_tac_times, tgt_tac_vals = safe_load_tac(filename=self.roi_tac_path, **tac_load_kwargs)
-        uncertainties = 'PLACEHOLDER' # TODO: Calculate uncertainties here to plug into RTM method
         analysis_obj = FitTACWithRTMs(tac_times_in_minutes=ref_tac_times,
                                       target_tac_vals=tgt_tac_vals,
                                       reference_tac_vals=ref_tac_vals,
                                       method=self.method, bounds=bounds,
                                       t_thresh_in_mins=t_thresh_in_mins,
                                       k2_prime=k2_prime,
-                                      uncertainties=uncertainties)
+                                      half_life_in_minutes=half_life/60,
+                                      frame_durations=frame_durations)
         analysis_obj.fit_tac_to_model()
 
         return analysis_obj.fit_results
@@ -472,6 +473,8 @@ class MultiTACRTMAnalysis(RTMAnalysis, MultiTACAnalysisMixin):
         """
         ref_tac_times, ref_tac_vals = safe_load_tac(self.ref_tac_path)
         fit_results = []
+        half_life = 'PLACEHOLDER'
+        frame_durations = 'PLACEHOLDER'
         for _, a_tac in enumerate(self.tacs_files_list):
             _, tgt_tac_vals = safe_load_tac(a_tac)
             analysis_obj = FitTACWithRTMs(tac_times_in_minutes=ref_tac_times,
@@ -480,7 +483,9 @@ class MultiTACRTMAnalysis(RTMAnalysis, MultiTACAnalysisMixin):
                                           method=self.method,
                                           bounds=bounds,
                                           t_thresh_in_mins=t_thresh_in_mins,
-                                          k2_prime=k2_prime)
+                                          k2_prime=k2_prime,
+                                          frame_durations=frame_durations,
+                                          half_life_in_minutes=half_life/60)
             analysis_obj.fit_tac_to_model()
             fit_results.append(analysis_obj.fit_results)
 
