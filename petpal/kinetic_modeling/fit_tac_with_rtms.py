@@ -401,11 +401,13 @@ class FitTACWithRTMs:
         if half_life_in_minutes is None:
             tac_weights = weight_tac_simple(tac_durations_in_minutes=frame_durations_in_minutes,
                                             tac_vals=self.target_tac_vals)
-        else:
+        elif frame_durations_in_minutes is not None:
             tac_weights = weight_tac_decay(tac_durations_in_minutes=frame_durations_in_minutes,
                                            tac_vals=self.target_tac_vals,
                                            tac_times_in_minutes=self.tac_times_in_minutes,
                                            half_life_in_minutes=half_life_in_minutes)
+        else:
+            tac_weights = np.ones(len(self.tac_times_in_minutes))
         uncertainties = convert_weights_to_sigma(tac_weights=tac_weights)
         return uncertainties
 
