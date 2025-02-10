@@ -230,11 +230,11 @@ class FitTACWithRTMs:
                  tac_times_in_minutes: np.ndarray,
                  target_tac_vals: np.ndarray,
                  reference_tac_vals: np.ndarray,
-                 frame_durations: np.ndarray,
                  method: str = 'mrtm',
                  bounds: Union[None, np.ndarray] = None,
                  t_thresh_in_mins: float = None,
                  k2_prime: float = None,
+                 frame_durations: np.ndarray = None,
                  half_life_in_minutes: float = None):
         r"""
         Initialize the FitTACWithRTMs object with specified parameters.
