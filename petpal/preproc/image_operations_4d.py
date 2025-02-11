@@ -25,6 +25,17 @@ from scipy.ndimage import center_of_mass
 from ..utils.useful_functions import weighted_series_sum
 from ..utils import image_io, math_lib
 
+def stitch_broken_scans(input_image_path: str,
+                        output_image_path: str,
+                        subsequent_image_paths: str | list[str],
+                        verbose: bool = False) -> np.ndarray:
+    """'Stitch' together 2 or more images from one session into a single image."""
+
+    image_loader = image_io.ImageIO(verbose=verbose)
+
+
+
+
 
 def crop_image(input_image_path: str,
                out_image_path: str,
