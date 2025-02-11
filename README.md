@@ -1,6 +1,6 @@
-# PET Processing Module
+# Positron Emissions Tomography Processing and Analysis Library
 
-Test-bed for Brier Lab PET Processing.
+A comprehensive 4D-PET analysis software suite.
 
 ## Installation
 
