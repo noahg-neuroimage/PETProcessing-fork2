@@ -5,6 +5,7 @@ import os
 from typing import Union
 import json
 import numpy as np
+from lmfit.minimizer import MinimizerResult
 from petpal.kinetic_modeling.fit_tac_with_rtms import FitTACWithRTMs
 from petpal.kinetic_modeling.graphical_analysis import get_index_from_threshold
 from petpal.kinetic_modeling.reference_tissue_models import (calc_k2prime_from_mrtm_2003_fit,
@@ -204,7 +205,7 @@ class RTMAnalysis:
         """
         if metadata_path is not None:
             half_life_in_minutes = get_half_life_from_meta(meta_data_file_path=metadata_path)/60
-            frame_durations = safe_load_meta(input_metadata_file=metadata_path)['FrameDuration']/60
+            frame_durations = np.array(safe_load_meta(input_metadata_file=metadata_path)['FrameDuration'])/60
         else:
             half_life_in_minutes = None
             frame_durations = None
@@ -250,7 +251,7 @@ class RTMAnalysis:
         return analysis_obj.fit_results
 
     def calculate_fit_properties(self,
-                                 fit_results: Union[np.ndarray, tuple[np.ndarray, np.ndarray]],
+                                 fit_results: Union[np.ndarray, tuple[np.ndarray, np.ndarray],MinimizerResult],
                                  t_thresh_in_mins: float = None,
                                  k2_prime: float = None):
         r"""
@@ -343,7 +344,7 @@ class RTMAnalysis:
         props_dict['NumberOfPointsFit'] = len(ref_tac_times[t_thresh_index:])
 
     def _calc_frtm_or_srtm_fit_props(self,
-                                     fit_results: tuple[np.ndarray, np.ndarray],
+                                     fit_results: MinimizerResult,
                                      k2_prime: float,
                                      props_dict: dict):
         r"""
@@ -357,21 +358,36 @@ class RTMAnalysis:
                 their corresponding fit covariances.
 
         """
-        fit_params, fit_covariances = fit_results
-        fit_stderr = np.sqrt(np.diagonal(fit_covariances))
+        if isinstance(fit_results,tuple):
+            fit_params, fit_covariances = fit_results
+            fit_stderr = np.sqrt(np.diagonal(fit_covariances))
+            if self.method.startswith('srtm'):
+                format_func =  self._get_pretty_srtm_fit_param_vals
+            else:
+                format_func = self._get_pretty_frtm_fit_param_vals
 
-        if self.method.startswith('srtm'):
-            format_func =  self._get_pretty_srtm_fit_param_vals
-        else:
-            format_func = self._get_pretty_frtm_fit_param_vals
+            if self.method.endswith('2'):
+                props_dict["k2Prime"] = k2_prime
+                props_dict["FitValues"] = format_func(fit_params.round(5), True)
+                props_dict["FitStdErr"] = format_func(fit_stderr.round(5), True)
+            else:
+                props_dict["FitValues"] = format_func(fit_params.round(5), False)
+                props_dict["FitStdErr"] = format_func(fit_stderr.round(5), False)
 
-        if self.method.endswith('2'):
-            props_dict["k2Prime"] = k2_prime
-            props_dict["FitValues"] = format_func(fit_params.round(5), True)
-            props_dict["FitStdErr"] = format_func(fit_stderr.round(5), True)
         else:
-            props_dict["FitValues"] = format_func(fit_params.round(5), False)
-            props_dict["FitStdErr"] = format_func(fit_stderr.round(5), False)
+            print(fit_results)
+            print(type(fit_results))
+            print(fit_results.params)
+            fit_params = fit_results.params.valuesdict()
+            fit_stderr = fit_results.chisqr
+            if self.method.endswith('2'):
+                props_dict["k2Prime"] = k2_prime
+                props_dict["FitValues"] = fit_params
+                props_dict["FitStdErr"] = fit_stderr
+            else:
+                props_dict["FitValues"] = fit_params
+                props_dict["FitStdErr"] = fit_stderr
+
 
     @staticmethod
     def _get_pretty_srtm_fit_param_vals(param_fits: np.ndarray, reduced: bool = False) -> dict:
