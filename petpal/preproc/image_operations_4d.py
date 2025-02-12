@@ -61,14 +61,6 @@ def stitch_broken_scans(input_image_path: str,
                                  for scan_time in noninitial_scan_times]
 
 
-
-
-
-
-
-
-
-
 def crop_image(input_image_path: str,
                out_image_path: str,
                x_dim: int=256,
