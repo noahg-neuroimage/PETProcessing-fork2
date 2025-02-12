@@ -18,6 +18,7 @@ def undo_decay_correction(input_image_path: str,
     it may result in unexpected behavior. In addition to returning a np.ndarray containing the "decay uncorrected" data,
     the function writes an image to output_image_path.
     TODO: Handle case where no .json sidecar exists or doesn't have requisite info.
+    TODO: Set BIDS keys "ImageDecayCorrected" and "ImageDecayCorrectionTime" in .json
 
     Args:
         input_image_path (str): Path to input (.nii.gz or .nii) image. A .json sidecar file should exist in the same
@@ -72,6 +73,9 @@ def decay_correct(input_image_path: str,
 
     where :math:`\lambda=\log(2)/T_{1/2}` is the decay constant of the radio isotope and depends on its half-life and
     `t` is the frame's reference time with respect to TimeZero (ideally, injection time).
+
+    TODO: Set BIDS keys "ImageDecayCorrected" and "ImageDecayCorrectionTime" in .json
+    TODO: Remove half_life argument and determine from .json
 
     Args:
         input_image_path (str): Path to input (.nii.gz or .nii) image. A .json sidecar file should exist in the same

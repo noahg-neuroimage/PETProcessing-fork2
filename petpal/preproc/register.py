@@ -8,10 +8,59 @@ import fsl.wrappers
 import ants
 import nibabel
 from nibabel.processing import resample_from_to
+
+from .preproc import weighted_series_sum
 from ..utils import image_io
 from . import image_operations_4d
 
 determine_motion_target = image_operations_4d.determine_motion_target
+
+def register_pet_to_pet(input_image_path: str,
+                        output_image_path: str,
+                        reference_pet_image_path: str,
+                        verbose: bool = False) -> np.ndarray:
+    """Compute weighted series sum images for input and reference pet images, then register input to reference."""
+
+    io_handler = image_io.ImageIO(verbose=verbose)
+
+    input_image_nifti = image_io.safe_load_4dpet_nifti(filename=input_image_path)
+
+    # Extract half-life from input image .json
+    half_life = image_io.get_half_life_from_nifti(image_path=input_image_path)
+
+    # Compute weighted series sum images and read them as ANTsImage objects
+    wss_input = determine_motion_target(motion_target_option='weighted_series_sum',
+                                        input_image_4d_path=input_image_path,
+                                        half_life=half_life)
+    wss_reference = determine_motion_target(motion_target_option='weighted_series_sum',
+                                            input_image_4d_path=reference_pet_image_path,
+                                            half_life=half_life)
+
+    wss_input_ants = ants.image_read(wss_input)
+    wss_reference_ants = ants.image_read(wss_reference)
+    input_ants = ants.image_read(input_image_path)
+
+    xfm_output = ants.registration(fixed=wss_reference_ants,
+                                   moving=wss_input_ants,
+                                   type_of_transform='DenseRigid',
+                                   write_composite_transform=True)
+    xfm_apply = ants.apply_transforms(moving=input_ants,
+                                      fixed=wss_reference_ants,
+                                      transformlist=xfm_output['fwdtransforms'],
+                                      interpolator='linear',
+                                      imagetype=3)
+    reg_data_numpy = xfm_apply.numpy()
+
+    reg_image_nifti = nibabel.Nifti1Image(dataobj=reg_data_numpy,
+                                          affine=input_image_nifti.affine,
+                                          header=input_image_nifti.header)
+
+    io_handler.save_nii(image=reg_image_nifti,
+                        out_file=output_image_path)
+
+    return reg_data_numpy
+
+
 
 def register_pet(input_reg_image_path: str,
                  out_image_path: str,
@@ -43,8 +92,8 @@ def register_pet(input_reg_image_path: str,
         kwargs (keyword arguments): Additional arguments passed to :py:func:`ants.registration`.
     """
     motion_target = determine_motion_target(motion_target_option=motion_target_option,
-                                                input_image_4d_path=input_reg_image_path,
-                                                half_life=half_life)
+                                            input_image_4d_path=input_reg_image_path,
+                                            half_life=half_life)
     motion_target_image = ants.image_read(motion_target)
     mri_image = ants.image_read(reference_image_path)
     pet_image_ants = ants.image_read(input_reg_image_path)

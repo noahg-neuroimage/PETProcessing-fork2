@@ -22,17 +22,34 @@ import ants
 import nibabel
 import numpy as np
 from scipy.ndimage import center_of_mass
+
 from ..utils.useful_functions import weighted_series_sum
 from ..utils import image_io, math_lib
 
 def stitch_broken_scans(input_image_path: str,
                         output_image_path: str,
-                        subsequent_image_paths: str | list[str],
+                        noninitial_image_paths: list[str],
                         verbose: bool = False) -> np.ndarray:
     """'Stitch' together 2 or more images from one session into a single image."""
 
+    # Extract half-life from .json
+    half_life = image_io.get_half_life_from_nifti(image_path=input_image_path)
+
+    # Obtain weighted series sum images for all images
+    wss_images = [weighted_series_sum(input_image_4d_path=path,
+                                      half_life=half_life,
+                                      verbose=verbose) for path in [input_image_path]+noninitial_image_paths]
+
+
+    # Register all noninitial images to initial image
+
+    # Load all images
     image_loader = image_io.ImageIO(verbose=verbose)
 
+    initial_nifti_image = image_io.safe_load_4dpet_nifti(filename=input_image_path)
+    noninitial_nifti_images = [image_io.safe_load_4dpet_nifti(filename=path) for path in noninitial_image_paths]
+
+    # Alter .json for all subsequent images to use the first file's AcquisitionTime as the start time.
 
 
 
