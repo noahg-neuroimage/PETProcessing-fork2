@@ -12,7 +12,21 @@ from ..utils import image_io
 def undo_decay_correction(input_image_path: str,
                           output_image_path: str,
                           verbose: bool = False) -> np.ndarray:
-    """Uses decay factors from the .json sidecar file for an image to remove decay correction for each frame."""
+    """Uses decay factors from the .json sidecar file for an image to remove decay correction for each frame.
+
+    This function expects to find decay factors in the .json sidecar file. If there are no decay factors listed,
+    it may result in unexpected behavior. In addition to returning a np.ndarray containing the "decay uncorrected" data,
+    the function writes an image to output_image_path.
+    TODO: Handle case where no .json sidecar exists or doesn't have requisite info.
+
+    Args:
+        input_image_path (str): Path to input (.nii.gz or .nii) image. A .json sidecar file should exist in the same
+             directory as the input image.
+        output_image_path (str): Path to output (.nii.gz or .nii) output image.
+        verbose (bool): If true, prints more information during processing. Default is False.
+
+    Returns:
+        np.ndarray: Image Data with decay correction reversed."""
 
     image_loader = image_io.ImageIO(verbose=verbose)
 
@@ -46,7 +60,26 @@ def decay_correct(input_image_path: str,
                   output_image_path: str,
                   half_life: float,
                   verbose: bool = False) -> np.ndarray:
-    """Recalculate decay_correction for nifti image based on frame reference times"""
+    r"""Recalculate decay_correction for nifti image based on frame reference times.
+
+    This function will compute frame reference times based on frame time starts and frame durations (both of which
+    are required by BIDS. These reference times are used in the following equation to determine the decay factor for
+    each frame. For more information, refer to Turku Pet Centre's materials at
+    https://www.turkupetcentre.net/petanalysis/decay.html
+
+    .. math::
+        decay\_factor = \exp(\lambda*t)
+
+    where :math:`\lambda=\log(2)/T_{1/2}` is the decay constant of the radio isotope and depends on its half-life and
+    `t` is the frame's reference time with respect to TimeZero (ideally, injection time).
+
+    Args:
+        input_image_path (str): Path to input (.nii.gz or .nii) image. A .json sidecar file should exist in the same
+             directory as the input image.
+        output_image_path (str): Path to output (.nii.gz or .nii) output image.
+        half_life (float): Half-life time of radioisotope in seconds.
+        verbose (bool): If true, prints more information during processing. Default is False.
+    """
 
     json_data = image_io.load_metadata_for_nifti_with_same_filename(image_path=input_image_path)
 
