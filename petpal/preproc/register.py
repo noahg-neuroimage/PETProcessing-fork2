@@ -9,7 +9,7 @@ import ants
 import nibabel
 from nibabel.processing import resample_from_to
 
-from .preproc import weighted_series_sum
+from ..utils.useful_functions import weighted_series_sum
 from ..utils import image_io
 from . import image_operations_4d
 
@@ -57,6 +57,8 @@ def register_pet_to_pet(input_image_path: str,
 
     io_handler.save_nii(image=reg_image_nifti,
                         out_file=output_image_path)
+    image_io.safe_copy_meta(input_image_path=input_image_path,
+                            out_image_path=output_image_path)
 
     return reg_data_numpy
 

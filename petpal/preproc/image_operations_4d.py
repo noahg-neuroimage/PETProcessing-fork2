@@ -17,6 +17,7 @@ TODOs:
 
 """
 import os
+import datetime
 import tempfile
 import ants
 import nibabel
@@ -35,14 +36,6 @@ def stitch_broken_scans(input_image_path: str,
     # Extract half-life from .json
     half_life = image_io.get_half_life_from_nifti(image_path=input_image_path)
 
-    # Obtain weighted series sum images for all images
-    wss_images = [weighted_series_sum(input_image_4d_path=path,
-                                      half_life=half_life,
-                                      verbose=verbose) for path in [input_image_path]+noninitial_image_paths]
-
-
-    # Register all noninitial images to initial image
-
     # Load all images
     image_loader = image_io.ImageIO(verbose=verbose)
 
@@ -50,6 +43,28 @@ def stitch_broken_scans(input_image_path: str,
     noninitial_nifti_images = [image_io.safe_load_4dpet_nifti(filename=path) for path in noninitial_image_paths]
 
     # Alter .json for all subsequent images to use the first file's AcquisitionTime as the start time.
+    image_metadata_dicts = [image_io.load_metadata_for_nifti_with_same_filename(image_path=path)
+                            for path in [input_image_path]+noninitial_image_paths]
+    try:
+        time_zeroes = [meta['TimeZero'] for meta in image_metadata_dicts]
+    except KeyError:
+        raise KeyError(f'.json sidecar for one of your input images does not contain required BIDS key "TimeZero". '
+                       f'Aborting...')
+
+    initial_scan_time = datetime.time.fromisoformat(time_zeroes[0])
+    faux_date = datetime.date.today() # Not even needed except to make a datetime object.
+    initial_scan_datetime = datetime.datetime.combine(date=faux_date,
+                                                      time=initial_scan_time)
+    noninitial_scan_times = [datetime.time.fromisoformat(time_zeroes[i])
+                             for i in range(1,len(noninitial_image_paths)+1)]
+    noninitial_scan_datetimes = [datetime.datetime.combine(date=faux_date, time=scan_time)
+                                 for scan_time in noninitial_scan_times]
+
+
+
+
+
+
 
 
 
