@@ -380,13 +380,16 @@ class RTMAnalysis:
             print(fit_results.params)
             fit_params = fit_results.params.valuesdict()
             fit_stderr = fit_results.chisqr
+            fit_chisqr = fit_results.chisqr
             if self.method.endswith('2'):
                 props_dict["k2Prime"] = k2_prime
                 props_dict["FitValues"] = fit_params
                 props_dict["FitStdErr"] = fit_stderr
+                props_dict["FitChiSqr"] = fit_chisqr
             else:
                 props_dict["FitValues"] = fit_params
                 props_dict["FitStdErr"] = fit_stderr
+                props_dict["FitChiSqr"] = fit_chisqr
 
 
     @staticmethod
