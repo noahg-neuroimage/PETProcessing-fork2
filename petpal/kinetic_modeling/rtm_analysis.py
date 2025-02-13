@@ -366,6 +366,13 @@ class RTMAnalysis:
             else:
                 format_func = self._get_pretty_frtm_fit_param_vals
 
+            props_dict["FitNvars"] = np.nan
+            props_dict["FitN"] = np.nan
+            props_dict["FitDoF"] = np.nan
+            props_dict["FitChiSqr"] = np.nan
+            props_dict["FitRedChiSqr"] = np.nan
+            props_dict["FitAIC"] = np.nan
+            props_dict["FitBIC"] = np.nan
             if self.method.endswith('2'):
                 props_dict["k2Prime"] = k2_prime
                 props_dict["FitValues"] = format_func(fit_params.round(5), True)
@@ -377,16 +384,17 @@ class RTMAnalysis:
         else:
             fit_params = fit_results.params.valuesdict()
             fit_stderr = self.lmfit_vals_to_stderr_dict(lmfit_result = fit_results)
-            fit_chisqr = fit_results.chisqr
+            props_dict["FitNvars"] = fit_results.nvarys
+            props_dict["FitN"] = fit_results.ndata
+            props_dict["FitDoF"] = fit_results.nfree
+            props_dict["FitValues"] = fit_params
+            props_dict["FitStdErr"] = fit_stderr
+            props_dict["FitChiSqr"] = fit_results.chisqr
+            props_dict["FitRedChiSqr"] = fit_results.redchi
+            props_dict["FitAIC"] = fit_results.aic
+            props_dict["FitBIC"] = fit_results.bic
             if self.method.endswith('2'):
                 props_dict["k2Prime"] = k2_prime
-                props_dict["FitValues"] = fit_params
-                props_dict["FitStdErr"] = fit_stderr
-                props_dict["FitChiSqr"] = fit_chisqr
-            else:
-                props_dict["FitValues"] = fit_params
-                props_dict["FitStdErr"] = fit_stderr
-                props_dict["FitChiSqr"] = fit_chisqr
 
 
     @staticmethod
@@ -394,7 +402,7 @@ class RTMAnalysis:
         r"""
         Utility function to get nicely formatted fit parameters for 'srtm(2)' analysis.
 
-        Returns a dictionary with keys: 'R1', 'k2', and 'BP' and the corresponding values from
+        Returns a dictionary with keys: 'r1', 'k2', and 'bp' and the corresponding values from
         ``param_fits``.
 
         Args:
@@ -404,16 +412,17 @@ class RTMAnalysis:
             dict: Dictionary of fit parameters and their corresponding values.
         """
         if reduced:
-            return {name: val for name, val in zip(['R1', 'BP'], param_fits)}
+            return {name: val for name, val in zip(['r1', 'bp'], param_fits)}
         else:
-            return {name: val for name, val in zip(['R1', 'k2', 'BP'], param_fits)}
+            return {name: val for name, val in zip(['r1', 'k2', 'bp'], param_fits)}
+
 
     @staticmethod
     def _get_pretty_frtm_fit_param_vals(param_fits: np.ndarray, reduced: bool = False) -> dict:
         r"""
         Utility function to get nicely formatted fit parameters for 'frtm(2)' analysis.
 
-        Returns a dictionary with keys: 'R1', 'k2', 'k3', and 'k4' and the corresponding values from
+        Returns a dictionary with keys: 'r1', 'k2', 'k3', and 'k4' and the corresponding values from
         ``param_fits``.
 
         Args:
@@ -423,9 +432,11 @@ class RTMAnalysis:
             dict: Dictionary of fit parameters and their corresponding values.
         """
         if reduced:
-            return {name: val for name, val in zip(['R1', 'k3', 'k4'], param_fits)}
+            return {name: val for name, val in zip(['r1', 'k3', 'k4'], param_fits)}
         else:
-            return {name: val for name, val in zip(['R1', 'k2', 'k3', 'k4'], param_fits)}
+            return {name: val for name, val in zip(['r1', 'k2', 'k3', 'k4'], param_fits)}
+
+
     @staticmethod
     def lmfit_vals_to_stderr_dict(lmfit_result: MinimizerResult):
         """
