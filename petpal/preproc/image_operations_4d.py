@@ -40,6 +40,9 @@ def stitch_broken_scans(input_image_path: str,
     # Extract half-life from .json
     half_life = image_io.get_half_life_from_nifti(image_path=input_image_path)
 
+    input_image_nifti = image_io.safe_load_4dpet_nifti(filename=input_image_path)
+    input_image_data = input_image_nifti.get_fdata()
+
     # Alter .json for all subsequent images to use the first file's AcquisitionTime as the start time.
     initial_image_metadata = image_io.load_metadata_for_nifti_with_same_filename(image_path=input_image_path)
     noninitial_image_metadata_dicts = [image_io.load_metadata_for_nifti_with_same_filename(image_path=path)
@@ -69,9 +72,9 @@ def stitch_broken_scans(input_image_path: str,
         additional_image_metadata['FrameDuration'] = [t+t_d for t in original_frame_durations]
         additional_image_metadata['TimeZero'] = actual_time_zero
 
-    corrected_arrays = []
+    corrected_arrays = [input_image_data]
     new_metadata = initial_image_metadata
-    # Undo any existing decay correction
+    # Undo any existing decay correction and reapply.
     for additional_image_path, metadata in zip(noninitial_image_paths,noninitial_image_metadata_dicts):
 
         # TODO: Separate this 'add desc entity' to its own function somewhere.
@@ -95,12 +98,29 @@ def stitch_broken_scans(input_image_path: str,
 
         corrected_arrays.append(corrected_array)
         updated_metadata = image_io.load_metadata_for_nifti_with_same_filename(image_path=output_image_path)
-        new_metadata['FrameTimesStart'].append(updated_metadata['FrameTimesStart'])
-        new_metadata['FrameDuration'].append(updated_metadata['FrameDuration'])
+        new_metadata['FrameTimesStart'].extend(updated_metadata['FrameTimesStart'])
+        new_metadata['FrameDuration'].extend(updated_metadata['FrameDuration'])
         # TODO: BIDS expects these to be called 'DecayCorrectionFactor', not 'DecayFactor'
-        new_metadata['DecayFactor'].append(updated_metadata['DecayFactor'])
+        new_metadata['DecayFactor'].extend(updated_metadata['DecayFactor'])
         new_metadata['ImageDecayCorrected'] = updated_metadata['ImageDecayCorrected']
         new_metadata['ImageDecayCorrectionTime'] = updated_metadata['ImageDecayCorrectionTime']
+
+    stitched_image_array = np.concatenate(corrected_arrays, axis=3)
+    stitched_image_header = input_image_nifti.header.copy()
+    new_dims_array = stitched_image_header['dim']
+    new_dims_array[4] = stitched_image_array.shape[3]
+    stitched_image_header['dim'] = new_dims_array
+
+    stitched_image_nifti = nibabel.Nifti1Image(dataobj=stitched_image_array,
+                                               affine=input_image_nifti.affine,
+                                               header=stitched_image_header)
+    nib.save(img=stitched_image_nifti,
+             filename=output_image_path)
+    image_io.write_dict_to_json(meta_data_dict=new_metadata,
+                                out_path=image_io._gen_meta_data_filepath_for_nifti(nifty_path=output_image_path))
+
+    return stitched_image_array
+
 
 
 
