@@ -625,11 +625,11 @@ def fit_frtm2_to_tac(tac_times_in_minutes: np.ndarray,
     """
     def _fitting_frtm2_lmfit(params, tac_times_in_minutes, tgt_tac_vals, uncertainties):
         frtm_tac = calc_frtm_tac(tac_times_in_minutes=tac_times_in_minutes,
-                             ref_tac_vals=ref_tac_vals,
-                             r1=params['r1'],
-                             k2=k2_prime,
-                             k3=params['k3'],
-                             k4=params['k4'])
+                                 ref_tac_vals=ref_tac_vals,
+                                 r1=params['r1'],
+                                 k2=k2_prime,
+                                 k3=params['k3'],
+                                 k4=params['k4'])
         return (tgt_tac_vals - frtm_tac)/uncertainties
 
     params = create_params(r1={'value': r1_start},
