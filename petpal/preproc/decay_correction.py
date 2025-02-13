@@ -11,6 +11,7 @@ from ..utils import image_io
 
 def undo_decay_correction(input_image_path: str,
                           output_image_path: str,
+                          metadata_dict: dict = None,
                           verbose: bool = False) -> np.ndarray:
     """Uses decay factors from the .json sidecar file for an image to remove decay correction for each frame.
 
@@ -24,15 +25,21 @@ def undo_decay_correction(input_image_path: str,
         input_image_path (str): Path to input (.nii.gz or .nii) image. A .json sidecar file should exist in the same
              directory as the input image.
         output_image_path (str): Path to output (.nii.gz or .nii) output image.
+        metadata_dict (dict): Optional dictionary to use instead of corresponding .json sidecar. If not specified
+             (default behavior), function will try to use sidecar .json in the same directory as input_image_path
         verbose (bool): If true, prints more information during processing. Default is False.
 
     Returns:
         np.ndarray: Image Data with decay correction reversed."""
 
+
     image_loader = image_io.ImageIO(verbose=verbose)
 
     nifti_image = image_io.safe_load_4dpet_nifti(filename=input_image_path)
-    json_data = image_io.load_metadata_for_nifti_with_same_filename(image_path=input_image_path)
+    if metadata_dict:
+        json_data = metadata_dict
+    else:
+        json_data = image_io.load_metadata_for_nifti_with_same_filename(image_path=input_image_path)
     frame_info = image_io.get_frame_timing_info_for_nifti(image_path=input_image_path)
     decay_factors = frame_info['decay']
 
