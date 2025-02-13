@@ -58,6 +58,7 @@ def undo_decay_correction(input_image_path: str,
                           out_file=output_image_path)
 
     json_data['DecayFactor'] = [1]*len(decay_factors)
+    json_data['ImageDecayCorrected'] = "false"
     output_json_path = image_io._gen_meta_data_filepath_for_nifti(nifty_path=output_image_path)
     image_io.write_dict_to_json(meta_data_dict=json_data,
                                 out_path=output_json_path)
@@ -124,6 +125,8 @@ def decay_correct(input_image_path: str,
                           out_file=output_image_path)
 
     json_data['DecayFactor'] = new_decay_factors
+    json_data['ImageDecayCorrected'] = "true"
+    json_data['ImageDecayCorrectionTime'] = 0 # We always use BIDS TimeZero for decay correction, so 0 seconds w.r.t. it
     output_json_path = image_io._gen_meta_data_filepath_for_nifti(nifty_path=output_image_path)
     image_io.write_dict_to_json(meta_data_dict=json_data,
                                 out_path=output_json_path)

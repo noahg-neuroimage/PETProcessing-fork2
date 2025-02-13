@@ -40,12 +40,6 @@ def stitch_broken_scans(input_image_path: str,
     # Extract half-life from .json
     half_life = image_io.get_half_life_from_nifti(image_path=input_image_path)
 
-    # Load all images
-    image_loader = image_io.ImageIO(verbose=verbose)
-
-    initial_nifti_image = image_io.safe_load_4dpet_nifti(filename=input_image_path)
-    noninitial_nifti_images = [image_io.safe_load_4dpet_nifti(filename=path) for path in noninitial_image_paths]
-
     # Alter .json for all subsequent images to use the first file's AcquisitionTime as the start time.
     initial_image_metadata = image_io.load_metadata_for_nifti_with_same_filename(image_path=input_image_path)
     noninitial_image_metadata_dicts = [image_io.load_metadata_for_nifti_with_same_filename(image_path=path)
@@ -57,7 +51,7 @@ def stitch_broken_scans(input_image_path: str,
         raise KeyError(f'.json sidecar for one of your input images does not contain required BIDS key "TimeZero". '
                        f'Aborting...')
 
-    initial_scan_time = datetime.time.fromisoformat(time_zeroes[0])
+    initial_scan_time = datetime.time.fromisoformat(actual_time_zero)
     faux_date = datetime.date.today() # Not even needed except to make a datetime object.
     initial_scan_datetime = datetime.datetime.combine(date=faux_date,
                                                       time=initial_scan_time)
@@ -73,7 +67,10 @@ def stitch_broken_scans(input_image_path: str,
         original_frame_durations = additional_image_metadata['FrameDuration']
         additional_image_metadata['FrameTimesStart'] = [t+t_d for t in original_frame_times_start]
         additional_image_metadata['FrameDuration'] = [t+t_d for t in original_frame_durations]
+        additional_image_metadata['TimeZero'] = actual_time_zero
 
+    corrected_arrays = []
+    new_metadata = initial_image_metadata
     # Undo any existing decay correction
     for additional_image_path, metadata in zip(noninitial_image_paths,noninitial_image_metadata_dicts):
 
@@ -91,10 +88,21 @@ def stitch_broken_scans(input_image_path: str,
                               verbose=verbose)
 
         corrected_image_path = new_path.replace("desc-nodecaycorrect", "desc-decayredone")
-        decay_correct(input_image_path=new_path,
-                      output_image_path=corrected_image_path,
-                      half_life=half_life,
-                      verbose=verbose)
+        corrected_array = decay_correct(input_image_path=new_path,
+                                        output_image_path=corrected_image_path,
+                                        half_life=half_life,
+                                        verbose=verbose)
+
+        corrected_arrays.append(corrected_array)
+        updated_metadata = image_io.load_metadata_for_nifti_with_same_filename(image_path=output_image_path)
+        new_metadata['FrameTimesStart'].append(updated_metadata['FrameTimesStart'])
+        new_metadata['FrameDuration'].append(updated_metadata['FrameDuration'])
+        # TODO: BIDS expects these to be called 'DecayCorrectionFactor', not 'DecayFactor'
+        new_metadata['DecayFactor'].append(updated_metadata['DecayFactor'])
+        new_metadata['ImageDecayCorrected'] = updated_metadata['ImageDecayCorrected']
+        new_metadata['ImageDecayCorrectionTime'] = updated_metadata['ImageDecayCorrectionTime']
+
+
 
 def crop_image(input_image_path: str,
                out_image_path: str,
