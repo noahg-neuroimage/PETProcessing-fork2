@@ -572,3 +572,21 @@ class MultiTACRTMAnalysis(RTMAnalysis, MultiTACAnalysisMixin):
 
             with open(filepath, 'w', encoding='utf-8') as f:
                 json.dump(obj=fit_props, fp=f, indent=4)
+
+
+    @staticmethod
+    def lmfit_vals_to_stderr_dict(lmfit_result: MinimizerResult):
+        """
+        Get stderr for each parameter in the results of an LMFIT optimization. Returns a 
+        dictionary of the form {name: stderr} where the "name" is the name of the optimized 
+        parameter and "stderr" is the standard error associated with the fitting of said parameter.
+
+        Args:
+            lmfit_result (lmfit.minimizer.MinimizerResult): Output of an lmfit.minimize fitting.
+        
+        Returns:
+            stderr_dict (dict): The dictionary containing standard errors for each parameter.
+        """
+        results_values = lmfit_result.params.values()
+        stderr_dict = {val.name: val.stderr for val in results_values}
+        return stderr_dict
