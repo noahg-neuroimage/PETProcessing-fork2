@@ -17,8 +17,10 @@ TODOs:
 
 """
 import os
+import pathlib
 import datetime
 import tempfile
+import re
 import ants
 import nibabel
 import numpy as np
@@ -26,6 +28,7 @@ from scipy.ndimage import center_of_mass
 
 from ..utils.useful_functions import weighted_series_sum
 from ..utils import image_io, math_lib
+from ..preproc.decay_correction import undo_decay_correction, decay_correct
 
 def stitch_broken_scans(input_image_path: str,
                         output_image_path: str,
@@ -71,6 +74,27 @@ def stitch_broken_scans(input_image_path: str,
         additional_image_metadata['FrameTimesStart'] = [t+t_d for t in original_frame_times_start]
         additional_image_metadata['FrameDuration'] = [t+t_d for t in original_frame_durations]
 
+    # Undo any existing decay correction
+    for additional_image_path, metadata in zip(noninitial_image_paths,noninitial_image_metadata_dicts):
+
+        # TODO: Separate this 'add desc entity' to its own function somewhere.
+        original_path = pathlib.Path(additional_image_path)
+        original_stem = original_path.stem
+        split_stem = original_stem.split("_")
+        split_stem.insert(-1, "desc-nodecaycorrect")
+        new_stem = "_".join(split_stem)
+        new_path = str(original_path).replace(original_stem, new_stem)
+
+        undo_decay_correction(input_image_path=additional_image,
+                              output_image_path=new_path,
+                              metadata_dict=metadata,
+                              verbose=verbose)
+
+        corrected_image_path = new_path.replace("desc-nodecaycorrect", "desc-decayredone")
+        decay_correct(input_image_path=new_path,
+                      output_image_path=corrected_image_path,
+                      half_life=half_life,
+                      verbose=verbose)
 
 def crop_image(input_image_path: str,
                out_image_path: str,
