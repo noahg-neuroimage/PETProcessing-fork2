@@ -51,12 +51,7 @@ def register_pet_to_pet(input_image_path: str,
                                       imagetype=3)
     reg_data_numpy = xfm_apply.numpy()
 
-    reg_image_nifti = nibabel.Nifti1Image(dataobj=reg_data_numpy,
-                                          affine=input_image_nifti.affine,
-                                          header=input_image_nifti.header)
-
-    io_handler.save_nii(image=reg_image_nifti,
-                        out_file=output_image_path)
+    ants.image_write(xfm_apply, output_image_path)
     image_io.safe_copy_meta(input_image_path=input_image_path,
                             out_image_path=output_image_path)
 
