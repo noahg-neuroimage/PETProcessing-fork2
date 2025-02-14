@@ -13,13 +13,11 @@ def undo_decay_correction(input_image_path: str,
                           output_image_path: str,
                           metadata_dict: dict = None,
                           verbose: bool = False) -> np.ndarray:
-    """Uses decay factors from the .json sidecar file for an image to remove decay correction for each frame.
+    """Uses decay factors from the metadata for an image to remove decay correction for each frame.
 
     This function expects to find decay factors in the .json sidecar file. If there are no decay factors listed,
     it may result in unexpected behavior. In addition to returning a np.ndarray containing the "decay uncorrected" data,
     the function writes an image to output_image_path.
-    TODO: Handle case where no .json sidecar exists or doesn't have requisite info.
-    TODO: Set BIDS keys "ImageDecayCorrected" and "ImageDecayCorrectionTime" in .json
 
     Args:
         input_image_path (str): Path to input (.nii.gz or .nii) image. A .json sidecar file should exist in the same
@@ -31,7 +29,6 @@ def undo_decay_correction(input_image_path: str,
 
     Returns:
         np.ndarray: Image Data with decay correction reversed."""
-
 
     image_loader = image_io.ImageIO(verbose=verbose)
 
@@ -45,10 +42,8 @@ def undo_decay_correction(input_image_path: str,
 
     image_data = nifti_image.get_fdata()
 
-    frame_num = 0
-    for decay_factor in  decay_factors:
+    for frame_num, decay_factor in  enumerate(decay_factors):
         image_data[..., frame_num] = image_data[..., frame_num] / decay_factor
-        frame_num += 1
 
     output_image = image_loader.extract_np_to_nibabel(image_array=image_data,
                                                       header=nifti_image.header,
@@ -110,12 +105,10 @@ def decay_correct(input_image_path: str,
 
     image_data = nifti_image.get_fdata()
     new_decay_factors = []
-    frame_num = 0
-    for frame_reference_time in frame_reference_times:
+    for frame_num, frame_reference_time in enumerate(frame_reference_times):
         decay_factor = math.exp(((math.log(2) / half_life) * frame_reference_time))
         image_data[..., frame_num] = image_data[..., frame_num] * decay_factor
         new_decay_factors.append(decay_factor)
-        frame_num += 1
 
     output_image = image_loader.extract_np_to_nibabel(image_array=image_data,
                                                       header=nifti_image.header,
