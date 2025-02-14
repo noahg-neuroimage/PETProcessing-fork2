@@ -17,13 +17,110 @@ TODOs:
 
 """
 import os
+import pathlib
+import datetime
 import tempfile
+import re
 import ants
 import nibabel
 import numpy as np
 from scipy.ndimage import center_of_mass
+
 from ..utils.useful_functions import weighted_series_sum
 from ..utils import image_io, math_lib
+from ..preproc.decay_correction import undo_decay_correction, decay_correct
+
+def stitch_broken_scans(input_image_path: str,
+                        output_image_path: str,
+                        noninitial_image_paths: list[str],
+                        verbose: bool = False) -> np.ndarray:
+    """'Stitch' together 2 or more images from one session into a single image."""
+
+    # TODO: Verify all necessary keys are present at the outset, rather than scatter checks throughout
+    # Extract half-life from .json
+    half_life = image_io.get_half_life_from_nifti(image_path=input_image_path)
+
+    input_image_nifti = image_io.safe_load_4dpet_nifti(filename=input_image_path)
+    input_image_data = input_image_nifti.get_fdata()
+
+    # Alter .json for all subsequent images to use the first file's AcquisitionTime as the start time.
+    initial_image_metadata = image_io.load_metadata_for_nifti_with_same_filename(image_path=input_image_path)
+    noninitial_image_metadata_dicts = [image_io.load_metadata_for_nifti_with_same_filename(image_path=path)
+                                       for path in noninitial_image_paths]
+    try:
+        noninitial_time_zeroes = [meta['TimeZero'] for meta in noninitial_image_metadata_dicts]
+        actual_time_zero = initial_image_metadata['TimeZero']
+    except KeyError:
+        raise KeyError(f'.json sidecar for one of your input images does not contain required BIDS key "TimeZero". '
+                       f'Aborting...')
+
+    initial_scan_time = datetime.time.fromisoformat(actual_time_zero)
+    faux_date = datetime.date.today() # Not even needed except to make a datetime object.
+    initial_scan_datetime = datetime.datetime.combine(date=faux_date,
+                                                      time=initial_scan_time)
+    noninitial_scan_times = [datetime.time.fromisoformat(t) for t in noninitial_time_zeroes]
+    noninitial_scan_datetimes = [datetime.datetime.combine(date=faux_date, time=scan_time)
+                                 for scan_time in noninitial_scan_times]
+
+    time_deltas = [t - initial_scan_datetime for t in noninitial_scan_datetimes]
+
+    # Update BIDS FrameTimesStart and FrameDuration to be used in decay computations
+    for t_d, additional_image_metadata in zip(time_deltas,noninitial_image_metadata_dicts):
+        original_frame_times_start = additional_image_metadata['FrameTimesStart']
+        original_frame_durations = additional_image_metadata['FrameDuration']
+        additional_image_metadata['FrameTimesStart'] = [t+t_d.total_seconds() for t in original_frame_times_start]
+        additional_image_metadata['TimeZero'] = actual_time_zero
+
+    corrected_arrays = [input_image_data]
+    new_metadata = initial_image_metadata
+    # Undo any existing decay correction and reapply.
+    for additional_image_path, metadata in zip(noninitial_image_paths,noninitial_image_metadata_dicts):
+
+        # TODO: Separate this 'add desc entity' to its own function somewhere.
+        original_path = pathlib.Path(additional_image_path)
+        original_stem = original_path.stem
+        split_stem = original_stem.split("_")
+        split_stem.insert(-1, "desc-nodecaycorrect")
+        new_stem = "_".join(split_stem)
+        new_path = str(original_path).replace(original_stem, new_stem)
+
+        undo_decay_correction(input_image_path=additional_image_path,
+                              output_image_path=new_path,
+                              metadata_dict=metadata,
+                              verbose=verbose)
+
+        corrected_image_path = new_path.replace("desc-nodecaycorrect", "desc-decayredone")
+        corrected_array = decay_correct(input_image_path=new_path,
+                                        output_image_path=corrected_image_path,
+                                        half_life=half_life,
+                                        verbose=verbose)
+
+        corrected_arrays.append(corrected_array)
+        updated_metadata = image_io.load_metadata_for_nifti_with_same_filename(image_path=corrected_image_path)
+        new_metadata['FrameTimesStart'].extend(updated_metadata['FrameTimesStart'])
+        new_metadata['FrameDuration'].extend(updated_metadata['FrameDuration'])
+        # TODO: BIDS expects these to be called 'DecayCorrectionFactor', not 'DecayFactor'
+        new_metadata['DecayFactor'].extend(updated_metadata['DecayFactor'])
+        new_metadata['ImageDecayCorrected'] = updated_metadata['ImageDecayCorrected']
+        new_metadata['ImageDecayCorrectionTime'] = updated_metadata['ImageDecayCorrectionTime']
+
+    stitched_image_array = np.concatenate(corrected_arrays, axis=3)
+    stitched_image_header = input_image_nifti.header.copy()
+    new_dims_array = stitched_image_header['dim']
+    new_dims_array[4] = stitched_image_array.shape[3]
+    stitched_image_header['dim'] = new_dims_array
+
+    stitched_image_nifti = nibabel.Nifti1Image(dataobj=stitched_image_array,
+                                               affine=input_image_nifti.affine,
+                                               header=stitched_image_header)
+    nibabel.save(img=stitched_image_nifti,
+                 filename=output_image_path)
+    image_io.write_dict_to_json(meta_data_dict=new_metadata,
+                                out_path=image_io._gen_meta_data_filepath_for_nifti(nifty_path=output_image_path))
+
+    return stitched_image_array
+
+
 
 
 def crop_image(input_image_path: str,
