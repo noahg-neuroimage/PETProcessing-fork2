@@ -64,10 +64,9 @@ def stitch_broken_scans(input_image_path: str,
 
     time_deltas = [t - initial_scan_datetime for t in noninitial_scan_datetimes]
 
-    # Update BIDS FrameTimesStart and FrameDuration to be used in decay computations
+    # Update BIDS FrameTimesStart to be used in decay computations
     for t_d, additional_image_metadata in zip(time_deltas,noninitial_image_metadata_dicts):
         original_frame_times_start = additional_image_metadata['FrameTimesStart']
-        original_frame_durations = additional_image_metadata['FrameDuration']
         additional_image_metadata['FrameTimesStart'] = [t+t_d.total_seconds() for t in original_frame_times_start]
         additional_image_metadata['TimeZero'] = actual_time_zero
 
