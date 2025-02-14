@@ -68,8 +68,7 @@ def stitch_broken_scans(input_image_path: str,
     for t_d, additional_image_metadata in zip(time_deltas,noninitial_image_metadata_dicts):
         original_frame_times_start = additional_image_metadata['FrameTimesStart']
         original_frame_durations = additional_image_metadata['FrameDuration']
-        additional_image_metadata['FrameTimesStart'] = [t+t_d for t in original_frame_times_start]
-        additional_image_metadata['FrameDuration'] = [t+t_d for t in original_frame_durations]
+        additional_image_metadata['FrameTimesStart'] = [t+t_d.total_seconds() for t in original_frame_times_start]
         additional_image_metadata['TimeZero'] = actual_time_zero
 
     corrected_arrays = [input_image_data]
@@ -85,7 +84,7 @@ def stitch_broken_scans(input_image_path: str,
         new_stem = "_".join(split_stem)
         new_path = str(original_path).replace(original_stem, new_stem)
 
-        undo_decay_correction(input_image_path=additional_image,
+        undo_decay_correction(input_image_path=additional_image_path,
                               output_image_path=new_path,
                               metadata_dict=metadata,
                               verbose=verbose)
@@ -97,7 +96,7 @@ def stitch_broken_scans(input_image_path: str,
                                         verbose=verbose)
 
         corrected_arrays.append(corrected_array)
-        updated_metadata = image_io.load_metadata_for_nifti_with_same_filename(image_path=output_image_path)
+        updated_metadata = image_io.load_metadata_for_nifti_with_same_filename(image_path=corrected_image_path)
         new_metadata['FrameTimesStart'].extend(updated_metadata['FrameTimesStart'])
         new_metadata['FrameDuration'].extend(updated_metadata['FrameDuration'])
         # TODO: BIDS expects these to be called 'DecayCorrectionFactor', not 'DecayFactor'
@@ -114,8 +113,8 @@ def stitch_broken_scans(input_image_path: str,
     stitched_image_nifti = nibabel.Nifti1Image(dataobj=stitched_image_array,
                                                affine=input_image_nifti.affine,
                                                header=stitched_image_header)
-    nib.save(img=stitched_image_nifti,
-             filename=output_image_path)
+    nibabel.save(img=stitched_image_nifti,
+                 filename=output_image_path)
     image_io.write_dict_to_json(meta_data_dict=new_metadata,
                                 out_path=image_io._gen_meta_data_filepath_for_nifti(nifty_path=output_image_path))
 
