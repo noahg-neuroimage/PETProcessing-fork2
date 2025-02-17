@@ -92,7 +92,7 @@ def build_label_map(region_names: list[str]):
 def weighted_series_sum(input_image_4d_path: str,
                         out_image_path: str,
                         half_life: float,
-                        verbose: bool,
+                        verbose: bool=False,
                         start_time: float=0,
                         end_time: float=-1) -> np.ndarray:
     r"""
