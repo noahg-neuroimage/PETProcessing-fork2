@@ -34,9 +34,24 @@ def stitch_broken_scans(input_image_path: str,
                         output_image_path: str,
                         noninitial_image_paths: list[str],
                         verbose: bool = False) -> np.ndarray:
-    """'Stitch' together 2 or more images from one session into a single image."""
+    """
+    'Stitch' together 2 or more images from one session into a single image.
 
-    # TODO: Verify all necessary keys are present at the outset, rather than scatter checks throughout
+    This function takes multiple images (4D) from a single PET session in which the scan had to pause in the middle (a
+    'broken scan'), registers all noninitial images to the initial image, recomputes decay corrections for all
+    noninitial images using the correct TimeZero (TimeZero for the first image), then combines all the data into a
+    single file to write (unless output_image_path is None, in which case the function will pass the data array.
+
+    Args:
+        input_image_path (str):
+        output_image_path (str):
+        noninitial_image_paths (list[str]):
+        verbose (bool, optional): If True, prints more information during processing. Defaults to False.
+
+    Returns:
+        np.ndarray: stitched image data as a single 4D array
+    """
+
     # Extract half-life from .json
     half_life = image_io.get_half_life_from_nifti(image_path=input_image_path)
 
