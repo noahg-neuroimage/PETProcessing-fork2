@@ -15,9 +15,10 @@ def undo_decay_correction(input_image_path: str,
                           verbose: bool = False) -> np.ndarray:
     """Uses decay factors from the metadata for an image to remove decay correction for each frame.
 
-    This function expects to find decay factors in the .json sidecar file. If there are no decay factors listed,
-    it may result in unexpected behavior. In addition to returning a np.ndarray containing the "decay uncorrected" data,
-    the function writes an image to output_image_path.
+    This function expects to find decay factors in the .json sidecar file, or the metadata_dict, if given. If there are
+    no decay factors (either under the key 'DecayFactor' or the BIDS-required 'DecayCorrectionFactor') listed, it may
+    result in unexpected behavior. In addition to returning a np.ndarray containing the "decay uncorrected" data, the
+    function writes an image to output_image_path.
 
     Args:
         input_image_path (str): Path to input (.nii.gz or .nii) image. A .json sidecar file should exist in the same
@@ -54,7 +55,8 @@ def undo_decay_correction(input_image_path: str,
         image_loader.save_nii(image=output_image,
                               out_file=output_image_path)
 
-        json_data['DecayFactor'] = [1]*len(decay_factors)
+        # This guarantees the type is unchanged, unlike [1]*len(decay_factors)
+        json_data['DecayFactor'] = list(np.ones_like(decay_factors))
         json_data['ImageDecayCorrected'] = "false"
         output_json_path = image_io._gen_meta_data_filepath_for_nifti(nifty_path=output_image_path)
         image_io.write_dict_to_json(meta_data_dict=json_data,
@@ -64,7 +66,6 @@ def undo_decay_correction(input_image_path: str,
 
 def decay_correct(input_image_path: str,
                   output_image_path: str,
-                  half_life: float,
                   verbose: bool = False) -> np.ndarray:
     r"""Recalculate decay_correction for nifti image based on frame reference times.
 
@@ -79,15 +80,14 @@ def decay_correct(input_image_path: str,
     where :math:`\lambda=\log(2)/T_{1/2}` is the decay constant of the radio isotope and depends on its half-life and
     `t` is the frame's reference time with respect to TimeZero (ideally, injection time).
 
-    TODO: Remove half_life argument and determine from .json
-
     Args:
         input_image_path (str): Path to input (.nii.gz or .nii) image. A .json sidecar file should exist in the same
              directory as the input image.
         output_image_path (str): Path to output (.nii.gz or .nii) output image.
-        half_life (float): Half-life time of radioisotope in seconds.
         verbose (bool): If true, prints more information during processing. Default is False.
     """
+    half_life = image_io.get_half_life_from_nifti(image_path=input_image_path) # Note: this will need to be handled
+    # intelligently if we change this function to take arrays (and provide decorators for reading from files).
 
     json_data = image_io.load_metadata_for_nifti_with_same_filename(image_path=input_image_path)
 
@@ -97,10 +97,11 @@ def decay_correct(input_image_path: str,
     frame_durations = frame_info['duration']
     frame_reference_times = [start+(duration/2) for start, duration in zip(frame_times_start, frame_durations)]
 
-    if filter(lambda x: x != 1, frame_info['decay']):
-        warnings.warn(f'.json sidecar for input image at {input_image_path} contains values other than one. For '
-                      f'accurate results, ensure that the input data does not have any decay correction applied. '
-                      f'Continuing...')
+    original_decay_factors = np.asarray(frame_info['decay'])
+    if np.any(original_decay_factors != 1):
+        raise ValueError(f'Decay Factors other than 1 found in metadata for {input_image_path}. This likely means the '
+                         f'image has not had its previous decay correction undone. Try running undo_decay_correction '
+                         f'before running this function to avoid decay correcting an image more than once.')
 
     image_data = nifti_image.get_fdata()
     new_decay_factors = []
