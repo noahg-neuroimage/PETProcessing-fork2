@@ -52,9 +52,6 @@ def stitch_broken_scans(input_image_path: str,
         np.ndarray: stitched image data as a single 4D array
     """
 
-    # Extract half-life from .json
-    half_life = image_io.get_half_life_from_nifti(image_path=input_image_path)
-
     input_image_nifti = image_io.safe_load_4dpet_nifti(filename=input_image_path)
     input_image_data = input_image_nifti.get_fdata()
 
