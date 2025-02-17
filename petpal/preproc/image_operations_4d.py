@@ -131,9 +131,6 @@ def stitch_broken_scans(input_image_path: str,
 
     return stitched_image
 
-
-
-
 def crop_image(input_image_path: str,
                out_image_path: str,
                x_dim: int=256,
