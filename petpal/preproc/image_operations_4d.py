@@ -33,27 +33,31 @@ from ..preproc.decay_correction import undo_decay_correction, decay_correct
 def stitch_broken_scans(input_image_path: str,
                         output_image_path: str,
                         noninitial_image_paths: list[str],
-                        verbose: bool = False) -> np.ndarray:
+                        verbose: bool = False) -> ants.ANTsImage:
     """
     'Stitch' together 2 or more images from one session into a single image.
 
     This function takes multiple images (4D) from a single PET session in which the scan had to pause in the middle (a
-    'broken scan'), registers all noninitial images to the initial image, recomputes decay corrections for all
-    noninitial images using the correct TimeZero (TimeZero for the first image), then combines all the data into a
-    single file to write (unless output_image_path is None, in which case the function will pass the data array.
+    'broken scan'), recomputes decay corrections for all noninitial images using the correct TimeZero (TimeZero for the
+    first image), then combines all the data into a single file to write (unless output_image_path is None, in which
+    case the function will pass the ANTsImage object.
+
+    Important: All noninitial images must be registered to the first image prior to calling this function.
 
     Args:
-        input_image_path (str):
-        output_image_path (str):
-        noninitial_image_paths (list[str]):
+        input_image_path (str): Path to the initial image captured during PET session. 'TimeZero' from this image will be considered
+            as the true value to correct the rest of the images to.
+        output_image_path (str): Path to which the stitched image will be written. If None, no file will be written.
+        noninitial_image_paths (list[str]): Path(s) to 1 or more additional images containing data from broken sections
+            of the PET session. Note that all images must be registered to the first (input_image_path).
         verbose (bool, optional): If True, prints more information during processing. Defaults to False.
 
     Returns:
-        np.ndarray: stitched image data as a single 4D array
+        ants.ANTsImage: stitched image
     """
 
-    input_image_nifti = image_io.safe_load_4dpet_nifti(filename=input_image_path)
-    input_image_data = input_image_nifti.get_fdata()
+    initial_image = ants.image_read(filename=input_image_path)
+    initial_image_data = initial_image.numpy()
 
     # Alter .json for all subsequent images to use the first file's AcquisitionTime as the start time.
     initial_image_metadata = image_io.load_metadata_for_nifti_with_same_filename(image_path=input_image_path)
@@ -82,7 +86,7 @@ def stitch_broken_scans(input_image_path: str,
         additional_image_metadata['FrameTimesStart'] = [t+t_d.total_seconds() for t in original_frame_times_start]
         additional_image_metadata['TimeZero'] = actual_time_zero
 
-    corrected_arrays = [input_image_data]
+    corrected_arrays = [initial_image_data]
     new_metadata = initial_image_metadata
     # Undo any existing decay correction and reapply.
     for additional_image_path, metadata in zip(noninitial_image_paths,noninitial_image_metadata_dicts):
@@ -100,34 +104,32 @@ def stitch_broken_scans(input_image_path: str,
                               metadata_dict=metadata)
 
         corrected_image_path = new_path.replace("desc-nodecaycorrect", "desc-decayredone")
-        corrected_array = decay_correct(input_image_path=new_path,
-                                        output_image_path=corrected_image_path,
-                                        verbose=verbose)
+        corrected_image = decay_correct(input_image_path=new_path,
+                                        output_image_path=corrected_image_path)
 
-        corrected_arrays.append(corrected_array)
+        corrected_arrays.append(corrected_image.numpy())
         updated_metadata = image_io.load_metadata_for_nifti_with_same_filename(image_path=corrected_image_path)
         new_metadata['FrameTimesStart'].extend(updated_metadata['FrameTimesStart'])
         new_metadata['FrameDuration'].extend(updated_metadata['FrameDuration'])
-        # TODO: BIDS expects these to be called 'DecayCorrectionFactor', not 'DecayFactor'
+        # Note: BIDS expects these to be called 'DecayCorrectionFactor', not 'DecayFactor'
         new_metadata['DecayFactor'].extend(updated_metadata['DecayFactor'])
         new_metadata['ImageDecayCorrected'] = updated_metadata['ImageDecayCorrected']
         new_metadata['ImageDecayCorrectionTime'] = updated_metadata['ImageDecayCorrectionTime']
 
     stitched_image_array = np.concatenate(corrected_arrays, axis=3)
-    stitched_image_header = input_image_nifti.header.copy()
-    new_dims_array = stitched_image_header['dim']
-    new_dims_array[4] = stitched_image_array.shape[3]
-    stitched_image_header['dim'] = new_dims_array
 
-    stitched_image_nifti = nibabel.Nifti1Image(dataobj=stitched_image_array,
-                                               affine=input_image_nifti.affine,
-                                               header=stitched_image_header)
-    nibabel.save(img=stitched_image_nifti,
-                 filename=output_image_path)
-    image_io.write_dict_to_json(meta_data_dict=new_metadata,
-                                out_path=image_io._gen_meta_data_filepath_for_nifti(nifty_path=output_image_path))
+    stitched_image = ants.from_numpy(data=stitched_image_array,
+                                     origin=initial_image.origin,
+                                     spacing=initial_image.spacing,
+                                     direction=initial_image.direction)
 
-    return stitched_image_array
+    if output_image_path is not None:
+        ants.image_write(image=stitched_image,
+                         filename=output_image_path)
+        image_io.write_dict_to_json(meta_data_dict=new_metadata,
+                                    out_path=image_io._gen_meta_data_filepath_for_nifti(nifty_path=output_image_path))
+
+    return stitched_image
 
 
 
