@@ -103,7 +103,6 @@ def stitch_broken_scans(input_image_path: str,
         corrected_image_path = new_path.replace("desc-nodecaycorrect", "desc-decayredone")
         corrected_array = decay_correct(input_image_path=new_path,
                                         output_image_path=corrected_image_path,
-                                        half_life=half_life,
                                         verbose=verbose)
 
         corrected_arrays.append(corrected_array)
