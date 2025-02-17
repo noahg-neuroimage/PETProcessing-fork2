@@ -17,13 +17,18 @@ determine_motion_target = image_operations_4d.determine_motion_target
 
 def register_pet_to_pet(input_image_path: str,
                         output_image_path: str,
-                        reference_pet_image_path: str,
-                        verbose: bool = False) -> np.ndarray:
-    """Compute weighted series sum images for input and reference pet images, then register input to reference."""
+                        reference_pet_image_path: str) -> ants.ANTsImage:
+    """
+    Compute weighted series sum images for input and reference pet images, then register input to reference.
 
-    io_handler = image_io.ImageIO(verbose=verbose)
+    Args:
+        input_image_path (str): Path to input image (i.e. moving 4D PET Image)
+        output_image_path (str): Path to write output image. If None is given, no image will be written.
+        reference_pet_image_path (str): Path to reference image (i.e. fixed 4D PET Image).
 
-    input_image_nifti = image_io.safe_load_4dpet_nifti(filename=input_image_path)
+    Returns:
+        ants.ANTsImage: ANTsImage containing input image registered to reference image.
+    """
 
     # Extract half-life from input image .json
     half_life = image_io.get_half_life_from_nifti(image_path=input_image_path)
@@ -40,22 +45,24 @@ def register_pet_to_pet(input_image_path: str,
     wss_reference_ants = ants.image_read(wss_reference)
     input_ants = ants.image_read(input_image_path)
 
-    xfm_output = ants.registration(fixed=wss_reference_ants,
-                                   moving=wss_input_ants,
-                                   type_of_transform='DenseRigid',
-                                   write_composite_transform=True)
-    xfm_apply = ants.apply_transforms(moving=input_ants,
-                                      fixed=wss_reference_ants,
-                                      transformlist=xfm_output['fwdtransforms'],
-                                      interpolator='linear',
-                                      imagetype=3)
-    reg_data_numpy = xfm_apply.numpy()
+    # Perform registration
+    registration_transform = ants.registration(fixed=wss_reference_ants,
+                                               moving=wss_input_ants,
+                                               type_of_transform='DenseRigid',
+                                               write_composite_transform=True)
+    registered_ants_image = ants.apply_transforms(moving=input_ants,
+                                                  fixed=wss_reference_ants,
+                                                  transformlist=registration_transform['fwdtransforms'],
+                                                  interpolator='linear',
+                                                  imagetype=3)
 
-    ants.image_write(xfm_apply, output_image_path)
-    image_io.safe_copy_meta(input_image_path=input_image_path,
-                            out_image_path=output_image_path)
+    # Optionally write image and metadata
+    if output_image_path is not None:
+        ants.image_write(registered_ants_image, output_image_path)
+        image_io.safe_copy_meta(input_image_path=input_image_path,
+                                out_image_path=output_image_path)
 
-    return reg_data_numpy
+    return registered_ants_image
 
 
 
