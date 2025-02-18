@@ -4,7 +4,7 @@ on 4D PET imaging series. These functions typically take one or more paths to im
 data in NIfTI format, and save modified data to a NIfTI file, and may return the
 modified imaging array as output.
 
-TODOs:
+Todo:
     * (weighted_series_sum) Refactor the DecayFactor key extraction into its own function
     * (weighted_series_sum) Refactor verbose reporting into the class as it is unrelated to
       computation
@@ -14,6 +14,10 @@ TODOs:
       such as finding the average uptake encompassing two regions.
     * Methods that create new images should copy over a previous metadata file, if one exists,
       and create a new one if it does not.
+    * (stitch_broken_scans) Separate 'add desc entity' section to its own function somewhere.
+    * (stitch_broken_scans) Assumes non-BIDS key 'DecayFactor' instead of BIDS-required 'DecayCorrectionFactor' for
+        ease-of-use with NIL data. Should be changed in the future.
+    * (stitch_broken_scans) Currently writes intermediate files even if output_image_path is None.
 
 """
 import os
@@ -32,8 +36,7 @@ from ..preproc.decay_correction import undo_decay_correction, decay_correct
 
 def stitch_broken_scans(input_image_path: str,
                         output_image_path: str,
-                        noninitial_image_paths: list[str],
-                        verbose: bool = False) -> ants.ANTsImage:
+                        noninitial_image_paths: list[str]) -> ants.ANTsImage:
     """
     'Stitch' together 2 or more images from one session into a single image.
 
@@ -50,7 +53,6 @@ def stitch_broken_scans(input_image_path: str,
         output_image_path (str): Path to which the stitched image will be written. If None, no file will be written.
         noninitial_image_paths (list[str]): Path(s) to 1 or more additional images containing data from broken sections
             of the PET session. Note that all images must be registered to the first (input_image_path).
-        verbose (bool, optional): If True, prints more information during processing. Defaults to False.
 
     Returns:
         ants.ANTsImage: stitched image
@@ -58,11 +60,10 @@ def stitch_broken_scans(input_image_path: str,
 
     initial_image = ants.image_read(filename=input_image_path)
     initial_image_data = initial_image.numpy()
-
-    # Alter .json for all subsequent images to use the first file's AcquisitionTime as the start time.
     initial_image_metadata = image_io.load_metadata_for_nifti_with_same_filename(image_path=input_image_path)
     noninitial_image_metadata_dicts = [image_io.load_metadata_for_nifti_with_same_filename(image_path=path)
                                        for path in noninitial_image_paths]
+
     try:
         noninitial_time_zeroes = [meta['TimeZero'] for meta in noninitial_image_metadata_dicts]
         actual_time_zero = initial_image_metadata['TimeZero']
@@ -71,27 +72,25 @@ def stitch_broken_scans(input_image_path: str,
                        f'Aborting...')
 
     initial_scan_time = datetime.time.fromisoformat(actual_time_zero)
-    faux_date = datetime.date.today() # Not even needed except to make a datetime object.
-    initial_scan_datetime = datetime.datetime.combine(date=faux_date,
+    placeholder_date = datetime.date.today()
+    initial_scan_datetime = datetime.datetime.combine(date=placeholder_date,
                                                       time=initial_scan_time)
     noninitial_scan_times = [datetime.time.fromisoformat(t) for t in noninitial_time_zeroes]
-    noninitial_scan_datetimes = [datetime.datetime.combine(date=faux_date, time=scan_time)
+    noninitial_scan_datetimes = [datetime.datetime.combine(date=placeholder_date, time=scan_time)
                                  for scan_time in noninitial_scan_times]
 
-    time_deltas = [t - initial_scan_datetime for t in noninitial_scan_datetimes]
+    times_since_timezero = [t - initial_scan_datetime for t in noninitial_scan_datetimes]
 
-    # Update BIDS FrameTimesStart to be used in decay computations
-    for t_d, additional_image_metadata in zip(time_deltas,noninitial_image_metadata_dicts):
+    for t_d, additional_image_metadata in zip(times_since_timezero,noninitial_image_metadata_dicts):
         original_frame_times_start = additional_image_metadata['FrameTimesStart']
         additional_image_metadata['FrameTimesStart'] = [t+t_d.total_seconds() for t in original_frame_times_start]
         additional_image_metadata['TimeZero'] = actual_time_zero
 
     corrected_arrays = [initial_image_data]
     new_metadata = initial_image_metadata
-    # Undo any existing decay correction and reapply.
+
     for additional_image_path, metadata in zip(noninitial_image_paths,noninitial_image_metadata_dicts):
 
-        # TODO: Separate this 'add desc entity' to its own function somewhere.
         original_path = pathlib.Path(additional_image_path)
         original_stem = original_path.stem
         split_stem = original_stem.split("_")
@@ -111,7 +110,6 @@ def stitch_broken_scans(input_image_path: str,
         updated_metadata = image_io.load_metadata_for_nifti_with_same_filename(image_path=corrected_image_path)
         new_metadata['FrameTimesStart'].extend(updated_metadata['FrameTimesStart'])
         new_metadata['FrameDuration'].extend(updated_metadata['FrameDuration'])
-        # Note: BIDS expects these to be called 'DecayCorrectionFactor', not 'DecayFactor'
         new_metadata['DecayFactor'].extend(updated_metadata['DecayFactor'])
         new_metadata['ImageDecayCorrected'] = updated_metadata['ImageDecayCorrected']
         new_metadata['ImageDecayCorrectionTime'] = updated_metadata['ImageDecayCorrectionTime']

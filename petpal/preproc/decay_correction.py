@@ -1,6 +1,12 @@
 """Decay Correction Module.
 
-Provides functions for undo-ing decay correction and recalculating it."""
+Provides functions for undo-ing decay correction and recalculating it.
+
+Todo:
+    * Refactor arguments (and half-life retrieval) once decorators are implemented to translate paths to ANTsImages.
+    * Handle BIDS keys more formally (i.e. this currently reads/writes decay factors from the key 'DecayFactor' instead
+        of the BIDS-required 'DecayCorrectionFactor).'
+"""
 
 import warnings
 import math
@@ -9,7 +15,6 @@ import ants
 import numpy as np
 
 from ..utils import image_io
-
 
 def undo_decay_correction(input_image_path: str,
                           output_image_path: str,
@@ -33,10 +38,12 @@ def undo_decay_correction(input_image_path: str,
         ants.ANTsImage: ANTsImage with decay correction reversed."""
 
     decay_corrected_image = ants.image_read(filename=input_image_path)
-    if metadata_dict:
+
+    if metadata_dict is not None:
         json_data = metadata_dict
     else:
         json_data = image_io.load_metadata_for_nifti_with_same_filename(image_path=input_image_path)
+
     frame_info = image_io.get_frame_timing_info_for_nifti(image_path=input_image_path)
     decay_factors = frame_info['decay']
 
@@ -52,16 +59,12 @@ def undo_decay_correction(input_image_path: str,
         ants.image_write(image=uncorrected_image,
                          filename=output_image_path)
 
-        # This guarantees the type is unchanged, unlike [1]*len(decay_factors)
         json_data['DecayFactor'] = list(np.ones_like(decay_factors))
         json_data['ImageDecayCorrected'] = "false"
         output_json_path = image_io._gen_meta_data_filepath_for_nifti(nifty_path=output_image_path)
         image_io.write_dict_to_json(meta_data_dict=json_data,
                                     out_path=output_json_path)
 
-    # Not sure why ants.from_numpy_like() isn't being understood to return an ANTsImage; upvoted an issue on their
-    # github regarding adding type hinting.
-    # noinspection PyTypeChecker
     return uncorrected_image
 
 
@@ -80,6 +83,9 @@ def decay_correct(input_image_path: str,
     where :math:`\lambda=\log(2)/T_{1/2}` is the decay constant of the radio isotope and depends on its half-life and
     `t` is the frame's reference time with respect to TimeZero (ideally, injection time).
 
+    Note: BIDS 'DecayCorrectionTime' is set to 0 (seconds w.r.t. TimeZero) for the image. If this assumption doesn't
+        hold, be wary of downstream effects.
+
     Args:
         input_image_path (str): Path to input (.nii.gz or .nii) image. A .json sidecar file should exist in the same
              directory as the input image.
@@ -89,8 +95,7 @@ def decay_correct(input_image_path: str,
         ants.ANTsImage: Decay-Corrected Image
 
     """
-    half_life = image_io.get_half_life_from_nifti(image_path=input_image_path)  # Note: this will need to be handled
-    # intelligently if we change this function to take arrays (and provide decorators for reading from files).
+    half_life = image_io.get_half_life_from_nifti(image_path=input_image_path)
 
     json_data = image_io.load_metadata_for_nifti_with_same_filename(image_path=input_image_path)
     uncorrected_image = ants.image_read(filename=input_image_path)
@@ -109,9 +114,9 @@ def decay_correct(input_image_path: str,
     corrected_data = uncorrected_image.numpy()
     new_decay_factors = []
     for frame_num, frame_reference_time in enumerate(frame_reference_times):
-        decay_factor = math.exp(((math.log(2) / half_life) * frame_reference_time))
-        corrected_data[..., frame_num] *= decay_factor
-        new_decay_factors.append(decay_factor)
+        new_decay_factor = math.exp(((math.log(2) / half_life) * frame_reference_time))
+        corrected_data[..., frame_num] *= new_decay_factor
+        new_decay_factors.append(new_decay_factor)
 
     corrected_image = ants.from_numpy_like(data=corrected_data,
                                            image=uncorrected_image)
@@ -123,10 +128,7 @@ def decay_correct(input_image_path: str,
         json_data['DecayFactor'] = new_decay_factors
         json_data['ImageDecayCorrected'] = "true"
         json_data['ImageDecayCorrectionTime'] = 0
-        # ^ We always use BIDS TimeZero for decay correction, so 0 seconds w.r.t. it
-        # Note: ^ There may be cases where this assumption isn't true. Keep an eye on it.
         image_io.write_dict_to_json(meta_data_dict=json_data,
                                     out_path=output_json_path)
-
 
     return corrected_image
