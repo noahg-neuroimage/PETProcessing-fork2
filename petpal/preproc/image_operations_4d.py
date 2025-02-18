@@ -4,7 +4,7 @@ on 4D PET imaging series. These functions typically take one or more paths to im
 data in NIfTI format, and save modified data to a NIfTI file, and may return the
 modified imaging array as output.
 
-Todo:
+TODO:
     * (weighted_series_sum) Refactor the DecayFactor key extraction into its own function
     * (weighted_series_sum) Refactor verbose reporting into the class as it is unrelated to
       computation
