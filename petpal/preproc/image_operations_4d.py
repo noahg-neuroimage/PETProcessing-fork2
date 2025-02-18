@@ -16,7 +16,7 @@ TODO:
       and create a new one if it does not.
     * (stitch_broken_scans) Separate 'add desc entity' section to its own function somewhere.
     * (stitch_broken_scans) Assumes non-BIDS key 'DecayFactor' instead of BIDS-required 'DecayCorrectionFactor' for
-        ease-of-use with NIL data. Should be changed in the future.
+      ease-of-use with NIL data. Should be changed in the future.
     * (stitch_broken_scans) Currently writes intermediate files even if output_image_path is None.
 
 """
