@@ -162,7 +162,7 @@ def apply_xfm_ants(input_image_path: str,
     xfm_image = ants.apply_transforms(fixed=ref_image_ants,
                                       moving=pet_image_ants,
                                       transformlist=xfm_paths,
-                                      imagetype=dim-1,
+                                      imagetype=dim,
                                       **kwargs)
 
     ants.image_write(xfm_image,out_image_path)
