@@ -138,6 +138,7 @@ def apply_xfm_ants(input_image_path: str,
                    ref_image_path: str,
                    out_image_path: str,
                    xfm_paths: list[str],
+                   copy_meta = False,
                    **kwargs):
     """
     Applies existing transforms in ANTs or ITK format to an input image, onto
@@ -167,7 +168,10 @@ def apply_xfm_ants(input_image_path: str,
 
     ants.image_write(xfm_image,out_image_path)
 
-    image_io.safe_copy_meta(input_image_path=input_image_path,out_image_path=out_image_path)
+    if copy_meta:
+        image_io.safe_copy_meta(input_image_path=input_image_path,out_image_path=out_image_path)
+
+    return xfm_image
 
 
 def apply_xfm_fsl(input_image_path: str,
