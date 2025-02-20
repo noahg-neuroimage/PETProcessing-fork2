@@ -17,7 +17,6 @@ from nibabel.filebasedimages import FileBasedHeader
 import numpy as np
 import pandas as pd
 
-from .bids_utils import infer_sub_ses_from_tac_path
 from . import useful_functions
 
 
