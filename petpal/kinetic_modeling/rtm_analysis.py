@@ -5,6 +5,7 @@ import os
 from typing import Union
 import json
 import numpy as np
+from lmfit.minimizer import MinimizerResult
 from petpal.kinetic_modeling.fit_tac_with_rtms import FitTACWithRTMs
 from petpal.kinetic_modeling.graphical_analysis import get_index_from_threshold
 from petpal.kinetic_modeling.reference_tissue_models import (calc_k2prime_from_mrtm_2003_fit,
@@ -12,7 +13,7 @@ from petpal.kinetic_modeling.reference_tissue_models import (calc_k2prime_from_m
                                                              calc_bp_from_mrtm2_2003_fit,
                                                              calc_bp_from_mrtm_original_fit,
                                                              calc_bp_from_mrtm_2003_fit)
-from petpal.utils.image_io import safe_load_tac
+from petpal.utils.image_io import safe_load_tac, safe_load_meta, get_half_life_from_meta
 from ..utils.time_activity_curve import MultiTACAnalysisMixin
 
 
@@ -69,7 +70,8 @@ class RTMAnalysis:
                  roi_tac_path: str,
                  output_directory: str,
                  output_filename_prefix: str,
-                 method: str):
+                 method: str,
+                 metadata_path: str=None):
         r"""
         Initialize RTMAnalysis with provided arguments.
 
@@ -93,6 +95,7 @@ class RTMAnalysis:
         """
         self.ref_tac_path: str = os.path.abspath(ref_tac_path)
         self.roi_tac_path: str = os.path.abspath(roi_tac_path)
+        self.half_life_in_minutes, self.frame_duration = self.get_uncertainty_inputs(metadata_path)
         self.output_directory: str = os.path.abspath(output_directory)
         self.output_filename_prefix: str = output_filename_prefix
         self.method = method.lower()
@@ -195,6 +198,20 @@ class RTMAnalysis:
             raise ValueError("k2_prime must be set for the modified RTM (MRTM2, FRTM2, and SRTM2) "
                              "analyses.")
 
+
+    def get_uncertainty_inputs(self, metadata_path):
+        """
+        Get the half life and frame duration from metadata, if provided.
+        """
+        if metadata_path is not None:
+            half_life_in_minutes = get_half_life_from_meta(meta_data_file_path=metadata_path)/60
+            frame_durations = np.array(safe_load_meta(input_metadata_file=metadata_path)['FrameDuration'])/60
+        else:
+            half_life_in_minutes = None
+            frame_durations = None
+        return half_life_in_minutes, frame_durations
+
+
     def calculate_fit(self,
                       bounds: Union[None, np.ndarray] = None,
                       t_thresh_in_mins: float = None,
@@ -226,13 +243,15 @@ class RTMAnalysis:
                                       reference_tac_vals=ref_tac_vals,
                                       method=self.method, bounds=bounds,
                                       t_thresh_in_mins=t_thresh_in_mins,
-                                      k2_prime=k2_prime)
+                                      k2_prime=k2_prime,
+                                      half_life_in_minutes=self.half_life_in_minutes,
+                                      frame_durations=self.frame_duration)
         analysis_obj.fit_tac_to_model()
 
         return analysis_obj.fit_results
 
     def calculate_fit_properties(self,
-                                 fit_results: Union[np.ndarray, tuple[np.ndarray, np.ndarray]],
+                                 fit_results: Union[np.ndarray, tuple[np.ndarray, np.ndarray],MinimizerResult],
                                  t_thresh_in_mins: float = None,
                                  k2_prime: float = None):
         r"""
@@ -325,7 +344,7 @@ class RTMAnalysis:
         props_dict['NumberOfPointsFit'] = len(ref_tac_times[t_thresh_index:])
 
     def _calc_frtm_or_srtm_fit_props(self,
-                                     fit_results: tuple[np.ndarray, np.ndarray],
+                                     fit_results: MinimizerResult,
                                      k2_prime: float,
                                      props_dict: dict):
         r"""
@@ -339,28 +358,51 @@ class RTMAnalysis:
                 their corresponding fit covariances.
 
         """
-        fit_params, fit_covariances = fit_results
-        fit_stderr = np.sqrt(np.diagonal(fit_covariances))
+        if isinstance(fit_results,tuple):
+            fit_params, fit_covariances = fit_results
+            fit_stderr = np.sqrt(np.diagonal(fit_covariances))
+            if self.method.startswith('srtm'):
+                format_func =  self._get_pretty_srtm_fit_param_vals
+            else:
+                format_func = self._get_pretty_frtm_fit_param_vals
 
-        if self.method.startswith('srtm'):
-            format_func =  self._get_pretty_srtm_fit_param_vals
-        else:
-            format_func = self._get_pretty_frtm_fit_param_vals
+            props_dict["FitNvars"] = np.nan
+            props_dict["FitN"] = np.nan
+            props_dict["FitDoF"] = np.nan
+            props_dict["FitChiSqr"] = np.nan
+            props_dict["FitRedChiSqr"] = np.nan
+            props_dict["FitAIC"] = np.nan
+            props_dict["FitBIC"] = np.nan
+            if self.method.endswith('2'):
+                props_dict["k2Prime"] = k2_prime
+                props_dict["FitValues"] = format_func(fit_params.round(5), True)
+                props_dict["FitStdErr"] = format_func(fit_stderr.round(5), True)
+            else:
+                props_dict["FitValues"] = format_func(fit_params.round(5), False)
+                props_dict["FitStdErr"] = format_func(fit_stderr.round(5), False)
 
-        if self.method.endswith('2'):
-            props_dict["k2Prime"] = k2_prime
-            props_dict["FitValues"] = format_func(fit_params.round(5), True)
-            props_dict["FitStdErr"] = format_func(fit_stderr.round(5), True)
         else:
-            props_dict["FitValues"] = format_func(fit_params.round(5), False)
-            props_dict["FitStdErr"] = format_func(fit_stderr.round(5), False)
+            fit_params = fit_results.params.valuesdict()
+            fit_stderr = self.lmfit_vals_to_stderr_dict(lmfit_result = fit_results)
+            props_dict["FitNvars"] = fit_results.nvarys
+            props_dict["FitN"] = fit_results.ndata
+            props_dict["FitDoF"] = fit_results.nfree
+            props_dict["FitValues"] = fit_params
+            props_dict["FitStdErr"] = fit_stderr
+            props_dict["FitChiSqr"] = fit_results.chisqr
+            props_dict["FitRedChiSqr"] = fit_results.redchi
+            props_dict["FitAIC"] = fit_results.aic
+            props_dict["FitBIC"] = fit_results.bic
+            if self.method.endswith('2'):
+                props_dict["k2Prime"] = k2_prime
+
 
     @staticmethod
     def _get_pretty_srtm_fit_param_vals(param_fits: np.ndarray, reduced: bool = False) -> dict:
         r"""
         Utility function to get nicely formatted fit parameters for 'srtm(2)' analysis.
 
-        Returns a dictionary with keys: 'R1', 'k2', and 'BP' and the corresponding values from
+        Returns a dictionary with keys: 'r1', 'k2', and 'bp' and the corresponding values from
         ``param_fits``.
 
         Args:
@@ -370,16 +412,17 @@ class RTMAnalysis:
             dict: Dictionary of fit parameters and their corresponding values.
         """
         if reduced:
-            return {name: val for name, val in zip(['R1', 'BP'], param_fits)}
+            return {name: val for name, val in zip(['r1', 'bp'], param_fits)}
         else:
-            return {name: val for name, val in zip(['R1', 'k2', 'BP'], param_fits)}
+            return {name: val for name, val in zip(['r1', 'k2', 'bp'], param_fits)}
+
 
     @staticmethod
     def _get_pretty_frtm_fit_param_vals(param_fits: np.ndarray, reduced: bool = False) -> dict:
         r"""
         Utility function to get nicely formatted fit parameters for 'frtm(2)' analysis.
 
-        Returns a dictionary with keys: 'R1', 'k2', 'k3', and 'k4' and the corresponding values from
+        Returns a dictionary with keys: 'r1', 'k2', 'k3', and 'k4' and the corresponding values from
         ``param_fits``.
 
         Args:
@@ -389,9 +432,27 @@ class RTMAnalysis:
             dict: Dictionary of fit parameters and their corresponding values.
         """
         if reduced:
-            return {name: val for name, val in zip(['R1', 'k3', 'k4'], param_fits)}
+            return {name: val for name, val in zip(['r1', 'k3', 'k4'], param_fits)}
         else:
-            return {name: val for name, val in zip(['R1', 'k2', 'k3', 'k4'], param_fits)}
+            return {name: val for name, val in zip(['r1', 'k2', 'k3', 'k4'], param_fits)}
+
+
+    @staticmethod
+    def lmfit_vals_to_stderr_dict(lmfit_result: MinimizerResult):
+        """
+        Get stderr for each parameter in the results of an LMFIT optimization. Returns a 
+        dictionary of the form {name: stderr} where the "name" is the name of the optimized 
+        parameter and "stderr" is the standard error associated with the fitting of said parameter.
+
+        Args:
+            lmfit_result (lmfit.minimizer.MinimizerResult): Output of an lmfit.minimize fitting.
+        
+        Returns:
+            stderr_dict (dict): The dictionary containing standard errors for each parameter.
+        """
+        results_values = lmfit_result.params.values()
+        stderr_dict = {val.name: val.stderr for val in results_values}
+        return stderr_dict
 
 
 class MultiTACRTMAnalysis(RTMAnalysis, MultiTACAnalysisMixin):
@@ -410,7 +471,8 @@ class MultiTACRTMAnalysis(RTMAnalysis, MultiTACAnalysisMixin):
                  roi_tacs_dir: str,
                  output_directory: str,
                  output_filename_prefix: str,
-                 method: str):
+                 method: str,
+                 metadata_path: str=None):
         """
         Initializes the MultiTACRTMAnalysis object with required paths and analysis method.
 
@@ -420,6 +482,8 @@ class MultiTACRTMAnalysis(RTMAnalysis, MultiTACAnalysisMixin):
             output_directory (str): Directory for saving analysis results.
             output_filename_prefix (str): Prefix for output filenames.
             method (str): Method used for RTM analysis.
+            metadata_path (str): Path to metadata file from which TACs are derived. Used in
+                analysis of uncertainty. Default None.
         """
         MultiTACAnalysisMixin.__init__(self,
                                        input_tac_path=ref_tac_path,
@@ -429,7 +493,8 @@ class MultiTACRTMAnalysis(RTMAnalysis, MultiTACAnalysisMixin):
                              roi_tac_path=roi_tacs_dir,
                              output_directory=output_directory,
                              output_filename_prefix=output_filename_prefix,
-                             method=method)
+                             method=method,
+                             metadata_path=metadata_path)
 
 
     def init_analysis_props(self, method: str) -> list[dict]:
@@ -478,7 +543,9 @@ class MultiTACRTMAnalysis(RTMAnalysis, MultiTACAnalysisMixin):
                                           method=self.method,
                                           bounds=bounds,
                                           t_thresh_in_mins=t_thresh_in_mins,
-                                          k2_prime=k2_prime)
+                                          k2_prime=k2_prime,
+                                          half_life_in_minutes=self.half_life_in_minutes,
+                                          frame_durations=self.frame_duration)
             analysis_obj.fit_tac_to_model()
             fit_results.append(analysis_obj.fit_results)
 

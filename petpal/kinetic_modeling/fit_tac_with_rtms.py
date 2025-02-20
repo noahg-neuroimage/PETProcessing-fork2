@@ -14,7 +14,10 @@ from petpal.kinetic_modeling.reference_tissue_models import (fit_frtm2_to_tac,
                                                              fit_srtm2_to_tac,
                                                              fit_srtm2_to_tac_with_bounds,
                                                              fit_srtm_to_tac,
-                                                             fit_srtm_to_tac_with_bounds)
+                                                             fit_srtm_to_tac_with_bounds,
+                                                             weight_tac_decay,
+                                                             weight_tac_simple,
+                                                             convert_weights_to_sigma)
 
 
 def get_rtm_method(method: str, bounds=None):
@@ -230,7 +233,9 @@ class FitTACWithRTMs:
                  method: str = 'mrtm',
                  bounds: Union[None, np.ndarray] = None,
                  t_thresh_in_mins: float = None,
-                 k2_prime: float = None):
+                 k2_prime: float = None,
+                 frame_durations: np.ndarray = None,
+                 half_life_in_minutes: float = None):
         r"""
         Initialize the FitTACWithRTMs object with specified parameters.
 
@@ -261,6 +266,9 @@ class FitTACWithRTMs:
         self.method: str = method.lower()
         self.bounds: Union[None, np.ndarray] = bounds
         self.validate_bounds()
+
+        self.uncertainties = self.calculate_uncertainties(frame_durations_in_minutes=frame_durations,
+                                                          half_life_in_minutes=half_life_in_minutes)
 
         self.t_thresh_in_mins: float = t_thresh_in_mins
         self.k2_prime: float = k2_prime
@@ -375,6 +383,35 @@ class FitTACWithRTMs:
 
         return nan_array
 
+
+    def calculate_uncertainties(self,
+                                frame_durations_in_minutes: np.ndarray,
+                                half_life_in_minutes: float=None):
+        """
+        Calculate uncertainties associated with the target TAC.
+
+        Args:
+            frame_durations_in_minutes: Length of each frame, in minutes, corresponding to time 
+                points in the target and reference TACs.
+            half_life_in_minutes (None): Half life of the radiotracer studied in the TAC.
+        
+        Returns:
+            uncertainties (np.ndarray): Uncertainty of each measurement in the target TAC.
+        """
+        if half_life_in_minutes is None:
+            tac_weights = weight_tac_simple(tac_durations_in_minutes=frame_durations_in_minutes,
+                                            tac_vals=self.target_tac_vals)
+        elif frame_durations_in_minutes is not None:
+            tac_weights = weight_tac_decay(tac_durations_in_minutes=frame_durations_in_minutes,
+                                           tac_vals=self.target_tac_vals,
+                                           tac_times_in_minutes=self.tac_times_in_minutes,
+                                           half_life_in_minutes=half_life_in_minutes)
+        else:
+            tac_weights = np.ones(len(self.tac_times_in_minutes))
+        uncertainties = convert_weights_to_sigma(tac_weights=tac_weights)
+        return uncertainties
+
+
     def fit_tac_to_model(self):
         r"""Fits TAC vals to model
 
@@ -415,6 +452,7 @@ class FitTACWithRTMs:
             self.fit_results = rtm_method(tac_times_in_minutes=self.tac_times_in_minutes,
                                           tgt_tac_vals=self.target_tac_vals,
                                           ref_tac_vals=self.reference_tac_vals,
+                                          uncertainties=self.uncertainties,
                                           **rtm_kwargs)
         except ValueError:
             self.fit_results = self.get_failed_output_nan_array()
