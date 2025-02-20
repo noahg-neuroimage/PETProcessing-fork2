@@ -10,13 +10,13 @@ import json
 import re
 import os
 import glob
-import pathlib
 import ants
 import nibabel
 from nibabel.filebasedimages import FileBasedHeader
 import numpy as np
 import pandas as pd
 
+from .bids_utils import infer_sub_ses_from_tac_path
 from . import useful_functions
 
 
@@ -138,11 +138,10 @@ def load_metadata_for_nifti_with_same_filename(image_path) -> dict:
     return metadata
 
 
-def flatten_metadata(metadata: dict) -> dict:
+def copy_metadata_sans_list(metadata: dict) -> dict:
     """
-    Given a metadata dictionary, return an identical dictionary with any list-like or dict-like 
-    data replaced with individual values. Useful when converting several JSON files into a TSV 
-    file.
+    Given a metadata dictionary, return an identical dictionary with any list-like data replaced
+    with individual values. Useful when converting several JSON files into a TSV file.
 
     Args:
         metadata (dict): The metadata file that may contain lists of data.
@@ -154,9 +153,7 @@ def flatten_metadata(metadata: dict) -> dict:
     Note:
         List-like data is replaced by renaming the key it appears in with ordinal values. E.g. if
         metadata contains a key named ``FitPars`` with value [4,6] then the function would create
-        two new keys, FitPars_1 and Fit_Pars2 with values 4 and 6 respectively. Likewise, nested
-        dictionaries are replaced by combining the two keys identifying the data with underscores.
-        Function is not robust for doubly nested lists and dictionaries.
+        two new keys, FitPars_1 and Fit_Pars2 with values 4 and 6 respectively.
     """
     metadata_for_tsv = {}
     for key in metadata:
@@ -165,10 +162,6 @@ def flatten_metadata(metadata: dict) -> dict:
             for i,val in enumerate(data):
                 key_new = f'{key}_{i+1}'
                 metadata_for_tsv[key_new] = val
-        elif isinstance(data,dict):
-            for inner_key in data:
-                key_new = f'{key}_{inner_key}'
-                metadata_for_tsv[key_new] = data[inner_key]
         else:
             metadata_for_tsv[key] = metadata[key]
     return metadata_for_tsv
@@ -598,47 +591,6 @@ def get_window_index_pairs_for_image(image_path: str, w_size: float):
     image_frame_info = get_frame_timing_info_for_nifti(image_path=image_path)
     return get_window_index_pairs_from_durations(frame_durations=image_frame_info['duration'], w_size=w_size)
 
-def infer_sub_ses_from_tac_path(tac_path: str):
-    """
-    Infers subject and session IDs from a TAC file path by analyzing the filename.
-
-    This method extracts subject and session IDs from the filename of a TAC file. It checks the
-    presence of a `sub-` and `ses-` marker in the filename, which is followed by the subject and
-    session respectively. This segment name is then formatted with each part capitalized. If no
-    subject or session is found a generic value of `UNK` is returned.
-
-    Args:
-        tac_path (str): Path of the TAC file.
-        tac_id (int): ID of the TAC.
-
-    Returns:
-        tuple: Inferred subject and session IDs.
-    """
-    path = pathlib.Path(tac_path)
-    assert path.suffix == '.tsv', '`tac_path` must point to a TSV file (*.tsv)'
-    filename = path.name
-    fileparts = filename.split("_")
-    subname = 'XXXX'
-    for part in fileparts:
-        if 'sub-' in part:
-            subname = part.split('sub-')[-1]
-            break
-    if subname == 'XXXX':
-        subname = 'UNK'
-    else:
-        name_parts = subname.split("-")
-        subname = ''.join(name_parts)
-    sesname = 'XXXX'
-    for part in fileparts:
-        if 'ses-' in part:
-            sesname = part.split('ses-')[-1]
-            break
-    if sesname == 'XXXX':
-        subname = 'UNK'
-    else:
-        name_parts = sesname.split("-")
-        sesname = ''.join(name_parts)
-    return subname, sesname
 
 def km_regional_fits_to_tsv(fit_results_dir: str, out_tsv_dir: str):
     """
@@ -659,7 +611,7 @@ def km_regional_fits_to_tsv(fit_results_dir: str, out_tsv_dir: str):
     km_fits = pd.DataFrame()
     for i,fit in enumerate(fit_results_jsons):
         fit_load = safe_load_meta(fit)
-        fit_clean = flatten_metadata(fit_load)
+        fit_clean = copy_metadata_sans_list(fit_load)
         sub, ses = infer_sub_ses_from_tac_path(fit_clean['FilePathTTAC'])
         fit_clean['sub_id'] = sub
         fit_clean['ses_id'] = ses
